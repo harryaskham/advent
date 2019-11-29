@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import TwentyEighteen
 
 main :: IO ()
-main = someFunc
+main = putStrLn "woo"
