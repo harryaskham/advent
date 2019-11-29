@@ -4,7 +4,7 @@ import Data.Set
 
 freqsToNums :: IO [Int]
 freqsToNums = do
-  content <- readFile "input/2018/1_1.txt"
+  content <- readFile "input/2018/1.txt"
   return $ parseLine <$> lines content
     where
       parseLine :: String -> Int
