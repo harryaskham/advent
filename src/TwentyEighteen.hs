@@ -22,9 +22,7 @@ freqsToNums = do
           '-' -> -1 * read number
 
 day1_1 :: IO Int
-day1_1 = do
-  nums <- freqsToNums
-  return $ sum nums
+day1_1 = sum <$> freqsToNums
 
 day1_2 :: IO Int
 day1_2 = do
@@ -37,11 +35,7 @@ day1_2 = do
 
 -- Get a count of unique items in a list.
 itemCounts :: Ord a => [a] -> M.Map a Int
-itemCounts xs = go M.empty xs
-  where
-    go :: Ord a => M.Map a Int -> [a] -> M.Map a Int
-    go acc [] = acc
-    go acc (x:xs) = go (M.insertWith (+) x 1 acc) xs
+itemCounts = foldl (\acc x -> M.insertWith (+) x 1 acc) M.empty
 
 -- Does the list contain the same thing exactly n times?
 exactlyN :: Ord a => Int -> [a] -> Bool
@@ -57,7 +51,7 @@ day2_1 = do
 
 -- Get the number of differences between the two strings.
 editDistance :: Eq a => [a] -> [a] -> Int
-editDistance xs ys = length $ filter (==False) $ fmap (\(x, y) -> x == y) (zip xs ys)
+editDistance xs ys = length $ filter (==False) $ fmap (uncurry (==)) (zip xs ys)
 
 -- Gets only the items that are the same in both cases.
 common :: Eq a => [a] -> [a] -> [a]
@@ -66,7 +60,7 @@ common xs ys = catMaybes $ filter (/=Nothing) $ fmap (\(x, y) -> if x == y then 
 day2_2 :: IO String
 day2_2 = do
   ls <- lines <$> readFile "input/2018/2.txt"
-  return $ [common x y | x <- ls, y <- ls, editDistance x y == 1] !! 0
+  return $ head [common x y | x <- ls, y <- ls, editDistance x y == 1]
 
 -- The details of a fabric rectangle
 data FabRect = FabRect { _id :: String
@@ -80,7 +74,7 @@ data FabRect = FabRect { _id :: String
 parseFabricRect :: String -> FabRect
 parseFabricRect s = FabRect idStr (read xStr) (read yStr) (read widthStr) (read heightStr)
   where
-    [(_:idStr), _, coordStr, dimStr] = words s
+    [_:idStr, _, coordStr, dimStr] = words s
     [xStr, yStr] = splitOn "," $ delete ':' coordStr
     [widthStr, heightStr] = splitOn "x" dimStr
 
@@ -93,26 +87,26 @@ coordsForRect :: FabRect -> [(Int, Int)]
 coordsForRect fr = [(x, y) | x <- [_xC fr.._xC fr + _width fr - 1], y <- [_yC fr.._yC fr + _height fr - 1]]
 
 coordCounts :: [FabRect] -> M.Map (Int, Int) Int
-coordCounts frs = foldl (\acc coord -> M.insertWith (+) coord 1 acc) M.empty coords
+coordCounts frs = itemCounts coords
   where
     coords = concat $ coordsForRect <$> frs
 
 day3_1 :: IO Int
 day3_1 = do
-  frs <- (fmap parseFabricRect . lines) <$> readFile "input/2018/3.txt"
-  return $ (snd <$> (M.toList $ coordCounts frs)) & filter (>1) & length
+  frs <- fmap parseFabricRect . lines <$> readFile "input/2018/3.txt"
+  return $ snd <$> M.toList (coordCounts frs) & filter (>1) & length
 
 -- Is the given rectangle non-overlapping?
 isRectUnique :: M.Map (Int, Int) Int -> FabRect -> Bool
 isRectUnique coordCounts rect = all (==1) counts
   where
     coords = coordsForRect rect
-    counts = catMaybes $ (\coord -> M.lookup coord coordCounts) <$> coords
+    counts = catMaybes $ (`M.lookup` coordCounts) <$> coords
 
 day3_2 :: IO String
 day3_2 = do
-  frs <- (fmap parseFabricRect . lines) <$> readFile "input/2018/3.txt"
-  return $ _id $ filter (\fr -> isRectUnique (coordCounts frs) fr) frs !! 0
+  frs <- fmap parseFabricRect . lines <$> readFile "input/2018/3.txt"
+  return $ _id . head $ filter (isRectUnique (coordCounts frs)) frs
 
 type GuardId = Int
 type Day = Int
