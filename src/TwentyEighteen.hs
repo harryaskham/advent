@@ -6,6 +6,8 @@ import Data.List.Split
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Function ((&))
+import Text.Regex.TDFA
+import Text.Regex.TDFA.Text ()
 
 -- Read signed ints from file.
 freqsToNums :: IO [Int]
@@ -111,3 +113,18 @@ day3_2 :: IO String
 day3_2 = do
   frs <- (fmap parseFabricRect . lines) <$> readFile "input/2018/3.txt"
   return $ _id $ filter (\fr -> isRectUnique (coordCounts frs) fr) frs !! 0
+
+type GuardId = Int
+type Day = Int
+type Minute = Int
+data LogSleep = GuardBegin GuardId Day Minute
+              | GuardAsleep GuardId Day Minute
+              | GuardAwake GuardId Day Minute
+
+parseLogSleep :: String -> LogSleep
+parseLogSleep s = s =~ "\[(
+
+day4_1 :: IO Int
+day4_1 = do
+  ls <- lines <$> readFile "input/2018/4.txt"
+  return 0
