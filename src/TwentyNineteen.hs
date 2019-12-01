@@ -10,8 +10,22 @@ import Data.Function ((&))
 import Text.ParserCombinators.ReadP
 import Control.Applicative
 
-day1_1 :: IO ()
-day1_1 = undefined
+-- Convert the given mass to basic fuel requirement.
+massToFuel :: Int -> Int
+massToFuel m = (m `div` 3) - 2
 
-day1_2 :: IO ()
-day1_2 = undefined
+day1_1 :: IO Int
+day1_1 = do
+  masses <- fmap read . lines <$> readFile "input/2019/1.txt"
+  return $ sum $ massToFuel <$> masses
+
+-- How much fuel does the fuel itself need including the mass
+massToFuelIncludingFuel :: Int -> Int
+massToFuelIncludingFuel m
+  | massToFuel m <= 0 = 0
+  | otherwise = massToFuel m + massToFuelIncludingFuel (massToFuel m)
+
+day1_2 :: IO Int
+day1_2 = do
+  masses <- fmap read . lines <$> readFile "input/2019/1.txt"
+  return $ sum $ massToFuelIncludingFuel <$> masses

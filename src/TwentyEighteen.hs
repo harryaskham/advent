@@ -113,8 +113,15 @@ day3_2 = do
   frs <- fmap parseFabricRect . lines <$> readFile "input/2018/3.txt"
   return $ _id . head $ filter (isRectUnique (coordCounts frs)) frs
 
+-- Month Day Hour Minute
+data TS = TS Int Int Int Int deriving (Eq, Ord, Show)
+type GuardId = Int
+data LogLine = GuardChange GuardId
+             | Asleep
+             | Awake deriving (Eq, Ord, Show)
+
 -- Parse out the raw logs into timestamps and message
-parseLogSleep :: ReadP (Int, Int, Int, Int)
+parseLogSleep :: ReadP (TS, LogLine)
 parseLogSleep = do
   string "[1518-"
   month <- count 2 digit
@@ -124,31 +131,36 @@ parseLogSleep = do
   hours <- count 2 digit
   string ":"
   minutes <- count 2 digit
-  string "] " 
-  return (read month, read day, read hours, read minutes)
+  string "] "
+  logLine <- parseGuard +++ parseAsleep +++ parseAwake
+  return (TS (read month) (read day) (read hours) (read minutes), logLine)
     where
       digit = satisfy isDigit
+      parseGuard = do
+        string "Guard #"
+        guardId <- count 2 digit <|> count 3 digit
+        return $ GuardChange (read guardId)
+      parseAsleep = do
+        string "falls asleep"
+        return Asleep
+      parseAwake = do
+        string "wakes up"
+        return Awake
 
-parseGuardId :: ReadP Int
-parseGuardId = do
-  string "Guard #"
-  guardId <- count 2 digit <|> count 3 digit
-  return $ read guardId
-    where
-      digit = satisfy isDigit
+-- Split the logs into chunks that start with guard changes.
+splitLogs :: [(TS, LogLine)] -> [[(TS, LogLine)]]
+splitLogs = drop 1 . split (whenElt isGuard)
+  where
+    isGuard (_, GuardChange _) = True
+    isGuard _ = False
 
-guardId :: String -> Int
-guardId msg = fst . head $ readP_to_S parseGuardId msg
-
-blockOpenings :: [((Int, Int, Int, Int), String)] -> [Int]
-blockOpenings ls = fst <$> filter snd (zip [0..] (isInfixOf "Guard" . snd <$> ls))
-
--- TODO: not splitting properly
-splitLogs :: [((Int, Int, Int, Int), String)] -> [[((Int, Int, Int, Int), String)]]
-splitLogs ls = splitPlaces (blockOpenings ls) ls
+-- Groups split logs into pairs
+groupSplitLogs :: [[(TS, LogLine)]] -> [(GuardId, [(TS, LogLine)]]
+groupSplitLogs = undefined
 
 day4_1 :: IO Int
 day4_1 = do
-  ls <- sort . fmap (head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
-  y <- sequenceA $ print <$> splitLogs ls
+  -- Parse out the timestamps and logline, taking first match and dropped rest of string.
+  ls <- sort . fmap (fst . head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
+  print $ splitLogs ls
   return 0
