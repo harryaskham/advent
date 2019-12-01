@@ -324,3 +324,6 @@ day6_2 = do
   let pds = pointDistances coords 0
       pointsToSums = filter ( \(p, s) -> s < 10000) $ M.toList $ (fmap sum) . (fmap . fmap $ snd) $ pds in
       return $ length pointsToSums
+
+day7_1 :: IO String
+day7_1 = undefined
