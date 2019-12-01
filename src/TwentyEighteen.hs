@@ -155,7 +155,7 @@ splitLogs = drop 1 . split (whenElt isGuard)
     isGuard _ = False
 
 -- Groups split logs into pairs
-groupSplitLogs :: [[(TS, LogLine)]] -> [(GuardId, [(TS, LogLine)]]
+groupSplitLogs :: [[(TS, LogLine)]] -> [(GuardId, [(TS, LogLine)])]
 groupSplitLogs = undefined
 
 day4_1 :: IO Int
