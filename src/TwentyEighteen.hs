@@ -250,3 +250,77 @@ day5_2 :: IO Int
 day5_2 = do
   p <- head . lines <$> readFile "input/2018/5.txt"
   return $ minimum $ length . reduceCompletely <$> (without <$> ['a'..'z'] <*> pure p)
+
+tuplify2 :: [a] -> (a, a)
+tuplify2 [x, y] = (x, y)
+
+toCoord :: String -> (Int, Int)
+toCoord = tuplify2 . fmap read . splitOn ", "
+
+-- Get the top-left, lower-right bounds of the grid.
+-- It's safe to ignore all others because anything extending
+-- outside the grid is also infinite.
+bounds :: [(Int, Int)] -> ((Int, Int), (Int, Int))
+bounds cs = ( ( fst $ minimumBy (comparing fst) cs
+              , snd $ minimumBy (comparing snd) cs )
+            , ( fst $ maximumBy (comparing fst) cs
+              , snd $ maximumBy (comparing snd) cs ) )
+
+-- Manhattan distance between two points
+distance :: (Int, Int) -> (Int, Int) -> Int
+distance (x1, y1) (x2, y2) = abs (x2 - x1) + abs (y2 - y1)
+
+-- Get a map from all grid points to the list of all real points and their distances.
+-- Takes a bounds modifier so we can look for infinities.
+pointDistances :: [(Int, Int)] -> Int -> M.Map (Int, Int) [((Int, Int), Int)]
+pointDistances cs boundsMod = M.fromList distances
+  where
+    ((minX, minY), (maxX, maxY)) = bounds cs
+    allPoints = [(x, y) | x <- [minX-boundsMod..maxX+boundsMod], y <- [minY-boundsMod..maxY+boundsMod]]
+    distances = [(p, [(c, distance c p) | c <- cs]) | p <- allPoints]
+
+-- Gets the closest point from the given distances. If there is a draw then Nothing.
+closestPoint :: [((Int, Int), Int)] -> Maybe (Int, Int)
+closestPoint ds = if numMins > 1 then Nothing else Just c
+  where
+    (c, minDistance) = minimumBy (comparing snd) ds
+    numMins = length $ filter (\(_, d) -> d == minDistance) ds
+
+-- Transforms the point-map into a map from point to closest.
+pointToClosest :: M.Map (Int, Int) [((Int, Int), Int)] -> M.Map (Int, Int) (Maybe (Int, Int))
+pointToClosest = fmap closestPoint
+
+-- Gets the largest finite area from the map.
+allAreas :: ((Int, Int), (Int, Int)) -> M.Map (Int, Int) (Maybe (Int, Int)) -> [((Int, Int), Int)]
+allAreas bounds = reverse . sortBy (comparing snd) . M.toList . itemCounts . removeEdges bounds . catMaybes . (fmap snd) . M.toList
+
+-- Get rid of any points that lie on the given bounds.
+removeEdges :: ((Int, Int), (Int, Int)) -> [(Int, Int)] -> [(Int, Int)]
+removeEdges ((minX, minY), (maxX, maxY)) = filter (\(x, y) -> x /= minX && x /= maxX && y /= minY && y /= maxY)
+
+-- You can still be infinite if you are inside the bounds
+-- Horrible hack: try with tight bounds and try with loose bounds, then only take those that don't change.
+
+day6_1 :: IO Int
+day6_1 = do
+  coords <- fmap toCoord . lines <$> readFile "input/2018/6.txt"
+  let bs = bounds coords
+      pds = pointDistances coords 0
+      pds' = pointDistances coords 50
+      ptc = pointToClosest pds
+      ptc' = pointToClosest pds'
+      areas = M.fromList $ allAreas bs ptc
+      areas' = M.fromList $ allAreas bs ptc' in do
+        return 
+        $ snd . head
+        $ filter (\((_, x, y), _) -> x == y)
+        $ reverse . sortBy (comparing snd)
+        $ M.toList
+        $ M.mapKeys (\k -> (k, M.lookup k areas, M.lookup k areas')) areas
+
+day6_2 :: IO Int
+day6_2 = do
+  coords <- fmap toCoord . lines <$> readFile "input/2018/6.txt"
+  let pds = pointDistances coords 0
+      pointsToSums = filter ( \(p, s) -> s < 10000) $ M.toList $ (fmap sum) . (fmap . fmap $ snd) $ pds in
+      return $ length pointsToSums
