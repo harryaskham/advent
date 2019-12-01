@@ -1,13 +1,18 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module TwentyEighteen where
 
 import qualified Data.Set as S
 import Data.List
+import Data.Char
 import Data.List.Split
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Function ((&))
 import Text.Regex.TDFA
 import Text.Regex.TDFA.Text ()
+import Text.ParserCombinators.ReadP
+import Control.Applicative
 
 -- Read signed ints from file.
 freqsToNums :: IO [Int]
@@ -108,17 +113,42 @@ day3_2 = do
   frs <- fmap parseFabricRect . lines <$> readFile "input/2018/3.txt"
   return $ _id . head $ filter (isRectUnique (coordCounts frs)) frs
 
-type GuardId = Int
-type Day = Int
-type Minute = Int
-data LogSleep = GuardBegin GuardId Day Minute
-              | GuardAsleep GuardId Day Minute
-              | GuardAwake GuardId Day Minute
+-- Parse out the raw logs into timestamps and message
+parseLogSleep :: ReadP (Int, Int, Int, Int)
+parseLogSleep = do
+  string "[1518-"
+  month <- count 2 digit
+  string "-"
+  day <- count 2 digit
+  string " "
+  hours <- count 2 digit
+  string ":"
+  minutes <- count 2 digit
+  string "] " 
+  return (read month, read day, read hours, read minutes)
+    where
+      digit = satisfy isDigit
 
-parseLogSleep :: String -> LogSleep
-parseLogSleep s = s =~ "\[(
+parseGuardId :: ReadP Int
+parseGuardId = do
+  string "Guard #"
+  guardId <- count 2 digit <|> count 3 digit
+  return $ read guardId
+    where
+      digit = satisfy isDigit
+
+guardId :: String -> Int
+guardId msg = fst . head $ readP_to_S parseGuardId msg
+
+blockOpenings :: [((Int, Int, Int, Int), String)] -> [Int]
+blockOpenings ls = fst <$> filter snd (zip [0..] (isInfixOf "Guard" . snd <$> ls))
+
+-- TODO: not splitting properly
+splitLogs :: [((Int, Int, Int, Int), String)] -> [[((Int, Int, Int, Int), String)]]
+splitLogs ls = splitPlaces (blockOpenings ls) ls
 
 day4_1 :: IO Int
 day4_1 = do
-  ls <- lines <$> readFile "input/2018/4.txt"
+  ls <- sort . fmap (head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
+  y <- sequenceA $ print <$> splitLogs ls
   return 0
