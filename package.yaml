@@ -25,6 +25,7 @@ dependencies:
 - split
 - regex-tdfa
 - regex-tdfa-text
+- time
 
 library:
   source-dirs: src
