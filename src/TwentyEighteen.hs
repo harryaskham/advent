@@ -375,7 +375,11 @@ newtype WorkerState = WorkerState (Maybe Task)
 -- Find the optimal ordering taking durations into account.
 -- Proceeds forward in time until all nodes are complete and returns the duration.
 getDuration :: Int -> [WorkerState] -> [Node] -> [(Node, Node)] -> Int
-getDuration t states nodes edges = undefined
+getDuration t wss nodes [] = undefined
+getDuration t wss nodes edges = undefined
+  where
+    nextNode = minimum $ readyNodes nodes edges
+    nodes' = nodes \\ [nextNode]
 
 day7_2 :: IO Int
 day7_2 = do
