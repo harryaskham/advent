@@ -26,6 +26,7 @@ dependencies:
 - regex-tdfa
 - regex-tdfa-text
 - time
+- vector
 
 library:
   source-dirs: src

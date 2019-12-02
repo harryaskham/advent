@@ -9,6 +9,7 @@ import Data.Maybe
 import Data.Function ((&))
 import Text.ParserCombinators.ReadP
 import Control.Applicative
+import qualified Data.Vector as V
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -29,3 +30,31 @@ day1_2 :: IO Int
 day1_2 = do
   masses <- fmap read . lines <$> readFile "input/2019/1.txt"
   return $ sum $ massToFuelIncludingFuel <$> masses
+
+-- Run a single operation on the given locations.
+runOp :: (Int -> Int -> Int) -> Int -> Int -> Int -> V.Vector Int -> V.Vector Int
+runOp op loc1 loc2 locR program = program V.// [(locR, res)]
+  where
+    x1 = program V.! loc1
+    x2 = program V.! loc2
+    res = op x1 x2
+
+runProgram :: Int -> ([String], V.Vector Int) -> ([String], V.Vector Int)
+runProgram counter (logs, program) =
+  case program V.! counter of
+    99 -> (l:logs, program)
+    1 -> runProgram (counter+4) $ (l:logs, runOp (+) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
+    2 -> runProgram (counter+4) $ (l:logs, runOp (*) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
+    otherwise -> error ("invalid opcode " ++ (show $ program V.! counter))
+  where
+    l = show (counter, program)
+
+day2_1 :: IO String
+day2_1 = do
+  -- Read program in as vector of ints.
+  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/2.txt"
+  -- Make initial modifications for 1202 program and run to completion.
+  let (logs, finalProgram) = runProgram 0 $ ([], program V.// [(1, 12), (2, 2)])
+   in do
+     sequenceA $ print <$> logs
+     return $ show . head . V.toList $ finalProgram
