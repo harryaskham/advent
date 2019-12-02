@@ -350,10 +350,10 @@ readyNodes nodes edges = filter (not . (`elem` dependents)) nodes
   where
     dependents = snd <$> edges
 
--- Run one iteration of node consumption.
-next :: [Node] -> [(Node, Node)] -> String -> String
-next nodes [] output = output ++ sort nodes
-next nodes edges output = next nodes' edges' (output ++ [nextNode])
+-- Find the optimal ordering without durations.
+getOrdering :: [Node] -> [(Node, Node)] -> String -> String
+getOrdering nodes [] output = output ++ sort nodes
+getOrdering nodes edges output = getOrdering nodes' edges' (output ++ [nextNode])
   where
     nextNode = minimum $ readyNodes nodes edges
     nodes' = nodes \\ [nextNode]
@@ -364,4 +364,22 @@ day7_1 = do
   ls <- lines <$> readFile "input/2018/7.txt"
   let edges = fst . head . readP_to_S parseConstraint <$> ls
       nodes = nub $ (fst <$> edges) ++ (snd <$> edges)
-   in return $ next nodes edges ""
+   in return $ getOrdering nodes edges ""
+
+-- Task assigned and duration left
+type Task = (Node, Int)
+
+-- A worker might have a task
+newtype WorkerState = WorkerState (Maybe Task)
+
+-- Find the optimal ordering taking durations into account.
+-- Proceeds forward in time until all nodes are complete and returns the duration.
+getDuration :: Int -> [WorkerState] -> [Node] -> [(Node, Node)] -> Int
+getDuration t states nodes edges = undefined
+
+day7_2 :: IO Int
+day7_2 = do
+  ls <- lines <$> readFile "input/2018/7.txt"
+  let edges = fst . head . readP_to_S parseConstraint <$> ls
+      nodes = nub $ (fst <$> edges) ++ (snd <$> edges)
+   in return $ getDuration 0 (replicate 5 $ WorkerState Nothing) nodes edges
