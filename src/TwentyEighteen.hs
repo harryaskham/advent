@@ -326,17 +326,19 @@ day6_2 = do
       return $ length pointsToSums
 
 -- Parse out the char->char relationship in the graph from a line.
-parseConstraint :: ReadP (String, String)
+parseConstraint :: ReadP (Char, Char)
 parseConstraint = do
   string "Step "
   from <- count 1 $ satisfy isAlpha
-  string " must be finished before Step "
+  string " must be finished before step "
   to <- count 1 $ satisfy isAlpha
   string " can begin."
-  return (from, to)
+  return (head from, head to)
 
 day7_1 :: IO String
 day7_1 = do
-  constraints <- fmap (fst . head . readP_to_S parseConstraint) . lines <$> readFile "input/2018/7.txt"
-  print constraints
-  return ""
+  ls <- lines <$> readFile "input/2018/7.txt"
+  let constraints = fst . head . readP_to_S parseConstraint <$> ls
+   in do
+     print constraints
+     return ""
