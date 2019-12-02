@@ -335,10 +335,33 @@ parseConstraint = do
   string " can begin."
   return (head from, head to)
 
+-- Get list of all nodes
+-- Create list of all ready-to-go nodes (never second in a tuple)
+-- Select alphabetical first ready node, add to output
+-- Find all edges starting from this node and remove
+-- Get the ready-to-go nodes again
+-- Any nodes remaining once all edges are removed just get consumed in alpha order.
+
+type Node = Char
+
+-- Get all the nodes that could be consumed.
+readyNodes :: String -> [(Node, Node)] -> String
+readyNodes nodes edges = filter (not . (`elem` dependents)) nodes
+  where
+    dependents = snd <$> edges
+
+-- Run one iteration of node consumption.
+next :: [Node] -> [(Node, Node)] -> String -> String
+next nodes [] output = output ++ sort nodes
+next nodes edges output = next nodes' edges' (output ++ [nextNode])
+  where
+    nextNode = minimum $ readyNodes nodes edges
+    nodes' = nodes \\ [nextNode]
+    edges' = filter (\(n, _) -> n /= nextNode) edges
+
 day7_1 :: IO String
 day7_1 = do
   ls <- lines <$> readFile "input/2018/7.txt"
-  let constraints = fst . head . readP_to_S parseConstraint <$> ls
-   in do
-     print constraints
-     return ""
+  let edges = fst . head . readP_to_S parseConstraint <$> ls
+      nodes = nub $ (fst <$> edges) ++ (snd <$> edges)
+   in return $ next nodes edges ""
