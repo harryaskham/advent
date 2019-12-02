@@ -325,5 +325,18 @@ day6_2 = do
       pointsToSums = filter ( \(p, s) -> s < 10000) $ M.toList $ fmap (sum . fmap snd) pds in
       return $ length pointsToSums
 
+-- Parse out the char->char relationship in the graph from a line.
+parseConstraint :: ReadP (String, String)
+parseConstraint = do
+  string "Step "
+  from <- count 1 $ satisfy isAlpha
+  string " must be finished before Step "
+  to <- count 1 $ satisfy isAlpha
+  string " can begin."
+  return (from, to)
+
 day7_1 :: IO String
-day7_1 = undefined
+day7_1 = do
+  constraints <- fmap (fst . head . readP_to_S parseConstraint) . lines <$> readFile "input/2018/7.txt"
+  print constraints
+  return ""
