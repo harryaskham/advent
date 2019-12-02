@@ -55,9 +55,7 @@ day2_1 = do
   program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/2.txt"
   -- Make initial modifications for 1202 program and run to completion.
   let (logs, finalProgram) = runProgram 0 ([], program V.// [(1, 12), (2, 2)])
-   in do
-     sequenceA $ print <$> logs
-     return $ head . V.toList $ finalProgram
+   in return $ head . V.toList $ finalProgram
 
 day2_2 :: IO Int
 day2_2 = do
@@ -65,6 +63,4 @@ day2_2 = do
   let variants = [[(1, noun), (2, verb)] | noun <- [0..99], verb <- [0..99]]
       allRuns = zip (runProgram 0 <$> [([], program V.// variant) | variant <- variants]) variants
       ((logs, finalProgram), variant) = head $ filter (\((_, p), _) -> p V.! 0 == 19690720) allRuns
-   in do
-     sequenceA $ print <$> logs
-     return $ (100 * (snd $ variant !! 0)) + (snd $ variant !! 1)
+   in return $ (100 * snd (head variant)) + snd (variant !! 1)
