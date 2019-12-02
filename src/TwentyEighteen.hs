@@ -160,7 +160,7 @@ splitLogs = drop 1 . split (whenElt isGuard)
 
 -- Groups split logs into pairs
 groupSplitLogs :: [[(TimeStamp, LogLine)]] -> [(GuardId, [(TimeStamp, LogLine)])]
-groupSplitLogs ls = (\l -> (getGuard (l !! 0), l !! 1)) <$> chunksOf 2 ls
+groupSplitLogs ls = (\l -> (getGuard $ head l, l !! 1)) <$> chunksOf 2 ls
   where
     getGuard [(_, GuardChange guardId)] = guardId
 
@@ -169,14 +169,14 @@ minutesAsleep :: [(TimeStamp, LogLine)] -> Int
 minutesAsleep ls = sum (sleepMinutes <$> chunks)
   where
     chunks = chunksOf 2 (fst <$> ls)
-    sleepMinutes [(TimeStamp _ t1), (TimeStamp _ t2)] = length $ getMinutes t1 t2
+    sleepMinutes [TimeStamp _ t1, TimeStamp _ t2] = length $ getMinutes t1 t2
 
 -- Gets the discrete minutes asleep in the given logs
 discreteMinutesAsleep :: [(TimeStamp, LogLine)] -> [Int]
 discreteMinutesAsleep ls = concat $ sleepMinutes <$> chunks
   where
     chunks = chunksOf 2 (fst <$> ls)
-    sleepMinutes [(TimeStamp _ t1), (TimeStamp _ t2)] = getMinutes t1 t2
+    sleepMinutes [TimeStamp _ t1, TimeStamp _ t2] = getMinutes t1 t2
 
 -- Gets pairs of (guard ID, minutes asleep) - guard ID could be repeated.
 guardMinutesAsleep :: [(GuardId, [(TimeStamp, LogLine)])] -> [(GuardId, [Int])]
@@ -184,7 +184,7 @@ guardMinutesAsleep = (fmap . fmap) discreteMinutesAsleep
 
 -- Create a map from guard ID to list of minutes spent asleep.
 guardTotals :: [(GuardId, [Int])] -> M.Map GuardId [Int]
-guardTotals ls = foldl (\acc (guardId, minutes) -> M.insertWith (++) guardId minutes acc) M.empty ls
+guardTotals = foldl (\acc (guardId, minutes) -> M.insertWith (++) guardId minutes acc) M.empty
 
 -- Find the guard with the most total sleep.
 sleepiestGuard :: M.Map GuardId [Int] -> GuardId
@@ -192,7 +192,7 @@ sleepiestGuard guards = fst $ maximumBy (comparing (length . snd)) $ M.toList gu
 
 -- Find a given guard's most common minute
 mostCommonGuardMinute :: M.Map GuardId [Int] -> GuardId -> Int
-mostCommonGuardMinute guards guardId = fromMaybe 0 $ (fst . mostCommon) <$> (M.lookup guardId guards)
+mostCommonGuardMinute guards guardId = maybe 0 (fst . mostCommon) (M.lookup guardId guards)
 
 -- Get the most common thing along with its count.
 mostCommon :: (Ord a, Eq a) => [a] -> (a, Int)
@@ -215,7 +215,7 @@ day4_2 :: IO Int
 day4_2 = do
   ls <- sort . fmap (fst . head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
   let guards = guardTotals . guardMinutesAsleep . groupSplitLogs . splitLogs $ ls
-      guardsToMostCommonMinute = (\(g, ms) -> (g, mostCommon ms)) <$> (filter ((/=0) . length . snd) $ M.toList guards)
+      guardsToMostCommonMinute = (\(g, ms) -> (g, mostCommon ms)) <$> filter (not . null . snd) (M.toList guards)
       (guard, (minute, count)) = maximumBy (comparing $ snd . snd) guardsToMostCommonMinute in do
       print guards
       print guardsToMostCommonMinute
@@ -231,7 +231,7 @@ reducePolymer "" = ""
 reducePolymer [x] = [x]
 reducePolymer (x:y:xs) = if
   | react x y -> reducePolymer xs
-  | otherwise -> x : (reducePolymer (y:xs))
+  | otherwise -> x : reducePolymer (y:xs)
 
 -- Iterate reductioun until a fixed point.
 reduceCompletely :: String -> String
@@ -292,7 +292,7 @@ pointToClosest = fmap closestPoint
 
 -- Gets the largest finite area from the map.
 allAreas :: ((Int, Int), (Int, Int)) -> M.Map (Int, Int) (Maybe (Int, Int)) -> [((Int, Int), Int)]
-allAreas bounds = reverse . sortBy (comparing snd) . M.toList . itemCounts . removeEdges bounds . catMaybes . (fmap snd) . M.toList
+allAreas bounds = sortOn (Down . snd) . M.toList . itemCounts . removeEdges bounds . mapMaybe snd . M.toList
 
 -- Get rid of any points that lie on the given bounds.
 removeEdges :: ((Int, Int), (Int, Int)) -> [(Int, Int)] -> [(Int, Int)]
@@ -310,11 +310,11 @@ day6_1 = do
       ptc = pointToClosest pds
       ptc' = pointToClosest pds'
       areas = M.fromList $ allAreas bs ptc
-      areas' = M.fromList $ allAreas bs ptc' in do
+      areas' = M.fromList $ allAreas bs ptc' in
         return 
         $ snd . head
         $ filter (\((_, x, y), _) -> x == y)
-        $ reverse . sortBy (comparing snd)
+        $ sortOn (Down . snd)
         $ M.toList
         $ M.mapKeys (\k -> (k, M.lookup k areas, M.lookup k areas')) areas
 
@@ -322,7 +322,7 @@ day6_2 :: IO Int
 day6_2 = do
   coords <- fmap toCoord . lines <$> readFile "input/2018/6.txt"
   let pds = pointDistances coords 0
-      pointsToSums = filter ( \(p, s) -> s < 10000) $ M.toList $ (fmap sum) . (fmap . fmap $ snd) $ pds in
+      pointsToSums = filter ( \(p, s) -> s < 10000) $ M.toList $ fmap (sum . fmap snd) pds in
       return $ length pointsToSums
 
 day7_1 :: IO String

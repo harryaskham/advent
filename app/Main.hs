@@ -5,4 +5,4 @@ import TwentyEighteen
 import TwentyNineteen
 
 main :: IO ()
-main = putStrLn "woo"
+main = undefined
