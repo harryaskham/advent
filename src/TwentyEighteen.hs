@@ -17,6 +17,7 @@ import Control.Applicative
 import Data.Time
 import Data.Ord
 import Control.Monad.Fix
+import qualified Data.Vector as V
 
 -- Read signed ints from file.
 freqsToNums :: IO [Int]
@@ -346,6 +347,7 @@ type Node = Char
 
 -- Get all the nodes that could be consumed.
 readyNodes :: String -> [(Node, Node)] -> String
+readyNodes nodes [] = nodes
 readyNodes nodes edges = filter (not . (`elem` dependents)) nodes
   where
     dependents = snd <$> edges
@@ -369,21 +371,68 @@ day7_1 = do
 -- Task assigned and duration left
 type Task = (Node, Int)
 
--- A worker might have a task
-newtype WorkerState = WorkerState (Maybe Task)
+-- The state of the current system.
+data WorkerState = WorkerState { _workers :: V.Vector (Maybe Task)
+                               , _t :: Int
+                               , _nodes :: [Node]
+                               , _edges :: [(Node, Node)] }
 
--- Find the optimal ordering taking durations into account.
--- Proceeds forward in time until all nodes are complete and returns the duration.
-getDuration :: Int -> [WorkerState] -> [Node] -> [(Node, Node)] -> Int
-getDuration t wss nodes [] = undefined
-getDuration t wss nodes edges = undefined
+-- Run one step of the state.
+advanceState :: WorkerState -> WorkerState
+advanceState = advanceTime . assignAnyReady . clearCompleted
+
+-- Get any completed nodes from the given state.
+completedNodes :: WorkerState -> [Node]
+completedNodes st = fst <$> filter (\(n, d) -> d == 0) (catMaybes . V.toList $ _workers st)
+
+-- Increment global time by 1, and drop all in-progress by 1
+advanceTime :: WorkerState -> WorkerState
+advanceTime st = WorkerState ((fmap . fmap . fmap) (subtract 1) (_workers st)) (_t st + 1) (_nodes st) (_edges st)
+
+-- Resets the given worker if it's one of the completed nodes.
+resetWorker :: [Node] -> Maybe Task -> Maybe Task
+resetWorker _ Nothing = Nothing
+resetWorker cNodes (Just (n, d)) = if n `elem` cNodes then Nothing else Just (n, d)
+
+-- Any completed tasks get their worker freed and we get rid of any edges.
+clearCompleted :: WorkerState -> WorkerState
+clearCompleted st = WorkerState workers (_t st) (_nodes st) edges
   where
-    nextNode = minimum $ readyNodes nodes edges
-    nodes' = nodes \\ [nextNode]
+    cNodes = completedNodes st
+    edges = filter (\(n, _) -> n `notElem` cNodes) (_edges st)
+    workers = fmap (resetWorker cNodes) (_workers st)
+
+-- The duration of a task.
+nodeDuration :: Node -> Int
+nodeDuration n = ord n - 4
+
+-- Assigns a single node if possible.
+-- Removes the node from the list.
+assignNode :: WorkerState -> Node -> WorkerState
+assignNode st n = case V.findIndex isNothing (_workers st) of
+                    Nothing -> st
+                    Just i -> let newWorkers = (_workers st V.// [(i, Just (n, nodeDuration n))])
+                                  newNodes = filter (/= n) (_nodes st)
+                               in WorkerState newWorkers (_t st) newNodes (_edges st)
+
+-- Of the ready-to-go nodes, assigns any that are ready.
+-- A no-op if we are currently unable to assign.
+assignAnyReady :: WorkerState -> WorkerState
+assignAnyReady st = foldl assignNode st $ sort $ readyNodes (_nodes st) (_edges st)
+
+-- Is the current state complete?
+-- Need all nodes assigned and all workers idle.
+isComplete :: WorkerState -> Bool
+isComplete st = V.all isNothing (_workers st) && null (_nodes st)
+
+-- Advance the state until all nodes are completed.
+advanceUntil :: WorkerState -> WorkerState
+advanceUntil st = if isComplete st then st else advanceUntil (advanceState st)
 
 day7_2 :: IO Int
 day7_2 = do
   ls <- lines <$> readFile "input/2018/7.txt"
   let edges = fst . head . readP_to_S parseConstraint <$> ls
       nodes = nub $ (fst <$> edges) ++ (snd <$> edges)
-   in return $ getDuration 0 (replicate 5 $ WorkerState Nothing) nodes edges
+      startState = WorkerState (V.replicate 5 Nothing) 0 nodes edges
+   in return $ _t (advanceUntil startState) - 1
