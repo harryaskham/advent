@@ -436,3 +436,8 @@ day7_2 = do
       nodes = nub $ (fst <$> edges) ++ (snd <$> edges)
       startState = WorkerState (V.replicate 5 Nothing) 0 nodes edges
    in return $ _t (advanceUntil startState) - 1
+
+day8_1 :: IO Int
+day8_1 = do
+  input <- fmap read . words . head . lines <$> readFile "input/2018/8.txt"
+  return $ head input
