@@ -69,7 +69,7 @@ type Wire = [String]
 
 -- Get all the coordinates that a wire occupies including how long it took to first get there in steps.
 wireToCoords :: [String] -> M.Map (Int, Int) Int
-wireToCoords dirs = go 0 (0, 0) M.empty dirs
+wireToCoords = go 0 (0, 0) M.empty
   where
     go :: Int -> (Int, Int) -> M.Map (Int, Int) Int -> [String] -> M.Map (Int, Int) Int
     go _ _ seen [] = seen
@@ -82,7 +82,7 @@ wireToCoords dirs = go 0 (0, 0) M.empty dirs
                            'D' -> (x, y + n')
                            'U' -> (x, y - n')
         -- Must sort the segments by distance from current, so that we always follow a continuous path.
-        segments = sortOn (mDistance (x, y)) $ [(x', y') | x' <- allBetween x nextX, y' <- allBetween y nextY]
+        segments = sortOn (mDistance (x, y)) [(x', y') | x' <- allBetween x nextX, y' <- allBetween y nextY]
         -- Convert to a map from segment to the step number on which we land on it.
         segmentSteps = M.fromList $ zip segments [step..(step + length segments)]
         -- Insert with preference for already seen keys to ensure we keep the smallest distance.
@@ -106,7 +106,7 @@ day3_2 :: IO (Maybe Int)
 day3_2 = do
   directions <- fmap (splitOn ",") . lines <$> readFile "input/2019/3.txt"
   let coordMaps = wireToCoords <$> directions
-      (coord1, coord2) = (coordMaps !! 0, coordMaps !! 1)
+      (coord1, coord2) = (head coordMaps, coordMaps !! 1)
       intersections = S.delete (0, 0) $ foldl1 S.intersection (S.fromList . fmap fst . M.toList . wireToCoords <$> directions)
       intersectionSums = sequenceA $ (\k -> (+) <$> M.lookup k coord1 <*> M.lookup k coord2) <$> S.toList intersections
-   in return $ fmap minimum $ intersectionSums
+   in return $ minimum <$> intersectionSums
