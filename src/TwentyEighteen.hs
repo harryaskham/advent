@@ -453,7 +453,7 @@ parseTree :: [Int] -> Tree
 -- A string may contain multiple trees. If the first subtree has zero children we still need to consider the rest.
 parseTree (0:numMetadata:xs) = Tree [] (take numMetadata xs)
 -- If we first have a child, then we have to parse out our children.
-parseTree (numChildren:numMetadata:xs) = Tree (parseTree content) metadata
+parseTree (numChildren:numMetadata:xs) = undefined
   where
     content = take (length xs - numMetadata) xs
     metadata = drop (length xs - numMetadata) xs
@@ -461,4 +461,4 @@ parseTree (numChildren:numMetadata:xs) = Tree (parseTree content) metadata
 day8_1 :: IO Int
 day8_1 = do
   input <- fmap read . words . head . lines <$> readFile "input/2018/8.txt"
-  return 0
+  return $ head input
