@@ -226,14 +226,14 @@ parseOpcode x = (opcode, toMode <$> reverse (take (numParams opcode) $ zeroPadTo
     opStr = show x
     opcode = opFromChar $ last opStr
 
-runProgramD5 :: Int -> Program -> IO Program
-runProgramD5 counter program = case opcode of
+runProgram :: Int -> Program -> IO Program
+runProgram counter program = case opcode of
                                  Terminate -> do
                                    putStrLn "terminating"
                                    pure program
                                  _ -> do
                                    (nextProgram, nextCounter) <- runInstruction counter opcode modes params program
-                                   runProgramD5 nextCounter nextProgram
+                                   runProgram nextCounter nextProgram
   where
     (opcode, modes) = parseOpcode $ program V.! counter
     params = V.toList $ V.slice (counter + 1) (numParams opcode) program
@@ -242,5 +242,5 @@ day5_2 :: IO ()
 day5_2 = do
   program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/5.txt"
   --program <- pure . V.fromList $ [1002,4,3,4,33] -- Should write 99 to end then stop.
-  runProgramD5 0 program
+  runProgram 0 program
   return ()
