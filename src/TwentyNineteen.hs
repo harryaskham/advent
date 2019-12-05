@@ -39,12 +39,12 @@ runOp op loc1 loc2 locR program = program V.// [(locR, res)]
     x2 = program V.! loc2
     res = op x1 x2
 
-runProgram :: Int -> ([String], V.Vector Int) -> ([String], V.Vector Int)
-runProgram counter (logs, program) =
+runProgramD2 :: Int -> ([String], V.Vector Int) -> ([String], V.Vector Int)
+runProgramD2 counter (logs, program) =
   case program V.! counter of
     99 -> (l:logs, program)
-    1 -> runProgram (counter+4) (l:logs, runOp (+) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
-    2 -> runProgram (counter+4) (l:logs, runOp (*) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
+    1 -> runProgramD2 (counter+4) (l:logs, runOp (+) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
+    2 -> runProgramD2 (counter+4) (l:logs, runOp (*) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
     _ -> error ("invalid opcode " ++ show (program V.! counter))
   where
     l = show (counter, program)
@@ -54,14 +54,14 @@ day2_1 = do
   -- Read program in as vector of ints.
   program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/2.txt"
   -- Make initial modifications for 1202 program and run to completion.
-  let (logs, finalProgram) = runProgram 0 ([], program V.// [(1, 12), (2, 2)])
+  let (logs, finalProgram) = runProgramD2 0 ([], program V.// [(1, 12), (2, 2)])
    in return $ head . V.toList $ finalProgram
 
 day2_2 :: IO Int
 day2_2 = do
   program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/2.txt"
   let variants = [[(1, noun), (2, verb)] | noun <- [0..99], verb <- [0..99]]
-      allRuns = zip (runProgram 0 <$> [([], program V.// variant) | variant <- variants]) variants
+      allRuns = zip (runProgramD2 0 <$> [([], program V.// variant) | variant <- variants]) variants
       ((logs, finalProgram), variant) = head $ filter (\((_, p), _) -> p V.! 0 == 19690720) allRuns
    in return $ (100 * snd (head variant)) + snd (variant !! 1)
 
@@ -146,3 +146,80 @@ day4_2 :: Int
 day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x]
   where
     input = [265275..781584]
+
+type Opcode = Int
+data Mode = Positional | Immediate deriving (Show)
+type Param = Int
+type Program = V.Vector Int
+
+runInstruction :: Opcode -> [Mode] -> [Param] -> Program -> IO Program
+runInstruction opcode modes params program = do
+  print opcode
+  print modes
+  print params
+  print program
+  case opcode of
+    99 -> return program
+    1 -> return $ program V.// [(writebackLocation, head paramVals + (paramVals !! 1))]
+    2 -> return $ program V.// [(writebackLocation, head paramVals * (paramVals !! 1))]
+    3 -> do
+      putStrLn "Input: "
+      inputVal <- getLine
+      return $ program V.// [(writebackLocation, read inputVal)]
+    4 -> do
+      putStrLn $ "Output: " ++ show (program V.! head paramVals)
+      return program
+  where
+    paramVal (param, mode) = case mode of
+                                 Immediate -> param
+                                 Positional -> program V.! param
+    paramVals = paramVal <$> zip params modes
+    writebackLocation = last params  -- Always use the exact writeback location
+
+zeroPadTo :: Int -> String -> String
+zeroPadTo l x = replicate (l - length x) '0' ++ x
+
+toMode :: Char -> Mode
+toMode '0' = Positional
+toMode '1' = Immediate
+toMode e = error $ "Invalid mode: " ++ [e]
+
+-- Parses out the opcode and the modes.
+parseOpcode :: Int -> (Opcode, [Mode])
+parseOpcode x =
+  case last opStr of
+    '9' -> (99, [])
+    '1' -> (1, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
+    '2' -> (2, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
+    '3' -> (3, toMode <$> take 1 (zeroPadTo 3 opStr))
+    '4' -> (4, toMode <$> take 1 (zeroPadTo 3 opStr))
+    _ -> error $ "invalid opcode: " ++ opStr
+  where
+    opStr = show x
+
+runProgramD5 :: Int -> Program -> IO Program
+runProgramD5 counter program = case opcode of
+                                 99 -> do
+                                   putStrLn "terminating"
+                                   pure program
+                                 _ -> do
+                                   nextProgram <- runInstruction opcode modes params program
+                                   print counter
+                                   -- print nextProgram
+                                   runProgramD5 newCounter nextProgram
+  where
+    (opcode, modes) = parseOpcode $ program V.! counter
+    (params, newCounter) = case opcode of
+                             99 -> ([], counter+1)
+                             1 -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
+                             2 -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
+                             3 -> ([program V.! (counter + 1)], counter+2)
+                             4 -> ([program V.! (counter + 1)], counter+2)
+
+
+day5_2 :: IO ()
+day5_2 = do
+  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/5.txt"
+  --program <- pure . V.fromList $ [1002,4,3,4,33] -- Should write 99 to end then stop.
+  runProgramD5 0 program
+  return ()

@@ -437,26 +437,17 @@ day7_2 = do
       startState = WorkerState (V.replicate 5 Nothing) 0 nodes edges
    in return $ _t (advanceUntil startState) - 1
 
--- Can only make meaningful parsing progress when a node has no children
--- So go DFS through data until find a nochild node, which can essentially be "consumed"
--- from the stream?
--- Find, parse, delete, add to parent; then extract n children from rest of stream
--- So recursively it's like - take N from string. if first is zero then WE KNOW ITS LENGTH - it's 2+metalength
--- So we can actually remove it.
--- If it has children, we need to recursively call upon it.
-
 -- A tree where each node has multiple children and some integer metadata
-data Tree = Tree [Tree] [Int]
+type Metadata = Int
+data Tree = Tree [Tree] [Metadata] deriving (Show)
 
--- Extract n children from the given input text
-parseTree :: [Int] -> Tree
--- A string may contain multiple trees. If the first subtree has zero children we still need to consider the rest.
-parseTree (0:numMetadata:xs) = Tree [] (take numMetadata xs)
--- If we first have a child, then we have to parse out our children.
-parseTree (numChildren:numMetadata:xs) = undefined
-  where
-    content = take (length xs - numMetadata) xs
-    metadata = drop (length xs - numMetadata) xs
+--parseTree :: Parser Tree
+--parseTree = do
+--  numChildren <- decimal
+--  numMetadata <- decimal
+--  children <- count numChildren parseTree
+--  metadata <- count numMetadata decimal
+--  return $ Tree children metadata
 
 day8_1 :: IO Int
 day8_1 = do
