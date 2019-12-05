@@ -238,8 +238,8 @@ runProgram counter program = case opcode of
     (opcode, modes) = parseOpcode $ program V.! counter
     params = V.toList $ V.slice (counter + 1) (numParams opcode) program
 
-day5_2 :: IO ()
-day5_2 = do
+day5 :: IO ()
+day5 = do
   program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/5.txt"
   --program <- pure . V.fromList $ [1002,4,3,4,33] -- Should write 99 to end then stop.
   runProgram 0 program
