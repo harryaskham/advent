@@ -147,27 +147,51 @@ day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x
   where
     input = [265275..781584]
 
-data Opcode = Add | Mul | Input | Output | Terminate deriving (Show)
+data Opcode = Add | Mul | Input | Output | JumpIfTrue | JumpIfFalse | LessThan | Equals | Terminate deriving (Show)
 data Mode = Positional | Immediate deriving (Show)
 type Param = Int
 type Program = V.Vector Int
+type Counter = Int
 
-runInstruction :: Opcode -> [Mode] -> [Param] -> Program -> IO Program
-runInstruction opcode modes params program = do
+numParams :: Opcode -> Int
+numParams Add = 3
+numParams Mul = 3
+numParams Input = 1
+numParams Output = 1
+numParams JumpIfTrue = 2
+numParams JumpIfFalse = 2
+numParams LessThan = 3
+numParams Equals = 3
+numParams Terminate = 0
+
+runInstruction :: Counter -> Opcode -> [Mode] -> [Param] -> Program -> IO (Program, Counter)
+runInstruction counter opcode modes params program = do
   putStrLn $ show opcode ++ show params ++ show modes
   print program
   --getLine
   case opcode of
-    Terminate -> return program
-    Add -> return $ program V.// [(writebackLocation, head paramVals + (paramVals !! 1))]
-    Mul -> return $ program V.// [(writebackLocation, head paramVals * (paramVals !! 1))]
+    Terminate -> return (program, counter)
+    Add -> return (program V.// [(writebackLocation, head paramVals + (paramVals !! 1))], counter + 4)
+    Mul -> return (program V.// [(writebackLocation, head paramVals * (paramVals !! 1))], counter + 4)
     Input -> do
       putStrLn "Input: "
       inputVal <- getLine
-      return $ program V.// [(writebackLocation, read inputVal)]
+      return (program V.// [(writebackLocation, read inputVal)], counter + 2)
     Output -> do
       putStrLn $ "Output: " ++ show (head paramVals)
-      return program
+      return (program, counter + 2)
+    JumpIfTrue -> case head paramVals of
+                    0 -> return (program, counter + 3)
+                    _ -> return (program, paramVals !! 1)
+    JumpIfFalse -> case head paramVals of
+                    0 -> return (program, paramVals !! 1)
+                    _ -> return (program, counter + 3)
+    LessThan -> if head paramVals < paramVals !! 1 then
+                  return (program V.// [(writebackLocation, 1)], counter + 4) else
+                  return (program V.// [(writebackLocation, 0)], counter + 4)
+    Equals -> if head paramVals == paramVals !! 1 then
+                  return (program V.// [(writebackLocation, 1)], counter + 4) else
+                  return (program V.// [(writebackLocation, 0)], counter + 4)
   where
     paramVal (param, mode) = case mode of
                                  Immediate -> param
@@ -183,18 +207,24 @@ toMode '0' = Positional
 toMode '1' = Immediate
 toMode e = error $ "Invalid mode: " ++ [e]
 
+-- TODO: Revisit once more than 10 ops.
+opFromChar :: Char -> Opcode
+opFromChar '1' = Add
+opFromChar '2' = Mul
+opFromChar '3' = Input
+opFromChar '4' = Output
+opFromChar '5' = JumpIfTrue
+opFromChar '6' = JumpIfFalse
+opFromChar '7' = LessThan
+opFromChar '8' = Equals
+opFromChar '9' = Terminate
+
 -- Parses out the opcode and the modes.
 parseOpcode :: Int -> (Opcode, [Mode])
-parseOpcode x =
-  case last opStr of
-    '9' -> (Terminate, [])
-    '1' -> (Add, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
-    '2' -> (Mul, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
-    '3' -> (Input, toMode <$> take 1 (zeroPadTo 3 opStr))
-    '4' -> (Output, toMode <$> take 1 (zeroPadTo 3 opStr))
-    _ -> error $ "invalid opcode: " ++ opStr
+parseOpcode x = (opcode, toMode <$> reverse (take (numParams opcode) $ zeroPadTo (numParams opcode + 2) opStr))
   where
     opStr = show x
+    opcode = opFromChar $ last opStr
 
 runProgramD5 :: Int -> Program -> IO Program
 runProgramD5 counter program = case opcode of
@@ -202,19 +232,11 @@ runProgramD5 counter program = case opcode of
                                    putStrLn "terminating"
                                    pure program
                                  _ -> do
-                                   nextProgram <- runInstruction opcode modes params program
-                                   print counter
-                                   -- print nextProgram
-                                   runProgramD5 newCounter nextProgram
+                                   (nextProgram, nextCounter) <- runInstruction counter opcode modes params program
+                                   runProgramD5 nextCounter nextProgram
   where
     (opcode, modes) = parseOpcode $ program V.! counter
-    (params, newCounter) =
-      case opcode of
-        Terminate -> ([], counter+1)
-        Add -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
-        Mul -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
-        Input -> ([program V.! (counter + 1)], counter+2)
-        Output -> ([program V.! (counter + 1)], counter+2)
+    params = V.toList $ V.slice (counter + 1) (numParams opcode) program
 
 
 day5_2 :: IO ()
