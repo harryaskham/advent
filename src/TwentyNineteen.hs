@@ -147,27 +147,26 @@ day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x
   where
     input = [265275..781584]
 
-type Opcode = Int
+data Opcode = Add | Mul | Input | Output | Terminate deriving (Show)
 data Mode = Positional | Immediate deriving (Show)
 type Param = Int
 type Program = V.Vector Int
 
 runInstruction :: Opcode -> [Mode] -> [Param] -> Program -> IO Program
 runInstruction opcode modes params program = do
-  print opcode
-  print modes
-  print params
+  putStrLn $ show opcode ++ show params ++ show modes
   print program
+  --getLine
   case opcode of
-    99 -> return program
-    1 -> return $ program V.// [(writebackLocation, head paramVals + (paramVals !! 1))]
-    2 -> return $ program V.// [(writebackLocation, head paramVals * (paramVals !! 1))]
-    3 -> do
+    Terminate -> return program
+    Add -> return $ program V.// [(writebackLocation, head paramVals + (paramVals !! 1))]
+    Mul -> return $ program V.// [(writebackLocation, head paramVals * (paramVals !! 1))]
+    Input -> do
       putStrLn "Input: "
       inputVal <- getLine
       return $ program V.// [(writebackLocation, read inputVal)]
-    4 -> do
-      putStrLn $ "Output: " ++ show (program V.! head paramVals)
+    Output -> do
+      putStrLn $ "Output: " ++ show (head paramVals)
       return program
   where
     paramVal (param, mode) = case mode of
@@ -188,18 +187,18 @@ toMode e = error $ "Invalid mode: " ++ [e]
 parseOpcode :: Int -> (Opcode, [Mode])
 parseOpcode x =
   case last opStr of
-    '9' -> (99, [])
-    '1' -> (1, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
-    '2' -> (2, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
-    '3' -> (3, toMode <$> take 1 (zeroPadTo 3 opStr))
-    '4' -> (4, toMode <$> take 1 (zeroPadTo 3 opStr))
+    '9' -> (Terminate, [])
+    '1' -> (Add, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
+    '2' -> (Mul, toMode <$> reverse (take 3 $ zeroPadTo 5 opStr))
+    '3' -> (Input, toMode <$> take 1 (zeroPadTo 3 opStr))
+    '4' -> (Output, toMode <$> take 1 (zeroPadTo 3 opStr))
     _ -> error $ "invalid opcode: " ++ opStr
   where
     opStr = show x
 
 runProgramD5 :: Int -> Program -> IO Program
 runProgramD5 counter program = case opcode of
-                                 99 -> do
+                                 Terminate -> do
                                    putStrLn "terminating"
                                    pure program
                                  _ -> do
@@ -209,12 +208,13 @@ runProgramD5 counter program = case opcode of
                                    runProgramD5 newCounter nextProgram
   where
     (opcode, modes) = parseOpcode $ program V.! counter
-    (params, newCounter) = case opcode of
-                             99 -> ([], counter+1)
-                             1 -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
-                             2 -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
-                             3 -> ([program V.! (counter + 1)], counter+2)
-                             4 -> ([program V.! (counter + 1)], counter+2)
+    (params, newCounter) =
+      case opcode of
+        Terminate -> ([], counter+1)
+        Add -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
+        Mul -> ([program V.! (counter + 1), program V.! (counter + 2), program V.! (counter + 3)], counter+4)
+        Input -> ([program V.! (counter + 1)], counter+2)
+        Output -> ([program V.! (counter + 1)], counter+2)
 
 
 day5_2 :: IO ()
