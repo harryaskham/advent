@@ -194,8 +194,8 @@ runInstruction counter opcode modes params program = do
                   return (program V.// [(writebackLocation, 0)], counter + 4)
   where
     paramVal (param, mode) = case mode of
-                                 Immediate -> param
-                                 Positional -> program V.! param
+                               Immediate -> param
+                               Positional -> program V.! param
     paramVals = paramVal <$> zip params modes
     writebackLocation = last params  -- Always use the exact writeback location
 
