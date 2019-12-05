@@ -441,15 +441,29 @@ day7_2 = do
 type Metadata = Int
 data Tree = Tree [Tree] [Metadata] deriving (Show)
 
---parseTree :: Parser Tree
---parseTree = do
---  numChildren <- decimal
---  numMetadata <- decimal
---  children <- count numChildren parseTree
---  metadata <- count numMetadata decimal
---  return $ Tree children metadata
+-- Parse a single tree and return the remainder
+parseTree :: [Int] -> (Tree, [Int])
+parseTree (0:numMeta:xs) = (Tree [] (take numMeta xs), drop numMeta xs)
+parseTree (numChild:numMeta:xs) = (Tree (reverse children) (take numMeta rem), drop numMeta rem)
+  where
+    nTrees 0 acc rem = (acc, rem)
+    nTrees numChild acc xs = nTrees (numChild - 1) (tree:acc) rem
+      where
+        (tree, rem) = parseTree xs
+    (children, rem) = nTrees numChild [] xs
 
-day8_1 :: IO Int
-day8_1 = do
+sumMeta :: Tree -> Int
+sumMeta (Tree [] meta) = sum meta
+sumMeta (Tree children meta) = sum meta + sum (sumMeta <$> children)
+
+value :: Tree -> Int
+value (Tree [] meta) = sum meta
+value (Tree children meta) = sum (value <$> [children !! (m - 1) | m <- meta, m > 0, m <= length children])
+
+day8 :: IO ()
+day8 = do
   input <- fmap read . words . head . lines <$> readFile "input/2018/8.txt"
-  return $ head input
+  let tree = fst . parseTree $ input
+   in do
+     print $ sumMeta tree
+     print $ value tree
