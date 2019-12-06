@@ -27,6 +27,7 @@ dependencies:
 - regex-tdfa-text
 - time
 - vector
+- listsafe
 
 library:
   source-dirs: src
