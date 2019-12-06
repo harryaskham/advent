@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module TwentyEighteen where
 
@@ -456,9 +457,9 @@ sumMeta :: Tree -> Int
 sumMeta (Tree [] meta) = sum meta
 sumMeta (Tree children meta) = sum meta + sum (sumMeta <$> children)
 
-value :: Tree -> Int
-value (Tree [] meta) = sum meta
-value (Tree children meta) = sum (value <$> [children !! (m - 1) | m <- meta, m > 0, m <= length children])
+metaValue :: Tree -> Int
+metaValue (Tree [] meta) = sum meta
+metaValue (Tree children meta) = sum (metaValue <$> [children !! (m - 1) | m <- meta, m > 0, m <= length children])
 
 day8 :: IO ()
 day8 = do
@@ -466,4 +467,77 @@ day8 = do
   let tree = fst . parseTree $ input
    in do
      print $ sumMeta tree
-     print $ value tree
+     print $ metaValue tree
+
+data Game = Game { marbles :: V.Vector Int
+                 , scores :: V.Vector Int
+                 , currentMarble :: Int
+                 , currentCount :: Int
+                 , currentPlayer :: Int
+                 , numPlayers :: Int
+                 } deriving (Show)
+
+-- Creates a new game with the initial marble placed.
+newGame :: Int -> Game
+newGame numPlayers = Game { marbles = V.fromList [0]
+                          , scores = V.replicate numPlayers 0
+                          , currentMarble = 0
+                          , currentCount = 1
+                          , currentPlayer = 1
+                          , numPlayers = numPlayers
+                          }
+
+-- Run a single turn and return what the last marble was worth.
+runTurn :: Game -> (Game, Int)
+runTurn game = if (currentCount game `mod` 23) == 0 then run23Turn game else runRegularTurn game
+
+run23Turn :: Game -> (Game, Int)
+run23Turn Game{..} = ( Game { marbles = marbles'
+                            , scores = scores V.// [(currentPlayer, (scores V.! currentPlayer) + score)]
+                            , currentMarble = removeIndex `mod` length marbles'
+                            , currentCount = currentCount + 1
+                            , currentPlayer = (currentPlayer + 1) `mod` numPlayers
+                            , numPlayers = numPlayers
+                            }
+                     , score )
+  where
+    removeIndex = (currentMarble - 7 + length marbles) `mod` length marbles
+    score = currentCount + marbles V.! removeIndex
+    marbles' = removeV removeIndex marbles
+
+insertV :: Int -> a -> V.Vector a -> V.Vector a
+insertV i x xs = V.concat [before, pure x, after]
+  where
+    (before, after) = V.splitAt i xs
+
+removeV :: Int -> V.Vector a -> V.Vector a
+removeV i xs = V.concat [before, V.tail after]
+  where
+    (before, after) = V.splitAt i xs
+
+runRegularTurn :: Game -> (Game, Int)
+runRegularTurn Game{..} = ( Game { marbles = marbles'
+                                 , scores = scores
+                                 , currentMarble = (currentMarble + 2) `mod` length marbles'
+                                 , currentCount = currentCount + 1
+                                 , currentPlayer = (currentPlayer + 1) `mod` numPlayers
+                                 , numPlayers = numPlayers
+                                 }
+                          , 0 )
+  where
+    marbles' = insertV currentMarble currentCount marbles
+
+-- Runs the game until the last marble score matches the target.
+runTurnUntilPoints :: Int -> Game -> IO Game
+runTurnUntilPoints pointsTarget game = do
+  print game
+  --getLine
+  if points == pointsTarget then return game else runTurnUntilPoints pointsTarget nextGame
+  where
+    (nextGame, points) = runTurn game
+
+day9 :: IO Int
+day9 = do
+  --game <- runTurnUntilPoints 72058 (newGame 426)
+  game <- runTurnUntilPoints 1618 (newGame 10)
+  return $ maximum . scores $ game

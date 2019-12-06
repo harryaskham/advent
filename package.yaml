@@ -28,6 +28,7 @@ dependencies:
 - time
 - vector
 - listsafe
+- array
 
 library:
   source-dirs: src
