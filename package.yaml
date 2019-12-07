@@ -29,6 +29,7 @@ dependencies:
 - vector
 - listsafe
 - array
+- lens
 
 library:
   source-dirs: src

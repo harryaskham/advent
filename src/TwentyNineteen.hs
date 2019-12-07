@@ -1,3 +1,6 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module TwentyNineteen where
 
 import qualified Data.Set as S
@@ -13,6 +16,7 @@ import qualified Data.Vector as V
 import qualified Data.Tree as T
 import qualified Data.List.Safe as LS
 import Control.Monad
+import Control.Lens
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -150,7 +154,7 @@ day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x
   where
     input = [265275..781584]
 
-data Opcode = Add | Mul | Input | Output | JumpIfTrue | JumpIfFalse | LessThan | Equals | Terminate deriving (Show)
+data Opcode = Add | Mul | Input | Output | JumpIfTrue | JumpIfFalse | LessThan | Equals | Terminate deriving (Show, Eq)
 data Mode = Positional | Immediate deriving (Show)
 type Param = Int
 type Program = V.Vector Int
@@ -167,38 +171,52 @@ numParams LessThan = 3
 numParams Equals = 3
 numParams Terminate = 0
 
-runInstruction :: Counter -> Opcode -> [Mode] -> [Param] -> Program -> IO (Program, Counter)
-runInstruction counter opcode modes params program = do
+-- The state of a machine.
+data Machine = Machine { _counter :: Counter
+                       , _inputs :: [Int]
+                       , _outputs :: [Int]
+                       , _program :: Program
+                       }
+
+makeLenses ''Machine
+
+runInstruction :: Opcode -> [Mode] -> [Param] -> Machine -> IO Machine
+runInstruction opcode modes params machine = do
   putStrLn $ show opcode ++ show params ++ show modes
-  print program
+  --putStrLn $ show (machine ^. inputs) ++ show (machine ^. outputs)
+  --print (machine ^. program)
   --getLine
   case opcode of
-    Terminate -> return (program, counter)
-    Add -> return (program V.// [(writebackLocation, head paramVals + (paramVals !! 1))], counter + 4)
-    Mul -> return (program V.// [(writebackLocation, head paramVals * (paramVals !! 1))], counter + 4)
-    Input -> do
-      putStrLn "Input: "
-      inputVal <- getLine
-      return (program V.// [(writebackLocation, read inputVal)], counter + 2)
-    Output -> do
-      putStrLn $ "Output: " ++ show (head paramVals)
-      return (program, counter + 2)
+    Terminate -> return machine
+    Add -> return $ machine & program %~ (V.// [(writebackLocation, head paramVals + (paramVals !! 1))])
+                            & counter %~ (+4)
+    Mul -> return $ machine & program %~ (V.// [(writebackLocation, head paramVals * (paramVals !! 1))])
+                            & counter %~ (+4)
+    Input -> return $ machine & program %~ (V.// [(writebackLocation, head $ machine ^. inputs)])
+                              & inputs %~ tail
+                              & counter %~ (+2)
+    Output -> return $ machine & outputs %~ (++[head paramVals])
+                               & counter %~ (+2)
     JumpIfTrue -> case head paramVals of
-                    0 -> return (program, counter + 3)
-                    _ -> return (program, paramVals !! 1)
+                    0 -> return $ machine & counter %~ (+3)
+                    _ -> return $ machine & counter .~ (paramVals !! 1)
     JumpIfFalse -> case head paramVals of
-                    0 -> return (program, paramVals !! 1)
-                    _ -> return (program, counter + 3)
+                    0 -> return $ machine & counter .~ (paramVals !! 1)
+                    _ -> return $ machine & counter %~ (+3)
     LessThan -> if head paramVals < paramVals !! 1 then
-                  return (program V.// [(writebackLocation, 1)], counter + 4) else
-                  return (program V.// [(writebackLocation, 0)], counter + 4)
+                  return $ machine & program %~ (V.// [(writebackLocation, 1)])
+                                   & counter %~ (+4) else
+                  return $ machine & program %~ (V.// [(writebackLocation, 0)])
+                                   & counter %~ (+4)
     Equals -> if head paramVals == paramVals !! 1 then
-                  return (program V.// [(writebackLocation, 1)], counter + 4) else
-                  return (program V.// [(writebackLocation, 0)], counter + 4)
+                  return $ machine & program %~ (V.// [(writebackLocation, 1)])
+                                   & counter %~ (+4) else
+                  return $ machine & program %~ (V.// [(writebackLocation, 0)])
+                                   & counter %~ (+4)
   where
     paramVal (param, mode) = case mode of
                                Immediate -> param
-                               Positional -> program V.! param
+                               Positional -> (machine ^. program) V.! param
     paramVals = paramVal <$> zip params modes
     writebackLocation = last params  -- Always use the exact writeback location
 
@@ -229,24 +247,35 @@ parseOpcode x = (opcode, toMode <$> reverse (take (numParams opcode) $ zeroPadTo
     opStr = show x
     opcode = opFromChar $ last opStr
 
-runProgram :: Int -> Program -> IO Program
-runProgram counter program = case opcode of
-                                 Terminate -> do
-                                   putStrLn "terminating"
-                                   pure program
-                                 _ -> do
-                                   (nextProgram, nextCounter) <- runInstruction counter opcode modes params program
-                                   runProgram nextCounter nextProgram
+getCurrentOp :: Machine -> (Opcode, [Mode])
+getCurrentOp machine = parseOpcode $ (machine ^. program) V.! (machine ^. counter)
+
+stepProgram :: Machine -> IO Machine
+stepProgram machine = 
+  case opcode of
+    Terminate -> do
+      putStrLn "terminating"
+      pure machine
+    _ -> runInstruction opcode modes params machine
   where
-    (opcode, modes) = parseOpcode $ program V.! counter
-    params = V.toList $ V.slice (counter + 1) (numParams opcode) program
+    (opcode, modes) = getCurrentOp machine
+    params = V.toList $ V.slice (machine ^. counter + 1) (numParams opcode) (machine ^. program)
+
+runProgram :: Machine -> IO Machine
+runProgram machine = 
+  case opcode of
+    Terminate -> pure machine
+    _ -> do
+      nextMachine <- stepProgram machine
+      runProgram nextMachine
+  where
+    (opcode, _) = getCurrentOp machine
 
 day5 :: IO ()
 day5 = do
   program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/5.txt"
-  --program <- pure . V.fromList $ [1002,4,3,4,33] -- Should write 99 to end then stop.
-  runProgram 0 program
-  return ()
+  machine <- runProgram $ Machine 0 [1] [] program
+  print $ machine ^. outputs
 
 data OrbitTree = OrbitTree String [OrbitTree] deriving (Show)
 
@@ -295,3 +324,80 @@ day6 = do
      print tree
      print $ countOrbits tree
      print $ santaDistance tree
+
+runPhaseConfiguration :: [Int] -> Int -> Program -> IO Int
+runPhaseConfiguration [] lastOutput _ = return lastOutput
+runPhaseConfiguration (p:ps) lastOutput program = do
+  print $ "Running phase " ++ show p
+  machine <- runProgram $ Machine 0 [p, lastOutput] [] program
+  runPhaseConfiguration ps (head $ machine ^. outputs) program
+
+day7_1 :: IO Int
+day7_1 = do
+  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/7.txt"
+  allOutputs <- sequenceA $ runPhaseConfiguration <$> permutations [0..4] <*> [0] <*> [program]
+  return $ maximum allOutputs
+
+-- Whether or not the machine is currently blocked from running
+isBlocked :: Machine -> Bool
+isBlocked machine = isTerminated machine || (opcode == Input && null (machine ^. inputs))
+  where
+    (opcode, _) = getCurrentOp machine
+
+isTerminated :: Machine -> Bool
+isTerminated machine = opcode == Terminate
+  where
+    (opcode, _) = getCurrentOp machine
+
+-- A cluster is a series of machines that can talk to one another.
+-- Stores the index of the currently running machine
+data Cluster = Cluster Int (V.Vector Machine)
+
+-- A cluster is terminated once all its machines are.
+isClusterTerminated :: Cluster -> Bool
+isClusterTerminated (Cluster i ms) = V.all isTerminated ms
+
+-- Run the current cluster for one step.
+stepCluster :: Cluster -> IO Cluster
+stepCluster (Cluster i ms) =
+  if isBlocked currentMachine then
+    -- If blocked, copy the output of this machine to the input of the next
+    -- Kill the output of this machine
+    -- and resume on the next machine
+    return $ Cluster nextIndex (ms V.// [ (i, currentMachine & outputs .~ [])
+                                        , (nextIndex, nextMachine & inputs %~ (++ currentMachine ^. outputs))
+                                        ])
+
+  else do
+    -- If not blocked then keep running the current machine
+    steppedCurrent <- stepProgram currentMachine
+    return $ Cluster i (ms V.// [(i, steppedCurrent)])
+  where
+    currentMachine = ms V.! i
+    nextIndex = (i + 1) `mod` length ms
+    nextMachine = ms V.! nextIndex
+
+-- Run a cluster until it terminates.
+runCluster :: Cluster -> IO Cluster
+runCluster cluster = if isClusterTerminated cluster then return cluster else do
+  nextCluster <- stepCluster cluster
+  runCluster nextCluster
+
+-- Creates a cluster to run the given phase combination.
+makeCluster :: [Int] -> Program -> Cluster
+makeCluster phases program = Cluster 0 machinesWithInput
+  where
+    machines = V.fromList $ (\phase -> Machine 0 [phase] [] program) <$> phases
+    firstMachine = machines V.! 0
+    machinesWithInput = machines V.// [(0, firstMachine & inputs %~ (++[0]))]
+
+-- Gets the final output of the cluster.
+getClusterOutput :: Cluster -> Int
+getClusterOutput (Cluster _ ms) = head $ (ms V.! (V.length ms - 1)) ^. outputs
+
+day7_2 :: IO Int
+day7_2 = do
+  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/7.txt"
+  --program <- pure $ V.fromList [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
+  allCompletedClusters <- sequenceA $ runCluster <$> (makeCluster <$> permutations [5..9] <*> [program])
+  return $ maximum (getClusterOutput <$> allCompletedClusters)

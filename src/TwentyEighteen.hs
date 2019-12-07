@@ -472,8 +472,8 @@ day8 = do
 data Game = Game { marbles :: V.Vector Int
                  , scores :: V.Vector Int
                  , currentMarble :: Int
-                 , currentCount :: Int
-                 , currentPlayer :: Int
+                 , nextCount :: Int
+                 , nextPlayer :: Int
                  , numPlayers :: Int
                  } deriving (Show)
 
@@ -482,27 +482,28 @@ newGame :: Int -> Game
 newGame numPlayers = Game { marbles = V.fromList [0]
                           , scores = V.replicate numPlayers 0
                           , currentMarble = 0
-                          , currentCount = 1
-                          , currentPlayer = 1
+                          , nextCount = 1
+                          , nextPlayer = 1
                           , numPlayers = numPlayers
                           }
 
 -- Run a single turn and return what the last marble was worth.
 runTurn :: Game -> (Game, Int)
-runTurn game = if (currentCount game `mod` 23) == 0 then run23Turn game else runRegularTurn game
+runTurn game = if (nextCount game `mod` 23) == 0 then run23Turn game else runRegularTurn game
 
 run23Turn :: Game -> (Game, Int)
 run23Turn Game{..} = ( Game { marbles = marbles'
-                            , scores = scores V.// [(currentPlayer, (scores V.! currentPlayer) + score)]
+                            , scores = scores V.// [(nextPlayer, (scores V.! nextPlayer) + score)]
                             , currentMarble = removeIndex `mod` length marbles'
-                            , currentCount = currentCount + 1
-                            , currentPlayer = (currentPlayer + 1) `mod` numPlayers
+                            , nextCount = nextCount + 1
+                            , nextPlayer = (nextPlayer + 1) `mod` numPlayers
                             , numPlayers = numPlayers
                             }
                      , score )
   where
-    removeIndex = (currentMarble - 7 + length marbles) `mod` length marbles
-    score = currentCount + marbles V.! removeIndex
+    -- The extra -2 is because we already wennt +2 but that's only for normal mode.
+    removeIndex = (currentMarble - 7 - 2 + length marbles) `mod` length marbles
+    score = nextCount + marbles V.! removeIndex
     marbles' = removeV removeIndex marbles
 
 insertV :: Int -> a -> V.Vector a -> V.Vector a
@@ -519,19 +520,19 @@ runRegularTurn :: Game -> (Game, Int)
 runRegularTurn Game{..} = ( Game { marbles = marbles'
                                  , scores = scores
                                  , currentMarble = (currentMarble + 2) `mod` length marbles'
-                                 , currentCount = currentCount + 1
-                                 , currentPlayer = (currentPlayer + 1) `mod` numPlayers
+                                 , nextCount = nextCount + 1
+                                 , nextPlayer = (nextPlayer + 1) `mod` numPlayers
                                  , numPlayers = numPlayers
                                  }
                           , 0 )
   where
-    marbles' = insertV currentMarble currentCount marbles
+    marbles' = insertV currentMarble nextCount marbles
 
 -- Runs the game until the last marble score matches the target.
 runTurnUntilPoints :: Int -> Game -> IO Game
 runTurnUntilPoints pointsTarget game = do
-  print game
-  --getLine
+  print points
+  -- getLine
   if points == pointsTarget then return game else runTurnUntilPoints pointsTarget nextGame
   where
     (nextGame, points) = runTurn game
