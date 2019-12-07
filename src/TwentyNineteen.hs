@@ -362,11 +362,11 @@ stepCluster :: Cluster -> IO Cluster
 stepCluster (Cluster i ms) =
   if isBlocked currentMachine then
     -- If blocked, copy the output of this machine to the input of the next
-    -- Kill the output of this machine
-    -- and resume on the next machine
-    return $ Cluster nextIndex (ms V.// [ (i, currentMachine & outputs .~ [])
-                                        , (nextIndex, nextMachine & inputs %~ (++ currentMachine ^. outputs))
-                                        ])
+    -- Kill the output of this machine and resume on the next machine
+    return $
+      Cluster nextIndex (ms V.// [ (i, currentMachine & outputs .~ [])
+                                 , (nextIndex, nextMachine & inputs %~ (++ currentMachine ^. outputs))
+                                 ])
 
   else do
     -- If not blocked then keep running the current machine
