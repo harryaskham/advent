@@ -494,15 +494,14 @@ runTurn game = if (nextCount game `mod` 23) == 0 then run23Turn game else runReg
 run23Turn :: Game -> (Game, Int)
 run23Turn Game{..} = ( Game { marbles = marbles'
                             , scores = scores V.// [(nextPlayer, (scores V.! nextPlayer) + score)]
-                            , currentMarble = removeIndex `mod` length marbles'
+                            , currentMarble = (removeIndex + 1) `mod` length marbles'
                             , nextCount = nextCount + 1
                             , nextPlayer = (nextPlayer + 1) `mod` numPlayers
                             , numPlayers = numPlayers
                             }
                      , score )
   where
-    -- The extra -2 is because we already wennt +2 but that's only for normal mode.
-    removeIndex = (currentMarble - 7 - 2 + length marbles) `mod` length marbles
+    removeIndex = (currentMarble - 9 + length marbles) `mod` length marbles
     score = nextCount + marbles V.! removeIndex
     marbles' = removeV removeIndex marbles
 
@@ -530,10 +529,11 @@ runRegularTurn Game{..} = ( Game { marbles = marbles'
 
 -- Runs the game until the last marble score matches the target.
 runTurnUntilPoints :: Int -> Game -> IO Game
-runTurnUntilPoints pointsTarget game = do
-  print points
-  -- getLine
-  if points == pointsTarget then return game else runTurnUntilPoints pointsTarget nextGame
+runTurnUntilPoints pointsTarget game =
+  if nextCount game == (pointsTarget + 1) then do
+    print game
+    return game
+    else runTurnUntilPoints pointsTarget nextGame
   where
     (nextGame, points) = runTurn game
 
