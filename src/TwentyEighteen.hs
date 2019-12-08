@@ -483,7 +483,7 @@ newGame numPlayers = Game { marbles = V.fromList [0]
                           , scores = V.replicate numPlayers 0
                           , currentMarble = 0
                           , nextCount = 1
-                          , nextPlayer = 1
+                          , nextPlayer = 0
                           , numPlayers = numPlayers
                           }
 
@@ -529,7 +529,9 @@ runRegularTurn Game{..} = ( Game { marbles = marbles'
 
 -- Runs the game until the last marble score matches the target.
 runTurnUntilPoints :: Int -> Game -> IO Game
-runTurnUntilPoints pointsTarget game =
+runTurnUntilPoints pointsTarget game = do
+  --print game
+  --getLine
   if nextCount game == (pointsTarget + 1) then do
     print game
     return game

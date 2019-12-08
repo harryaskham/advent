@@ -434,3 +434,9 @@ day8 = do
       image = chunksOf 25 stackedLayers
   print $ numNs 1 layerWithFewestZeros * numNs 2 layerWithFewestZeros
   sequenceA $ print <$> image
+
+day9 :: IO ()
+day9 = do
+  ls <- lines <$> readFile "input/2019/9.txt"
+  let something = head $ ls
+  return ()
