@@ -27,6 +27,7 @@ dependencies:
 - regex-tdfa-text
 - time
 - vector
+- vector-split
 - listsafe
 - array
 - lens
