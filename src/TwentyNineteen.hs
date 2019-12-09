@@ -252,7 +252,12 @@ opFromStr s = error s
 
 -- Parses out the opcode and the modes.
 parseOpcode :: Integer -> (Opcode, [Mode])
-parseOpcode x = (opcode, toMode <$> reverse (take (fromIntegral $ numParams opcode) $ zeroPadTo (fromIntegral $ numParams opcode + 2) opStr))
+parseOpcode x =
+  ( opcode
+  , toMode
+    <$> reverse (take (fromIntegral $ numParams opcode)
+    $ zeroPadTo (fromIntegral $ numParams opcode + 2) opStr)
+  )
   where
     opStr = show x
     opcode = opFromStr $ zeroPadTo 2 $ drop (length opStr - 2) opStr
