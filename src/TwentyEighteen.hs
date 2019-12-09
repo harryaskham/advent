@@ -533,7 +533,7 @@ runTurnUntilPoints pointsTarget game = do
   --print game
   --getLine
   if nextCount game == (pointsTarget + 1) then do
-    print game
+    --print game
     return game
     else runTurnUntilPoints pointsTarget nextGame
   where
@@ -541,6 +541,6 @@ runTurnUntilPoints pointsTarget game = do
 
 day9 :: IO Int
 day9 = do
-  --game <- runTurnUntilPoints 72058 (newGame 426)
-  game <- runTurnUntilPoints 1618 (newGame 10)
+  game <- runTurnUntilPoints 72058 (newGame 426)
+  --game <- runTurnUntilPoints 1618 (newGame 10)
   return $ maximum . scores $ game

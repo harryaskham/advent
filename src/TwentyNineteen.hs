@@ -156,13 +156,13 @@ day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x
   where
     input = [265275..781584]
 
-data Opcode = Add | Mul | Input | Output | JumpIfTrue | JumpIfFalse | LessThan | Equals | Terminate deriving (Show, Eq)
-data Mode = Positional | Immediate deriving (Show)
-type Param = Int
-type Program = V.Vector Int
-type Counter = Int
+data Opcode = Add | Mul | Input | Output | JumpIfTrue | JumpIfFalse | LessThan | Equals | AdjustBase | Terminate deriving (Show, Eq)
+data Mode = Positional | Immediate | Relative deriving (Show, Eq)
+type Param = Integer
+type Program = M.Map Integer Integer
+type Counter = Integer
 
-numParams :: Opcode -> Int
+numParams :: Opcode -> Integer
 numParams Add = 3
 numParams Mul = 3
 numParams Input = 1
@@ -171,56 +171,62 @@ numParams JumpIfTrue = 2
 numParams JumpIfFalse = 2
 numParams LessThan = 3
 numParams Equals = 3
+numParams AdjustBase = 1
 numParams Terminate = 0
 
 -- The state of a machine.
 data Machine = Machine { _counter :: Counter
-                       , _inputs :: [Int]
-                       , _outputs :: [Int]
+                       , _inputs :: [Integer]
+                       , _outputs :: [Integer]
                        , _program :: Program
-                       }
+                       , _relBase :: Integer
+                       } deriving (Show)
 
 makeLenses ''Machine
 
-runInstruction :: Opcode -> [Mode] -> [Param] -> Machine -> IO Machine
-runInstruction opcode modes params machine = do
-  putStrLn $ show opcode ++ show params ++ show modes
-  --putStrLn $ show (machine ^. inputs) ++ show (machine ^. outputs)
-  --print (machine ^. program)
-  --getLine
+-- Wrap memory accesses so that previously unused locations are 0
+unsafeMemAccess (Just a) = a
+unsafeMemAccess Nothing = 0
+
+runInstruction :: Opcode -> [Mode] -> [Param] -> Machine -> Machine
+runInstruction opcode modes params machine =
   case opcode of
-    Terminate -> return machine
-    Add -> return $ machine & program %~ (V.// [(writebackLocation, head paramVals + (paramVals !! 1))])
-                            & counter %~ (+4)
-    Mul -> return $ machine & program %~ (V.// [(writebackLocation, head paramVals * (paramVals !! 1))])
-                            & counter %~ (+4)
-    Input -> return $ machine & program %~ (V.// [(writebackLocation, head $ machine ^. inputs)])
-                              & inputs %~ tail
-                              & counter %~ (+2)
-    Output -> return $ machine & outputs %~ (++[head paramVals])
-                               & counter %~ (+2)
+    Terminate -> machine
+    Add -> machine & program %~ M.insert writebackLocation (head paramVals + (paramVals !! 1))
+                   & counter %~ (+4)
+    Mul -> machine & program %~ M.insert writebackLocation (head paramVals * (paramVals !! 1))
+                   & counter %~ (+4)
+    Input -> machine & program %~ M.insert writebackLocation (head $ machine ^. inputs)
+                     & inputs %~ tail
+                     & counter %~ (+2)
+    Output -> machine & outputs %~ (++[head paramVals])
+                      & counter %~ (+2)
     JumpIfTrue -> case head paramVals of
-                    0 -> return $ machine & counter %~ (+3)
-                    _ -> return $ machine & counter .~ (paramVals !! 1)
+                    0 -> machine & counter %~ (+3)
+                    _ -> machine & counter .~ (paramVals !! 1)
     JumpIfFalse -> case head paramVals of
-                    0 -> return $ machine & counter .~ (paramVals !! 1)
-                    _ -> return $ machine & counter %~ (+3)
+                    0 -> machine & counter .~ (paramVals !! 1)
+                    _ -> machine & counter %~ (+3)
     LessThan -> if head paramVals < paramVals !! 1 then
-                  return $ machine & program %~ (V.// [(writebackLocation, 1)])
-                                   & counter %~ (+4) else
-                  return $ machine & program %~ (V.// [(writebackLocation, 0)])
-                                   & counter %~ (+4)
+                  machine & program %~ M.insert writebackLocation 1
+                          & counter %~ (+4) else
+                  machine & program %~ M.insert writebackLocation 0
+                          & counter %~ (+4)
     Equals -> if head paramVals == paramVals !! 1 then
-                  return $ machine & program %~ (V.// [(writebackLocation, 1)])
-                                   & counter %~ (+4) else
-                  return $ machine & program %~ (V.// [(writebackLocation, 0)])
-                                   & counter %~ (+4)
+                  machine & program %~ M.insert writebackLocation 1
+                          & counter %~ (+4) else
+                  machine & program %~ M.insert writebackLocation 0
+                          & counter %~ (+4)
+    AdjustBase -> machine & relBase %~ (+head paramVals)
+                          & counter %~ (+2)
   where
     paramVal (param, mode) = case mode of
                                Immediate -> param
-                               Positional -> (machine ^. program) V.! param
+                               Positional -> unsafeMemAccess $ M.lookup param (machine ^. program)
+                               Relative -> unsafeMemAccess $ M.lookup (param + (machine ^. relBase)) (machine ^. program) 
     paramVals = paramVal <$> zip params modes
-    writebackLocation = last params  -- Always use the exact writeback location
+    -- TODO: This feels like a horrible hack, why should relative mode work any differently?
+    writebackLocation = if last modes == Relative then last params + (machine ^. relBase) else last params  -- Always use the exact writeback location
 
 zeroPadTo :: Int -> String -> String
 zeroPadTo l x = replicate (l - length x) '0' ++ x
@@ -228,40 +234,54 @@ zeroPadTo l x = replicate (l - length x) '0' ++ x
 toMode :: Char -> Mode
 toMode '0' = Positional
 toMode '1' = Immediate
+toMode '2' = Relative
 toMode e = error $ "Invalid mode: " ++ [e]
 
--- TODO: Revisit once more than 10 ops.
-opFromChar :: Char -> Opcode
-opFromChar '1' = Add
-opFromChar '2' = Mul
-opFromChar '3' = Input
-opFromChar '4' = Output
-opFromChar '5' = JumpIfTrue
-opFromChar '6' = JumpIfFalse
-opFromChar '7' = LessThan
-opFromChar '8' = Equals
-opFromChar '9' = Terminate
+opFromStr :: String -> Opcode
+opFromStr "01" = Add
+opFromStr "02" = Mul
+opFromStr "03" = Input
+opFromStr "04" = Output
+opFromStr "05" = JumpIfTrue
+opFromStr "06" = JumpIfFalse
+opFromStr "07" = LessThan
+opFromStr "08" = Equals
+opFromStr "09" = AdjustBase
+opFromStr "99" = Terminate
+opFromStr s = error s
 
 -- Parses out the opcode and the modes.
-parseOpcode :: Int -> (Opcode, [Mode])
-parseOpcode x = (opcode, toMode <$> reverse (take (numParams opcode) $ zeroPadTo (numParams opcode + 2) opStr))
+parseOpcode :: Integer -> (Opcode, [Mode])
+parseOpcode x = (opcode, toMode <$> reverse (take (fromIntegral $ numParams opcode) $ zeroPadTo (fromIntegral $ numParams opcode + 2) opStr))
   where
     opStr = show x
-    opcode = opFromChar $ last opStr
+    opcode = opFromStr $ zeroPadTo 2 $ drop (length opStr - 2) opStr
 
 getCurrentOp :: Machine -> (Opcode, [Mode])
-getCurrentOp machine = parseOpcode $ (machine ^. program) V.! (machine ^. counter)
+getCurrentOp machine = parseOpcode $ unsafeMemAccess $ M.lookup (machine ^. counter) (machine ^. program) 
 
 stepProgram :: Machine -> IO Machine
 stepProgram machine = 
   case opcode of
     Terminate -> do
-      putStrLn "terminating"
-      pure machine
-    _ -> runInstruction opcode modes params machine
+      putStrLn "Terminating"
+      return machine
+    _ -> do
+      --{-
+      putStrLn $ "Counter: " ++ show (machine ^. counter)
+      putStrLn $ "RelBase: " ++ show (machine ^. relBase)
+      putStrLn $ "Op/Params/Modes:" ++ show opcode ++ show params ++ show modes
+      putStrLn $ "In/Out:" ++ show (machine ^. inputs) ++ show (machine ^. outputs)
+      print (machine ^. program)
+      getLine
+      ---}
+      return $ runInstruction opcode modes params machine
   where
     (opcode, modes) = getCurrentOp machine
-    params = V.toList $ V.slice (machine ^. counter + 1) (numParams opcode) (machine ^. program)
+    params = catMaybes
+      $ M.lookup
+      <$> [(machine ^. counter) + 1 .. (machine ^. counter) + numParams opcode]
+      <*> [machine ^. program]
 
 runProgram :: Machine -> IO Machine
 runProgram machine = 
@@ -275,9 +295,11 @@ runProgram machine =
 
 day5 :: IO ()
 day5 = do
-  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/5.txt"
-  machine <- runProgram $ Machine 0 [1] [] program
+  program <- readProgram "input/2019/5.txt"
+  machine <- runProgram $ Machine 0 [1] [] program 0
+  machine' <- runProgram $ Machine 0 [5] [] program 0
   print $ machine ^. outputs
+  print $ machine' ^. outputs
 
 data OrbitTree = OrbitTree String [OrbitTree] deriving (Show)
 
@@ -327,18 +349,23 @@ day6 = do
      print $ countOrbits tree
      print $ santaDistance tree
 
-runPhaseConfiguration :: [Int] -> Int -> Program -> IO Int
+runPhaseConfiguration :: [Integer] -> Integer -> Program -> IO Integer
 runPhaseConfiguration [] lastOutput _ = return lastOutput
 runPhaseConfiguration (p:ps) lastOutput program = do
   print $ "Running phase " ++ show p
-  machine <- runProgram $ Machine 0 [p, lastOutput] [] program
+  machine <- runProgram $ Machine 0 [p, lastOutput] [] program 0
   runPhaseConfiguration ps (head $ machine ^. outputs) program
 
-day7_1 :: IO Int
+readProgram :: String -> IO Program
+readProgram path = do
+  program <- fmap read . splitOn "," . head . lines <$> readFile path
+  return $ M.fromList $ zip [0..toInteger (length program - 1)] program
+
+day7_1 :: IO ()
 day7_1 = do
-  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/7.txt"
+  program <- readProgram "input/2019/7.txt"
   allOutputs <- sequenceA $ runPhaseConfiguration <$> permutations [0..4] <*> [0] <*> [program]
-  return $ maximum allOutputs
+  print $ maximum allOutputs
 
 -- Whether or not the machine is currently blocked from running
 isBlocked :: Machine -> Bool
@@ -386,23 +413,22 @@ runCluster cluster = if isClusterTerminated cluster then return cluster else do
   runCluster nextCluster
 
 -- Creates a cluster to run the given phase combination.
-makeCluster :: [Int] -> Program -> Cluster
+makeCluster :: [Integer] -> Program -> Cluster
 makeCluster phases program = Cluster 0 machinesWithInput
   where
-    machines = V.fromList $ (\phase -> Machine 0 [phase] [] program) <$> phases
+    machines = V.fromList $ (\phase -> Machine 0 [phase] [] program 0) <$> phases
     firstMachine = machines V.! 0
     machinesWithInput = machines V.// [(0, firstMachine & inputs %~ (++[0]))]
 
 -- Gets the final output of the cluster.
-getClusterOutput :: Cluster -> Int
+getClusterOutput :: Cluster -> Integer
 getClusterOutput (Cluster _ ms) = head $ (ms V.! (V.length ms - 1)) ^. outputs
 
-day7_2 :: IO Int
+day7_2 :: IO ()
 day7_2 = do
-  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/7.txt"
-  --program <- pure $ V.fromList [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
+  program <- readProgram "input/2019/7.txt"
   allCompletedClusters <- sequenceA $ runCluster <$> (makeCluster <$> permutations [5..9] <*> [program])
-  return $ maximum (getClusterOutput <$> allCompletedClusters)
+  print $ maximum (getClusterOutput <$> allCompletedClusters)
 
 pixelsToLayers :: Int -> Int -> [Int] -> [[Int]]
 pixelsToLayers width height ps = chunksOf layerSize ps
@@ -437,6 +463,12 @@ day8 = do
 
 day9 :: IO ()
 day9 = do
-  ls <- lines <$> readFile "input/2019/9.txt"
-  let something = head $ ls
-  return ()
+  --let xs = [1102,34915192,34915192,7,4,7,99,0]
+  --let xs = [104,1125899906842624,99]
+  --let xs = [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]
+      --program = M.fromList $ zip [0..toInteger (length xs - 1)] xs
+  program <- readProgram "input/2019/9.txt"
+  machine1 <- runProgram $ Machine 0 [1] [] program 0
+  print $ machine1 ^. outputs
+  machine2 <- runProgram $ Machine 0 [2] [] program 0
+  print $ machine2 ^. outputs
