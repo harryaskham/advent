@@ -480,7 +480,6 @@ day9 = do
   machine2 <- runProgram $ Machine 0 [2] [] program 0
   print $ machine2 ^. outputs
 
--- V of rows
 data Asteroid = Asteroid | NoAsteroid deriving (Eq)
 type Grid = V.Vector (V.Vector Asteroid)
 
@@ -501,7 +500,10 @@ rayIncrements grid = nub $ simplifyRatio <$> allCoords
   where
     width = V.length $ grid V.! 0
     height = V.length grid
-    allCoords = [(x, y) | x <- [1 - width .. width - 1], y <- [1 - height .. height - 1], (x, y) /= (0, 0)]
+    allCoords = [ (x, y)
+                | x <- [1 - width .. width - 1]
+                , y <- [1 - height .. height - 1]
+                , (x, y) /= (0, 0) ]
 
 -- Simplify e.g. (10,5) to (2,1)
 simplifyRatio :: (Int, Int) -> (Int, Int)
@@ -532,7 +534,10 @@ intersectAsteroid grid (x, y) (incX, incY) =
     height = V.length grid
 
 asteroidLocations :: Grid -> [(Int, Int)]
-asteroidLocations grid = [(x, y) | x <- [0..width-1], y <- [0..height-1], grid V.! y V.! x == Asteroid]
+asteroidLocations grid = [ (x, y)
+                         | x <- [0..width-1]
+                         , y <- [0..height-1]
+                         , grid V.! y V.! x == Asteroid ]
   where
     width = V.length $ grid V.! 0
     height = V.length grid
