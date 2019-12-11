@@ -19,6 +19,8 @@ import Data.Time
 import Data.Ord
 import Control.Monad.Fix
 import qualified Data.Vector as V
+import qualified Data.StrictVector as SV
+import Control.Monad
 
 -- Read signed ints from file.
 freqsToNums :: IO [Int]
@@ -469,8 +471,8 @@ day8 = do
      print $ sumMeta tree
      print $ metaValue tree
 
-data Game = Game { marbles :: V.Vector Int
-                 , scores :: V.Vector Int
+data Game = Game { marbles :: SV.Vector Int
+                 , scores :: SV.Vector Int
                  , currentMarble :: Int
                  , nextCount :: Int
                  , nextPlayer :: Int
@@ -479,59 +481,64 @@ data Game = Game { marbles :: V.Vector Int
 
 -- Creates a new game with the initial marble placed.
 newGame :: Int -> Game
-newGame numPlayers = Game { marbles = V.fromList [0]
-                          , scores = V.replicate numPlayers 0
+newGame numPlayers = Game { marbles = SV.fromList [0]
+                          , scores = SV.replicate numPlayers 0
                           , currentMarble = 0
                           , nextCount = 1
                           , nextPlayer = 0
                           , numPlayers = numPlayers
                           }
 
+insertV :: Int -> a -> SV.Vector a -> SV.Vector a
+insertV i x xs = SV.concat [before, pure x, after]
+  where
+    (before, after) = SV.splitAt i xs
+
+removeV :: Int -> SV.Vector a -> SV.Vector a
+removeV i xs = SV.concat [before, SV.tail after]
+  where
+    (before, after) = SV.splitAt i xs
+
 -- Run a single turn and return what the last marble was worth.
 runTurn :: Game -> (Game, Int)
-runTurn game = if (nextCount game `mod` 23) == 0 then run23Turn game else runRegularTurn game
+runTurn game = if (nextCount game `mod` 23) == 0
+                  then run23Turn game
+                  else runRegularTurn game
 
 run23Turn :: Game -> (Game, Int)
-run23Turn Game{..} = ( Game { marbles = marbles'
-                            , scores = scores V.// [(nextPlayer, (scores V.! nextPlayer) + score)]
-                            , currentMarble = (removeIndex + 1) `mod` length marbles'
-                            , nextCount = nextCount + 1
-                            , nextPlayer = (nextPlayer + 1) `mod` numPlayers
-                            , numPlayers = numPlayers
-                            }
-                     , score )
+run23Turn Game{..} =
+  ( Game { marbles = marbles'
+         , scores = scores SV.// [(nextPlayer, (scores SV.! nextPlayer) + score)]
+         , currentMarble = (removeIndex + 2) `mod` length marbles'
+         , nextCount = nextCount + 1
+         , nextPlayer = (nextPlayer + 1) `mod` numPlayers
+         , numPlayers = numPlayers
+         }
+  , score )
   where
     removeIndex = (currentMarble - 9 + length marbles) `mod` length marbles
-    score = nextCount + marbles V.! removeIndex
+    score = nextCount + marbles SV.! removeIndex
     marbles' = removeV removeIndex marbles
 
-insertV :: Int -> a -> V.Vector a -> V.Vector a
-insertV i x xs = V.concat [before, pure x, after]
-  where
-    (before, after) = V.splitAt i xs
-
-removeV :: Int -> V.Vector a -> V.Vector a
-removeV i xs = V.concat [before, V.tail after]
-  where
-    (before, after) = V.splitAt i xs
-
 runRegularTurn :: Game -> (Game, Int)
-runRegularTurn Game{..} = ( Game { marbles = marbles'
-                                 , scores = scores
-                                 , currentMarble = (currentMarble + 2) `mod` length marbles'
-                                 , nextCount = nextCount + 1
-                                 , nextPlayer = (nextPlayer + 1) `mod` numPlayers
-                                 , numPlayers = numPlayers
-                                 }
-                          , 0 )
+runRegularTurn Game{..} =
+  ( Game { marbles = marbles'
+         , scores = scores
+         , currentMarble = (currentMarble + 2) `mod` length marbles'
+         , nextCount = nextCount + 1
+         , nextPlayer = (nextPlayer + 1) `mod` numPlayers
+         , numPlayers = numPlayers
+         }
+  , 0 )
   where
     marbles' = insertV currentMarble nextCount marbles
 
 -- Runs the game until the last marble score matches the target.
 runTurnUntilPoints :: Int -> Game -> IO Game
 runTurnUntilPoints pointsTarget game = do
-  --print game
-  --getLine
+  --print game >> getLine
+  --if points > 0 then (print points >> getLine) else return mempty
+  when (nextCount game `mod` 10000 == 0) (print $ scores game)
   if nextCount game == (pointsTarget + 1) then do
     --print game
     return game
@@ -541,6 +548,8 @@ runTurnUntilPoints pointsTarget game = do
 
 day9 :: IO Int
 day9 = do
-  game <- runTurnUntilPoints 72058 (newGame 426)
+  --game <- runTurnUntilPoints 72058 (newGame 426)
+  game <- runTurnUntilPoints 7205800 (newGame 426)
   --game <- runTurnUntilPoints 1618 (newGame 10)
+  --game <- runTurnUntilPoints 115 (newGame 9)
   return $ maximum . scores $ game
