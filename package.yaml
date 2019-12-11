@@ -32,7 +32,6 @@ dependencies:
 - array
 - lens
 - mtl
-- strict-data
 
 library:
   source-dirs: src
