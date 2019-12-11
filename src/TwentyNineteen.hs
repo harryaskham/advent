@@ -21,6 +21,7 @@ import Data.Ord
 import Control.Lens
 import qualified Data.Vector.Split as VS
 import Data.Ratio
+import Data.Foldable
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -274,14 +275,14 @@ stepProgram machine =
       putStrLn "Terminating"
       return machine
     _ -> do
-      --{-
+      {-
       putStrLn $ "Counter: " ++ show (machine ^. counter)
       putStrLn $ "RelBase: " ++ show (machine ^. relBase)
       putStrLn $ "Op/Params/Modes:" ++ show opcode ++ show params ++ show modes
       putStrLn $ "In/Out:" ++ show (machine ^. inputs) ++ show (machine ^. outputs)
       print (machine ^. program)
       getLine
-      ---}
+      -}
       return $ runInstruction opcode modes params machine
   where
     (opcode, modes) = getCurrentOp machine
@@ -580,3 +581,69 @@ day10 = do
       orderedExplosions = explodeUntil baseLoc 200 grid
       (finalX, finalY) = last orderedExplosions
   print $ (100 * finalX) + finalY
+
+data Direction = Up'
+               | Down'
+               | Left'
+               | Right' deriving (Show)
+type Position = (Int, Int)
+-- A robot has a direction, its brain, its current position, and its set of whites, its set of visited
+data Robot = Robot Direction Machine Position (S.Set Position) (S.Set Position) deriving (Show)
+
+-- Proceed until we either have N outputs, or the machine terminates.
+stepUntilNOutputs :: Int -> Machine -> IO Machine
+stepUntilNOutputs n machine =
+  if isTerminated machine || length (machine ^. outputs) == n then
+    return machine else
+    stepUntilNOutputs n =<< stepProgram machine
+
+stepRobot :: Robot -> IO Robot
+stepRobot robot@(Robot direction machine position@(x,y) whites seen) = do
+  let isWhite = position `S.member` whites
+      currentMachine = machine & inputs %~ if isWhite then (1:) else (0:)
+  nextMachine <- stepUntilNOutputs 2 currentMachine
+  let 
+      [colorI, rotI] = nextMachine ^. outputs
+      nextWhites = case colorI of
+                     0 -> S.delete position whites
+                     1 -> S.insert position whites
+      nextSeen = S.insert position seen
+      nextDirection = case rotI of
+                        0 -> case direction of
+                               Up' -> Left'
+                               Left' -> Down'
+                               Down' -> Right'
+                               Right' -> Up'
+                        1 -> case direction of
+                               Up' -> Right'
+                               Right' -> Down'
+                               Down' -> Left'
+                               Left' -> Up'
+      nextPosition = case nextDirection of
+                       Up' -> (x,y-1)
+                       Down' -> (x,y+1)
+                       Left' -> (x-1,y)
+                       Right' -> (x+1,y)
+  if isTerminated nextMachine then
+    return (Robot direction nextMachine position whites seen) else
+    return $ Robot nextDirection (nextMachine & outputs .~ []) nextPosition nextWhites nextSeen
+
+stepRobotForever :: Robot -> IO Robot
+stepRobotForever robot@(Robot _ machine _ _ _) =
+  if isTerminated machine then
+    return robot else
+    stepRobotForever =<< stepRobot robot
+
+day11_1 :: IO ()
+day11_1 = do
+  program <- readProgram "input/2019/11.txt"
+  let robot = Robot Up' (Machine 0 [] [] program 0) (0,0) S.empty S.empty
+  (Robot _ _ _ _ seen) <- stepRobotForever robot
+  print $ length seen
+
+day11_2 :: IO ()
+day11_2 = do
+  program <- readProgram "input/2019/11.txt"
+  let robot = Robot Up' (Machine 0 [] [] program 0) (0,0) (S.singleton (0, 0)) S.empty
+  (Robot _ _ _ whites _) <- stepRobotForever robot
+  sequenceA_ $ print <$> [ [ if (x, y) `S.member` whites then 'X' else ' ' | x <- [0..40]] | y <- [0..5] ]
