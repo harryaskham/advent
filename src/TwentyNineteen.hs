@@ -159,8 +159,19 @@ day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x
   where
     input = [265275..781584]
 
-data Opcode = Add | Mul | Input | Output | JumpIfTrue | JumpIfFalse | LessThan | Equals | AdjustBase | Terminate deriving (Show, Eq)
-data Mode = Positional | Immediate | Relative deriving (Show, Eq)
+data Opcode = Add
+            | Mul
+            | Input 
+            | Output 
+            | JumpIfTrue 
+            | JumpIfFalse 
+            | LessThan 
+            | Equals 
+            | AdjustBase 
+            | Terminate deriving (Show, Eq)
+data Mode = Positional
+          | Immediate
+          | Relative deriving (Show, Eq)
 type Param = Integer
 type Program = M.Map Integer Integer
 type Counter = Integer
@@ -228,8 +239,7 @@ runInstruction opcode modes params machine =
                                Positional -> unsafeMemAccess $ M.lookup param (machine ^. program)
                                Relative -> unsafeMemAccess $ M.lookup (param + (machine ^. relBase)) (machine ^. program) 
     paramVals = paramVal <$> zip params modes
-    -- TODO: This feels like a horrible hack, why should relative mode work any differently?
-    writebackLocation = if last modes == Relative then last params + (machine ^. relBase) else last params  -- Always use the exact writeback location
+    writebackLocation = if last modes == Relative then last params + (machine ^. relBase) else last params
 
 zeroPadTo :: Int -> String -> String
 zeroPadTo l x = replicate (l - length x) '0' ++ x
