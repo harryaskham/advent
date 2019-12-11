@@ -656,4 +656,6 @@ day11_2 = do
   program <- readProgram "input/2019/11.txt"
   let robot = Robot Up' (Machine 0 [] [] program 0) (0,0) (S.singleton (0, 0)) S.empty
   (Robot _ _ _ whites _) <- stepRobotForever robot
-  sequenceA_ $ print <$> [ [ if (x, y) `S.member` whites then 'X' else ' ' | x <- [0..40]] | y <- [0..5] ]
+  sequenceA_ $ print <$> [ [ if (x, y) `S.member` whites then 'X' else ' '
+                           | x <- [0..(maximum $ S.map fst whites)] ]
+                         | y <- [0..(maximum $ S.map snd whites)] ]
