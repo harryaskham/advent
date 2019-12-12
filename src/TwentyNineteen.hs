@@ -303,14 +303,9 @@ stepProgram machine =
       <*> [machine ^. program]
 
 runProgram :: Machine -> IO Machine
-runProgram machine = 
-  case opcode of
-    Terminate -> pure machine
-    _ -> do
-      nextMachine <- stepProgram machine
-      runProgram nextMachine
-  where
-    (opcode, _) = getCurrentOp machine
+runProgram machine = if isTerminated machine
+                        then pure machine
+                        else runProgram =<< stepProgram machine
 
 day5 :: IO ()
 day5 = do
