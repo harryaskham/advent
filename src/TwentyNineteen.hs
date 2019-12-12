@@ -22,6 +22,7 @@ import Control.Lens
 import qualified Data.Vector.Split as VS
 import Data.Ratio
 import Data.Foldable
+import Text.ParserCombinators.ReadP
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -659,3 +660,109 @@ day11_2 = do
   sequenceA_ $ print <$> [ [ if (x, y) `S.member` whites then 'X' else ' '
                            | x <- [0..(maximum $ S.map fst whites)] ]
                          | y <- [0..(maximum $ S.map snd whites)] ]
+
+data Body = Body { _bodyId :: Int
+                 , _position :: (Int, Int, Int)
+                 , _velocity :: (Int, Int, Int)
+                 } deriving (Eq, Show)
+
+makeLenses ''Body
+
+bodies = [ Body 0 (-17, 9, -5) (0, 0, 0)
+         , Body 1 (-1, 7, 13) (0, 0, 0)
+         , Body 2 (-19, 12, 5) (0, 0, 0)
+         , Body 3 (-6, -6, -4) (0, 0, 0)
+         ]
+bodiesMap = M.fromList $ zip (view bodyId <$> bodies) bodies
+
+testBodies = [ Body 0 (-1, -0, 2) (0, 0, 0)
+             , Body 1 (2, -10, -7) (0, 0, 0)
+             , Body 2 (4, -8, 8) (0, 0, 0)
+             , Body 3 (3, 5, -1) (0, 0, 0)
+             ]
+testBodiesMap = M.fromList $ zip (view bodyId <$> testBodies) testBodies
+
+unsafeJ (Just a) = a
+
+pairGravityX :: (Body, Body) -> (Body, Body)
+pairGravityX (b1, b2)
+  | b1^.position._1 < b2^.position._1 =
+    (b1&velocity._1%~(+1), b2&velocity._1%~subtract 1)
+  | b1^.position._1 > b2^.position._1 =
+    (b1&velocity._1%~subtract 1, b2&velocity._1%~(+1))
+  | otherwise = (b1, b2)
+
+pairGravityY :: (Body, Body) -> (Body, Body)
+pairGravityY (b1, b2)
+  | b1^.position._2 < b2^.position._2 =
+    (b1&velocity._2%~(+1), b2&velocity._2%~subtract 1)
+  | b1^.position._2 > b2^.position._2 =
+    (b1&velocity._2%~subtract 1, b2&velocity._2%~(+1))
+  | otherwise = (b1, b2)
+
+pairGravityZ :: (Body, Body) -> (Body, Body)
+pairGravityZ (b1, b2)
+  | b1^.position._3 < b2^.position._3 =
+    (b1&velocity._3%~(+1), b2&velocity._3%~subtract 1)
+  | b1^.position._3 > b2^.position._3 =
+    (b1&velocity._3%~subtract 1, b2&velocity._3%~(+1))
+  | otherwise = (b1, b2)
+
+applyGravity :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> IO (M.Map Int Body)
+applyGravity axisFns bs = do
+  --print allIdPairs
+  return overAxes
+  where
+    ids = fst <$> M.toList bs
+    allIdPairs = [(a, b) | a <- ids, b <- ids, a < b]
+    foldFn pairF acc (id1, id2) = let b1 = unsafeJ $ M.lookup id1 acc
+                                      b2 = unsafeJ $ M.lookup id2 acc
+                                      (b1', b2') = pairF (b1, b2)
+                                   in M.insert id1 b1' . M.insert id2 b2' $ acc
+    overAxes = foldl' (\acc axisFn -> foldl' (foldFn axisFn) acc allIdPairs) bs axisFns
+
+stepBody :: Body -> Body
+stepBody body = body & position._1 %~ (+ body^.velocity._1)
+                     & position._2 %~ (+ body^.velocity._2)
+                     & position._3 %~ (+ body^.velocity._3)
+
+stepSim :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> IO (M.Map Int Body)
+stepSim axisFns bs = do
+  withGrav <- applyGravity axisFns bs
+  return $ stepBody <$> withGrav
+
+kinetic :: Body -> Int
+kinetic body =
+  abs (body^.velocity._1) +
+  abs (body^.velocity._2) +
+  abs (body^.velocity._3)
+
+potential :: Body -> Int
+potential body =
+  abs (body^.position._1) +
+  abs (body^.position._2) +
+  abs (body^.position._3)
+
+energy :: Body -> Int
+energy = (*) <$> kinetic <*> potential
+
+stepN :: Int -> M.Map Int Body -> IO (M.Map Int Body)
+stepN 0 bs = return bs
+stepN n bs = stepN (n-1) =<< stepSim [pairGravityX, pairGravityY, pairGravityZ] bs
+
+stepUntilReturn :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> IO Int
+stepUntilReturn axisFns orig = go 0 orig
+  where
+    go :: Int -> M.Map Int Body -> IO Int
+    go n bs = do
+      when (n `mod` 1000 == 0) $ print n
+      if n > 0 && orig == bs then return n else go (n+1) =<< stepSim axisFns bs
+
+day12 :: IO ()
+day12 = do
+  bs <- stepN 1000 bodiesMap
+  print $ sum $ energy <$> (snd <$> M.toList bs)
+  print . foldl1 lcm =<< sequenceA [ stepUntilReturn [pairGravityX] bodiesMap
+                                   , stepUntilReturn [pairGravityY] bodiesMap
+                                   , stepUntilReturn [pairGravityZ] bodiesMap
+                                   ]
