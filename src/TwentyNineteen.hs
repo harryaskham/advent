@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE RankNTypes #-}
 
 module TwentyNineteen where
 
@@ -11,7 +12,6 @@ import Data.List.Split
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Function ((&))
-import Text.ParserCombinators.ReadP
 import Control.Applicative
 import qualified Data.Vector as V
 import qualified Data.Tree as T
@@ -684,29 +684,22 @@ testBodiesMap = M.fromList $ zip (view bodyId <$> testBodies) testBodies
 
 unsafeJ (Just a) = a
 
-pairGravityX :: (Body, Body) -> (Body, Body)
-pairGravityX (b1, b2)
-  | b1^.position._1 < b2^.position._1 =
-    (b1&velocity._1%~(+1), b2&velocity._1%~subtract 1)
-  | b1^.position._1 > b2^.position._1 =
-    (b1&velocity._1%~subtract 1, b2&velocity._1%~(+1))
+pairGravity :: Lens' (Int, Int, Int) Int -> (Body, Body) -> (Body, Body)
+pairGravity _n (b1, b2)
+  | b1^.position._n < b2^.position._n =
+    (b1&velocity._n%~(+1), b2&velocity._n%~subtract 1)
+  | b1^.position._n > b2^.position._n =
+    (b1&velocity._n%~subtract 1, b2&velocity._n%~(+1))
   | otherwise = (b1, b2)
+
+pairGravityX :: (Body, Body) -> (Body, Body)
+pairGravityX = pairGravity _1
 
 pairGravityY :: (Body, Body) -> (Body, Body)
-pairGravityY (b1, b2)
-  | b1^.position._2 < b2^.position._2 =
-    (b1&velocity._2%~(+1), b2&velocity._2%~subtract 1)
-  | b1^.position._2 > b2^.position._2 =
-    (b1&velocity._2%~subtract 1, b2&velocity._2%~(+1))
-  | otherwise = (b1, b2)
+pairGravityY = pairGravity _2
 
 pairGravityZ :: (Body, Body) -> (Body, Body)
-pairGravityZ (b1, b2)
-  | b1^.position._3 < b2^.position._3 =
-    (b1&velocity._3%~(+1), b2&velocity._3%~subtract 1)
-  | b1^.position._3 > b2^.position._3 =
-    (b1&velocity._3%~subtract 1, b2&velocity._3%~(+1))
-  | otherwise = (b1, b2)
+pairGravityZ = pairGravity _3
 
 applyGravity :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> M.Map Int Body
 applyGravity axisFns bs = overAxes
