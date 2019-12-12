@@ -708,10 +708,8 @@ pairGravityZ (b1, b2)
     (b1&velocity._3%~subtract 1, b2&velocity._3%~(+1))
   | otherwise = (b1, b2)
 
-applyGravity :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> IO (M.Map Int Body)
-applyGravity axisFns bs = do
-  --print allIdPairs
-  return overAxes
+applyGravity :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> M.Map Int Body
+applyGravity axisFns bs = overAxes
   where
     ids = fst <$> M.toList bs
     allIdPairs = [(a, b) | a <- ids, b <- ids, a < b]
@@ -726,10 +724,8 @@ stepBody body = body & position._1 %~ (+ body^.velocity._1)
                      & position._2 %~ (+ body^.velocity._2)
                      & position._3 %~ (+ body^.velocity._3)
 
-stepSim :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> IO (M.Map Int Body)
-stepSim axisFns bs = do
-  withGrav <- applyGravity axisFns bs
-  return $ stepBody <$> withGrav
+stepSim :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> M.Map Int Body
+stepSim axisFns bs = stepBody <$> applyGravity axisFns bs
 
 kinetic :: Body -> Int
 kinetic body =
@@ -746,23 +742,20 @@ potential body =
 energy :: Body -> Int
 energy = (*) <$> kinetic <*> potential
 
-stepN :: Int -> M.Map Int Body -> IO (M.Map Int Body)
-stepN 0 bs = return bs
-stepN n bs = stepN (n-1) =<< stepSim [pairGravityX, pairGravityY, pairGravityZ] bs
+stepN :: Int -> M.Map Int Body -> M.Map Int Body
+stepN 0 bs = bs
+stepN n bs = stepN (n-1) $ stepSim [pairGravityX, pairGravityY, pairGravityZ] bs
 
-stepUntilReturn :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> IO Int
+stepUntilReturn :: [(Body, Body) -> (Body, Body)] -> M.Map Int Body -> Int
 stepUntilReturn axisFns orig = go 0 orig
   where
-    go :: Int -> M.Map Int Body -> IO Int
-    go n bs = do
-      when (n `mod` 1000 == 0) $ print n
-      if n > 0 && orig == bs then return n else go (n+1) =<< stepSim axisFns bs
+    go :: Int -> M.Map Int Body -> Int
+    go n bs = if n > 0 && orig == bs then n else go (n+1) $ stepSim axisFns bs
 
 day12 :: IO ()
 day12 = do
-  bs <- stepN 1000 bodiesMap
-  print $ sum $ energy <$> (snd <$> M.toList bs)
-  print . foldl1 lcm =<< sequenceA [ stepUntilReturn [pairGravityX] bodiesMap
-                                   , stepUntilReturn [pairGravityY] bodiesMap
-                                   , stepUntilReturn [pairGravityZ] bodiesMap
-                                   ]
+  print $ sum $ energy <$> (snd <$> M.toList (stepN 1000 bodiesMap))
+  print $ foldl1 lcm [ stepUntilReturn [pairGravityX] bodiesMap
+                     , stepUntilReturn [pairGravityY] bodiesMap
+                     , stepUntilReturn [pairGravityZ] bodiesMap
+                     ]
