@@ -32,6 +32,8 @@ dependencies:
 - array
 - lens
 - mtl
+- matrix
+- hidden-char
 
 library:
   source-dirs: src

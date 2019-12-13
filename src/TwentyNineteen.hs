@@ -2,6 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module TwentyNineteen where
 
@@ -24,6 +25,9 @@ import Data.Ratio
 import Data.Foldable
 import Text.ParserCombinators.ReadP
 import Debug.Trace
+import Data.Matrix as MX
+import System.IO
+import System.IO.HiddenChar
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -600,6 +604,13 @@ stepUntilNOutputs n machine =
     return machine else
     stepUntilNOutputs n =<< stepProgram machine
 
+-- Proceed until we either have N inputs, or the machine terminates.
+stepUntilNInputs :: Int -> Machine -> IO Machine
+stepUntilNInputs n machine =
+  if isTerminated machine || length (machine ^. inputs) == n then
+    return machine else
+    stepUntilNInputs n =<< stepProgram machine
+
 stepRobot :: Robot -> IO Robot
 stepRobot robot@(Robot direction machine position@(x,y) whites seen) = do
   let isWhite = position `S.member` whites
@@ -746,7 +757,8 @@ day12 = do
                      ]
 
 data Entity = EEmpty | Wall | Block | Paddle | Ball deriving (Eq)
-newtype Display = Display (V.Vector (V.Vector Entity))
+type Score = Int
+data Display = Display (MX.Matrix Entity) Score
 data Arcade = Arcade Machine Display
 
 instance Show Entity where
@@ -757,7 +769,7 @@ instance Show Entity where
   show Ball = "o"
 
 instance Show Display where
-  show (Display rows) = intercalate "\n" $ V.toList (show <$> rows)
+  show (Display rows score) = "Score: " ++ show score ++ "\n" ++ MX.prettyMatrix rows
 
 fromId :: Int -> Entity
 fromId 0 = EEmpty
@@ -779,10 +791,12 @@ stepArcade arcade@(Arcade machine display) = do
         in return $ Arcade (machine' & outputs .~ []) display'
 
 updateDisplay :: [Int] -> Display -> Display
-updateDisplay [x, y, eId] (Display d) = Display $ d V.// [(y, d V.! y V.// [(x, fromId eId)])]
+updateDisplay [x, y, eId] (Display d score)
+  | x == (-1) && y == 0 = Display d eId
+  | otherwise = Display (MX.setElem (fromId eId) (y+1,x+1) d) score
 
 mkDisplay :: Int -> Int -> Display
-mkDisplay x y = Display $ V.replicate y (V.replicate x EEmpty)
+mkDisplay x y = Display (MX.matrix y x (const EEmpty)) 0
 
 -- |Clear the terminal screen.
 clear :: IO ()
@@ -791,16 +805,13 @@ clear = putStr "\ESC[2J"
 completeArcade :: Arcade -> IO Arcade
 completeArcade arcade = do
   arcade'@(Arcade m d) <- stepArcade arcade
-  print arcade
-  print $ blockCount arcade
-  --getLine
-  clear
   if isTerminated m
      then return arcade'
      else completeArcade arcade'
 
 blockCount :: Arcade -> Int
-blockCount (Arcade _ (Display d)) = length [d V.! y V.! x | y <- [0..V.length d - 1], x <- [0..V.length (d V.! 0) - 1], d V.! y V.! x == Block]
+blockCount (Arcade _ (Display d _)) =
+  length [d MX.! (y,x) | y <- [1..MX.nrows d], x <- [1..MX.ncols d], d MX.! (y,x) == Block]
 
 day13_1 :: IO ()
 day13_1 = do
@@ -808,9 +819,102 @@ day13_1 = do
   let arcade = Arcade (Machine 0 [] [] program 0) (mkDisplay 50 30)
   print =<< blockCount <$> completeArcade arcade
 
+newtype Agent = Agent Arcade
+
+data BallDir = BRight | BLeft deriving (Show)
+
+stepArcadeUntilBallChanges :: Arcade -> IO Arcade
+stepArcadeUntilBallChanges arcade@(Arcade m d) = do
+  arcade'@(Arcade _ d') <- stepArcade arcade
+  print arcade
+  if isJust (ballX d) && isJust (ballX d') && (ballX d /= ballX d')
+     then return arcade'
+     else stepArcadeUntilBallChanges arcade'
+
+runAgent :: Agent -> IO Agent
+runAgent agent@(Agent arcade@(Arcade m d))
+  -- If the game is over, quit out.
+  | isTerminated m = return agent
+  | isLost d = return agent
+  -- If we didn't draw the paddle yet, proceed until we did with a zero input
+  | isNothing (paddleX d)  || isNothing (ballX d) = do
+      nextArcade <- stepArcade (Arcade (m & inputs .~ [0]) d)
+      runAgent $ Agent nextArcade
+  -- If there is input to consume, first consume it.
+  -- This is the only point where the game proceeds
+--  | not . null $ m ^. inputs = do
+      --print arcade
+      --nextArcade <- stepArcade arcade
+      --runAgent $ Agent nextArcade
+  -- Otherwise simulate forwards and try to predict where the ball will land.
+  | otherwise = do
+      print "Current"
+      print arcade
+      nextArcade@(Arcade _ nextD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat 0) d
+      print "Stepped"
+      print nextArcade
+      let ballDir = if ballX nextD > ballX d then BRight else BLeft
+          isBallDown = ballHeight nextD > ballHeight d
+          -- If the ball is coming down, anticipate its spot, otherwise just track it
+          strikeX = if isBallDown
+                       then case ballDir of
+                         BRight -> (+) <$> ballX d <*> ballHeight d
+                         BLeft -> (-) <$> ballX d <*> ballHeight d
+                       else ballX d
+      putStrLn $ "Ball direction: " ++ show ballDir
+      putStrLn $ "Ball descending? " ++ show isBallDown
+      putStrLn $ "Predicted strike X: " ++ show strikeX
+      getLine
+      let newInputs = if | paddleX d > strikeX -> [-1]
+                         | paddleX d < strikeX -> [1]
+                         | paddleX d == strikeX -> [0]
+      do
+        -- potentially here, step until need input?
+        nextArcade' <- stepArcade (Arcade (m & inputs .~ newInputs) d)
+        runAgent $ Agent nextArcade'
+
+runHuman :: Agent -> IO Agent
+runHuman agent@(Agent arcade@(Arcade m d))
+  | isTerminated m = return agent
+  | isLost d = return agent
+  | not . null $ m ^. inputs = do
+      nextArcade <- stepArcade arcade
+      runHuman $ Agent nextArcade
+  | isNothing (paddleX d) = runHuman $ Agent (Arcade (m & inputs .~ [0]) d)
+  | otherwise = do
+      print arcade
+      hSetBuffering stdin NoBuffering
+      c <- getHiddenChar
+      case c of
+        'j' -> runHuman $ Agent (Arcade (m & inputs .~ [-1]) d)
+        'k' -> runHuman $ Agent (Arcade (m & inputs .~ [0]) d)
+        'l' -> runHuman $ Agent (Arcade (m & inputs .~ [1]) d)
+
+findMx :: (Eq a) => a -> Matrix a -> Maybe (Int, Int)
+findMx a m = if null matches then Nothing else Just (head matches)
+  where
+    matches = [(y,x) | y <- [1..MX.nrows m], x <- [1..MX.ncols m], m MX.! (y,x) == a]
+
+ballX :: Display -> Maybe Int
+ballX (Display d _) = snd <$> findMx Ball d
+
+ballHeight :: Display -> Maybe Int
+ballHeight (Display d _) = (-) <$> (fst <$> findMx Paddle d) <*> (fst <$> findMx Ball d)
+
+paddleX :: Display -> Maybe Int
+paddleX (Display d _) = snd <$> findMx Paddle d
+
+isLost :: Display -> Bool
+isLost (Display d _) = isJust ballY && isJust paddleY && paddleY < ballY
+  where
+    ballY = fst <$> findMx Ball d
+    paddleY = fst <$> findMx Paddle d
+
 day13_2 :: IO ()
 day13_2 = do
   program <- readProgram "input/2019/13.txt"
   let program' = M.insert 0 2 program 
-      arcade = Arcade (Machine 0 [] [] program' 0) (mkDisplay 50 50)
-  print =<< blockCount <$> completeArcade arcade
+      agent@(Agent arcade) = Agent $ Arcade (Machine 0 [] [] program' 0) (mkDisplay 44 21)
+  (Agent (Arcade _ (Display _ score))) <- runAgent agent
+  --(Agent (Arcade _ (Display _ score))) <- runHuman agent
+  print score
