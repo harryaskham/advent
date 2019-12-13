@@ -790,6 +790,17 @@ stepArcade arcade@(Arcade machine display) = do
        let display' = updateDisplay (fromIntegral <$> machine' ^. outputs) display
         in return $ Arcade (machine' & outputs .~ []) display'
 
+stepArcadeI :: Arcade -> IO Arcade
+stepArcadeI arcade@(Arcade machine display) = do
+  machine' <- stepUntilNInputs 0 machine
+  if isTerminated machine'
+     then return arcade
+     else
+       let display' = if length (machine ^. outputs) == 3
+                         then updateDisplay (fromIntegral <$> machine' ^. outputs) display
+                         else display
+        in return $ Arcade (if length (machine ^. outputs) ==3 then machine' & outputs .~ [] else machine) display'
+
 updateDisplay :: [Int] -> Display -> Display
 updateDisplay [x, y, eId] (Display d score)
   | x == (-1) && y == 0 = Display d eId
@@ -825,10 +836,13 @@ data BallDir = BRight | BLeft deriving (Show)
 
 stepArcadeUntilBallChanges :: Arcade -> IO Arcade
 stepArcadeUntilBallChanges arcade@(Arcade m d) = do
-  arcade'@(Arcade _ d') <- stepArcade arcade
-  print arcade
-  if isJust (ballX d) && isJust (ballX d') && (ballX d /= ballX d')
-     then return arcade'
+  --print "Stepping until ball changes"
+  --print $ "Current x=" ++ (show $ ballX d)
+  arcade'@(Arcade _ d') <- stepArcade (Arcade (m & inputs .~ [0]) d)
+  --print $ "Next x=" ++ (show $ ballX d')
+  if ballX d /= ballX d'
+     -- TODO : below could be source of slowness
+     then stepArcade arcade'  -- Need to step twice to get over the frame with ball deleted
      else stepArcadeUntilBallChanges arcade'
 
 runAgent :: Agent -> IO Agent
@@ -842,36 +856,42 @@ runAgent agent@(Agent arcade@(Arcade m d))
       runAgent $ Agent nextArcade
   -- If there is input to consume, first consume it.
   -- This is the only point where the game proceeds
---  | not . null $ m ^. inputs = do
+  | not . null $ m ^. inputs = do
       --print arcade
-      --nextArcade <- stepArcade arcade
-      --runAgent $ Agent nextArcade
+      print $ "Input received: " ++ show (m ^. inputs)
+      print arcade
+      getLine
+      nextArcade <- stepArcade arcade
+      runAgent $ Agent nextArcade
   -- Otherwise simulate forwards and try to predict where the ball will land.
   | otherwise = do
-      print "Current"
+      print "Current:"
       print arcade
       nextArcade@(Arcade _ nextD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat 0) d
-      print "Stepped"
+      print "Stepped:"
       print nextArcade
       let ballDir = if ballX nextD > ballX d then BRight else BLeft
-          isBallDown = ballHeight nextD > ballHeight d
+          isBallDown = ballHeight nextD < ballHeight d
           -- If the ball is coming down, anticipate its spot, otherwise just track it
           strikeX = if isBallDown
                        then case ballDir of
                          BRight -> (+) <$> ballX d <*> ballHeight d
                          BLeft -> (-) <$> ballX d <*> ballHeight d
                        else ballX d
+      putStrLn $ "Paddle X:" ++ show (paddleX d)
+      putStrLn $ "Prev X: " ++ show (ballX d)
+      putStrLn $ "Next X: " ++ show (ballX nextD)
+      putStrLn $ "Prev Height: " ++ show (ballHeight d)
+      putStrLn $ "Next Height: " ++ show (ballHeight nextD)
       putStrLn $ "Ball direction: " ++ show ballDir
       putStrLn $ "Ball descending? " ++ show isBallDown
       putStrLn $ "Predicted strike X: " ++ show strikeX
-      getLine
       let newInputs = if | paddleX d > strikeX -> [-1]
                          | paddleX d < strikeX -> [1]
                          | paddleX d == strikeX -> [0]
-      do
-        -- potentially here, step until need input?
-        nextArcade' <- stepArcade (Arcade (m & inputs .~ newInputs) d)
-        runAgent $ Agent nextArcade'
+      putStrLn $ "Inputting: " ++ show newInputs
+      getLine
+      runAgent $ Agent $ Arcade (m & inputs .~ newInputs) d
 
 runHuman :: Agent -> IO Agent
 runHuman agent@(Agent arcade@(Arcade m d))
