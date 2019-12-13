@@ -28,6 +28,7 @@ import Debug.Trace
 import Data.Matrix as MX
 import System.IO
 import System.IO.HiddenChar
+import Control.Concurrent
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -799,7 +800,7 @@ stepArcadeI arcade@(Arcade machine display) = do
        let display' = if length (machine ^. outputs) == 3
                          then updateDisplay (fromIntegral <$> machine' ^. outputs) display
                          else display
-        in return $ Arcade (if length (machine ^. outputs) ==3 then machine' & outputs .~ [] else machine) display'
+        in return $ Arcade (if length (machine ^. outputs) == 3 then machine' & outputs .~ [] else machine') display'
 
 updateDisplay :: [Int] -> Display -> Display
 updateDisplay [x, y, eId] (Display d score)
@@ -832,66 +833,111 @@ day13_1 = do
 
 newtype Agent = Agent Arcade
 
-data BallDir = BRight | BLeft deriving (Show)
+data BallDir = BRight | BLeft deriving (Show, Eq)
+
+dbgBrk = True
+getLine_ = do
+  getLine
+  return ()
+
+nAhead n f = foldr (>=>) return $ replicate n f
 
 stepArcadeUntilBallChanges :: Arcade -> IO Arcade
 stepArcadeUntilBallChanges arcade@(Arcade m d) = do
-  --print "Stepping until ball changes"
-  --print $ "Current x=" ++ (show $ ballX d)
-  arcade'@(Arcade _ d') <- stepArcade (Arcade (m & inputs .~ [0]) d)
-  --print $ "Next x=" ++ (show $ ballX d')
+  --when dbgBrk $ print "Stepping until ball changes"
+  --when dbgBrk $ print $ "Current x=" ++ (show $ ballX d)
+  arcade'@(Arcade _ d') <- stepArcade (Arcade (m & inputs .~ repeat 0) d)
+  --when dbgBrk $ print $ "Next x=" ++ (show $ ballX d')
   if ballX d /= ballX d'
      -- TODO : below could be source of slowness
      then stepArcade arcade'  -- Need to step twice to get over the frame with ball deleted
      else stepArcadeUntilBallChanges arcade'
+
+-- Step either until we hit floor, or paddle
+-- Must runn at least one iteration
+stepArcadeUntilBallHitsFloor :: Arcade -> IO Arcade
+stepArcadeUntilBallHitsFloor = go 0
+  where 
+    go n arcade@(Arcade m d)
+      | isLost d = return arcade
+      | otherwise = do
+        --when dbgBrk $ print n
+        arcade'@(Arcade _ d') <- stepArcade (Arcade (m & inputs .~ repeat 0) d)
+        if n > 0 
+           && (ballHeight d == Just 0
+           || (ballHeight d == Just 1 && ((abs <$> ((-) <$> ballX d <*> paddleX d)) <= Just 1)))
+           then return arcade
+           else go (n+1) =<< stepArcade arcade'
+
+-- We can predict until next hits paddle versus next hits floor, and if differ, take paddle
 
 runAgent :: Agent -> IO Agent
 runAgent agent@(Agent arcade@(Arcade m d))
   -- If the game is over, quit out.
   | isTerminated m = return agent
   | isLost d = return agent
-  -- If we didn't draw the paddle yet, proceed until we did with a zero input
+  -- If we didn't draw the paddle yet, proceed until we did.
+  -- Should not need any input on these stages.
   | isNothing (paddleX d)  || isNothing (ballX d) = do
-      nextArcade <- stepArcade (Arcade (m & inputs .~ [0]) d)
+      nextArcade <- stepArcade arcade
       runAgent $ Agent nextArcade
   -- If there is input to consume, first consume it.
-  -- This is the only point where the game proceeds
   | not . null $ m ^. inputs = do
+      --when dbgBrk $ print $ "Input received: " ++ show (m ^. inputs)
       --print arcade
-      print $ "Input received: " ++ show (m ^. inputs)
-      print arcade
-      getLine
-      nextArcade <- stepArcade arcade
+      --threadDelay 1000000
+      --clear
+      nextArcade@(Arcade nextM _) <- stepArcadeI arcade
+      --when dbgBrk $ print $ "After consuming input: " ++ show (nextM ^. inputs)
+      --when dbgBrk $ print nextArcade
+      --when dbgBrk getLine_
       runAgent $ Agent nextArcade
   -- Otherwise simulate forwards and try to predict where the ball will land.
   | otherwise = do
-      print "Current:"
+      when dbgBrk $ print "Current:"
       print arcade
-      nextArcade@(Arcade _ nextD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat 0) d
-      print "Stepped:"
-      print nextArcade
+      --threadDelay 1000000
+      --clear
+      -- Simulate where the ball will travel next by passing in zero input.
+      -- HACK: Simulate ahead 2x
+      -- Problem is we pass this along. We need to finish this with a minimally stepped one.
+      nextArcade@(Arcade nextM nextD) <-
+        nAhead 1 stepArcadeUntilBallHitsFloor
+        $ Arcade (m & inputs .~ repeat 0) d
+      when dbgBrk $ print "Stepped:"
+      when dbgBrk $ print nextArcade
       let ballDir = if ballX nextD > ballX d then BRight else BLeft
           isBallDown = ballHeight nextD < ballHeight d
           -- If the ball is coming down, anticipate its spot, otherwise just track it
-          strikeX = if isBallDown
-                       then case ballDir of
-                         BRight -> (+) <$> ballX d <*> ballHeight d
-                         BLeft -> (-) <$> ballX d <*> ballHeight d
-                       else ballX d
-      putStrLn $ "Paddle X:" ++ show (paddleX d)
-      putStrLn $ "Prev X: " ++ show (ballX d)
-      putStrLn $ "Next X: " ++ show (ballX nextD)
-      putStrLn $ "Prev Height: " ++ show (ballHeight d)
-      putStrLn $ "Next Height: " ++ show (ballHeight nextD)
-      putStrLn $ "Ball direction: " ++ show ballDir
-      putStrLn $ "Ball descending? " ++ show isBallDown
-      putStrLn $ "Predicted strike X: " ++ show strikeX
-      let newInputs = if | paddleX d > strikeX -> [-1]
-                         | paddleX d < strikeX -> [1]
-                         | paddleX d == strikeX -> [0]
-      putStrLn $ "Inputting: " ++ show newInputs
-      getLine
-      runAgent $ Agent $ Arcade (m & inputs .~ newInputs) d
+--          strikeX = subtract 1 <$> if isBallDown
+--                       then case ballDir of
+--                         BRight -> (+) <$> ballX d <*> ballHeight d
+--                         BLeft -> (-) <$> ballX d <*> ballHeight d
+--                       else (+1) <$> ballX nextD
+          strikeX = ballX nextD
+      when dbgBrk $ putStrLn $ "Prev X: " ++ show (ballX d)
+      when dbgBrk $ putStrLn $ "Next X: " ++ show (ballX nextD)
+      when dbgBrk $ putStrLn $ "Prev Height: " ++ show (ballHeight d)
+      when dbgBrk $ putStrLn $ "Next Height: " ++ show (ballHeight nextD)
+      when dbgBrk $ putStrLn $ "Ball direction: " ++ show ballDir
+      when dbgBrk $ putStrLn $ "Ball descending? " ++ show isBallDown
+      when dbgBrk $ putStrLn $ "Paddle X:" ++ show (paddleX d)
+      when dbgBrk $ putStrLn $ "Predicted strike X: " ++ show strikeX
+      -- If we are actually under the ball, just follow it.
+      -- If we are in the right place, do nothing.
+      let thresh = 0
+          newInputs = if | paddleX d == strikeX -> [0]
+                         | ((-) <$> paddleX d <*> strikeX) > Just thresh -> [-1]
+                         | ((-) <$> paddleX d <*> strikeX) < Just (negate thresh) -> [1]
+                         | otherwise -> [0]
+      when dbgBrk $ putStrLn $ "Inputting: " ++ show newInputs
+      when dbgBrk getLine_
+      -- Set the new inputs, but don't run anything.
+      -- Will get enacted on the next run of the machine.
+      --runAgent $ Agent $ Arcade (m & inputs .~ newInputs) d
+      --
+      (Arcade oneM oneD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat 0) d
+      runAgent $ Agent $ Arcade (oneM & inputs .~ newInputs) oneD
 
 runHuman :: Agent -> IO Agent
 runHuman agent@(Agent arcade@(Arcade m d))
@@ -902,7 +948,7 @@ runHuman agent@(Agent arcade@(Arcade m d))
       runHuman $ Agent nextArcade
   | isNothing (paddleX d) = runHuman $ Agent (Arcade (m & inputs .~ [0]) d)
   | otherwise = do
-      print arcade
+      when dbgBrk $ print arcade
       hSetBuffering stdin NoBuffering
       c <- getHiddenChar
       case c of
