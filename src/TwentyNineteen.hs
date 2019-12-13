@@ -23,6 +23,7 @@ import qualified Data.Vector.Split as VS
 import Data.Ratio
 import Data.Foldable
 import Text.ParserCombinators.ReadP
+import Debug.Trace
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -280,21 +281,17 @@ getCurrentOp :: Machine -> (Opcode, [Mode])
 getCurrentOp machine = parseOpcode $ unsafeMemAccess $ M.lookup (machine ^. counter) (machine ^. program) 
 
 stepProgram :: Machine -> IO Machine
-stepProgram machine = 
-  case opcode of
-    Terminate -> do
-      putStrLn "Terminating"
-      return machine
-    _ -> do
-      {-
-      putStrLn $ "Counter: " ++ show (machine ^. counter)
-      putStrLn $ "RelBase: " ++ show (machine ^. relBase)
-      putStrLn $ "Op/Params/Modes:" ++ show opcode ++ show params ++ show modes
-      putStrLn $ "In/Out:" ++ show (machine ^. inputs) ++ show (machine ^. outputs)
-      print (machine ^. program)
-      getLine
-      -}
-      return $ runInstruction opcode modes params machine
+stepProgram machine =
+  {-
+  do
+    putStrLn $ "Counter: " ++ show (machine ^. counter)
+    putStrLn $ "RelBase: " ++ show (machine ^. relBase)
+    putStrLn $ "Op/Params/Modes:" ++ show opcode ++ show params ++ show modes
+    putStrLn $ "In/Out:" ++ show (machine ^. inputs) ++ show (machine ^. outputs)
+    print (machine ^. program)
+    getLine
+  -}
+  return $ runInstruction opcode modes params machine
   where
     (opcode, modes) = getCurrentOp machine
     params = catMaybes
