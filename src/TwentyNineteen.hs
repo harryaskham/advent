@@ -744,3 +744,73 @@ day12 = do
                      , stepUntilReturn [pairGravityY] bodiesMap
                      , stepUntilReturn [pairGravityZ] bodiesMap
                      ]
+
+data Entity = EEmpty | Wall | Block | Paddle | Ball deriving (Eq)
+newtype Display = Display (V.Vector (V.Vector Entity))
+data Arcade = Arcade Machine Display
+
+instance Show Entity where
+  show EEmpty = " "
+  show Wall = "|"
+  show Block = "X"
+  show Paddle = "_"
+  show Ball = "o"
+
+instance Show Display where
+  show (Display rows) = intercalate "\n" $ V.toList (show <$> rows)
+
+fromId :: Int -> Entity
+fromId 0 = EEmpty
+fromId 1 = Wall
+fromId 2 = Block
+fromId 3 = Paddle
+fromId 4 = Ball
+
+instance Show Arcade where
+  show (Arcade machine display) = show display
+
+stepArcade :: Arcade -> IO Arcade
+stepArcade arcade@(Arcade machine display) = do
+  machine' <- stepUntilNOutputs 3 machine
+  if isTerminated machine'
+     then return arcade
+     else
+       let display' = updateDisplay (fromIntegral <$> machine' ^. outputs) display
+        in return $ Arcade (machine' & outputs .~ []) display'
+
+updateDisplay :: [Int] -> Display -> Display
+updateDisplay [x, y, eId] (Display d) = Display $ d V.// [(y, d V.! y V.// [(x, fromId eId)])]
+
+mkDisplay :: Int -> Int -> Display
+mkDisplay x y = Display $ V.replicate y (V.replicate x EEmpty)
+
+-- |Clear the terminal screen.
+clear :: IO ()
+clear = putStr "\ESC[2J"
+
+completeArcade :: Arcade -> IO Arcade
+completeArcade arcade = do
+  arcade'@(Arcade m d) <- stepArcade arcade
+  print arcade
+  print $ blockCount arcade
+  --getLine
+  clear
+  if isTerminated m
+     then return arcade'
+     else completeArcade arcade'
+
+blockCount :: Arcade -> Int
+blockCount (Arcade _ (Display d)) = length [d V.! y V.! x | y <- [0..V.length d - 1], x <- [0..V.length (d V.! 0) - 1], d V.! y V.! x == Block]
+
+day13_1 :: IO ()
+day13_1 = do
+  program <- readProgram "input/2019/13.txt"
+  let arcade = Arcade (Machine 0 [] [] program 0) (mkDisplay 50 30)
+  print =<< blockCount <$> completeArcade arcade
+
+day13_2 :: IO ()
+day13_2 = do
+  program <- readProgram "input/2019/13.txt"
+  let program' = M.insert 0 2 program 
+      arcade = Arcade (Machine 0 [] [] program' 0) (mkDisplay 50 50)
+  print =<< blockCount <$> completeArcade arcade
