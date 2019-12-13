@@ -835,7 +835,7 @@ newtype Agent = Agent Arcade
 
 data BallDir = BRight | BLeft deriving (Show, Eq)
 
-dbgBrk = True
+dbgBrk = False
 getLine_ = do
   getLine
   return ()
@@ -846,7 +846,7 @@ stepArcadeUntilBallChanges :: Arcade -> IO Arcade
 stepArcadeUntilBallChanges arcade@(Arcade m d) = do
   --when dbgBrk $ print "Stepping until ball changes"
   --when dbgBrk $ print $ "Current x=" ++ (show $ ballX d)
-  arcade'@(Arcade _ d') <- stepArcade (Arcade (m & inputs .~ repeat 0) d)
+  arcade'@(Arcade _ d') <- stepArcade arcade
   --when dbgBrk $ print $ "Next x=" ++ (show $ ballX d')
   if ballX d /= ballX d'
      -- TODO : below could be source of slowness
@@ -869,8 +869,6 @@ stepArcadeUntilBallHitsFloor = go 0
            then return arcade
            else go (n+1) =<< stepArcade arcade'
 
--- We can predict until next hits paddle versus next hits floor, and if differ, take paddle
-
 runAgent :: Agent -> IO Agent
 runAgent agent@(Agent arcade@(Arcade m d))
   -- If the game is over, quit out.
@@ -883,15 +881,15 @@ runAgent agent@(Agent arcade@(Arcade m d))
       runAgent $ Agent nextArcade
   -- If there is input to consume, first consume it.
   | not . null $ m ^. inputs = do
-      --when dbgBrk $ print $ "Input received: " ++ show (m ^. inputs)
-      --print arcade
+      when dbgBrk $ print $ "Input received: " ++ show (m ^. inputs)
+      print arcade
       --threadDelay 1000000
       --clear
-      nextArcade@(Arcade nextM _) <- stepArcadeI arcade
+      nextArcade@(Arcade nextM nextD) <- stepArcadeUntilBallChanges arcade
       --when dbgBrk $ print $ "After consuming input: " ++ show (nextM ^. inputs)
-      --when dbgBrk $ print nextArcade
       --when dbgBrk getLine_
-      runAgent $ Agent nextArcade
+      --runAgent $ Agent nextArcade
+      runAgent $ Agent $ Arcade (nextM & inputs .~ []) nextD
   -- Otherwise simulate forwards and try to predict where the ball will land.
   | otherwise = do
       when dbgBrk $ print "Current:"
@@ -926,7 +924,7 @@ runAgent agent@(Agent arcade@(Arcade m d))
       -- If we are actually under the ball, just follow it.
       -- If we are in the right place, do nothing.
       let thresh = 0
-          newInputs = if | paddleX d == strikeX -> [0]
+          newInputs = if | paddleX d == ballX d && ballHeight d == Just 1 -> [0]
                          | ((-) <$> paddleX d <*> strikeX) > Just thresh -> [-1]
                          | ((-) <$> paddleX d <*> strikeX) < Just (negate thresh) -> [1]
                          | otherwise -> [0]
@@ -934,10 +932,10 @@ runAgent agent@(Agent arcade@(Arcade m d))
       when dbgBrk getLine_
       -- Set the new inputs, but don't run anything.
       -- Will get enacted on the next run of the machine.
-      --runAgent $ Agent $ Arcade (m & inputs .~ newInputs) d
+      runAgent $ Agent $ Arcade (m & inputs .~ newInputs) d
       --
-      (Arcade oneM oneD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat 0) d
-      runAgent $ Agent $ Arcade (oneM & inputs .~ newInputs) oneD
+      --(Arcade oneM oneD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat 0) d
+      --runAgent $ Agent $ Arcade (oneM & inputs .~ newInputs) oneD
 
 runHuman :: Agent -> IO Agent
 runHuman agent@(Agent arcade@(Arcade m d))
@@ -947,14 +945,16 @@ runHuman agent@(Agent arcade@(Arcade m d))
       nextArcade <- stepArcade arcade
       runHuman $ Agent nextArcade
   | isNothing (paddleX d) = runHuman $ Agent (Arcade (m & inputs .~ [0]) d)
+  | isNothing (ballX d) = runHuman =<< Agent <$> stepArcade arcade
   | otherwise = do
-      when dbgBrk $ print arcade
+      print arcade
       hSetBuffering stdin NoBuffering
       c <- getHiddenChar
-      case c of
-        'j' -> runHuman $ Agent (Arcade (m & inputs .~ [-1]) d)
-        'k' -> runHuman $ Agent (Arcade (m & inputs .~ [0]) d)
-        'l' -> runHuman $ Agent (Arcade (m & inputs .~ [1]) d)
+      let newInputs = case c of
+                        'j' -> [-1]
+                        'k' -> [0]
+                        'l' -> [1]
+      runHuman $ Agent (Arcade (m & inputs .~ newInputs) d)
 
 findMx :: (Eq a) => a -> Matrix a -> Maybe (Int, Int)
 findMx a m = if null matches then Nothing else Just (head matches)
