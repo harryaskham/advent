@@ -894,7 +894,6 @@ runAgent targetX agent@(Agent arcade@(Arcade m d@(Display _ score)))
       when dbgBrk $ print "Current:"
       --if score > 1000 then print arcade else print score
       print arcade
-      clear
       --threadDelay 1000000
       --clear
       -- Simulate where the ball will travel next by passing in zero input.
