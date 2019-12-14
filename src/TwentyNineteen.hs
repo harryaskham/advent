@@ -1006,3 +1006,6 @@ day13_2 = do
   (Agent (Arcade _ (Display _ score))) <- runAgent (mkStdGen 45) Nothing agent
   --(Agent (Arcade _ (Display _ score))) <- runHuman agent
   print score
+
+day14 :: ()
+day14 = undefined
