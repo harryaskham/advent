@@ -29,6 +29,7 @@ import Data.Matrix as MX
 import System.IO
 import System.IO.HiddenChar
 import Control.Concurrent
+import System.Random
 
 -- Convert the given mass to basic fuel requirement.
 massToFuel :: Int -> Int
@@ -788,8 +789,10 @@ stepArcade arcade@(Arcade machine display) = do
   if isTerminated machine'
      then return arcade
      else
-       let display' = updateDisplay (fromIntegral <$> machine' ^. outputs) display
-        in return $ Arcade (machine' & outputs .~ []) display'
+       let display'@(Display _ score) = updateDisplay (fromIntegral <$> machine' ^. outputs) display
+        in do
+          print score
+          return $ Arcade (machine' & outputs .~ []) display'
 
 stepArcadeI :: Arcade -> IO Arcade
 stepArcadeI arcade@(Arcade machine display) = do
@@ -797,10 +800,12 @@ stepArcadeI arcade@(Arcade machine display) = do
   if isTerminated machine'
      then return arcade
      else
-       let display' = if length (machine ^. outputs) == 3
-                         then updateDisplay (fromIntegral <$> machine' ^. outputs) display
-                         else display
-        in return $ Arcade (if length (machine ^. outputs) == 3 then machine' & outputs .~ [] else machine') display'
+       let display'@(Display _ score) = if length (machine ^. outputs) == 3
+                                          then updateDisplay (fromIntegral <$> machine' ^. outputs) display
+                                          else display
+        in do
+          print score
+          return $ Arcade (if length (machine ^. outputs) == 3 then machine' & outputs .~ [] else machine') display'
 
 updateDisplay :: [Int] -> Display -> Display
 updateDisplay [x, y, eId] (Display d score)
@@ -869,8 +874,8 @@ stepArcadeUntilBallHitsFloor = go 0
            then return arcade
            else go (n+1) =<< stepArcade arcade'
 
-runAgent :: Maybe Int -> Agent -> IO Agent
-runAgent targetX agent@(Agent arcade@(Arcade m d@(Display _ score)))
+runAgent :: RandomGen g => g -> Maybe Int -> Agent -> IO Agent
+runAgent g targetX agent@(Agent arcade@(Arcade m d@(Display _ score)))
   -- If the game is over, quit out.
   | isTerminated m = return agent
   | isLost d = return agent
@@ -878,22 +883,26 @@ runAgent targetX agent@(Agent arcade@(Arcade m d@(Display _ score)))
   -- Should not need any input on these stages.
   | isNothing (paddleX d)  || isNothing (ballX d) = do
       nextArcade <- stepArcade arcade
-      runAgent Nothing $ Agent nextArcade
+      runAgent g Nothing $ Agent nextArcade
   -- If there is input to consume, first consume it.
   | not . null $ m ^. inputs = do
       when dbgBrk $ print $ "Input received: " ++ show (m ^. inputs)
       --threadDelay 1000000
       --clear
-      nextArcade@(Arcade nextM nextD) <- stepArcadeUntilBallChanges arcade
+      --nextArcade@(Arcade nextM nextD) <- stepArcadeUntilBallChanges arcade
+      let (nextDir, g') = randomR (-1, 0) g
+      nextArcade@(Arcade nextM nextD) <- stepArcadeUntilBallChanges $ Arcade (m & inputs .~ repeat nextDir) d
       --when dbgBrk $ print $ "After consuming input: " ++ show (nextM ^. inputs)
       --when dbgBrk getLine_
       --runAgent $ Agent nextArcade
-      runAgent targetX $ Agent $ Arcade (nextM & inputs .~ []) nextD
+      runAgent g' targetX $ Agent $ Arcade (nextM & inputs .~ []) nextD
   -- Otherwise simulate forwards and try to predict where the ball will land.
   | otherwise = do
       when dbgBrk $ print "Current:"
       --if score > 1000 then print arcade else print score
-      if score < 15000 then print score else print arcade
+      --if score < 15000 then print score else print arcade
+      print arcade
+      --print score -- to beat 15561
       --threadDelay 1000000
       --clear
       -- Simulate where the ball will travel next by passing in zero input.
@@ -917,11 +926,14 @@ runAgent targetX agent@(Agent arcade@(Arcade m d@(Display _ score)))
       --                       else (+1) <$> ballX nextD
             -- Special casing to break a loop or avoid a full-field chase
             return $ case score of
+                       {-
                        7496 -> subtract 1 <$> ballX nextD
                        10807 -> subtract 1 <$> ballX nextD
                        14297 -> subtract 1 <$> ballX nextD
                        15171 -> (+1) <$> ballX nextD
                        15358 -> (+1) <$> ballX nextD
+                       15449 -> (+1) <$> ballX nextD
+                       -}
                        _ -> ballX nextD
 
       --when dbgBrk $ putStrLn $ "Prev X: " ++ show (ballX d)
@@ -944,7 +956,8 @@ runAgent targetX agent@(Agent arcade@(Arcade m d@(Display _ score)))
       -- Will get enacted on the next run of the machine.
       -- We also pass through a saved target to avoid recomputation if the ball is high enough for it not to change.
       let nextTarget = if ballHeight d > Just 1 then strikeX else Nothing
-      runAgent nextTarget $ Agent $ Arcade (m & inputs .~ newInputs) d
+      runAgent g (Just 0) $ Agent $ Arcade (m & inputs .~ newInputs) d
+      --runAgent nextTarget $ Agent $ Arcade (m & inputs .~ newInputs) d
 
 runHuman :: Agent -> IO Agent
 runHuman agent@(Agent arcade@(Arcade m d))
@@ -990,6 +1003,6 @@ day13_2 = do
   program <- readProgram "input/2019/13.txt"
   let program' = M.insert 0 2 program 
       agent@(Agent arcade) = Agent $ Arcade (Machine 0 [] [] program' 0) (mkDisplay 44 21)
-  (Agent (Arcade _ (Display _ score))) <- runAgent Nothing agent
+  (Agent (Arcade _ (Display _ score))) <- runAgent (mkStdGen 45) Nothing agent
   --(Agent (Arcade _ (Display _ score))) <- runHuman agent
   print score
