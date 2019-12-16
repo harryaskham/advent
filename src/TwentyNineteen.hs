@@ -1007,5 +1007,45 @@ day13_2 = do
   --(Agent (Arcade _ (Display _ score))) <- runHuman agent
   print score
 
-day14 :: ()
-day14 = undefined
+type Chemical = String
+type Quantity = Int
+data Reaction = Reaction [(Chemical, Quantity)] (Chemical, Quantity) deriving (Show)
+
+parseReaction :: String -> Reaction
+parseReaction line = Reaction inputs' (outputChemical, read outputQuantity)
+  where
+    [inputLine, outputLine] = splitOn " => " line
+    [outputQuantity, outputChemical] = words outputLine
+    inputs = words <$> splitOn ", " inputLine
+    inputs' = (\[q, c] -> (c, read q)) <$> inputs
+
+-- Create map from chemical to the resources it needs and its yield
+reactionMap :: [Reaction] -> M.Map Chemical Reaction
+reactionMap = foldl' (\acc r@(Reaction _ (c, _)) -> M.insert c r acc) M.empty
+
+-- Breadth first: build up a queue of "needs" and "haves"
+-- Go through queue, look up needs, multiply until enough, add to queue, add surplus to "haves"
+-- Always kill from "haves" before computing "real need"
+-- Proceed until Queue is all ore and sum the Ore
+
+oreRequired :: [(Chemical, Quantity)] -> M.Map Chemical Quantity -> Maybe Int
+oreRequired [] haves = M.lookup "ORE" haves
+oreRequired ((targetC, targetQ):needs) haves =
+  case targetC of
+    -- Need to rethink, the ORE branch makes no sense
+    "ORE" -> M.insertWith (+) "ORE" targetQ haves
+    c -> let (Reaction requirements outputQ) = unsafeJ $ M.lookup reactionMap c
+             multiplier = ceiling (targetQ / outputQ)
+             multipliedReqs = (*multiplier) <$> requirements
+             -- Now need to fold over haves / reqs and update both at once, like a ([],{}) acc?
+             -- Or, wait, append needs to the start and deal with them first?
+             -- And when we have ORE we can create all the others
+             newHaves = undefined
+          in oreRequired (needs:multipliedReqs) newHaves
+
+day14 :: IO ()
+day14 = do
+  ls <- lines <$> readFile "input/2019/14.txt"
+  let reactions = parseReaction <$> ls
+      rMap = reactionMap reactions
+  print $ oreRequired "FUEL"
