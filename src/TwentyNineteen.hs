@@ -1063,9 +1063,3 @@ day14 = do
   print $ M.lookup "ORE" $ ore rMap [("FUEL", 1)] M.empty
   _ <- search rMap 1 10000000000
   return ()
-
-day15 :: IO ()
-day15 = do
-  program <- readProgram "input/2019/15.txt"
-  let machine = Machine 0 [] [] program 0
-  return ()
