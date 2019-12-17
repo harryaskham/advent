@@ -55,7 +55,7 @@ instance Show Droid where
   show (Droid _ grid (x, y) facing) =
     MX.prettyMatrix $ MX.matrix dim dim drawFn
       where
-        dim = 60
+        dim = 50
         drawFn (y', x') = if (x, y) == (x'-(dim `div` 2), y'-(dim `div` 2))
                              then case facing of
                                     North -> UpC
@@ -109,25 +109,30 @@ stuck (Droid _ grid (x, y) facing) = length surroundingWalls > 2
     nextCoords = updatedCoord <$> dirs <*> [x] <*> [y]
     surroundingWalls = filter (== Just Wall) (M.lookup <$> nextCoords <*> pure grid)
 
-undoUntilUnstuck :: MoveStack -> Droid -> IO Droid
-undoUntilUnstuck [] droid = runDroid [] droid
-undoUntilUnstuck (m:stack) droid@(Droid machine grid pos _) = do
+undoUntilUnstuck :: Int -> MoveStack -> Droid -> IO Droid
+undoUntilUnstuck n [] droid = runDroid n [] droid
+undoUntilUnstuck n (m:stack) droid@(Droid machine grid pos _) = do
+  --print (m:stack)
+  --print droid
+  print $ length (m:stack)
+  --getLine
   -- Undo the top move on the stack
   let move = case m of
                North -> South
                East -> West
                South -> North
                West -> East
-  (movedDroid, _) <- oneMove move [] droid
+  -- print $ "Undoing move: " ++ show m ++ " by going " ++ show move
+  (movedDroid, _) <- oneMove [] (Droid machine grid pos move)
   -- Check whether there is anything unexplored and if so, we're good
   let (Droid _ grid (x, y) facing) = rotateUntilGood movedDroid
   if isNothing $ M.lookup (updatedCoord facing x y) grid
-     then runDroid stack movedDroid
-     else undoUntilUnstuck stack movedDroid
+     then runDroid (n+1) stack movedDroid
+     else undoUntilUnstuck (n+1) stack movedDroid
 
-oneMove :: Dir -> MoveStack -> Droid -> IO (Droid, MoveStack)
-oneMove dir stack droid@(Droid machine grid pos@(x, y) facing) = do
-  nextMachine <- stepUntilNOutputs 1 $ machine & inputs .~ [dirIn dir]
+oneMove :: MoveStack -> Droid -> IO (Droid, MoveStack)
+oneMove stack droid@(Droid machine grid pos@(x, y) facing) = do
+  nextMachine <- stepUntilNOutputs 1 $ machine & inputs .~ [dirIn facing]
   let output = head $ nextMachine ^. outputs
       nextCoord = updatedCoord facing x y
       nextPos = case output of
@@ -139,28 +144,63 @@ oneMove dir stack droid@(Droid machine grid pos@(x, y) facing) = do
                    2 -> M.insert nextCoord Oxygen grid
       nextStack = case output of
                     0 -> stack
-                    _ -> dir:stack
-  if output == 2
-     then print ("Found oxygen at " ++ show x ++ " " ++ show y) >> return (droid, stack)
-     else return (Droid (nextMachine & outputs .~ []) nextGrid nextPos facing, nextStack)
+                    _ -> facing:stack
+  when (output == 2) $ print ("Found oxygen at " ++ show x ++ " " ++ show y)
+  return (Droid (nextMachine & outputs .~ []) nextGrid nextPos facing, nextStack)
 
+-- Run droid until grid is complete.
+runDroid :: Int -> MoveStack -> Droid -> IO Droid
+runDroid n stack droid' = do
+  --print droid'
+  --getLine
+  --print n
+  print $ length stack
+  if n > 10000 && null stack
+     then return droid'
+     else if stuck droid'
+             then undoUntilUnstuck n stack droid'
+             else do
+               -- Shadow droid, and ensure we are always facing the right way.
+               let droid@(Droid machine grid pos@(x, y) facing) = rotateUntilGood droid'
+               -- Otherwise, step forwards in the direction we are facing.
+               (movedDroid@(Droid _ grid' _ _), nextStack) <- oneMove stack droid
+               runDroid (n+1) nextStack movedDroid
 
-runDroid :: MoveStack -> Droid -> IO Droid
-runDroid stack droid' = do
-  print droid'
-  getLine
-  if stuck droid'
-     then undoUntilUnstuck stack droid'
-     else do
-       -- Shadow droid, and ensure we are always facing the right way.
-       let droid@(Droid machine grid pos@(x, y) facing) = rotateUntilGood droid'
-       -- Otherwise, step forwards in the direction we are facing.
-       (movedDroid, nextStack) <- oneMove facing stack droid
-       runDroid nextStack movedDroid
+-- Oxygen was at -17, -20, stack size of 295+1 when getting there
+
+neighbours :: MX.Matrix Space -> (Int, Int) -> [Maybe Space]
+neighbours orig (x, y) = [ MX.safeGet y (x+1) orig
+                         , MX.safeGet y (x-1) orig
+                         , MX.safeGet (y+1) x orig
+                         , MX.safeGet (y-1) x orig ]
+
+floodPass :: MX.Matrix Space -> MX.Matrix Space
+floodPass orig = MX.matrix (MX.nrows orig) (MX.ncols orig) fillCoord
+  where
+    fillCoord (y, x) = case MX.safeGet y x orig of
+                         Just Wall -> Wall
+                         Just Oxygen -> Oxygen
+                         Just Empty -> if Just Oxygen `elem` neighbours orig (x, y) then Oxygen else Empty
+                         Just Unknown -> Unknown
+                         Nothing -> Unknown
+
+gridToMatrix grid = MX.matrix dim dim drawFn
+      where
+        dim = 45
+        drawFn (y', x') = fromMaybe Unknown $ M.lookup (x'-(dim `div` 2), y'-(dim `div` 2)) grid
+
+floodUntilComplete :: Int -> MX.Matrix Space -> Int
+floodUntilComplete n m =
+  if m == flooded
+     then n
+     else floodUntilComplete (n+1) flooded
+  where
+    flooded = floodPass m
 
 day15 :: IO ()
 day15 = do
   program <- readProgram "input/2019/15.txt"
   let droid = Droid (Machine 0 [] [] program 0) M.empty (0, 0) North
-  runDroid [] droid
-  return ()
+  droid'@(Droid _ completeGrid _ _) <- runDroid 0 [] droid
+  let matrix = gridToMatrix completeGrid
+  print $ floodUntilComplete 0 matrix
