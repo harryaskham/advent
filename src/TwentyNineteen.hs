@@ -25,7 +25,7 @@ import Data.Ratio
 import Data.Foldable
 import Text.ParserCombinators.ReadP
 import Debug.Trace
-import Data.Matrix as MX
+import qualified Data.Matrix as MX
 import System.IO
 import System.IO.HiddenChar
 import Control.Concurrent
@@ -978,7 +978,7 @@ runHuman agent@(Agent arcade@(Arcade m d))
                         'l' -> [1]
       runHuman $ Agent (Arcade (m & inputs .~ newInputs) d)
 
-findMx :: (Eq a) => a -> Matrix a -> Maybe (Int, Int)
+findMx :: (Eq a) => a -> MX.Matrix a -> Maybe (Int, Int)
 findMx a m = if null matches then Nothing else Just (head matches)
   where
     matches = [(y,x) | y <- [1..MX.nrows m], x <- [1..MX.ncols m], m MX.! (y,x) == a]
@@ -1007,6 +1007,9 @@ day13_2 = do
   --(Agent (Arcade _ (Display _ score))) <- runHuman agent
   print score
 
+rdbg = False
+traceIf b x y = if b then trace x y else y
+
 type Chemical = String
 type Quantity = Int
 data Reaction = Reaction [(Chemical, Quantity)] (Chemical, Quantity) deriving (Show)
@@ -1023,28 +1026,73 @@ parseReaction line = Reaction inputs' (outputChemical, read outputQuantity)
 reactionMap :: [Reaction] -> M.Map Chemical Reaction
 reactionMap = foldl' (\acc r@(Reaction _ (c, _)) -> M.insert c r acc) M.empty
 
--- Need to update haves each time, and also try every permutation for the minimum
--- First need to check if we can make it from what we have, in which case no need to recurse
-ore :: M.Map Chemical Reaction -> (Chemical, Quantity) -> M.Map Chemical Quantity -> (Quantity, M.Map Chemical Quantity)
--- If we are checking basic ore, then this just contributes the quantity we asked for.
-ore rm ("ORE", q) haves = (q, haves)
--- If checking a chemical, if we can make it from current stock then we need zero additional ore.
--- Otherwise, it's the cost of its children and it surfaces the remainder after making them.
-ore rm (c, q) haves = bestPermutation
+-- Expand requirements to a map of all things that need ORE
+-- Then find ore requirements. Why would this not work?
+-- After every expansion, condense?
+
+getReqs rm c q = multipliedReqs
   where
     (Reaction requirements (_, outputQ)) = unsafeJ $ M.lookup c rm
     multiplier = ceiling (fromIntegral q / fromIntegral outputQ)
     multipliedReqs = (fmap.fmap) (*multiplier) requirements
-    reqPermutations = permutations multipliedReqs
+
+expandToNeedingOre :: M.Map Chemical Reaction -> [(Chemical, Quantity)] -> [(Chemical, Quantity)]
+expandToNeedingOre rm [] = []
+expandToNeedingOre rm ((c,q):reqs) =
+  if (fst . head $ multipliedReqs) == "ORE"
+     then M.toList $ M.fromListWith (+) (M.toList $ M.fromListWith (+) $ (c, q):expandToNeedingOre rm reqs)
+     else M.toList $ M.fromListWith (+) (expandToNeedingOre rm (M.toList . M.fromListWith (+) $ reqs ++ multipliedReqs))
+  where
+    multipliedReqs = getReqs rm c q
+
+ore2 :: M.Map Chemical Reaction -> [(Chemical, Quantity)] -> Int
+ore2 rm [] = 0
+ore2 rm ((c,q):reqs) = (snd . head $ multipliedReqs) + ore2 rm reqs
+  where
+    multipliedReqs = getReqs rm c q
+
+
+
+
+
+-- Need to update haves each time, and also try every permutation for the minimum
+-- First need to check if we can make it from what we have, in which case no need to recurse
+ore :: M.Map Chemical Reaction -> (Chemical, Quantity) -> M.Map Chemical Quantity -> (Quantity, M.Map Chemical Quantity)
+-- If checking a chemical, if we can make it from current stock then we need zero additional ore.
+-- Otherwise, it's the cost of its children and it surfaces the remainder after making them.
+ore rm (c, q) haves = if (fst . head $ multipliedReqs) == "ORE"
+                         -- If we need only ore then insert only the leftovers.
+                         then (snd . head $ multipliedReqs, M.insertWith (+) c ((outputQ*multiplier)-q) haves)
+                         -- Otherwise recurse and find the best insertion in any order.
+                         else bestPermutation
+  where
+    (Reaction requirements (_, outputQ)) =
+      traceIf rdbg ("Looking for " ++ show q ++ " " ++ show c ++ "; have " ++ show haves)
+      unsafeJ $ M.lookup c rm
+    multiplier =
+      traceIf rdbg ("Needing " ++ show requirements)
+      ceiling (fromIntegral q / fromIntegral outputQ)
+    multipliedReqs =
+      traceIf rdbg ("Needing a multiplier of " ++ show multiplier)
+      (fmap.fmap) (*multiplier) requirements
+    reqPermutations =
+      traceIf rdbg ("Need to make " ++ show multipliedReqs)
+      permutations multipliedReqs
     bestPermutation = minimumBy (comparing fst) (costPermutation rm haves <$> reqPermutations)
 
 costPermutation :: M.Map Chemical Reaction -> M.Map Chemical Quantity -> [(Chemical, Quantity)] -> (Quantity, M.Map Chemical Quantity)
 costPermutation rm haves multipliedReqs =
   if all (==0) $ snd <$> usingStock
-     then (0, haves)
-     else (childOre, finalHaves)
+     then
+       traceIf rdbg ("We managed to buy using leftovers, now have: " ++ show newHaves)
+       (0, newHaves)
+     else
+       traceIf rdbg ("We had to spend " ++ show childOre ++ " to proceed, how have: " ++ show finalHaves)
+       (childOre, finalHaves)
   where
-    (usingStock, newHaves) = useStock multipliedReqs haves
+    (usingStock, newHaves) =
+      traceIf rdbg ("Finding cost of " ++ show multipliedReqs ++ " given having: " ++ show haves)
+      useStock multipliedReqs haves
     (childOre, finalHaves) =
       foldl'
         (\(accQ, accHaves) (nextC, nextQ) ->
@@ -1071,8 +1119,12 @@ day14 = do
   --ls <- lines <$> readFile "input/2019/14.txt"
   --ls <- lines <$> readFile "input/2019/14_example2.txt"
   --ls <- lines <$> readFile "input/2019/14_example3.txt"
-  --ls <- lines <$> readFile "input/2019/14_example4.txt"
-  ls <- lines <$> readFile "input/2019/14_example5.txt"
+  ls <- lines <$> readFile "input/2019/14_example4.txt"
+
+  --ls <- lines <$> readFile "input/2019/14_example5.txt"
   let reactions = parseReaction <$> ls
       rMap = reactionMap reactions
-  print $ fst $ ore rMap ("FUEL", 1) M.empty
+      needingOre = expandToNeedingOre rMap [("FUEL", 1)]
+  --print $ fst $ ore rMap ("FUEL", 1) M.empty
+  print needingOre
+  print $ ore2 rMap needingOre
