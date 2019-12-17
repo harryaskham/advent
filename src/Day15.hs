@@ -90,39 +90,77 @@ rotateUntilGood droid@(Droid machine grid pos@(x, y) facing) =
      then Droid machine grid pos $ fst . head $ nextUnexplored
      else Droid machine grid pos $ fst . head $ nextEmpty
   where
-    dirs = [facing, rotate facing, rotate.rotate $ facing, rotate.rotate.rotate $ facing]
+    -- Ordered this way so that we prefer the fewest rotations where possible.
+    -- Will always prioritise rotating rather than going straight, hopefully letting us do an always-turn-right policy.
+    dirs = [rotate facing, rotate.rotate.rotate $ facing, facing, rotate.rotate $ facing]
     nextCoords = updatedCoord <$> dirs <*> [x] <*> [y]
     nextSpaces = M.lookup <$> nextCoords <*> pure grid
     nextUnexplored = filter (\(d,s) -> isNothing s) $ zip dirs nextSpaces 
-    nextEmpty = filter (\(d,s) -> s == Just Empty) $ zip dirs nextSpaces 
+    nextEmpty = filter (\(d,s) -> s == Just Empty) $ zip dirs nextSpaces
+
+-- Keep a move-stack, and if we hit a dead end then undo the moves until we hit something with space, then follow adding to the movestack again.
+
+type MoveStack = [Dir]
+
+stuck :: Droid -> Bool
+stuck (Droid _ grid (x, y) facing) = length surroundingWalls > 2
+  where
+    dirs = [rotate facing, rotate.rotate.rotate $ facing, facing, rotate.rotate $ facing]
+    nextCoords = updatedCoord <$> dirs <*> [x] <*> [y]
+    surroundingWalls = filter (== Just Wall) (M.lookup <$> nextCoords <*> pure grid)
+
+undoUntilUnstuck :: MoveStack -> Droid -> IO Droid
+undoUntilUnstuck [] droid = runDroid [] droid
+undoUntilUnstuck (m:stack) droid@(Droid machine grid pos _) = do
+  -- Undo the top move on the stack
+  let move = case m of
+               North -> South
+               East -> West
+               South -> North
+               West -> East
+  (movedDroid, _) <- oneMove move [] droid
+  -- Check whether there is anything unexplored and if so, we're good
+  let (Droid _ grid (x, y) facing) = rotateUntilGood movedDroid
+  if isNothing $ M.lookup (updatedCoord facing x y) grid
+     then runDroid stack movedDroid
+     else undoUntilUnstuck stack movedDroid
+
+oneMove :: Dir -> MoveStack -> Droid -> IO (Droid, MoveStack)
+oneMove dir stack droid@(Droid machine grid pos@(x, y) facing) = do
+  nextMachine <- stepUntilNOutputs 1 $ machine & inputs .~ [dirIn dir]
+  let output = head $ nextMachine ^. outputs
+      nextCoord = updatedCoord facing x y
+      nextPos = case output of
+                  0 -> pos
+                  _ -> nextCoord
+      nextGrid = case output of
+                   0 -> M.insert nextCoord Wall grid
+                   1 -> M.insert nextCoord Empty grid
+                   2 -> M.insert nextCoord Oxygen grid
+      nextStack = case output of
+                    0 -> stack
+                    _ -> dir:stack
+  if output == 2
+     then print ("Found oxygen at " ++ show x ++ " " ++ show y) >> return (droid, stack)
+     else return (Droid (nextMachine & outputs .~ []) nextGrid nextPos facing, nextStack)
 
 
-runDroid :: Droid -> IO Droid
-runDroid droid@(Droid machine grid pos@(x, y) facing) = do
-  --print droid
-  --getLine
-  let nextCoord = updatedCoord facing x y
-  -- If we are facing a wall as far as we know, then just immediately rotate.
-  if M.lookup nextCoord grid == Just Wall
-     then runDroid (rotateUntilGood droid)
+runDroid :: MoveStack -> Droid -> IO Droid
+runDroid stack droid' = do
+  print droid'
+  getLine
+  if stuck droid'
+     then undoUntilUnstuck stack droid'
      else do
+       -- Shadow droid, and ensure we are always facing the right way.
+       let droid@(Droid machine grid pos@(x, y) facing) = rotateUntilGood droid'
        -- Otherwise, step forwards in the direction we are facing.
-       nextMachine <- stepUntilNOutputs 1 $ machine & inputs .~ [dirIn facing]
-       let output = head $ nextMachine ^. outputs
-           nextPos = case output of
-                       0 -> pos
-                       _ -> nextCoord
-           nextGrid = case output of
-                        0 -> M.insert nextCoord Wall grid
-                        1 -> M.insert nextCoord Empty grid
-                        2 -> M.insert nextCoord Oxygen grid
-       if output == 2
-          then print ("Found oxygen at " ++ show x ++ " " ++ show y) >> return droid
-          else runDroid $ Droid (nextMachine & outputs .~ []) nextGrid nextPos facing
+       (movedDroid, nextStack) <- oneMove facing stack droid
+       runDroid nextStack movedDroid
 
 day15 :: IO ()
 day15 = do
   program <- readProgram "input/2019/15.txt"
   let droid = Droid (Machine 0 [] [] program 0) M.empty (0, 0) North
-  runDroid droid
+  runDroid [] droid
   return ()
