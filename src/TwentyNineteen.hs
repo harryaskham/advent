@@ -1023,10 +1023,27 @@ parseReaction line = Reaction inputs' (outputChemical, read outputQuantity)
 reactionMap :: [Reaction] -> M.Map Chemical Reaction
 reactionMap = foldl' (\acc r@(Reaction _ (c, _)) -> M.insert c r acc) M.empty
 
+
+-- Follow the needs, building up until the only need is ore, then sum needs
+
+-- The following doesn't let us share our "haves" between paths, nor share resources, nor update paths.
+-- Need a smarter solution.
+ore ("ORE", q) _ = q
+ore (c, q) haves = sum (ore <$> usingStock)
+  where
+    (Reaction requirements outputQ) = unsafeJ $ M.lookup reactionMap c
+    multiplier = ceiling (q / outputQ)
+    multipliedReqs = (*multiplier) <$> requirements
+    (usingStock, newHaves) = useStock multipliedReqs haves
+
+useStock = undefined
+
 -- Breadth first: build up a queue of "needs" and "haves"
 -- Go through queue, look up needs, multiply until enough, add to queue, add surplus to "haves"
 -- Always kill from "haves" before computing "real need"
 -- Proceed until Queue is all ore and sum the Ore
+
+-- Maybe keep a running count of ore cost? Then we can just state the problem neatly.
 
 oreRequired :: [(Chemical, Quantity)] -> M.Map Chemical Quantity -> Maybe Int
 oreRequired [] haves = M.lookup "ORE" haves
@@ -1048,4 +1065,4 @@ day14 = do
   ls <- lines <$> readFile "input/2019/14.txt"
   let reactions = parseReaction <$> ls
       rMap = reactionMap reactions
-  print $ oreRequired "FUEL"
+  print $ oreRequired [("FUEL", 1)]
