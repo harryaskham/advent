@@ -33,7 +33,7 @@ import System.Random
 import TwentyNineteen (Machine(..), readProgram, stepUntilNOutputs, inputs, outputs, clear)
 
 data Dir = North | South | West | East deriving (Show, Enum)
-data Space = Empty | Wall | Oxygen | Unknown | UpC | DownC | LeftC | RightC
+data Space = Empty | Wall | Oxygen | Unknown | UpC | DownC | LeftC | RightC deriving (Eq)
 
 instance Show Space where
   show Empty = "."
@@ -55,7 +55,7 @@ instance Show Droid where
   show (Droid _ grid (x, y) facing) =
     MX.prettyMatrix $ MX.matrix dim dim drawFn
       where
-        dim = 40
+        dim = 60
         drawFn (y', x') = if (x, y) == (x'-(dim `div` 2), y'-(dim `div` 2))
                              then case facing of
                                     North -> UpC
@@ -70,34 +70,55 @@ dirIn South = 2
 dirIn West = 3
 dirIn East = 4
 
--- Strategy: proceed randomly to get idea of the space
+rotate :: Dir -> Dir
+rotate West = North
+rotate North = East
+rotate East = South
+rotate South = West
+
+updatedCoord :: Dir -> Int -> Int -> (Int, Int)
+updatedCoord facing x y = case facing of
+                            North -> (x, y-1)
+                            South -> (x, y+1)
+                            East -> (x+1, y)
+                            West -> (x-1, y)
+
+-- Rotate the droid until it's facing either an unknown square (preferred), or otherwise an empty one.
+rotateUntilGood :: Droid -> Droid
+rotateUntilGood droid@(Droid machine grid pos@(x, y) facing) =
+  if not . null $ nextUnexplored
+     then Droid machine grid pos $ fst . head $ nextUnexplored
+     else Droid machine grid pos $ fst . head $ nextEmpty
+  where
+    dirs = [facing, rotate facing, rotate.rotate $ facing, rotate.rotate.rotate $ facing]
+    nextCoords = updatedCoord <$> dirs <*> [x] <*> [y]
+    nextSpaces = M.lookup <$> nextCoords <*> pure grid
+    nextUnexplored = filter (\(d,s) -> isNothing s) $ zip dirs nextSpaces 
+    nextEmpty = filter (\(d,s) -> s == Just Empty) $ zip dirs nextSpaces 
+
 
 runDroid :: Droid -> IO Droid
 runDroid droid@(Droid machine grid pos@(x, y) facing) = do
-  print droid
-  getLine
-  nextMachine <- stepUntilNOutputs 1 $ machine & inputs .~ [dirIn facing]
-  let output = head $ nextMachine ^. outputs
-      updatedCoord = case facing of
-                       North -> (x, y-1)
-                       South -> (x, y+1)
-                       East -> (x+1, y)
-                       West -> (x-1, y)
-      nextPos = case output of
-                  0 -> pos
-                  _ -> updatedCoord
-      nextGrid = case output of
-                   0 -> M.insert updatedCoord Wall grid
-                   1 -> M.insert updatedCoord Empty grid
-                   2 -> M.insert updatedCoord Oxygen grid
-      nextFacing = case output of
-                     0 -> case facing of
-                            East -> North
-                            North -> West
-                            West -> South
-                            South -> East
-                     _ -> facing
-  runDroid $ Droid (nextMachine & outputs .~ []) nextGrid nextPos nextFacing
+  --print droid
+  --getLine
+  let nextCoord = updatedCoord facing x y
+  -- If we are facing a wall as far as we know, then just immediately rotate.
+  if M.lookup nextCoord grid == Just Wall
+     then runDroid (rotateUntilGood droid)
+     else do
+       -- Otherwise, step forwards in the direction we are facing.
+       nextMachine <- stepUntilNOutputs 1 $ machine & inputs .~ [dirIn facing]
+       let output = head $ nextMachine ^. outputs
+           nextPos = case output of
+                       0 -> pos
+                       _ -> nextCoord
+           nextGrid = case output of
+                        0 -> M.insert nextCoord Wall grid
+                        1 -> M.insert nextCoord Empty grid
+                        2 -> M.insert nextCoord Oxygen grid
+       if output == 2
+          then print ("Found oxygen at " ++ show x ++ " " ++ show y) >> return droid
+          else runDroid $ Droid (nextMachine & outputs .~ []) nextGrid nextPos facing
 
 day15 :: IO ()
 day15 = do
