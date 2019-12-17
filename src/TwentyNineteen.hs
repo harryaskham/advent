@@ -9,7 +9,7 @@ module TwentyNineteen where
 import qualified Data.Set as S
 import Data.List
 import Data.Char
-import Data.List.Split
+import Data.List.Split hiding (condense)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Function ((&))
@@ -1011,7 +1011,7 @@ rdbg = False
 traceIf b x y = if b then trace x y else y
 
 type Chemical = String
-type Quantity = Int
+type Quantity = Integer
 data Reaction = Reaction [(Chemical, Quantity)] (Chemical, Quantity) deriving (Show)
 
 parseReaction :: String -> Reaction
@@ -1026,105 +1026,46 @@ parseReaction line = Reaction inputs' (outputChemical, read outputQuantity)
 reactionMap :: [Reaction] -> M.Map Chemical Reaction
 reactionMap = foldl' (\acc r@(Reaction _ (c, _)) -> M.insert c r acc) M.empty
 
--- Expand requirements to a map of all things that need ORE
--- Then find ore requirements. Why would this not work?
--- After every expansion, condense?
-
-getReqs rm c q = multipliedReqs
+ore :: M.Map Chemical Reaction -> [(Chemical, Quantity)] -> M.Map Chemical Quantity -> M.Map Chemical Quantity
+ore _ [] haves = haves
+ore rm (("ORE", q):needs) haves = ore rm needs $ M.insertWith (+) "ORE" q haves
+ore rm ((c, q):needs) haves = ore rm (needs++multipliedReqs) newHaves
   where
     (Reaction requirements (_, outputQ)) = unsafeJ $ M.lookup c rm
-    multiplier = ceiling (fromIntegral q / fromIntegral outputQ)
+    alreadyHave = fromMaybe 0 $ M.lookup c haves
+    additionalNeed = q - alreadyHave
+    multiplier = ceiling (fromIntegral additionalNeed / fromIntegral outputQ)
     multipliedReqs = (fmap.fmap) (*multiplier) requirements
+    actualOutput = multiplier * outputQ
+    surplus = actualOutput - q
+    newHaves = M.insertWith (+) c surplus haves
 
-expandToNeedingOre :: M.Map Chemical Reaction -> [(Chemical, Quantity)] -> [(Chemical, Quantity)]
-expandToNeedingOre rm [] = []
-expandToNeedingOre rm ((c,q):reqs) =
-  if (fst . head $ multipliedReqs) == "ORE"
-     then M.toList $ M.fromListWith (+) (M.toList $ M.fromListWith (+) $ (c, q):expandToNeedingOre rm reqs)
-     else M.toList $ M.fromListWith (+) (expandToNeedingOre rm (M.toList . M.fromListWith (+) $ reqs ++ multipliedReqs))
+oreNeeded :: M.Map Chemical Reaction -> Quantity -> Quantity
+oreNeeded rm fuel = unsafeJ $ M.lookup "ORE" $ ore rm [("FUEL", fuel)] M.empty
+
+search :: M.Map Chemical Reaction -> Quantity -> Quantity -> IO Quantity
+search rm lower upper = if oreNeeded rm midpoint > 1000000000000
+                           then print midpoint >> search rm lower midpoint
+                           else print midpoint >> search rm midpoint upper
   where
-    multipliedReqs = getReqs rm c q
-
-ore2 :: M.Map Chemical Reaction -> [(Chemical, Quantity)] -> Int
-ore2 rm [] = 0
-ore2 rm ((c,q):reqs) = (snd . head $ multipliedReqs) + ore2 rm reqs
-  where
-    multipliedReqs = getReqs rm c q
-
-
-
-
-
--- Need to update haves each time, and also try every permutation for the minimum
--- First need to check if we can make it from what we have, in which case no need to recurse
-ore :: M.Map Chemical Reaction -> (Chemical, Quantity) -> M.Map Chemical Quantity -> (Quantity, M.Map Chemical Quantity)
--- If checking a chemical, if we can make it from current stock then we need zero additional ore.
--- Otherwise, it's the cost of its children and it surfaces the remainder after making them.
-ore rm (c, q) haves = if (fst . head $ multipliedReqs) == "ORE"
-                         -- If we need only ore then insert only the leftovers.
-                         then (snd . head $ multipliedReqs, M.insertWith (+) c ((outputQ*multiplier)-q) haves)
-                         -- Otherwise recurse and find the best insertion in any order.
-                         else bestPermutation
-  where
-    (Reaction requirements (_, outputQ)) =
-      traceIf rdbg ("Looking for " ++ show q ++ " " ++ show c ++ "; have " ++ show haves)
-      unsafeJ $ M.lookup c rm
-    multiplier =
-      traceIf rdbg ("Needing " ++ show requirements)
-      ceiling (fromIntegral q / fromIntegral outputQ)
-    multipliedReqs =
-      traceIf rdbg ("Needing a multiplier of " ++ show multiplier)
-      (fmap.fmap) (*multiplier) requirements
-    reqPermutations =
-      traceIf rdbg ("Need to make " ++ show multipliedReqs)
-      permutations multipliedReqs
-    bestPermutation = minimumBy (comparing fst) (costPermutation rm haves <$> reqPermutations)
-
-costPermutation :: M.Map Chemical Reaction -> M.Map Chemical Quantity -> [(Chemical, Quantity)] -> (Quantity, M.Map Chemical Quantity)
-costPermutation rm haves multipliedReqs =
-  if all (==0) $ snd <$> usingStock
-     then
-       traceIf rdbg ("We managed to buy using leftovers, now have: " ++ show newHaves)
-       (0, newHaves)
-     else
-       traceIf rdbg ("We had to spend " ++ show childOre ++ " to proceed, how have: " ++ show finalHaves)
-       (childOre, finalHaves)
-  where
-    (usingStock, newHaves) =
-      traceIf rdbg ("Finding cost of " ++ show multipliedReqs ++ " given having: " ++ show haves)
-      useStock multipliedReqs haves
-    (childOre, finalHaves) =
-      foldl'
-        (\(accQ, accHaves) (nextC, nextQ) ->
-          let (oreQ, nextHaves) = ore rm (nextC, nextQ) accHaves
-           in (accQ + oreQ, nextHaves))
-        (0, newHaves) usingStock
-
-useStock :: [(Chemical, Quantity)] -> M.Map Chemical Quantity -> ([(Chemical, Quantity)], M.Map Chemical Quantity)
-useStock [] haves = ([], haves)
-useStock ((c,q):reqs) haves =
-  case M.lookup c haves of
-    Nothing -> let (newReqs, newHaves) = useStock reqs haves in ((c,q):newReqs, newHaves)
-    Just haveQ -> if haveQ <= q
-                    then let updatedHaves = M.insert c 0 haves
-                             (newReqs, newHaves) = useStock reqs updatedHaves
-                          in ((c,q-haveQ):newReqs, newHaves)
-                    else let updatedHaves = M.insert c (haveQ-q) haves
-                             (newReqs, newHaves) = useStock reqs updatedHaves
-                          in ((c,0):newReqs, newHaves)
+    midpoint = (lower + upper) `div` 2
 
 day14 :: IO ()
 day14 = do
   --ls <- lines <$> readFile "input/2019/14_example.txt"
-  --ls <- lines <$> readFile "input/2019/14.txt"
+  ls <- lines <$> readFile "input/2019/14.txt"
   --ls <- lines <$> readFile "input/2019/14_example2.txt"
   --ls <- lines <$> readFile "input/2019/14_example3.txt"
-  ls <- lines <$> readFile "input/2019/14_example4.txt"
-
+  --ls <- lines <$> readFile "input/2019/14_example4.txt"
   --ls <- lines <$> readFile "input/2019/14_example5.txt"
   let reactions = parseReaction <$> ls
       rMap = reactionMap reactions
-      needingOre = expandToNeedingOre rMap [("FUEL", 1)]
-  --print $ fst $ ore rMap ("FUEL", 1) M.empty
-  print needingOre
-  print $ ore2 rMap needingOre
+  print $ M.lookup "ORE" $ ore rMap [("FUEL", 1)] M.empty
+  _ <- search rMap 1 10000000000
+  return ()
+
+day15 :: IO ()
+day15 = do
+  program <- readProgram "input/2019/15.txt"
+  let machine = Machine 0 [] [] program 0
+  return ()
