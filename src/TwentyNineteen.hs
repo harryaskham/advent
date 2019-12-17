@@ -1023,46 +1023,56 @@ parseReaction line = Reaction inputs' (outputChemical, read outputQuantity)
 reactionMap :: [Reaction] -> M.Map Chemical Reaction
 reactionMap = foldl' (\acc r@(Reaction _ (c, _)) -> M.insert c r acc) M.empty
 
-
--- Follow the needs, building up until the only need is ore, then sum needs
-
--- The following doesn't let us share our "haves" between paths, nor share resources, nor update paths.
--- Need a smarter solution.
-ore ("ORE", q) _ = q
-ore (c, q) haves = sum (ore <$> usingStock)
+-- Need to update haves each time, and also try every permutation for the minimum
+-- First need to check if we can make it from what we have, in which case no need to recurse
+ore :: M.Map Chemical Reaction -> (Chemical, Quantity) -> M.Map Chemical Quantity -> (Quantity, M.Map Chemical Quantity)
+-- If we are checking basic ore, then this just contributes the quantity we asked for.
+ore rm ("ORE", q) haves = (q, haves)
+-- If checking a chemical, if we can make it from current stock then we need zero additional ore.
+-- Otherwise, it's the cost of its children and it surfaces the remainder after making them.
+ore rm (c, q) haves = bestPermutation
   where
-    (Reaction requirements outputQ) = unsafeJ $ M.lookup reactionMap c
-    multiplier = ceiling (q / outputQ)
-    multipliedReqs = (*multiplier) <$> requirements
+    (Reaction requirements (_, outputQ)) = unsafeJ $ M.lookup c rm
+    multiplier = ceiling (fromIntegral q / fromIntegral outputQ)
+    multipliedReqs = (fmap.fmap) (*multiplier) requirements
+    reqPermutations = permutations multipliedReqs
+    bestPermutation = minimumBy (comparing fst) (costPermutation rm haves <$> reqPermutations)
+
+costPermutation :: M.Map Chemical Reaction -> M.Map Chemical Quantity -> [(Chemical, Quantity)] -> (Quantity, M.Map Chemical Quantity)
+costPermutation rm haves multipliedReqs =
+  if all (==0) $ snd <$> usingStock
+     then (0, haves)
+     else (childOre, finalHaves)
+  where
     (usingStock, newHaves) = useStock multipliedReqs haves
+    (childOre, finalHaves) =
+      foldl'
+        (\(accQ, accHaves) (nextC, nextQ) ->
+          let (oreQ, nextHaves) = ore rm (nextC, nextQ) accHaves
+           in (accQ + oreQ, nextHaves))
+        (0, newHaves) usingStock
 
-useStock = undefined
-
--- Breadth first: build up a queue of "needs" and "haves"
--- Go through queue, look up needs, multiply until enough, add to queue, add surplus to "haves"
--- Always kill from "haves" before computing "real need"
--- Proceed until Queue is all ore and sum the Ore
-
--- Maybe keep a running count of ore cost? Then we can just state the problem neatly.
-
-oreRequired :: [(Chemical, Quantity)] -> M.Map Chemical Quantity -> Maybe Int
-oreRequired [] haves = M.lookup "ORE" haves
-oreRequired ((targetC, targetQ):needs) haves =
-  case targetC of
-    -- Need to rethink, the ORE branch makes no sense
-    "ORE" -> M.insertWith (+) "ORE" targetQ haves
-    c -> let (Reaction requirements outputQ) = unsafeJ $ M.lookup reactionMap c
-             multiplier = ceiling (targetQ / outputQ)
-             multipliedReqs = (*multiplier) <$> requirements
-             -- Now need to fold over haves / reqs and update both at once, like a ([],{}) acc?
-             -- Or, wait, append needs to the start and deal with them first?
-             -- And when we have ORE we can create all the others
-             newHaves = undefined
-          in oreRequired (needs:multipliedReqs) newHaves
+useStock :: [(Chemical, Quantity)] -> M.Map Chemical Quantity -> ([(Chemical, Quantity)], M.Map Chemical Quantity)
+useStock [] haves = ([], haves)
+useStock ((c,q):reqs) haves =
+  case M.lookup c haves of
+    Nothing -> let (newReqs, newHaves) = useStock reqs haves in ((c,q):newReqs, newHaves)
+    Just haveQ -> if haveQ <= q
+                    then let updatedHaves = M.insert c 0 haves
+                             (newReqs, newHaves) = useStock reqs updatedHaves
+                          in ((c,q-haveQ):newReqs, newHaves)
+                    else let updatedHaves = M.insert c (haveQ-q) haves
+                             (newReqs, newHaves) = useStock reqs updatedHaves
+                          in ((c,0):newReqs, newHaves)
 
 day14 :: IO ()
 day14 = do
-  ls <- lines <$> readFile "input/2019/14.txt"
+  --ls <- lines <$> readFile "input/2019/14_example.txt"
+  --ls <- lines <$> readFile "input/2019/14.txt"
+  --ls <- lines <$> readFile "input/2019/14_example2.txt"
+  --ls <- lines <$> readFile "input/2019/14_example3.txt"
+  --ls <- lines <$> readFile "input/2019/14_example4.txt"
+  ls <- lines <$> readFile "input/2019/14_example5.txt"
   let reactions = parseReaction <$> ls
       rMap = reactionMap reactions
-  print $ oreRequired [("FUEL", 1)]
+  print $ fst $ ore rMap ("FUEL", 1) M.empty
