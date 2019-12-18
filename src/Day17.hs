@@ -4,7 +4,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiWayIf #-}
 
-module Day15 where
+module Day17 where
 
 import qualified Data.Set as S
 import Data.List
@@ -30,10 +30,10 @@ import System.IO
 import System.IO.HiddenChar
 import Control.Concurrent
 import System.Random
-import TwentyNineteen (Machine(..), readProgram, stepUntilNOutputs, inputs, outputs, clear)
+import TwentyNineteen (Machine(..), readProgram, stepUntilNOutputs, inputs, outputs, clear, runProgram)
 
 day17 :: IO ()
 day17 = do
-  program <- readProgram "input/2019/177txt"
-  let machine = (Machine 0 [] [] program 0)
-  return ()
+  program <- readProgram "input/2019/17.txt"
+  machine <- runProgram (Machine 0 [] [] program 0)
+  putStrLn $ toEnum . fromIntegral <$> machine ^. outputs
