@@ -1106,19 +1106,15 @@ runPhases n number = runPhases (n-1) (runPhase number)
 
 -- Assuming the reversed number as input, and returns the reversed list as output
 -- Build the new number simply by starting with the last and adding the previous.
-nextPhase :: [Integer] -> [Integer] -> [Integer]
--- Once we consume all input, we're good.
-nextPhase acc [] = reverse acc
--- If we're at the start, the first digit doesn't change at all.
-nextPhase [] (x:xs) = nextPhase [x] xs
-nextPhase (a:acc) (x:xs) = nextPhase (sumD x a:a:acc) xs
+runEfficientPhase :: [Integer] -> [Integer]
+runEfficientPhase = scanl1 sumD
 
 sumD :: Integer -> Integer -> Integer
 sumD a b = fromIntegral . digitToInt . last $ show (a + b)
 
 runEfficientPhases :: Int -> [Integer] -> [Integer]
 runEfficientPhases 0 number = number
-runEfficientPhases n number = runEfficientPhases (n-1) (nextPhase [] number)
+runEfficientPhases n number = runEfficientPhases (n-1) (runEfficientPhase number)
 
 offset :: [Integer] -> Int
 offset number = read $ intToDigit . fromInteger <$> take 7 number
@@ -1138,6 +1134,6 @@ day16 = do
   let number = fromIntegral . digitToInt <$> head ls
       target = 5970807
       bigNumber = concat $ replicate 10000 number
-      lastNumber = efficientLastN (length bigNumber - target) bigNumber
+      lastNumber = drop target bigNumber -- efficientLastN (length bigNumber - target) bigNumber
   --print $ take 8 $ runPhases 100 number
-  print $ take 8 . reverse $ runEfficientPhases 1 (reverse lastNumber)
+  print $ take 8 . reverse $ runEfficientPhases 100 (reverse lastNumber)
