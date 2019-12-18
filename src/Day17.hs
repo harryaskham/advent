@@ -91,6 +91,10 @@ inputMovements routine funcA funcB funcC cameraOn machine =
                       else (fromIntegral . fromEnum) 'n'
                   , (fromIntegral . fromEnum) '\n']
 
+-- TODO: Need to hand-draw the full input string
+-- Find commonalities in order to compress it.
+-- Might be possible by hand, otherwise need algorithm
+
 day17_2 :: IO ()
 day17_2 = do
   program <- readProgram "input/2019/17.txt"
