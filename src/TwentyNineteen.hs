@@ -1104,10 +1104,9 @@ runPhases n number = runPhases (n-1) (runPhase number)
 -- So we can work backwards from the last digit until we reach our target digit, compute it, and that's a phase
 -- Run again 100 times and read out the first 8
 
--- Assuming the reversed number as input, and returns the reversed list as output
 -- Build the new number simply by starting with the last and adding the previous.
 runEfficientPhase :: [Integer] -> [Integer]
-runEfficientPhase = scanl1 sumD
+runEfficientPhase = tail . scanl' sumD 0
 
 sumD :: Integer -> Integer -> Integer
 sumD a b = fromIntegral . digitToInt . last $ show (a + b)
