@@ -185,9 +185,9 @@ floodPass orig = MX.matrix (MX.nrows orig) (MX.ncols orig) fillCoord
                          Nothing -> Unknown
 
 gridToMatrix grid = MX.matrix dim dim drawFn
-      where
-        dim = 45
-        drawFn (y', x') = fromMaybe Unknown $ M.lookup (x'-(dim `div` 2), y'-(dim `div` 2)) grid
+  where
+    dim = 45
+    drawFn (y', x') = fromMaybe Unknown $ M.lookup (x'-(dim `div` 2), y'-(dim `div` 2)) grid
 
 floodUntilComplete :: Int -> MX.Matrix Space -> Int
 floodUntilComplete n m =

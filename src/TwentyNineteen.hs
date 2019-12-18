@@ -1063,3 +1063,33 @@ day14 = do
   print $ M.lookup "ORE" $ ore rMap [("FUEL", 1)] M.empty
   _ <- search rMap 1 10000000000
   return ()
+
+errorCode :: Int -> [Integer]
+errorCode 0 = tail $ cycle [0, 1, 0, -1]
+errorCode n = tail . cycle $ concat $ replicate (n+1) <$> [0, 1, 0, -1]
+
+combineCodeWithNumber :: [Integer] -> [Integer] -> Integer
+combineCodeWithNumber code number = fromIntegral . digitToInt . last . show $ sum mulPairs
+  where
+    pairs = zip code number
+    mulPairs = ((*) <$> fst <*> snd) <$> pairs
+
+runPhase :: [Integer] -> [Integer]
+runPhase number = take (length number) $ (combineCodeWithNumber <$> fst <*> snd) <$> codeNumbers
+  where
+    codes = errorCode <$> [0..]
+    codeNumbers = zip codes (repeat number)
+
+runPhases :: Int -> [Integer] -> [Integer]
+runPhases 0 number = number
+runPhases n number = runPhases (n-1) (runPhase number)
+
+offset :: [Integer] -> Int
+offset number = read $ intToDigit . fromInteger <$> take 7 number
+
+day16 :: IO ()
+day16 = do
+  ls <- lines <$> readFile "input/2019/16.txt"
+  let number = fromIntegral . digitToInt <$> head ls
+  print $ take 8 $ runPhases 100 number
+  print $ take 8 . drop (offset number) $ runPhases 100 (concat . replicate 10000 $ number)
