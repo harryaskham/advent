@@ -86,30 +86,24 @@ inputMovements routine funcA funcB funcC cameraOn machine =
     asciiFuncA = fromIntegral . fromEnum <$> funcA ++ "\n"
     asciiFuncB = fromIntegral . fromEnum <$> funcB ++ "\n"
     asciiFuncC = fromIntegral . fromEnum <$> funcC ++ "\n"
-    asciiCamera = [if cameraOn then (fromIntegral . fromEnum) 'y' else (fromIntegral . fromEnum) 'n', (fromIntegral . fromEnum) '\n']
+    asciiCamera = [ if cameraOn
+                      then (fromIntegral . fromEnum) 'y'
+                      else (fromIntegral . fromEnum) 'n'
+                  , (fromIntegral . fromEnum) '\n']
 
 day17_2 :: IO ()
 day17_2 = do
   program <- readProgram "input/2019/17.txt"
   let machine = Machine 0 [] [] (M.insert 0 2 program) 0
       moved = inputMovements
-                "A,B,C,B,A,C"
-                "R,8,R,8"
-                "R,4,R,4,R,8"
-                "L,6,L,2"
-                True
-                machine
-    {-
                 "A,B,C"
                 "L,4,L,4,L,10,R,4,R,4"
                 "L,4,L,4"
                 "R,8,R,10"
-                True
+                False
                 machine
-                -}
   print $ moved ^. inputs
   runMoved <- runProgram moved
-  let splitOutputs = chunksOf (31 * 39 + 1) $ runMoved ^. outputs
-      printChunk :: [Integer] -> IO ()
-      printChunk chunk = if length chunk > 10 then sequenceA_ $ print <$> asciiToGrid chunk else print chunk
-  sequenceA_ $ printChunk <$> splitOutputs
+  let rows = splitOn "\n" $ toEnum . fromIntegral <$> runMoved ^. outputs
+  sequenceA_ $ print <$> rows
+  print $ last $ runMoved ^. outputs
