@@ -1095,6 +1095,30 @@ runPhases n number = runPhases (n-1) (runPhase number)
 -- Recognise that replication == cancelling out.
 -- Any -1 in the same spot as a +1 cancels out and 0 doesn't contribute
 -- But +1 must be in the same alignment as the -1, can;t just cancel 1 and -1
+--
+-- The last digit always remains the same!
+-- The last half could be computed incrementally
+-- But that's still on a length of 6,500,000 ... which isn't that bad
+-- We are looking for 5970807, so well into the second half
+-- And the second half never depend on the first half.
+-- So we can work backwards from the last digit until we reach our target digit, compute it, and that's a phase
+-- Run again 100 times and read out the first 8
+
+-- Assuming the reversed number as input, and returns the reversed list as output
+-- Build the new number simply by starting with the last and adding the previous.
+nextPhase :: [Integer] -> [Integer] -> [Integer]
+-- Once we consume all input, we're good.
+nextPhase acc [] = reverse acc
+-- If we're at the start, the first digit doesn't change at all.
+nextPhase [] (x:xs) = nextPhase [x] xs
+nextPhase (a:acc) (x:xs) = nextPhase (sumD x a:a:acc) xs
+
+sumD :: Integer -> Integer -> Integer
+sumD a b = fromIntegral . digitToInt . last $ show (a + b)
+
+runEfficientPhases :: Int -> [Integer] -> [Integer]
+runEfficientPhases 0 number = number
+runEfficientPhases n number = runEfficientPhases (n-1) (nextPhase [] number)
 
 offset :: [Integer] -> Int
 offset number = read $ intToDigit . fromInteger <$> take 7 number
@@ -1106,11 +1130,14 @@ modGet n xs = xs !! (n `mod` length xs)
 -- Get the last N thigns "efficiently"
 -- Better if we use a Vector or Array.
 efficientLastN :: Int -> [Integer] -> [Integer]
-efficientLastN n xs = modGet <$> [n-1..length xs - 1] <*> pure xs
+efficientLastN n xs = modGet <$> [length xs - n..length xs - 1] <*> pure xs
 
 day16 :: IO ()
 day16 = do
   ls <- lines <$> readFile "input/2019/16.txt"
   let number = fromIntegral . digitToInt <$> head ls
-      off = offset number
-  print $ take 8 $ runPhases 100 number
+      target = 5970807
+      bigNumber = concat $ replicate 10000 number
+      lastNumber = efficientLastN (length bigNumber - target) bigNumber
+  --print $ take 8 $ runPhases 100 number
+  print $ take 8 . reverse $ runEfficientPhases 1 (reverse lastNumber)
