@@ -114,7 +114,6 @@ day17_2 = do
                 "R,4,L,10,R,10"
                 False
                 machine
-  print $ moved ^. inputs
   runMoved <- runProgram moved
   let rows = splitOn "\n" $ toEnum . fromIntegral <$> runMoved ^. outputs
   sequenceA_ $ print <$> rows
