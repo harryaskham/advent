@@ -31,6 +31,7 @@ import System.IO.HiddenChar
 import Control.Concurrent
 import System.Random
 import Control.Exception
+import TwentyNineteen (unsafeJ)
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 type Grid = V.Vector (V.Vector Space)
@@ -49,8 +50,11 @@ printGrid (x, y) grid = sequenceA_ $ print . concat . V.toList <$> charGrid V.//
     ythRow = charGrid V.! y
     updatedYth = ythRow V.// [(x, "*")]
 
-gridFind :: Space -> Grid -> (Int, Int)
-gridFind a grid = head coords
+isKey (KeySpace _) = True
+isKey _ = False
+
+gridFind :: Space -> Grid -> Maybe (Int, Int)
+gridFind a grid = if null coords then Nothing else Just $ head coords
   where
     nrows = V.length grid
     ncols = V.length (grid V.! 0)
@@ -93,21 +97,36 @@ vreplace2 (x, y) a g = g V.// [(y, row)]
 
 -- Return the grid with the given door unlocked.
 unlockDoor :: Key -> Grid -> Grid
-unlockDoor (Key c) grid = vreplace2 keyLoc Empty $ vreplace2 doorLoc Empty grid
+unlockDoor (Key c) grid = withoutDoor
   where
     keyLoc = gridFind (KeySpace $ toLower c) grid
+    withoutKey = case keyLoc of
+                   (Just k) -> vreplace2 k Empty grid
+                   Nothing -> grid
     doorLoc = gridFind (Door $ toUpper c) grid
+    withoutDoor = case doorLoc of
+                    (Just k) -> vreplace2 k Empty withoutKey
+                    Nothing -> withoutKey
 
 isDoor :: Space -> Bool
 isDoor space = case space of
                  (Door _) -> True
                  _ -> False
 
+numKeys :: Grid -> Int
+numKeys grid = length [(x, y) | x <- [0..ncols-1], y <- [0..nrows-1], isKey (grid V.! y V.! x)]
+  where
+    nrows = V.length grid
+    ncols = V.length (grid V.! 0)
+
+
 dbg = False
 
+-- still running - if not finished use some debug output to check we're not in an infinite loop, maybe we arent removing keys or something
+
 -- Returns the minimum number of steps to get all the keys.
-stepExplorer :: Explorer -> IO StepState
-stepExplorer (Explorer grid (x, y) keys numSteps seenLocations) = do
+stepExplorer :: Int -> Explorer -> IO StepState
+stepExplorer nkeys (Explorer grid (x, y) keys numSteps seenLocations) = do
   when dbg $ do
     printGrid (x, y) grid
     print $ "Location: " ++ show (x, y)
@@ -116,15 +135,16 @@ stepExplorer (Explorer grid (x, y) keys numSteps seenLocations) = do
     print $ "Current steps: " ++ show numSteps
     print $ "Current seen: " ++ show seenLocations
 
+  --getLine
   print $ length keys
-  if S.size nextKeys == 26
+  if S.size nextKeys == nkeys
      then return numSteps
      else if null nextPos
      then return Dead
      else
        let branches =
              sequenceA
-             ((\pos -> stepExplorer (Explorer nextGrid pos nextKeys (addStep numSteps) nextSeenLocations)) <$> nextPos)
+             ((\pos -> stepExplorer nkeys (Explorer nextGrid pos nextKeys (addStep numSteps) nextSeenLocations)) <$> nextPos)
         in bestStepState <$> branches
   where
     -- If current space is key, pick it up, add to inventory, and unlock corresponding door.
@@ -153,9 +173,11 @@ stepExplorer (Explorer grid (x, y) keys numSteps seenLocations) = do
 
 day18 :: IO ()
 day18 = do
-  ls <- lines <$> readFile "input/2019/18.txt"
+  --ls <- lines <$> readFile "input/2019/18.txt"
+  ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
-      startPos = gridFind Entrance grid
+      nkeys = numKeys grid
+      startPos = unsafeJ $ gridFind Entrance grid
       explorer = Explorer grid startPos S.empty (NumSteps 0) S.empty
-  finalState <- stepExplorer explorer
+  finalState <- stepExplorer nkeys explorer
   print finalState
