@@ -109,7 +109,7 @@ dbg = False
 stepExplorer :: Explorer -> IO StepState
 stepExplorer (Explorer grid (x, y) keys numSteps seenLocations) = do
   when dbg $ do
-    --printGrid (x, y) grid
+    printGrid (x, y) grid
     print $ "Location: " ++ show (x, y)
     print $ "Going next: " ++ show nextPos
     print $ "Current keys: " ++ show keys
