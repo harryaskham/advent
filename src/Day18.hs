@@ -69,7 +69,7 @@ fromChar c
   | otherwise = KeySpace c
 
 newtype Key = Key Char deriving (Ord, Eq, Show)
-data StepState = NumSteps Int | Dead deriving (Eq, Show)
+data StepState = NumSteps Int | Dead deriving (Eq, Show, Ord)
 -- Store the position, inventory and number of steps taken.
 data Explorer = Explorer Grid (Int, Int) (S.Set Key) StepState (S.Set (Int, Int))
 
@@ -119,14 +119,20 @@ numKeys grid = length [(x, y) | x <- [0..ncols-1], y <- [0..nrows-1], isKey (gri
     nrows = V.length grid
     ncols = V.length (grid V.! 0)
 
+overCap :: StepState -> StepState -> Bool
+overCap (NumSteps cap) (NumSteps now) = now > cap
+overCap Dead _ = False
+
 
 dbg = False
 
--- still running - if not finished use some debug output to check we're not in an infinite loop, maybe we arent removing keys or something
+-- Okay, we added capping, didn't help
+-- Maybe this needs to be a BFS... means that we find a single solution early
+-- So that we can use this to cap a DFS
 
 -- Returns the minimum number of steps to get all the keys.
-stepExplorer :: Int -> Explorer -> IO StepState
-stepExplorer nkeys (Explorer grid (x, y) keys numSteps seenLocations) = do
+stepExplorer :: StepState -> Int -> Explorer -> IO StepState
+stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations) = do
   when dbg $ do
     printGrid (x, y) grid
     print $ "Location: " ++ show (x, y)
@@ -137,15 +143,37 @@ stepExplorer nkeys (Explorer grid (x, y) keys numSteps seenLocations) = do
 
   --getLine
   print $ length keys
+  -- If we found all the keys, finish
   if S.size nextKeys == nkeys
      then return numSteps
-     else if null nextPos
+     -- Otherwise if we hit a dead end or we already found a nice branch, die
+     else if null nextPos || overCap stepCap numSteps
      then return Dead
-     else
-       let branches =
-             sequenceA
-             ((\pos -> stepExplorer nkeys (Explorer nextGrid pos nextKeys (addStep numSteps) nextSeenLocations)) <$> nextPos)
-        in bestStepState <$> branches
+     -- Otherwise kick off a few branches.
+     else do
+       -- Introduce capping.
+       -- For all below need to do as a fold where cap is passed on.
+       -- Find bestUp with no cap.
+       -- Then bestDown with a truncation of best so far
+       -- Then bestRight with trunncation of best so far
+       -- Finally bestLeft with same.
+       --let branches =
+       --      sequenceA
+       --      ((\pos -> stepExplorer nkeys (Explorer nextGrid pos nextKeys (addStep numSteps) nextSeenLocations)) <$> nextPos)
+       -- in bestStepState <$> branches
+       bestUp <- if validNextPos (x,y-1)
+                    then stepExplorer Dead nkeys (Explorer nextGrid (x,y-1) nextKeys (addStep numSteps) nextSeenLocations)
+                    else return Dead
+       bestDown <- if validNextPos (x,y+1)
+                      then stepExplorer bestUp nkeys (Explorer nextGrid (x,y+1) nextKeys (addStep numSteps) nextSeenLocations)
+                      else return Dead
+       bestLeft <- if validNextPos (x-1,y)
+                      then stepExplorer (minimum [bestUp, bestDown]) nkeys (Explorer nextGrid (x-1,y) nextKeys (addStep numSteps) nextSeenLocations)
+                      else return Dead
+       bestRight <- if validNextPos (x+1,y)
+                      then stepExplorer (minimum [bestUp, bestDown, bestLeft]) nkeys (Explorer nextGrid (x+1,y) nextKeys (addStep numSteps) nextSeenLocations)
+                      else return Dead
+       return $ bestStepState [bestUp, bestDown, bestLeft, bestRight]
   where
     -- If current space is key, pick it up, add to inventory, and unlock corresponding door.
     currentSpace = grid V.! y V.! x
@@ -164,12 +192,11 @@ stepExplorer nkeys (Explorer grid (x, y) keys numSteps seenLocations) = do
     -- If there is nowhere to go, we're a dead end.
     nrows = V.length grid
     ncols = V.length (grid V.! 0)
-    nextPos = filter
-                (\(x,y) -> x >= 0 && y >= 0 && x < ncols && y < nrows
-                           && not ((x,y) `S.member` nextSeenLocations)
-                           && grid V.! y V.! x /= Wall
-                           && not (isDoor $ grid V.! y V.! x))
-                [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
+    validNextPos (x,y) = x >= 0 && y >= 0 && x < ncols && y < nrows
+                         && not ((x,y) `S.member` nextSeenLocations)
+                         && grid V.! y V.! x /= Wall
+                         && not (isDoor $ grid V.! y V.! x)
+    nextPos = filter validNextPos [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
 
 day18 :: IO ()
 day18 = do
@@ -179,5 +206,5 @@ day18 = do
       nkeys = numKeys grid
       startPos = unsafeJ $ gridFind Entrance grid
       explorer = Explorer grid startPos S.empty (NumSteps 0) S.empty
-  finalState <- stepExplorer nkeys explorer
+  finalState <- stepExplorer Dead nkeys explorer
   print finalState
