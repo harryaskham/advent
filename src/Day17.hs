@@ -91,19 +91,27 @@ inputMovements routine funcA funcB funcC cameraOn machine =
                       else (fromIntegral . fromEnum) 'n'
                   , (fromIntegral . fromEnum) '\n']
 
--- TODO: Need to hand-draw the full input string
--- Find commonalities in order to compress it.
--- Might be possible by hand, otherwise need algorithm
+-- Full string:
+-- A L,4,L,4,L,10,R,4,
+-- B R,4,L,4,L,4,R,8,R,10,
+-- A L,4,L,4,L,10,R,4,
+-- C R,4,L,10,R,10,
+-- A L,4,L,4,L,10,R,4,
+-- C R,4,L,10,R,10,
+-- B R,4,L,4,L,4,R,8,R,10,
+-- C R,4,L,10,R,10,
+-- C R,4,L,10,R,10,
+-- B R,4,L,4,L,4,R,8,R,10
 
 day17_2 :: IO ()
 day17_2 = do
   program <- readProgram "input/2019/17.txt"
   let machine = Machine 0 [] [] (M.insert 0 2 program) 0
       moved = inputMovements
-                "A,B,C"
-                "L,4,L,4,L,10,R,4,R,4"
-                "L,4,L,4"
-                "R,8,R,10"
+                "A,B,A,C,A,C,B,C,C,B"
+                "L,4,L,4,L,10,R,4"
+                "R,4,L,4,L,4,R,8,R,10"
+                "R,4,L,10,R,10"
                 False
                 machine
   print $ moved ^. inputs
