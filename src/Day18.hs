@@ -73,7 +73,7 @@ fromChar c
 newtype Key = Key Char deriving (Ord, Eq, Show)
 data StepState = NumSteps Int | Dead deriving (Eq, Show, Ord)
 -- Store the position, inventory and number of steps taken.
-data Explorer = Explorer (Int, Int) (S.Set Key) StepState
+data Explorer = Explorer (Int, Int) (S.Set Key) StepState deriving (Eq)
 
 vreplace2 :: (Int, Int) -> a -> V.Vector (V.Vector a) -> V.Vector (V.Vector a)
 vreplace2 (x, y) a g = g V.// [(y, row)]
@@ -185,6 +185,10 @@ type Cache = M.Map ((Int, Int), S.Set Key) (M.Map (Int, Int) Int)
 -- Cache the best cost from a given point.
 type CostCache = M.Map ((Int, Int), S.Set Key) StepState
 
+-- WHY IS BFS SO SLOW?!?!?
+
+-- cache from Explorer to something?
+
 -- Going back to a simple caching BFS.
 simpleBfs :: Grid -> Cache -> KeyLocations -> Int -> [Explorer] -> StepState -> IO StepState
 simpleBfs grid cache keyLocations nkeys [] stepState = return stepState
@@ -211,7 +215,7 @@ simpleBfs grid cache keyLocations nkeys (e:rest) stepState = do
             <$> M.toList rKeys
           nextQueue = rest ++ nextStates
        in do
-         if isJust cachedRKeys then print "hit" else print "miss"
+         --if isJust cachedRKeys then print "hit" else print "miss"
          when dbg $ do
            print $ "Cache length: " ++ show (M.size cache)
            print $ "Reachable keys: " ++ show rKeys
