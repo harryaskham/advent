@@ -35,6 +35,7 @@ dependencies:
 - matrix
 - hidden-char
 - random
+- pqueue
 
 library:
   source-dirs: src
