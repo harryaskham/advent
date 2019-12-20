@@ -36,6 +36,7 @@ dependencies:
 - hidden-char
 - random
 - pqueue
+- monad-dijkstra
 
 library:
   source-dirs: src

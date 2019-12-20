@@ -33,6 +33,7 @@ import System.Random
 import Control.Exception
 import TwentyNineteen (unsafeJ, mDistance)
 import qualified Data.PQueue.Prio.Min as PQ
+import Control.Monad.Search
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 type Grid = V.Vector (V.Vector Space)
@@ -103,9 +104,6 @@ numKeys grid = length [(x, y) | x <- [0..ncols-1], y <- [0..nrows-1], isKey (gri
     nrows = V.length grid
     ncols = V.length (grid V.! 0)
 
-shortestPath :: DistanceMap -> [(Int, Int)] -> Int
-shortestPath distanceMap points
-
 -- An A* search heuristic.
 heuristic :: DistanceMap -> M.Map Char (Int, Int) -> Explorer -> Int
 heuristic distanceMap keyLocations (Explorer _ pos keys numSteps) =
@@ -113,8 +111,6 @@ heuristic distanceMap keyLocations (Explorer _ pos keys numSteps) =
   --sum $ dist pos <$> remainingKeyLocs
   where
     dist :: (Int, Int) -> (Int, Int) -> Int
-    --dist (x1,y1) (x2,y2) = floor $ sqrt . fromIntegral $ ((x2-x1)^2) * ((y2-y1)^2)
-    --dist = mDistance
     dist from to = unsafeJ $ M.lookup (from,to) distanceMap
     remainingKeyLocs :: [(Int, Int)]
     remainingKeyLocs = snd <$> M.toList (foldl' (\acc (Key k) -> M.delete k acc) keyLocations (S.toList keys))
@@ -135,7 +131,7 @@ bestDistance (x, y) (toX, toY) grid seen
                          -- && not (isDoor $ grid V.! y V.! x)
     nextPos = filter validNextPos [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
 
--- Given the origin and key locations, find the no-walls distances between all things.
+-- Given the origin and key locations, find the no-doors distances between all things.
 bestDistances :: (Int, Int) -> M.Map Char (Int, Int) -> Grid -> DistanceMap
 bestDistances origin keyLocations grid =
   M.fromList [((from,to), bestDistance from to grid S.empty) | from <- froms, to <- tos]
@@ -148,7 +144,7 @@ getNumSteps (NumSteps i) = i
 type DistanceMap = M.Map ((Int, Int), (Int, Int)) Int
 type KeyLocations = M.Map Char (Int, Int)
 
-dbg = False
+dbg = True
 
 -- The distance between two keys.
 keyDistance :: (Int, Int) -> (Int, Int) -> Grid -> S.Set (Int, Int) -> Maybe Int
@@ -182,8 +178,44 @@ reachableKeys keys from keyLocations grid =
 -- Key is position and keys, value is the reachable key map
 type Cache = M.Map ((Int, Int), S.Set Key) (M.Map (Int, Int) Int)
 
+-- Cache the best cost from a given point.
+type CostCache = M.Map ((Int, Int), S.Set Key) StepState
+
+-- Going back to a simple caching BFS.
+simpleBfs :: Cache -> KeyLocations -> StepState -> Int -> [Explorer] -> IO StepState
+simpleBfs _ _ stepCap _ [] = return stepCap
+simpleBfs cache keyLocations stepCap nkeys (e:rest) = do
+  let (Explorer grid (x, y) keys numSteps) = e
+      currentSpace = grid V.! y V.! x
+      nextKeys = case currentSpace of
+                   (KeySpace c) -> S.insert (Key c) keys
+                   _ -> keys
+      nextGrid = case currentSpace of
+                   (KeySpace c) -> unlockDoor (Key c) grid
+                   _ -> grid
+
+  if S.size nextKeys == nkeys
+     then return numSteps
+     else do
+       let cachedRKeys = M.lookup ((x,y), keys) cache
+           rKeys = fromMaybe (reachableKeys keys (x, y) keyLocations nextGrid) cachedRKeys
+           nextCache = M.insert ((x,y),keys) rKeys cache
+           nextStates =
+             (\(pos, d) -> Explorer nextGrid pos nextKeys (NumSteps (d + getNumSteps numSteps)))
+             <$> M.toList rKeys
+           nextQueue = rest ++ nextStates
+           sortedQueue = sortOn (\(Explorer _ _ _ (NumSteps d)) -> d) nextQueue
+       --if isJust cachedRKeys then print "Reachable Cache hit" else print "Reachable Cache miss"
+       simpleBfs nextCache keyLocations stepCap nkeys sortedQueue
+
+
+
+           
+
+
+
 -- Returns the minimum number of steps to get all the keys.
-stepExplorer :: DistanceMap -> Cache -> M.Map Char (Int, Int) -> StepState -> Int -> PQ.MinPQueue Int Explorer -> IO StepState
+stepExplorer :: DistanceMap -> Cache -> KeyLocations -> StepState -> Int -> PQ.MinPQueue Int Explorer -> IO StepState
 stepExplorer distanceMap cache keyLocations stepCap nkeys queue
   | PQ.null queue = return stepCap
   | otherwise = do
@@ -208,7 +240,6 @@ stepExplorer distanceMap cache keyLocations stepCap nkeys queue
              foldl'
              (\q ex@(Explorer _ _ _ (NumSteps st)) -> PQ.insert (st + heuristic distanceMap keyLocations ex) ex q)
              queueWithoutCurrent nextStates
-        --in stepExplorer stepCap nkeys nextRest
         in do
           when dbg $ do
             print $ "Cache length: " ++ show (M.size cache)
@@ -242,5 +273,6 @@ day18 = do
       startPos = head $ gridFind Entrance grid
       distanceMap = bestDistances startPos keyLocations grid
       explorer = Explorer grid startPos S.empty (NumSteps 0)
-  finalState <- stepExplorer distanceMap M.empty keyLocations Dead nkeys (PQ.singleton 0 explorer)
+  --finalState <- stepExplorer distanceMap M.empty keyLocations Dead nkeys (PQ.singleton 0 explorer)
+  finalState <- simpleBfs M.empty keyLocations Dead nkeys [Explorer grid startPos S.empty (NumSteps 0)]
   print finalState
