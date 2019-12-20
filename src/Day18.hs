@@ -34,6 +34,7 @@ import Control.Exception
 import TwentyNineteen (unsafeJ, mDistance)
 import qualified Data.PQueue.Prio.Min as PQ
 import Control.Monad.Search
+import qualified Data.Sequence as SQ
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 type Grid = V.Vector (V.Vector Space)
@@ -186,20 +187,23 @@ type Cache = M.Map ((Int, Int), S.Set Key) (M.Map (Int, Int) Int)
 type CostCache = M.Map ((Int, Int), S.Set Key) StepState
 
 -- WHY IS BFS SO SLOW?!?!?
+-- Building with profiling and will find out.
+-- Holy shit, using Seq made things a lot faster
+-- Fuck linked lists
 
--- cache from Explorer to something?
 
 -- Going back to a simple caching BFS.
-simpleBfs :: Grid -> Cache -> KeyLocations -> Int -> [Explorer] -> StepState -> IO StepState
-simpleBfs grid cache keyLocations nkeys [] stepState = return stepState
-simpleBfs grid cache keyLocations nkeys (e:rest) stepState = do
-  let (Explorer (x, y) keys numSteps) = e
+simpleBfs :: Int -> Grid -> Cache -> KeyLocations -> Int -> SQ.Seq Explorer -> StepState -> IO StepState
+simpleBfs n grid cache keyLocations nkeys queue stepState 
+  | SQ.null queue = return stepState
+  | otherwise = do
+  let (Explorer (x, y) keys numSteps) = SQ.index queue 0
       currentSpace = grid V.! y V.! x
       nextKeys = case currentSpace of
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
   if S.size nextKeys == nkeys
-    then simpleBfs grid cache keyLocations nkeys rest (minimum [numSteps, stepState])
+    then simpleBfs (n+1) grid cache keyLocations nkeys (SQ.drop 1 queue) (minimum [numSteps, stepState])
     else do
       print numSteps
       when dbg $ do
@@ -213,15 +217,17 @@ simpleBfs grid cache keyLocations nkeys (e:rest) stepState = do
           nextStates =
             (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
             <$> M.toList rKeys
-          nextQueue = rest ++ nextStates
+          nextQueue = SQ.drop 1 queue SQ.>< SQ.fromList nextStates
        in do
          --if isJust cachedRKeys then print "hit" else print "miss"
+         print $ "Queue length: " ++ show (length nextQueue)
+         print $ "States handled: " ++ show n
          when dbg $ do
            print $ "Cache length: " ++ show (M.size cache)
            print $ "Reachable keys: " ++ show rKeys
            _ <- if dbg then getLine else return ""
            return ()
-         simpleBfs grid nextCache keyLocations nkeys nextQueue stepState
+         simpleBfs (n+1) grid nextCache keyLocations nkeys nextQueue stepState
 
 
 
@@ -273,8 +279,8 @@ stepExplorer grid distanceMap cache keyLocations stepCap nkeys queue
 
 day18 :: IO ()
 day18 = do
-  --ls <- lines <$> readFile "input/2019/18.txt"
-  ls <- lines <$> readFile "input/2019/18_example.txt"
+  ls <- lines <$> readFile "input/2019/18.txt"
+  --ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
@@ -286,5 +292,5 @@ day18 = do
       distanceMap = bestDistances startPos keyLocations grid
       explorer = Explorer startPos S.empty (NumSteps 0)
   --finalState <- stepExplorer grid distanceMap M.empty keyLocations Dead nkeys (PQ.singleton 0 explorer)
-  finalState <- simpleBfs grid M.empty keyLocations nkeys [explorer] Dead
+  finalState <- simpleBfs 0 grid M.empty keyLocations nkeys (SQ.singleton explorer) Dead
   print finalState
