@@ -37,7 +37,7 @@ data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 type Grid = V.Vector (V.Vector Space)
 
 instance Show Space where
-  show Entrance = "@"
+  show Entrance = "."
   show Empty = "."
   show (Door c) = [c]
   show (KeySpace c) = [c]
@@ -48,7 +48,7 @@ printGrid (x, y) grid = sequenceA_ $ print . concat . V.toList <$> charGrid V.//
   where
     charGrid = (fmap.fmap) show grid
     ythRow = charGrid V.! y
-    updatedYth = ythRow V.// [(x, "*")]
+    updatedYth = ythRow V.// [(x, "@")]
 
 isKey (KeySpace _) = True
 isKey _ = False
@@ -120,7 +120,7 @@ numKeys grid = length [(x, y) | x <- [0..ncols-1], y <- [0..nrows-1], isKey (gri
     ncols = V.length (grid V.! 0)
 
 overCap :: StepState -> StepState -> Bool
-overCap (NumSteps cap) (NumSteps now) = now > cap
+overCap (NumSteps cap) (NumSteps now) = now >= cap
 overCap Dead _ = False
 
 
@@ -129,10 +129,14 @@ dbg = False
 -- Okay, we added capping, didn't help
 -- Maybe this needs to be a BFS... means that we find a single solution early
 -- So that we can use this to cap a DFS
+-- Okay BFS does not help, never reaches 26 so can't cap
+-- Proceeds through steps very slowly
+-- Need to crack the branching example first
 
 -- Returns the minimum number of steps to get all the keys.
-stepExplorer :: StepState -> Int -> Explorer -> IO StepState
-stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations) = do
+stepExplorer :: StepState -> Int -> [Explorer] -> IO StepState
+stepExplorer stepCap _ [] = return stepCap
+stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations:rest) = do
   when dbg $ do
     printGrid (x, y) grid
     print $ "Location: " ++ show (x, y)
@@ -140,17 +144,18 @@ stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations) = 
     print $ "Current keys: " ++ show keys
     print $ "Current steps: " ++ show numSteps
     print $ "Current seen: " ++ show seenLocations
-
-  --getLine
+    _ <- if dbg then getLine else return ""
+    return ()
   print $ length keys
-  -- If we found all the keys, finish
+  print numSteps
   if S.size nextKeys == nkeys
-     then return numSteps
+     -- If we found all the keys, update the best cap.
+     then stepExplorer (minimum [stepCap, numSteps]) nkeys rest
      -- Otherwise if we hit a dead end or we already found a nice branch, die
      else if null nextPos || overCap stepCap numSteps
-     then return Dead
+     then stepExplorer (minimum [stepCap, Dead]) nkeys rest
      -- Otherwise kick off a few branches.
-     else do
+     else --do
        -- Introduce capping.
        -- For all below need to do as a fold where cap is passed on.
        -- Find bestUp with no cap.
@@ -161,6 +166,7 @@ stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations) = 
        --      sequenceA
        --      ((\pos -> stepExplorer nkeys (Explorer nextGrid pos nextKeys (addStep numSteps) nextSeenLocations)) <$> nextPos)
        -- in bestStepState <$> branches
+         {-
        bestUp <- if validNextPos (x,y-1)
                     then stepExplorer Dead nkeys (Explorer nextGrid (x,y-1) nextKeys (addStep numSteps) nextSeenLocations)
                     else return Dead
@@ -174,6 +180,10 @@ stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations) = 
                       then stepExplorer (minimum [bestUp, bestDown, bestLeft]) nkeys (Explorer nextGrid (x+1,y) nextKeys (addStep numSteps) nextSeenLocations)
                       else return Dead
        return $ bestStepState [bestUp, bestDown, bestLeft, bestRight]
+       -}
+       
+       let nextRest = rest ++ ((\pos -> Explorer nextGrid pos nextKeys (addStep numSteps) nextSeenLocations) <$> nextPos)
+        in stepExplorer stepCap nkeys nextRest
   where
     -- If current space is key, pick it up, add to inventory, and unlock corresponding door.
     currentSpace = grid V.! y V.! x
@@ -200,11 +210,11 @@ stepExplorer stepCap nkeys (Explorer grid (x, y) keys numSteps seenLocations) = 
 
 day18 :: IO ()
 day18 = do
-  --ls <- lines <$> readFile "input/2019/18.txt"
-  ls <- lines <$> readFile "input/2019/18_example.txt"
+  ls <- lines <$> readFile "input/2019/18.txt"
+  -- ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       nkeys = numKeys grid
       startPos = unsafeJ $ gridFind Entrance grid
       explorer = Explorer grid startPos S.empty (NumSteps 0) S.empty
-  finalState <- stepExplorer Dead nkeys explorer
+  finalState <- stepExplorer Dead nkeys [explorer]
   print finalState
