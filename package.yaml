@@ -37,6 +37,7 @@ dependencies:
 - random
 - pqueue
 - monad-dijkstra
+- dequeue
 
 library:
   source-dirs: src

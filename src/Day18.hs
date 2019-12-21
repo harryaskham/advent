@@ -35,6 +35,7 @@ import TwentyNineteen (unsafeJ, mDistance)
 import qualified Data.PQueue.Prio.Min as PQ
 import Control.Monad.Search
 import qualified Data.Sequence as SQ
+import qualified Data.Dequeue as DQ
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 type Grid = V.Vector (V.Vector Space)
@@ -153,17 +154,19 @@ type OverallCache = M.Map (Int, Int, S.Set Key) (M.Map (Int, Int) Int)
 
 -- Going back to a simple caching BFS.
 -- TODO: bitstirng instead of set for efficient keying
-simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> PQ.MinPQueue Int Explorer -> StepState -> IO StepState
+simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> DQ.Dequeue Explorer -> StepState -> IO StepState
 simpleBfs n grid keyCache cache keyLocations nkeys queue stepState 
-  | PQ.null queue = return stepState
+  | DQ.null queue = return stepState
   | otherwise = do
-  let ((_, Explorer (x, y) keys numSteps), queueWithout) = PQ.deleteFindMin queue
+  let Just (Explorer (x, y) keys numSteps, queueWithout) = DQ.popFront queue
       currentSpace = grid V.! y V.! x
       nextKeys = case currentSpace of
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
   if S.size nextKeys == nkeys
     then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout (minimum [numSteps, stepState])
+  else if numSteps > stepState
+    then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout stepState
     else do
       print $ "Best: " ++ show stepState
       print $ "States handled: " ++ show n
@@ -189,9 +192,13 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
           nextStates =
             (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
             <$> rKeyList
+
+          -- TODO: not using it
           heuristic = sum (snd <$> rKeyList) -- sum of distances to all other keys
+
           -- TODO: currently doing DFS but need better for full grid
-          nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert ((-1)*n) st q) queueWithout nextStates
+          --nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert ((-1)*n) st q) queueWithout nextStates
+          nextQueue = foldl' (\q e -> DQ.pushBack st e) queueWithout nextStates
        in do
          when dbg $ do
            print $ "Cache length: " ++ show (M.size keyCache)
@@ -208,8 +215,8 @@ fullCache startPos keyLocations grid =
 
 day18 :: IO ()
 day18 = do
-  ls <- lines <$> readFile "input/2019/18.txt"
-  --ls <- lines <$> readFile "input/2019/18_example.txt"
+  --ls <- lines <$> readFile "input/2019/18.txt"
+  ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
@@ -220,5 +227,5 @@ day18 = do
       startPos = head $ gridFind Entrance grid
       explorer = Explorer startPos S.empty (NumSteps 0)
       cache = fullCache startPos (snd <$> M.toList keyLocations) grid
-  finalState <- simpleBfs 0 grid M.empty cache keyLocations nkeys (PQ.singleton 0 explorer) Dead
+  finalState <- simpleBfs 0 grid M.empty cache keyLocations nkeys (DQ.pushBack DQ.empty explorer) Dead
   print finalState
