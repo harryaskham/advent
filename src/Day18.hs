@@ -152,6 +152,7 @@ type KeyDoorCache = M.Map (Int, Int) (Int, S.Set Key)
 type OverallCache = M.Map (Int, Int, S.Set Key) (M.Map (Int, Int) Int) 
 
 -- Going back to a simple caching BFS.
+-- TODO: bitstirng instead of set for efficient keying
 simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> PQ.MinPQueue Int Explorer -> StepState -> IO StepState
 simpleBfs n grid keyCache cache keyLocations nkeys queue stepState 
   | PQ.null queue = return stepState
@@ -165,6 +166,8 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
     then return numSteps -- simpleBfs (n+1) grid keyCache cache keyLocations nkeys (SQ.drop 1 queue) (minimum [numSteps, stepState])
     else do
       print $ "Best: " ++ show stepState
+      print $ "States handled: " ++ show n
+      print numSteps
       when dbg $ do
         printGrid (x, y) grid
         print $ "Location: " ++ show (x, y)
@@ -172,19 +175,26 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
         print $ "Current steps: " ++ show numSteps
       -- Filter down only to those keys whose paths are unlocked then drop the door information.
       -- This is lazy and won't happen in a cache hit
-      let ffn (kx, ky) (_, need) = let (KeySpace c) = grid V.! ky V.! kx in need `S.isSubsetOf` nextKeys && not ((Key c) `S.member` nextKeys)
-          rKeys' = fst <$> (M.filterWithKey ffn (unsafeJ $ M.lookup (x, y) cache))
-          rKeys = fromMaybe rKeys' $ M.lookup (x, y, nextKeys) keyCache
-          nextKeyCache = M.insert (x, y, nextKeys) rKeys keyCache
+      let ffn (kx, ky) (_, need) =
+            let (KeySpace c) = grid V.! ky V.! kx
+             in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
+          rKeys' = fst <$> M.filterWithKey ffn (unsafeJ $ M.lookup (x, y) cache)
+          cachedRKeys = M.lookup (x, y, nextKeys) keyCache
+          rKeys = fromMaybe rKeys' cachedRKeys
+          nextKeyCache =
+            if isNothing cachedRKeys
+               then M.insert (x, y, nextKeys) rKeys keyCache
+               else keyCache
+          rKeyList = M.toList rKeys
           nextStates =
             (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
-            <$> M.toList rKeys
-          nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert d st q) queueWithout nextStates
+            <$> rKeyList
+          heuristic = sum (snd <$> rKeyList) -- sum of distances to all other keys
+          nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert (d+heuristic) st q) queueWithout nextStates
        in do
          when dbg $ do
            print $ "Cache length: " ++ show (M.size keyCache)
            print $ "Reachable keys: " ++ show rKeys
-           print $ "States handled: " ++ show n
            print $ "Queue length: " ++ show (length nextQueue)
            --_ <- if dbg then getLine else return ""
            return ()
