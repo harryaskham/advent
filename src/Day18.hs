@@ -163,7 +163,7 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
   if S.size nextKeys == nkeys
-    then return numSteps -- simpleBfs (n+1) grid keyCache cache keyLocations nkeys (SQ.drop 1 queue) (minimum [numSteps, stepState])
+    then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout (minimum [numSteps, stepState])
     else do
       print $ "Best: " ++ show stepState
       print $ "States handled: " ++ show n
@@ -190,7 +190,8 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
             (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
             <$> rKeyList
           heuristic = sum (snd <$> rKeyList) -- sum of distances to all other keys
-          nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert (d+heuristic) st q) queueWithout nextStates
+          -- TODO: currently doing DFS but need better for full grid
+          nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert ((-1)*n) st q) queueWithout nextStates
        in do
          when dbg $ do
            print $ "Cache length: " ++ show (M.size keyCache)
@@ -207,8 +208,8 @@ fullCache startPos keyLocations grid =
 
 day18 :: IO ()
 day18 = do
-  --ls <- lines <$> readFile "input/2019/18.txt"
-  ls <- lines <$> readFile "input/2019/18_example.txt"
+  ls <- lines <$> readFile "input/2019/18.txt"
+  --ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
