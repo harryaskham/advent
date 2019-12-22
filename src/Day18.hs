@@ -154,7 +154,9 @@ type OverallCache = M.Map (Int, Int, S.Set Key) (M.Map (Int, Int) Int)
 
 -- Going back to a simple caching BFS.
 -- TODO: bitstirng instead of set for efficient keying
-simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> DQ.Dequeue Explorer -> StepState -> IO StepState
+-- TODO: We are still somehow missing a GLOBAL COST MAP. e.g. in position (x,y) with keys (ks) we could finish best in XXX steps. how to do this?
+-- TODO: SCORE CACHING DFS. THIS HAS TO WORK, but hard to pass state around functionally without mutability
+simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> DQ.BankersDequeue Explorer -> StepState -> IO StepState
 simpleBfs n grid keyCache cache keyLocations nkeys queue stepState 
   | DQ.null queue = return stepState
   | otherwise = do
@@ -169,8 +171,9 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
     then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout stepState
     else do
       print $ "Best: " ++ show stepState
-      print $ "States handled: " ++ show n
-      print numSteps
+      --if (n % 1000 == 0) then (print $ "States handled: " ++ show n) else return ()
+      --print n
+      --print numSteps
       when dbg $ do
         printGrid (x, y) grid
         print $ "Location: " ++ show (x, y)
@@ -183,6 +186,7 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
              in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
           rKeys' = fst <$> M.filterWithKey ffn (unsafeJ $ M.lookup (x, y) cache)
           cachedRKeys = M.lookup (x, y, nextKeys) keyCache
+          -- Here we only lazily compute the expensive set intersection if cache miss
           rKeys = fromMaybe rKeys' cachedRKeys
           nextKeyCache =
             if isNothing cachedRKeys
@@ -194,11 +198,12 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
             <$> rKeyList
 
           -- TODO: not using it
-          heuristic = sum (snd <$> rKeyList) -- sum of distances to all other keys
+          --heuristic = sum (snd <$> rKeyList) -- sum of distances to all other keys
 
           -- TODO: currently doing DFS but need better for full grid
           --nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert ((-1)*n) st q) queueWithout nextStates
-          nextQueue = foldl' (\q e -> DQ.pushBack st e) queueWithout nextStates
+          --nextQueue = foldl' DQ.pushBack queueWithout nextStates
+          nextQueue = foldl' DQ.pushFront queueWithout nextStates
        in do
          when dbg $ do
            print $ "Cache length: " ++ show (M.size keyCache)
