@@ -154,19 +154,35 @@ type KeyDoorCache = M.Map (Int, Int) (Int, S.Set Key)
 type OverallCache = M.Map (Int, Int, S.Set Key) (M.Map (Int, Int) Int)
 type CostCache = M.Map (Int, Int, S.Set Key) StepState
 
+-- TODO: sad times, cannot make use of the costcache in the DFS since we can't guarantee we ever saw the minimum
+-- We need to be smarter e.g.
+-- If we are at the finish, additional cost is zero
+-- If we are not, then cost is smallest child 
+
+-- CACHE needs to contain the score from here.
+
 simpleDfs :: Int -> Grid -> IORef CostCache -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> Explorer -> IO StepState
 simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
+  costCache <- readIORef costCacheRef
+  print costCache
+  getLine
+
   let (Explorer (x, y) keys numSteps) = e
+      cachedCost = M.lookup (x, y, keys) costCache
       currentSpace = grid V.! y V.! x
       nextKeys = case currentSpace of
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
 
-  if S.size nextKeys == nkeys
+  if isJust cachedCost
+     then do
+       print "cache hit"
+       return $ unsafeJ cachedCost
+  else if S.size nextKeys == nkeys
     then do
       -- If we reached the end, then update the cache with the score if it was the best so far.
       costCache <- readIORef costCacheRef
-      writeIORef costCacheRef $ M.insertWith min (x, y, keys) numSteps costCache
+      writeIORef costCacheRef $ M.insertWith min (x, y, nextKeys) (NumSteps 0) costCache
       return numSteps
     else do
       --if (n % 1000 == 0) then (print $ "States handled: " ++ show n) else return ()
@@ -193,7 +209,8 @@ simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
                else keyCache
           rKeyList = M.toList rKeys
           nextStates =
-            (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
+            --(\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
+            (\(pos, d) -> Explorer pos nextKeys (NumSteps 0))
             <$> rKeyList
 
       when dbg $ do
@@ -208,32 +225,26 @@ simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
       -- c) then take the minimum cost still, returning the updated cache
 
       -- First populate the cache from the children
-      sequenceA_ $ (\state@(Explorer (x,y) keys _) -> do
-         --print $ "Cost Cache length: " ++ show (M.size cc)
-         --print cc
-         costCache <- readIORef costCacheRef
-         case M.lookup (x, y, keys) costCache of
-           Just cost -> return ()
-           Nothing -> do
-             cost <- simpleDfs (n+1) grid costCacheRef nextKeyCache cache keyLocations nkeys state
-             costCache <- readIORef costCacheRef
-             writeIORef costCacheRef $ M.insertWith min (x, y, keys) cost costCache) <$> nextStates
+      childCosts <- sequenceA $ (\(state@(Explorer (x,y) keys _), (_, d)) -> do
+         -- For each child, get the now-memoized cost
+         (NumSteps c) <- simpleDfs (n+1) grid costCacheRef nextKeyCache cache keyLocations nkeys state
+         return $ NumSteps (d + c)) <$> (zip nextStates rKeyList)
 
-      -- Then look up all children, all should be present
+      -- Get the best child cost
+      let minCost = minimum childCosts
+
+      -- Cache for further use if this is the best one.
       costCache <- readIORef costCacheRef
-
-      let childCosts = (\(Explorer (x, y) keys _) -> M.lookup (x, y, keys) costCache) <$> nextStates
-          -- Then find the best cost
-          bestCost = unsafeJ $ minimum childCosts
-
-      return bestCost
+      writeIORef costCacheRef $ M.insertWith min (x, y, nextKeys) minCost costCache
+         
+      return minCost
 
 -- Going back to a simple caching BFS.
 -- TODO: bitstirng instead of set for efficient keying
 -- TODO: We are still somehow missing a GLOBAL COST MAP. e.g. in position (x,y) with keys (ks) we could finish best in XXX steps. how to do this?
 -- TODO: SCORE CACHING DFS. THIS HAS TO WORK, but hard to pass state around functionally without mutability
-simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> DQ.BankersDequeue Explorer -> StepState -> IO StepState
-simpleBfs n grid keyCache cache keyLocations nkeys queue stepState 
+simpleBfs :: Int -> Grid -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> DQ.BankersDequeue Explorer -> StepState -> S.Set (Int, Int, S.Set Key) -> IO StepState
+simpleBfs n grid keyCache cache keyLocations nkeys queue stepState seenStates
   | DQ.null queue = return stepState
   | otherwise = do
   let Just (Explorer (x, y) keys numSteps, queueWithout) = DQ.popFront queue
@@ -241,10 +252,11 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
       nextKeys = case currentSpace of
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
+      nextSeenStates = S.insert (x, y, nextKeys) seenStates
   if S.size nextKeys == nkeys
-    then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout (minimum [numSteps, stepState])
+    then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout (minimum [numSteps, stepState]) nextSeenStates
   else if numSteps > stepState
-    then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout stepState
+    then simpleBfs (n+1) grid keyCache cache keyLocations nkeys queueWithout stepState nextSeenStates
     else do
       print $ "Best: " ++ show stepState
       --if (n % 1000 == 0) then (print $ "States handled: " ++ show n) else return ()
@@ -279,15 +291,19 @@ simpleBfs n grid keyCache cache keyLocations nkeys queue stepState
           -- TODO: currently doing DFS but need better for full grid
           --nextQueue = foldl' (\q st@(Explorer _ _ (NumSteps d)) -> PQ.insert ((-1)*n) st q) queueWithout nextStates
           --nextQueue = foldl' DQ.pushBack queueWithout nextStates
-          nextQueue = foldl' DQ.pushFront queueWithout nextStates
+          
+          -- Only push back unseen states
+          nextStatesUnseen = filter (\(Explorer (x, y) keys _) -> not $ (x, y, keys) `S.member` seenStates) nextStates
+          nextQueue = foldl' DQ.pushFront queueWithout nextStatesUnseen
        in do
+         print $ length nextStatesUnseen
          when dbg $ do
            print $ "Cache length: " ++ show (M.size keyCache)
            print $ "Reachable keys: " ++ show rKeys
            print $ "Queue length: " ++ show (length nextQueue)
            --_ <- if dbg then getLine else return ""
            return ()
-         simpleBfs (n+1) grid nextKeyCache cache keyLocations nkeys nextQueue stepState
+         simpleBfs (n+1) grid nextKeyCache cache keyLocations nkeys nextQueue stepState nextSeenStates
 
 fullCache :: (Int, Int) -> [(Int, Int)] -> Grid -> M.Map (Int, Int) KeyDoorCache
 fullCache startPos keyLocations grid =
@@ -308,7 +324,7 @@ day18 = do
       startPos = head $ gridFind Entrance grid
       explorer = Explorer startPos S.empty (NumSteps 0)
       cache = fullCache startPos (snd <$> M.toList keyLocations) grid
-  --finalState <- simpleBfs 0 grid M.empty cache keyLocations nkeys (DQ.pushBack DQ.empty explorer) Dead
+  --finalState <- simpleBfs 0 grid M.empty cache keyLocations nkeys (DQ.pushBack DQ.empty explorer) Dead S.empty
   costCacheRef <- newIORef M.empty
   finalState <- simpleDfs 0 grid costCacheRef M.empty cache keyLocations nkeys explorer
   print finalState
