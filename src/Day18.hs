@@ -348,8 +348,8 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
 
 day18_2 :: IO ()
 day18_2 = do
-  --ls <- lines <$> readFile "input/2019/18_2.txt"
-  ls <- lines <$> readFile "input/2019/18_2_example.txt"
+  ls <- lines <$> readFile "input/2019/18_2.txt"
+  --ls <- lines <$> readFile "input/2019/18_2_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
