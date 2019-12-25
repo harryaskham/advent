@@ -108,6 +108,7 @@ numKeys grid = length [(x, y) | x <- [0..ncols-1], y <- [0..nrows-1], isKey (gri
     ncols = V.length (grid V.! 0)
 
 getNumSteps (NumSteps i) = i
+getNumSteps Dead = 10000000 -- TODO bad hack
 
 type DistanceMap = M.Map ((Int, Int), (Int, Int)) Int
 type KeyLocations = M.Map Char (Int, Int)
@@ -154,22 +155,7 @@ type KeyDoorCache = M.Map (Int, Int) (Int, S.Set Key)
 type OverallCache = M.Map (Int, Int, S.Set Key) (M.Map (Int, Int) Int)
 type CostCache = M.Map (Int, Int, S.Set Key) StepState
 
--- TODO: sad times, cannot make use of the costcache in the DFS since we can't guarantee we ever saw the minimum
--- We need to be smarter e.g.
--- If we are at the finish, additional cost is zero
--- If we are not, then cost is smallest child 
-
--- CACHE needs to contain the score from here.
---
--- TODO:
--- If we dont have the value, then do a full DFS from there. that should really give the best cost
--- Means cache doesn't have bullshit values and we can really trust it
--- early terminate properly - if current + bestcostsofar
--- pqueue
--- keep location of seen states, don't add to queue if its seen
---
--- DFS optimisatinos:
--- keep an ioref to the best so far? terminate if worse?
+-- CACHE IS: position, plus keys after pickup, to best score by DFS from there.
 
 simpleDfs :: Int -> Grid -> IORef CostCache -> IORef StepState -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> Explorer -> IO StepState
 simpleDfs n grid costCacheRef bestSoFarRef keyCache cache keyLocations nkeys e = do
@@ -180,80 +166,80 @@ simpleDfs n grid costCacheRef bestSoFarRef keyCache cache keyLocations nkeys e =
   --getLine
 
   let (Explorer (x, y) keys numSteps) = e
-      cachedCost = M.lookup (x, y, keys) costCache
       currentSpace = grid V.! y V.! x
       nextKeys = case currentSpace of
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
+      cachedCost = M.lookup (x, y, nextKeys) costCache
 
   -- If we cached this location we can just return its cost, trusting we DFS'd properly first time
-  if isJust cachedCost
-     then do
-       print "cache hit"
-       return $ unsafeJ cachedCost
-  else if numSteps > bestSoFar
-    then return Dead
-    else if S.size nextKeys == nkeys
+  if isJust cachedCost then do
+    print "cache hit"
+    return $ unsafeJ cachedCost
+  else if numSteps > bestSoFar then do
+    return Dead
+  else if S.size nextKeys == nkeys then do
       -- If we reached the end, just return it.
       -- Means we will never have leaves in the cache but that's okay.
-    then do
-      when (numSteps < bestSoFar) $ writeIORef bestSoFarRef numSteps
-      return numSteps
-    else do
-      -- Otherwise run the proper DFS.
-      --
-      --if (n % 1000 == 0) then (print $ "States handled: " ++ show n) else return ()
-      --print n
-      --print numSteps
-      when dbg $ do
-        printGrid (x, y) grid
-        print $ "Location: " ++ show (x, y)
-        print $ "Keys: " ++ show nextKeys
-        print $ "Current steps: " ++ show numSteps
+    when (numSteps < bestSoFar) $ writeIORef bestSoFarRef numSteps
+    --writeIORef costCacheRef $ M.insert (x, y, nextKeys) (NumSteps 0) costCache
+    --return numSteps
+    return $ NumSteps 0
+  else do
+    -- Otherwise run the proper DFS.
+    --
+    --if (n % 1000 == 0) then (print $ "States handled: " ++ show n) else return ()
+    --print n
+    --print numSteps
+    when dbg $ do
+      printGrid (x, y) grid
+      print $ "Location: " ++ show (x, y)
+      print $ "Keys: " ++ show nextKeys
+      print $ "Current steps: " ++ show numSteps
 
-      -- Filter down only to those keys whose paths are unlocked then drop the door information.
-      -- This is lazy and won't happen in a cache hit
-      let ffn (kx, ky) (_, need) =
-            let (KeySpace c) = grid V.! ky V.! kx
-             in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
-          rKeys' = fst <$> M.filterWithKey ffn (unsafeJ $ M.lookup (x, y) cache)
-          cachedRKeys = M.lookup (x, y, nextKeys) keyCache
-          -- Here we only lazily compute the expensive set intersection if cache miss
-          rKeys = fromMaybe rKeys' cachedRKeys
-          nextKeyCache =
-            if isNothing cachedRKeys
-               then M.insert (x, y, nextKeys) rKeys keyCache
-               else keyCache
-          rKeyList = M.toList rKeys
-          nextStates =
-            (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
-            --(\(pos, d) -> Explorer pos nextKeys (NumSteps 0))
-            <$> rKeyList
+    -- Filter down only to those keys whose paths are unlocked then drop the door information.
+    -- This is lazy and won't happen in a cache hit
+    let ffn (kx, ky) (_, need) =
+          let (KeySpace c) = grid V.! ky V.! kx
+           in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
+        rKeys' = fst <$> M.filterWithKey ffn (unsafeJ $ M.lookup (x, y) cache)
+        cachedRKeys = M.lookup (x, y, nextKeys) keyCache
+        -- Here we only lazily compute the expensive set intersection if cache miss
+        rKeys = fromMaybe rKeys' cachedRKeys
+        nextKeyCache =
+          if isNothing cachedRKeys
+             then M.insert (x, y, nextKeys) rKeys keyCache
+             else keyCache
+        rKeyList = M.toList rKeys
+        nextStates =
+          (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
+          --(\(pos, d) -> Explorer pos nextKeys (NumSteps 0))
+          <$> rKeyList
 
-      when dbg $ do
-        print $ "Key Cache length: " ++ show (M.size keyCache)
-        print $ "Reachable keys: " ++ show rKeys
-        _ <- if dbg then getLine else return ""
-        return ()
+    when dbg $ do
+      print $ "Key Cache length: " ++ show (M.size keyCache)
+      print $ "Reachable keys: " ++ show rKeys
+      _ <- if dbg then getLine else return ""
+      return ()
 
-      -- For each child, we need to see
-      -- a) is it cached, and if so then get cached value
-      -- b) if not cached, explore it and cache it, passing cache on to next child
-      -- c) then take the minimum cost still, returning the updated cache
+    -- Get all child costs, either cached or computed.
+    childCosts <-
+      sequenceA
+      $ simpleDfs (n+1) grid costCacheRef bestSoFarRef nextKeyCache cache keyLocations nkeys
+      <$> nextStates
 
-      childCosts <-
-        sequenceA
-        $ simpleDfs (n+1) grid costCacheRef bestSoFarRef nextKeyCache cache keyLocations nkeys
-        <$> nextStates
-
-      -- Get the best child cost
-      let minCost = minimum childCosts
-
-      -- Cache, because the DFS guarantees this was the best from this position.
-      costCache <- readIORef costCacheRef
-      writeIORef costCacheRef $ M.insert (x, y, nextKeys) minCost costCache
-         
-      return minCost
+    -- Get the best child cost and then:
+    -- Cache, because the DFS guarantees this was the best from this position.
+    let childDistances = snd <$> rKeyList
+    let minCost =
+          minimum . getZipList
+          $ (+)
+          <$> ZipList (getNumSteps <$> childCosts)
+          <*> ZipList childDistances
+    costCache <- readIORef costCacheRef
+    writeIORef costCacheRef $ M.insert (x, y, nextKeys) (NumSteps minCost) costCache
+       
+    return (NumSteps minCost)
 
 -- Going back to a simple caching BFS.
 -- TODO: bitstirng instead of set for efficient keying
@@ -345,3 +331,5 @@ day18 = do
   bestSoFarRef <- newIORef Dead
   finalState <- simpleDfs 0 grid costCacheRef bestSoFarRef M.empty cache keyLocations nkeys explorer
   print finalState
+  costCache <- readIORef costCacheRef
+  print $ M.lookup (fst startPos, snd startPos, S.empty) costCache
