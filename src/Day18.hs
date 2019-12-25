@@ -314,8 +314,8 @@ fullCache startPos keyLocations grid =
 
 day18 :: IO ()
 day18 = do
-  --ls <- lines <$> readFile "input/2019/18.txt"
-  ls <- lines <$> readFile "input/2019/18_example.txt"
+  ls <- lines <$> readFile "input/2019/18.txt"
+  --ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
