@@ -127,16 +127,17 @@ keyDistance queue (toX, toY) grid
 reachableKeys :: (Int, Int) -> [(Int, Int)] -> Grid -> KeyDoorCache
 reachableKeys from keyLocations grid =
   M.filter ((>0) . fst)
-  $ M.fromList [(to, keyDistance (SQ.singleton (from, 0, S.empty, S.empty)) to grid) | to <- keyLocations]
+  $ M.fromList [ (to, keyDistance (SQ.singleton (from, 0, S.empty, S.empty)) to grid)
+               | to <- keyLocations]
 
+-- From a given position, how far away are each key and which keys are needed?
 type KeyDoorCache = M.Map (Int, Int) (Int, S.Set Key)
-type OverallCache = M.Map (Int, Int, S.Set Key) (M.Map (Int, Int) Int)
+
+-- For a given position, how far is the best distance to get to all keys?
 type CostCache = M.Map (Int, Int, S.Set Key) StepState
 
--- CACHE IS: position, plus keys after pickup, to best score by DFS from there.
-
-simpleDfs :: Int -> Grid -> IORef CostCache -> IORef StepState -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> Int -> Explorer -> IO StepState
-simpleDfs n grid costCacheRef bestSoFarRef keyCache cache nkeys e = do
+simpleDfs :: Int -> Grid -> IORef CostCache -> IORef StepState -> M.Map (Int, Int) KeyDoorCache -> Int -> Explorer -> IO StepState
+simpleDfs n grid costCacheRef bestSoFarRef cache nkeys e = do
   -- Read the global DFS state first.
   costCache <- readIORef costCacheRef
   bestSoFar <- readIORef bestSoFarRef
@@ -164,27 +165,18 @@ simpleDfs n grid costCacheRef bestSoFarRef keyCache cache nkeys e = do
       print $ "Keys: " ++ show nextKeys
       print $ "Current steps: " ++ show numSteps
 
-    -- Filter down only to those keys whose paths are unlocked then drop the door information.
-    -- This is lazy and won't happen in a cache hit
-    let ffn (kx, ky) (_, need) =
+    -- Filter down only to those keys we don't have, whose paths are unlocked then drop the door information.
+    let filterAccessibleKeys (kx, ky) (_, need) =
           let (KeySpace c) = grid V.! ky V.! kx
            in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
-        rKeys' = fst <$> M.filterWithKey ffn (unsafeJ $ M.lookup (x, y) cache)
-        cachedRKeys = M.lookup (x, y, nextKeys) keyCache
-        -- Here we only lazily compute the expensive set intersection if cache miss
-        rKeys = fromMaybe rKeys' cachedRKeys
-        nextKeyCache =
-          if isNothing cachedRKeys
-             then M.insert (x, y, nextKeys) rKeys keyCache
-             else keyCache
+        rKeys = fst <$> M.filterWithKey filterAccessibleKeys (unsafeJ $ M.lookup (x, y) cache)
         rKeyList = M.toList rKeys
+        -- Create next states for all reachable keys to explore.
         nextStates =
           (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
-          --(\(pos, d) -> Explorer pos nextKeys (NumSteps 0))
           <$> rKeyList
 
     when dbg $ do
-      print $ "Key Cache length: " ++ show (M.size keyCache)
       print $ "Reachable keys: " ++ show rKeys
       _ <- if dbg then getLine else return ""
       return ()
@@ -192,7 +184,7 @@ simpleDfs n grid costCacheRef bestSoFarRef keyCache cache nkeys e = do
     -- Get all child costs, either cached or computed.
     childCosts <-
       sequenceA
-      $ simpleDfs (n+1) grid costCacheRef bestSoFarRef nextKeyCache cache nkeys
+      $ simpleDfs (n+1) grid costCacheRef bestSoFarRef cache nkeys
       <$> nextStates
 
     -- Get the best child cost, taking distance-to-child into account.
@@ -217,7 +209,8 @@ fullCache startPos keyLocations grid =
 
 day18 :: IO ()
 day18 = do
-  ls <- lines <$> readFile "input/2019/18.txt"
+  --ls <- lines <$> readFile "input/2019/18.txt"
+  ls <- lines <$> readFile "input/2019/18_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
@@ -230,5 +223,5 @@ day18 = do
       cache = fullCache startPos (snd <$> M.toList keyLocations) grid
   costCacheRef <- newIORef M.empty
   bestSoFarRef <- newIORef Dead
-  finalState <- simpleDfs 0 grid costCacheRef bestSoFarRef M.empty cache nkeys explorer
+  finalState <- simpleDfs 0 grid costCacheRef bestSoFarRef cache nkeys explorer
   print finalState
