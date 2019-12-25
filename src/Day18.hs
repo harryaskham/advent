@@ -160,12 +160,24 @@ type CostCache = M.Map (Int, Int, S.Set Key) StepState
 -- If we are not, then cost is smallest child 
 
 -- CACHE needs to contain the score from here.
+--
+-- TODO:
+-- If we dont have the value, then do a full DFS from there. that should really give the best cost
+-- Means cache doesn't have bullshit values and we can really trust it
+-- early terminate properly - if current + bestcostsofar
+-- pqueue
+-- keep location of seen states, don't add to queue if its seen
+--
+-- DFS optimisatinos:
+-- keep an ioref to the best so far? terminate if worse?
 
-simpleDfs :: Int -> Grid -> IORef CostCache -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> Explorer -> IO StepState
-simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
+simpleDfs :: Int -> Grid -> IORef CostCache -> IORef StepState -> OverallCache -> M.Map (Int, Int) KeyDoorCache -> KeyLocations -> Int -> Explorer -> IO StepState
+simpleDfs n grid costCacheRef bestSoFarRef keyCache cache keyLocations nkeys e = do
   costCache <- readIORef costCacheRef
-  print costCache
-  getLine
+  bestSoFar <- readIORef bestSoFarRef
+  print $ length costCache
+  print bestSoFar
+  --getLine
 
   let (Explorer (x, y) keys numSteps) = e
       cachedCost = M.lookup (x, y, keys) costCache
@@ -174,17 +186,22 @@ simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
                    (KeySpace c) -> S.insert (Key c) keys
                    _ -> keys
 
+  -- If we cached this location we can just return its cost, trusting we DFS'd properly first time
   if isJust cachedCost
      then do
        print "cache hit"
        return $ unsafeJ cachedCost
-  else if S.size nextKeys == nkeys
+  else if numSteps > bestSoFar
+    then return Dead
+    else if S.size nextKeys == nkeys
+      -- If we reached the end, just return it.
+      -- Means we will never have leaves in the cache but that's okay.
     then do
-      -- If we reached the end, then update the cache with the score if it was the best so far.
-      costCache <- readIORef costCacheRef
-      writeIORef costCacheRef $ M.insertWith min (x, y, nextKeys) (NumSteps 0) costCache
+      when (numSteps < bestSoFar) $ writeIORef bestSoFarRef numSteps
       return numSteps
     else do
+      -- Otherwise run the proper DFS.
+      --
       --if (n % 1000 == 0) then (print $ "States handled: " ++ show n) else return ()
       --print n
       --print numSteps
@@ -209,8 +226,8 @@ simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
                else keyCache
           rKeyList = M.toList rKeys
           nextStates =
-            --(\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
-            (\(pos, d) -> Explorer pos nextKeys (NumSteps 0))
+            (\(pos, d) -> Explorer pos nextKeys (NumSteps (d + getNumSteps numSteps)))
+            --(\(pos, d) -> Explorer pos nextKeys (NumSteps 0))
             <$> rKeyList
 
       when dbg $ do
@@ -224,18 +241,17 @@ simpleDfs n grid costCacheRef keyCache cache keyLocations nkeys e = do
       -- b) if not cached, explore it and cache it, passing cache on to next child
       -- c) then take the minimum cost still, returning the updated cache
 
-      -- First populate the cache from the children
-      childCosts <- sequenceA $ (\(state@(Explorer (x,y) keys _), (_, d)) -> do
-         -- For each child, get the now-memoized cost
-         (NumSteps c) <- simpleDfs (n+1) grid costCacheRef nextKeyCache cache keyLocations nkeys state
-         return $ NumSteps (d + c)) <$> (zip nextStates rKeyList)
+      childCosts <-
+        sequenceA
+        $ simpleDfs (n+1) grid costCacheRef bestSoFarRef nextKeyCache cache keyLocations nkeys
+        <$> nextStates
 
       -- Get the best child cost
       let minCost = minimum childCosts
 
-      -- Cache for further use if this is the best one.
+      -- Cache, because the DFS guarantees this was the best from this position.
       costCache <- readIORef costCacheRef
-      writeIORef costCacheRef $ M.insertWith min (x, y, nextKeys) minCost costCache
+      writeIORef costCacheRef $ M.insert (x, y, nextKeys) minCost costCache
          
       return minCost
 
@@ -326,5 +342,6 @@ day18 = do
       cache = fullCache startPos (snd <$> M.toList keyLocations) grid
   --finalState <- simpleBfs 0 grid M.empty cache keyLocations nkeys (DQ.pushBack DQ.empty explorer) Dead S.empty
   costCacheRef <- newIORef M.empty
-  finalState <- simpleDfs 0 grid costCacheRef M.empty cache keyLocations nkeys explorer
+  bestSoFarRef <- newIORef Dead
+  finalState <- simpleDfs 0 grid costCacheRef bestSoFarRef M.empty cache keyLocations nkeys explorer
   print finalState
