@@ -3,6 +3,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Day18 where
 
@@ -103,7 +104,7 @@ dbg = False
 -- Store the doors we need to go past on the path too.
 keyDistance :: SQ.Seq ((Int, Int), Int, S.Set Key, S.Set (Int, Int)) -> (Int, Int) -> Grid -> (Int, S.Set Key)
 keyDistance queue (toX, toY) grid
-  | SQ.null queue = error $ "didn't find path to " ++ show (toX, toY)
+  | SQ.null queue = (1000000, S.empty)-- error $ "didn't find path to " ++ show (toX, toY)
   | (x, y) == (toX, toY) = (distance, neededKeys)
   | otherwise = keyDistance nextQueue (toX, toY) grid
   where
@@ -136,8 +137,8 @@ type KeyDoorCache = M.Map (Int, Int) (Int, S.Set Key)
 -- For a given position, how far is the best distance to get to all keys?
 type CostCache = M.Map (Int, Int, S.Set Key) StepState
 
-simpleDfs :: Int -> Grid -> IORef CostCache -> IORef StepState -> M.Map (Int, Int) KeyDoorCache -> Int -> Explorer -> IO StepState
-simpleDfs n grid costCacheRef bestSoFarRef cache nkeys e = do
+runDFS :: Int -> Grid -> IORef CostCache -> IORef StepState -> M.Map (Int, Int) KeyDoorCache -> Int -> Explorer -> IO StepState
+runDFS n grid costCacheRef bestSoFarRef cache nkeys e = do
   -- Read the global DFS state first.
   costCache <- readIORef costCacheRef
   bestSoFar <- readIORef bestSoFarRef
@@ -184,7 +185,7 @@ simpleDfs n grid costCacheRef bestSoFarRef cache nkeys e = do
     -- Get all child costs, either cached or computed.
     childCosts <-
       sequenceA
-      $ simpleDfs (n+1) grid costCacheRef bestSoFarRef cache nkeys
+      $ runDFS (n+1) grid costCacheRef bestSoFarRef cache nkeys
       <$> nextStates
 
     -- Get the best child cost, taking distance-to-child into account.
@@ -202,10 +203,10 @@ simpleDfs n grid costCacheRef bestSoFarRef cache nkeys e = do
     return (NumSteps minCost)
 
 -- Creates a cache from position to the key-distance cache.
-fullCache :: (Int, Int) -> [(Int, Int)] -> Grid -> M.Map (Int, Int) KeyDoorCache
-fullCache startPos keyLocations grid =
+fullCache :: [(Int, Int)] -> [(Int, Int)] -> Grid -> M.Map (Int, Int) KeyDoorCache
+fullCache starts keyLocations grid =
   M.fromList
-  $ (\p -> (p, reachableKeys p keyLocations grid)) <$> (startPos:keyLocations)
+  $ (\p -> (p, reachableKeys p keyLocations grid)) <$> (starts++keyLocations)
 
 day18_1 :: IO ()
 day18_1 = do
@@ -219,10 +220,10 @@ day18_1 = do
       nkeys = numKeys grid
       startPos = head $ gridFind Entrance grid
       explorer = Explorer startPos S.empty (NumSteps 0)
-      cache = fullCache startPos (snd <$> M.toList keyLocations) grid
+      cache = fullCache [startPos] (snd <$> M.toList keyLocations) grid
   costCacheRef <- newIORef M.empty
   bestSoFarRef <- newIORef Dead
-  finalState <- simpleDfs 0 grid costCacheRef bestSoFarRef cache nkeys explorer
+  finalState <- runDFS 0 grid costCacheRef bestSoFarRef cache nkeys explorer
   print finalState
 
 chopGrid :: Int -> Int -> Int -> Int -> Grid -> Grid
@@ -239,8 +240,8 @@ vreplace2 (x, y) a g = g V.// [(y, row)]
 -- Get rid of any doors that don't have keys in the grid.
 removeDoorsWithoutKeys :: Grid -> Grid
 removeDoorsWithoutKeys grid =
-  trace (show doorsToKeep) $ M.foldlWithKey'
-  (\g doorC loc -> if not $ (trace (show doorC) doorC) `S.member` doorsToKeep
+  M.foldlWithKey'
+  (\g doorC loc -> if not $ doorC `S.member` doorsToKeep
                       then vreplace2 loc Empty g
                       else g)
   grid
@@ -257,30 +258,106 @@ removeDoorsWithoutKeys grid =
       $ (`gridFind` grid)
       <$> M.fromList [(a, Door a) | a <- ['A'..'Z']]
 
+-- Stores state of the robots
+data Explorers = Explorers [(Int, Int)] (S.Set Key) StepState deriving (Eq)
+type CostCache' = M.Map (Int, Int, Int, Int, Int, Int, Int, Int, S.Set Key) StepState
+
+runDFS' :: Int -> Grid -> IORef CostCache' -> IORef StepState -> M.Map (Int, Int) KeyDoorCache -> Int -> Explorers -> IO StepState
+runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
+  -- Read the global DFS state first.
+  costCache <- readIORef costCacheRef
+  bestSoFar <- readIORef bestSoFarRef
+
+  let (Explorers positions keys numSteps) = e
+      currentSpaces = (\(x, y) -> grid V.! y V.! x) <$> positions
+      nextKeys = maximumBy (comparing S.size) $ (\case
+                   (KeySpace c) -> S.insert (Key c) keys
+                   _ -> keys) <$> currentSpaces
+      cacheKey = ( fst $ positions !! 0
+                 , snd $ positions !! 0
+                 , fst $ positions !! 1
+                 , snd $ positions !! 1
+                 , fst $ positions !! 2
+                 , snd $ positions !! 2
+                 , fst $ positions !! 3
+                 , snd $ positions !! 3
+                 , nextKeys
+                 )
+      cachedCost = M.lookup cacheKey costCache
+
+  -- If we cached this location we can just return its cost, trusting we DFS'd properly first time
+  if isJust cachedCost then return $ unsafeJ cachedCost
+  -- If we are already greater than our largest path, terminate early.
+  else if numSteps > bestSoFar then return Dead
+  -- If we found all the keys, track the best path and return zero.
+  else if S.size nextKeys == nkeys then do
+    when (numSteps < bestSoFar) $ writeIORef bestSoFarRef numSteps
+    return $ NumSteps 0
+  -- Otherwise run the proper DFS.
+  else do
+    when dbg $ do
+      --printGrid (x, y) grid
+      print $ "Location: " ++ show positions
+      print $ "Keys: " ++ show nextKeys
+      print $ "Current steps: " ++ show numSteps
+
+    -- Our options are the moves available to any given robot
+    -- Filter down only to those keys we don't have, whose paths are unlocked then drop the door information.
+    let filterAccessibleKeys (kx, ky) (_, need) =
+          let (KeySpace c) = grid V.! ky V.! kx
+           in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
+        -- Per-robot reachable keys
+        rKeys = (\pos -> fst <$> M.filterWithKey filterAccessibleKeys (unsafeJ $ M.lookup pos cache)) <$> positions
+        rKeyList = M.toList <$> rKeys
+        -- Create next states for all reachable keys to explore.
+        -- We need to create all combinations of positions with each element swapped out for corresponding rKeysList
+        -- Take ps and replace first with all rkeys first, append to snd w snd, etc
+        nextPosDs :: [([(Int, Int)], Int)]
+        nextPosDs = concat [(\(pos, d) -> (positions & ix i .~ pos, d)) <$> (rKeyList !! i) | i <- [0..length positions - 1]]
+        nextStates :: [Explorers]
+        nextStates =
+          (\(nextPositions, d) -> Explorers nextPositions nextKeys (NumSteps (d + getNumSteps numSteps)))
+          <$> nextPosDs
+
+    when dbg $ do
+      print $ "Reachable keys: " ++ show rKeys
+      --_ <- if dbg then getLine else return ""
+      return ()
+
+    -- Get all child costs, either cached or computed.
+    childCosts <-
+      sequenceA
+      $ runDFS' (n+1) grid costCacheRef bestSoFarRef cache nkeys
+      <$> nextStates
+
+    -- Get the best child cost, taking distance-to-child into account.
+    let childDistances = snd <$> nextPosDs
+    let minCost =
+          minimum . getZipList
+          $ (+)
+          <$> ZipList (getNumSteps <$> childCosts)
+          <*> ZipList childDistances
+
+    -- Cache, because the DFS guarantees this was the best from this position.
+    costCache <- readIORef costCacheRef
+    writeIORef costCacheRef $ M.insert cacheKey (NumSteps minCost) costCache
+       
+    return (NumSteps minCost)
+
 day18_2 :: IO ()
 day18_2 = do
-  ls <- lines <$> readFile "input/2019/18_2.txt"
+  ls <- lines <$> readFile "input/2019/18_2_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
-      grid1 = chopGrid 0 41 0 41 grid
-      grid2 = chopGrid 40 41 0 41 grid
-      grid3 = chopGrid 0 41 40 41 grid
-      grid4 = chopGrid 40 41 40 41 grid
-      grids = removeDoorsWithoutKeys <$> [grid1, grid2, grid3, grid4]
-      solveGrid g =
-        let keyLocations =
-              fmap head 
-              $ M.filter (not . null)
-              $ (`gridFind` g)
-              <$> M.fromList [(a, KeySpace a) | a <- ['a'..'z']]
-            nkeys = numKeys g
-            startPos = head $ gridFind Entrance g
-            explorer = Explorer startPos S.empty (NumSteps 0)
-            cache = fullCache startPos (snd <$> M.toList keyLocations) g
-         in do
-           costCacheRef <- newIORef M.empty
-           bestSoFarRef <- newIORef Dead
-           simpleDfs 0 g costCacheRef bestSoFarRef cache nkeys explorer
-  scores <- sequenceA $ solveGrid <$> grids
-  print $ sum $ getNumSteps <$> scores
-
-  --sequenceA_ $ uncurry printGrid <$> ((\g -> (head $ gridFind Entrance g, g)) <$> grids)
+      keyLocations =
+        fmap head 
+        $ M.filter (not . null)
+        $ (`gridFind` grid)
+        <$> M.fromList [(a, KeySpace a) | a <- ['a'..'z']]
+      nkeys = numKeys grid
+      starts = gridFind Entrance grid
+      explorers = Explorers starts S.empty (NumSteps 0)
+      cache = fullCache starts (snd <$> M.toList keyLocations) grid
+  costCacheRef <- newIORef M.empty
+  bestSoFarRef <- newIORef Dead
+  finalState <- runDFS' 0 grid costCacheRef bestSoFarRef cache nkeys explorers
+  print finalState
