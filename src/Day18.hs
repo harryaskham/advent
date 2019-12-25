@@ -178,7 +178,7 @@ simpleDfs n grid costCacheRef bestSoFarRef cache nkeys e = do
 
     when dbg $ do
       print $ "Reachable keys: " ++ show rKeys
-      _ <- if dbg then getLine else return ""
+      --_ <- if dbg then getLine else return ""
       return ()
 
     -- Get all child costs, either cached or computed.
@@ -207,10 +207,9 @@ fullCache startPos keyLocations grid =
   M.fromList
   $ (\p -> (p, reachableKeys p keyLocations grid)) <$> (startPos:keyLocations)
 
-day18 :: IO ()
-day18 = do
-  --ls <- lines <$> readFile "input/2019/18.txt"
-  ls <- lines <$> readFile "input/2019/18_example.txt"
+day18_1 :: IO ()
+day18_1 = do
+  ls <- lines <$> readFile "input/2019/18.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
@@ -225,3 +224,63 @@ day18 = do
   bestSoFarRef <- newIORef Dead
   finalState <- simpleDfs 0 grid costCacheRef bestSoFarRef cache nkeys explorer
   print finalState
+
+chopGrid :: Int -> Int -> Int -> Int -> Grid -> Grid
+chopGrid startX lenX startY lenY grid = choppedGrid
+  where
+    choppedRows = V.slice startY lenY grid
+    choppedGrid = V.slice startX lenX <$> choppedRows
+
+vreplace2 :: (Int, Int) -> a -> V.Vector (V.Vector a) -> V.Vector (V.Vector a)
+vreplace2 (x, y) a g = g V.// [(y, row)]
+  where
+    row = (g V.! y) V.// [(x, a)]
+
+-- Get rid of any doors that don't have keys in the grid.
+removeDoorsWithoutKeys :: Grid -> Grid
+removeDoorsWithoutKeys grid =
+  trace (show doorsToKeep) $ M.foldlWithKey'
+  (\g doorC loc -> if not $ (trace (show doorC) doorC) `S.member` doorsToKeep
+                      then vreplace2 loc Empty g
+                      else g)
+  grid
+  doorLocations
+  where
+    doorsToKeep =
+      S.fromList
+      $ fmap fst
+      $ filter (not . null . snd)
+      $ zip ['A'..'Z'] ((`gridFind` grid) <$> [KeySpace c | c <- ['a'..'z']])
+    doorLocations =
+      fmap head 
+      $ M.filter (not . null)
+      $ (`gridFind` grid)
+      <$> M.fromList [(a, Door a) | a <- ['A'..'Z']]
+
+day18_2 :: IO ()
+day18_2 = do
+  ls <- lines <$> readFile "input/2019/18_2.txt"
+  let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
+      grid1 = chopGrid 0 41 0 41 grid
+      grid2 = chopGrid 40 41 0 41 grid
+      grid3 = chopGrid 0 41 40 41 grid
+      grid4 = chopGrid 40 41 40 41 grid
+      grids = removeDoorsWithoutKeys <$> [grid1, grid2, grid3, grid4]
+      solveGrid g =
+        let keyLocations =
+              fmap head 
+              $ M.filter (not . null)
+              $ (`gridFind` g)
+              <$> M.fromList [(a, KeySpace a) | a <- ['a'..'z']]
+            nkeys = numKeys g
+            startPos = head $ gridFind Entrance g
+            explorer = Explorer startPos S.empty (NumSteps 0)
+            cache = fullCache startPos (snd <$> M.toList keyLocations) g
+         in do
+           costCacheRef <- newIORef M.empty
+           bestSoFarRef <- newIORef Dead
+           simpleDfs 0 g costCacheRef bestSoFarRef cache nkeys explorer
+  scores <- sequenceA $ solveGrid <$> grids
+  print $ sum $ getNumSteps <$> scores
+
+  --sequenceA_ $ uncurry printGrid <$> ((\g -> (head $ gridFind Entrance g, g)) <$> grids)

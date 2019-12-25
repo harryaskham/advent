@@ -8,4 +8,4 @@ import Day17
 import Day18
 
 main :: IO ()
-main = Day18.day18
+main = Day18.day18_2
