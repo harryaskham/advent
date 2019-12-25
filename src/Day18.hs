@@ -102,10 +102,10 @@ dbg = False
 -- The distance between two keys.
 -- Need to better memoize this, since unlocking most doors doesn't change most of the values.
 -- Store the doors we need to go past on the path too.
-keyDistance :: SQ.Seq ((Int, Int), Int, S.Set Key, S.Set (Int, Int)) -> (Int, Int) -> Grid -> (Int, S.Set Key)
+keyDistance :: SQ.Seq ((Int, Int), Int, S.Set Key, S.Set (Int, Int)) -> (Int, Int) -> Grid -> Maybe (Int, S.Set Key)
 keyDistance queue (toX, toY) grid
-  | SQ.null queue = (1000000, S.empty)-- error $ "didn't find path to " ++ show (toX, toY)
-  | (x, y) == (toX, toY) = (distance, neededKeys)
+  | SQ.null queue = Nothing
+  | (x, y) == (toX, toY) = Just (distance, neededKeys)
   | otherwise = keyDistance nextQueue (toX, toY) grid
   where
     ((x, y), distance, neededKeys, seen) = SQ.index queue 0
@@ -128,8 +128,10 @@ keyDistance queue (toX, toY) grid
 reachableKeys :: (Int, Int) -> [(Int, Int)] -> Grid -> KeyDoorCache
 reachableKeys from keyLocations grid =
   M.filter ((>0) . fst)
-  $ M.fromList [ (to, keyDistance (SQ.singleton (from, 0, S.empty, S.empty)) to grid)
-               | to <- keyLocations]
+  $ M.fromList
+  $ (\(t, d) -> (t, unsafeJ d))
+  <$> filter (isJust . snd)
+  [(to, keyDistance (SQ.singleton (from, 0, S.empty, S.empty)) to grid) | to <- keyLocations]
 
 -- From a given position, how far away are each key and which keys are needed?
 type KeyDoorCache = M.Map (Int, Int) (Int, S.Set Key)
@@ -346,7 +348,7 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
 
 day18_2 :: IO ()
 day18_2 = do
-  ls <- lines <$> readFile "input/2019/18_2.txt"
+  ls <- lines <$> readFile "input/2019/18_2_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
