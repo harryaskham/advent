@@ -49,12 +49,11 @@ instance Show Space where
   show (KeySpace c) = [c]
   show Wall = "#"
 
-printGrid :: (Int, Int) -> Grid -> IO ()
-printGrid (x, y) grid = sequenceA_ $ print . concat . V.toList <$> charGrid V.// [(y, updatedYth)]
+printGrid :: [(Int, Int)] -> Grid -> IO ()
+printGrid positions grid = sequenceA_ $ print . concat . V.toList <$> withStarts
   where
     charGrid = (fmap.fmap) show grid
-    ythRow = charGrid V.! y
-    updatedYth = ythRow V.// [(x, "@")]
+    withStarts = foldl' (\g pos -> vreplace2 pos "@" g) charGrid positions
 
 isKey (KeySpace _) = True
 isKey _ = False
@@ -97,7 +96,7 @@ getNumSteps Dead = 10000000 -- TODO bad hack
 type DistanceMap = M.Map ((Int, Int), (Int, Int)) Int
 type KeyLocations = M.Map Char (Int, Int)
 
-dbg = False
+dbg = True
 
 -- The distance between two keys.
 -- Need to better memoize this, since unlocking most doors doesn't change most of the values.
@@ -163,7 +162,7 @@ runDFS n grid costCacheRef bestSoFarRef cache nkeys e = do
   -- Otherwise run the proper DFS.
   else do
     when dbg $ do
-      printGrid (x, y) grid
+      printGrid [(x, y)] grid
       print $ "Location: " ++ show (x, y)
       print $ "Keys: " ++ show nextKeys
       print $ "Current steps: " ++ show numSteps
@@ -298,7 +297,7 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
   -- Otherwise run the proper DFS.
   else do
     when dbg $ do
-      --printGrid (x, y) grid
+      printGrid positions grid
       print $ "Location: " ++ show positions
       print $ "Keys: " ++ show nextKeys
       print $ "Current steps: " ++ show numSteps
@@ -313,17 +312,18 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
         rKeyList = M.toList <$> rKeys
         -- Create next states for all reachable keys to explore.
         -- We need to create all combinations of positions with each element swapped out for corresponding rKeysList
-        -- Take ps and replace first with all rkeys first, append to snd w snd, etc
         nextPosDs :: [([(Int, Int)], Int)]
         nextPosDs = concat [(\(pos, d) -> (positions & ix i .~ pos, d)) <$> (rKeyList !! i) | i <- [0..length positions - 1]]
+        -- Use these to generate all possible states.
         nextStates :: [Explorers]
         nextStates =
           (\(nextPositions, d) -> Explorers nextPositions nextKeys (NumSteps (d + getNumSteps numSteps)))
           <$> nextPosDs
 
     when dbg $ do
+      print $ "Considering num next states: " ++ show (length nextStates)
       print $ "Reachable keys: " ++ show rKeys
-      --_ <- if dbg then getLine else return ""
+      _ <- if dbg then getLine else return ""
       return ()
 
     -- Get all child costs, either cached or computed.
@@ -348,7 +348,8 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
 
 day18_2 :: IO ()
 day18_2 = do
-  ls <- lines <$> readFile "input/2019/18_2.txt"
+  --ls <- lines <$> readFile "input/2019/18_2.txt"
+  ls <- lines <$> readFile "input/2019/18_2_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
       keyLocations =
         fmap head 
@@ -363,3 +364,29 @@ day18_2 = do
   bestSoFarRef <- newIORef Dead
   finalState <- runDFS' 0 grid costCacheRef bestSoFarRef cache nkeys explorers
   print finalState
+
+day18_cheat :: IO ()
+day18_cheat = do
+  ls <- lines <$> readFile "input/2019/18_2.txt"
+  let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
+      grid1 = chopGrid 0 41 0 41 grid
+      grid2 = chopGrid 40 41 0 41 grid
+      grid3 = chopGrid 0 41 40 41 grid
+      grid4 = chopGrid 40 41 40 41 grid
+      grids = removeDoorsWithoutKeys <$> [grid1, grid2, grid3, grid4]
+      solveGrid g =
+        let keyLocations =
+              fmap head
+              $ M.filter (not . null)
+              $ (`gridFind` g)
+              <$> M.fromList [(a, KeySpace a) | a <- ['a'..'z']]
+            nkeys = numKeys g
+            startPos = head $ gridFind Entrance g
+            explorer = Explorer startPos S.empty (NumSteps 0)
+            cache = fullCache [startPos] (snd <$> M.toList keyLocations) g
+         in do
+            costCacheRef <- newIORef M.empty
+            bestSoFarRef <- newIORef Dead
+            runDFS 0 g costCacheRef bestSoFarRef cache nkeys explorer
+  scores <- sequenceA $ solveGrid <$> grids
+  print $ sum $ getNumSteps <$> scores
