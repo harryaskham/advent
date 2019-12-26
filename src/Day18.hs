@@ -96,7 +96,7 @@ getNumSteps Dead = 10000000 -- TODO bad hack
 type DistanceMap = M.Map ((Int, Int), (Int, Int)) Int
 type KeyLocations = M.Map Char (Int, Int)
 
-dbg = True
+dbg = False
 
 -- The distance between two keys.
 -- Need to better memoize this, since unlocking most doors doesn't change most of the values.
@@ -198,8 +198,7 @@ runDFS n grid costCacheRef bestSoFarRef cache nkeys e = do
           <*> ZipList childDistances
 
     -- Cache, because the DFS guarantees this was the best from this position.
-    costCache <- readIORef costCacheRef
-    writeIORef costCacheRef $ M.insert (x, y, nextKeys) (NumSteps minCost) costCache
+    modifyIORef' costCacheRef $ M.insert (x, y, nextKeys) (NumSteps minCost)
        
     return (NumSteps minCost)
 
@@ -341,8 +340,7 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
           <*> ZipList childDistances
 
     -- Cache, because the DFS guarantees this was the best from this position.
-    costCache <- readIORef costCacheRef
-    writeIORef costCacheRef $ M.insert cacheKey (NumSteps minCost) costCache
+    modifyIORef' costCacheRef $ M.insert cacheKey (NumSteps minCost)
        
     return (NumSteps minCost)
 
