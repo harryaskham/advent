@@ -96,7 +96,7 @@ getNumSteps Dead = 10000000 -- TODO bad hack
 type DistanceMap = M.Map ((Int, Int), (Int, Int)) Int
 type KeyLocations = M.Map Char (Int, Int)
 
-dbg = False
+dbg = True
 
 -- The distance between two keys.
 -- Need to better memoize this, since unlocking most doors doesn't change most of the values.
@@ -180,7 +180,7 @@ runDFS n grid costCacheRef bestSoFarRef cache nkeys e = do
 
     when dbg $ do
       print $ "Reachable keys: " ++ show rKeys
-      --_ <- if dbg then getLine else return ""
+      _ <- if dbg then getLine else return ""
       return ()
 
     -- Get all child costs, either cached or computed.
@@ -252,6 +252,15 @@ removeDoorsWithoutKeys grid =
       $ fmap fst
       $ filter (not . null . snd)
       $ zip ['A'..'Z'] ((`gridFind` grid) <$> [KeySpace c | c <- ['a'..'z']])
+    doorLocations =
+      fmap head 
+      $ M.filter (not . null)
+      $ (`gridFind` grid)
+      <$> M.fromList [(a, Door a) | a <- ['A'..'Z']]
+
+removeAllDoors :: Grid -> Grid
+removeAllDoors grid = M.foldl' (\g loc -> vreplace2 loc Empty g) grid doorLocations
+  where
     doorLocations =
       fmap head 
       $ M.filter (not . null)
@@ -346,6 +355,7 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
 
 day18_2 :: IO ()
 day18_2 = do
+  --ls <- lines <$> readFile "input/2019/18_2_cut.txt"
   ls <- lines <$> readFile "input/2019/18_2.txt"
   --ls <- lines <$> readFile "input/2019/18_2_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap.fmap) fromChar ls)
@@ -363,6 +373,10 @@ day18_2 = do
   finalState <- runDFS' 0 grid costCacheRef bestSoFarRef cache nkeys explorers
   print finalState
 
+-- Okay, weird - even with NO DOORS the shortest path is lower than reference value.
+-- Let alone without the doors we can't open from each quadrant
+-- Aiming for 1940 but getting 1976 with no doors
+
 day18_cheat :: IO ()
 day18_cheat = do
   ls <- lines <$> readFile "input/2019/18_2.txt"
@@ -371,6 +385,7 @@ day18_cheat = do
       grid2 = chopGrid 40 41 0 41 grid
       grid3 = chopGrid 0 41 40 41 grid
       grid4 = chopGrid 40 41 40 41 grid
+      --grids = removeAllDoors <$> [grid1, grid2, grid3, grid4]
       grids = removeDoorsWithoutKeys <$> [grid1, grid2, grid3, grid4]
       solveGrid g =
         let keyLocations =
@@ -387,4 +402,5 @@ day18_cheat = do
             bestSoFarRef <- newIORef Dead
             runDFS 0 g costCacheRef bestSoFarRef cache nkeys explorer
   scores <- sequenceA $ solveGrid <$> grids
+  print scores
   print $ sum $ getNumSteps <$> scores
