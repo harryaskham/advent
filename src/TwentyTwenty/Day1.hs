@@ -1,9 +1,9 @@
 module TwentyTwenty.Day1 where
 
-inputPath :: Int -> String
-inputPath day = "input/2020/" <> show day <> ".txt"
+inputPath :: String
+inputPath = "input/2020/1.txt"
 
 part1 :: IO ()
 part1 = do
-  ls <- lines <$> (readFile $ inputPath 1)
+  ls <- lines <$> readFile inputPath
   print ls
