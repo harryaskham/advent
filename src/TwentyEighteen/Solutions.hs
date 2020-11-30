@@ -1,39 +1,39 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE BangPatterns #-}
 
-module TwentyEighteen where
+module TwentyEighteen.Solutions where
 
-import qualified Data.Set as S
-import Data.List
+import Control.Applicative
+import Control.Monad
+import Control.Monad.Fix
 import Data.Char
+import Data.Function ((&))
+import Data.List
 import Data.List.Split
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Function ((&))
+import Data.Ord
+import qualified Data.Sequence as SQ
+import qualified Data.Set as S
+import Data.Time
+import qualified Data.Vector as V
+import Text.ParserCombinators.ReadP
 import Text.Regex.TDFA
 import Text.Regex.TDFA.Text ()
-import Text.ParserCombinators.ReadP
-import Control.Applicative
-import Data.Time
-import Data.Ord
-import Control.Monad.Fix
-import qualified Data.Vector as V
-import Control.Monad
-import qualified Data.Sequence as SQ
 
 -- Read signed ints from file.
 freqsToNums :: IO [Int]
 freqsToNums = do
   content <- readFile "input/2018/1.txt"
   return $ parseLine <$> lines content
-    where
-      parseLine :: String -> Int
-      parseLine (sign:number) =
-        case sign of
-          '+' -> read number
-          '-' -> -1 * read number
+  where
+    parseLine :: String -> Int
+    parseLine (sign : number) =
+      case sign of
+        '+' -> read number
+        '-' -> -1 * read number
 
 day1_1 :: IO Int
 day1_1 = sum <$> freqsToNums
@@ -42,10 +42,10 @@ day1_2 :: IO Int
 day1_2 = do
   nums <- cycle <$> freqsToNums
   return $ next S.empty nums 0
-    where
-      next :: S.Set Int -> [Int] -> Int -> Int
-      next seen (n:ns) frequency =
-        if frequency `S.member` seen then frequency else next (S.insert frequency seen) ns (frequency + n)
+  where
+    next :: S.Set Int -> [Int] -> Int -> Int
+    next seen (n : ns) frequency =
+      if frequency `S.member` seen then frequency else next (S.insert frequency seen) ns (frequency + n)
 
 -- Get a count of unique items in a list.
 itemCounts :: Ord a => [a] -> M.Map a Int
@@ -59,17 +59,17 @@ day2_1 :: IO Int
 day2_1 = do
   content <- readFile "input/2018/2.txt"
   return $ go 2 (lines content) * go 3 (lines content)
-    where
-      go :: Int -> [String] -> Int
-      go n ls = length $ filter (exactlyN n) ls
+  where
+    go :: Int -> [String] -> Int
+    go n ls = length $ filter (exactlyN n) ls
 
 -- Get the number of differences between the two strings.
 editDistance :: Eq a => [a] -> [a] -> Int
-editDistance xs ys = length $ filter (==False) $ fmap (uncurry (==)) (zip xs ys)
+editDistance xs ys = length $ filter (== False) $ fmap (uncurry (==)) (zip xs ys)
 
 -- Gets only the items that are the same in both cases.
 common :: Eq a => [a] -> [a] -> [a]
-common xs ys = catMaybes $ filter (/=Nothing) $ fmap (\(x, y) -> if x == y then Just x else Nothing) (zip xs ys)
+common xs ys = catMaybes $ filter (/= Nothing) $ fmap (\(x, y) -> if x == y then Just x else Nothing) (zip xs ys)
 
 day2_2 :: IO String
 day2_2 = do
@@ -77,18 +77,20 @@ day2_2 = do
   return $ head [common x y | x <- ls, y <- ls, editDistance x y == 1]
 
 -- The details of a fabric rectangle
-data FabRect = FabRect { _id :: String
-                       , _xC :: Int
-                       , _yC :: Int
-                       , _width :: Int
-                       , _height :: Int
-                       } deriving (Show)
+data FabRect = FabRect
+  { _id :: String,
+    _xC :: Int,
+    _yC :: Int,
+    _width :: Int,
+    _height :: Int
+  }
+  deriving (Show)
 
 -- Read a rectangle from #id @ x,y: wxh form.
 parseFabricRect :: String -> FabRect
 parseFabricRect s = FabRect idStr (read xStr) (read yStr) (read widthStr) (read heightStr)
   where
-    [_:idStr, _, coordStr, dimStr] = words s
+    [_ : idStr, _, coordStr, dimStr] = words s
     [xStr, yStr] = splitOn "," $ delete ':' coordStr
     [widthStr, heightStr] = splitOn "x" dimStr
 
@@ -98,7 +100,7 @@ trackOverlap :: M.Map (Int, Int) Int -> (Int, Int) -> M.Map (Int, Int) Int
 trackOverlap counts coord = M.insertWith (+) coord 1 counts
 
 coordsForRect :: FabRect -> [(Int, Int)]
-coordsForRect fr = [(x, y) | x <- [_xC fr.._xC fr + _width fr - 1], y <- [_yC fr.._yC fr + _height fr - 1]]
+coordsForRect fr = [(x, y) | x <- [_xC fr .. _xC fr + _width fr - 1], y <- [_yC fr .. _yC fr + _height fr - 1]]
 
 coordCounts :: [FabRect] -> M.Map (Int, Int) Int
 coordCounts frs = itemCounts coords
@@ -108,11 +110,11 @@ coordCounts frs = itemCounts coords
 day3_1 :: IO Int
 day3_1 = do
   frs <- fmap parseFabricRect . lines <$> readFile "input/2018/3.txt"
-  return $ snd <$> M.toList (coordCounts frs) & filter (>1) & length
+  return $ snd <$> M.toList (coordCounts frs) & filter (> 1) & length
 
 -- Is the given rectangle non-overlapping?
 isRectUnique :: M.Map (Int, Int) Int -> FabRect -> Bool
-isRectUnique coordCounts rect = all (==1) counts
+isRectUnique coordCounts rect = all (== 1) counts
   where
     coords = coordsForRect rect
     counts = catMaybes $ (`M.lookup` coordCounts) <$> coords
@@ -124,10 +126,14 @@ day3_2 = do
 
 -- Month Day Hour Minute
 data TimeStamp = TimeStamp Day TimeOfDay deriving (Eq, Ord, Show)
+
 type GuardId = Int
-data LogLine = GuardChange GuardId
-             | Asleep
-             | Awake deriving (Eq, Ord, Show)
+
+data LogLine
+  = GuardChange GuardId
+  | Asleep
+  | Awake
+  deriving (Eq, Ord, Show)
 
 -- Parse out the raw logs into timestamps and message
 parseLogSleep :: ReadP (TimeStamp, LogLine)
@@ -143,18 +149,18 @@ parseLogSleep = do
   string "] "
   logLine <- parseGuard +++ parseAsleep +++ parseAwake
   return (TimeStamp (fromGregorian 1518 (read month) (read day)) (TimeOfDay (read hours) (read minutes) 0), logLine)
-    where
-      digit = satisfy isDigit
-      parseGuard = do
-        string "Guard #"
-        guardId <- manyTill digit (satisfy (==' '))
-        return $ GuardChange (read guardId)
-      parseAsleep = do
-        string "falls asleep"
-        return Asleep
-      parseAwake = do
-        string "wakes up"
-        return Awake
+  where
+    digit = satisfy isDigit
+    parseGuard = do
+      string "Guard #"
+      guardId <- manyTill digit (satisfy (== ' '))
+      return $ GuardChange (read guardId)
+    parseAsleep = do
+      string "falls asleep"
+      return Asleep
+    parseAwake = do
+      string "wakes up"
+      return Awake
 
 -- Split the logs into chunks - either only guard changes or only awake/asleep.
 splitLogs :: [(TimeStamp, LogLine)] -> [[(TimeStamp, LogLine)]]
@@ -205,7 +211,7 @@ mostCommon xs = maximumBy (comparing snd) $ M.toList (itemCounts xs)
 
 -- Converts a timestamp pair to the list of minute-values it contains
 getMinutes :: TimeOfDay -> TimeOfDay -> [Int]
-getMinutes (TimeOfDay _ m1 _) (TimeOfDay _ m2 _) = [m1..m2-1]
+getMinutes (TimeOfDay _ m1 _) (TimeOfDay _ m2 _) = [m1 .. m2 -1]
 
 day4_1 :: IO Int
 day4_1 = do
@@ -213,18 +219,19 @@ day4_1 = do
   ls <- sort . fmap (fst . head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
   let guards = guardTotals . guardMinutesAsleep . groupSplitLogs . splitLogs $ ls
       guard = sleepiestGuard guards
-      minute = mostCommonGuardMinute guards guard in
-      return $ guard * minute
+      minute = mostCommonGuardMinute guards guard
+   in return $ guard * minute
 
 day4_2 :: IO Int
 day4_2 = do
   ls <- sort . fmap (fst . head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
   let guards = guardTotals . guardMinutesAsleep . groupSplitLogs . splitLogs $ ls
       guardsToMostCommonMinute = (\(g, ms) -> (g, mostCommon ms)) <$> filter (not . null . snd) (M.toList guards)
-      (guard, (minute, count)) = maximumBy (comparing $ snd . snd) guardsToMostCommonMinute in do
-      print guards
-      print guardsToMostCommonMinute
-      return $ guard * minute
+      (guard, (minute, count)) = maximumBy (comparing $ snd . snd) guardsToMostCommonMinute
+   in do
+        print guards
+        print guardsToMostCommonMinute
+        return $ guard * minute
 
 -- Do two chars react with one another?
 react :: Char -> Char -> Bool
@@ -234,9 +241,10 @@ react x y = x /= y && (toLower x == toLower y)
 reducePolymer :: String -> String
 reducePolymer "" = ""
 reducePolymer [x] = [x]
-reducePolymer (x:y:xs) = if
-  | react x y -> reducePolymer xs
-  | otherwise -> x : reducePolymer (y:xs)
+reducePolymer (x : y : xs) =
+  if
+      | react x y -> reducePolymer xs
+      | otherwise -> x : reducePolymer (y : xs)
 
 -- Iterate reductioun until a fixed point.
 reduceCompletely :: String -> String
@@ -254,7 +262,7 @@ without c xs = [x | x <- xs, x /= toLower c, x /= toUpper c]
 day5_2 :: IO Int
 day5_2 = do
   p <- head . lines <$> readFile "input/2018/5.txt"
-  return $ minimum $ length . reduceCompletely <$> (without <$> ['a'..'z'] <*> pure p)
+  return $ minimum $ length . reduceCompletely <$> (without <$> ['a' .. 'z'] <*> pure p)
 
 tuplify2 :: [a] -> (a, a)
 tuplify2 [x, y] = (x, y)
@@ -266,10 +274,14 @@ toCoord = tuplify2 . fmap read . splitOn ", "
 -- It's safe to ignore all others because anything extending
 -- outside the grid is also infinite.
 bounds :: [(Int, Int)] -> ((Int, Int), (Int, Int))
-bounds cs = ( ( fst $ minimumBy (comparing fst) cs
-              , snd $ minimumBy (comparing snd) cs )
-            , ( fst $ maximumBy (comparing fst) cs
-              , snd $ maximumBy (comparing snd) cs ) )
+bounds cs =
+  ( ( fst $ minimumBy (comparing fst) cs,
+      snd $ minimumBy (comparing snd) cs
+    ),
+    ( fst $ maximumBy (comparing fst) cs,
+      snd $ maximumBy (comparing snd) cs
+    )
+  )
 
 -- Manhattan distance between two points
 distance :: (Int, Int) -> (Int, Int) -> Int
@@ -281,7 +293,7 @@ pointDistances :: [(Int, Int)] -> Int -> M.Map (Int, Int) [((Int, Int), Int)]
 pointDistances cs boundsMod = M.fromList distances
   where
     ((minX, minY), (maxX, maxY)) = bounds cs
-    allPoints = [(x, y) | x <- [minX-boundsMod..maxX+boundsMod], y <- [minY-boundsMod..maxY+boundsMod]]
+    allPoints = [(x, y) | x <- [minX - boundsMod .. maxX + boundsMod], y <- [minY - boundsMod .. maxY + boundsMod]]
     distances = [(p, [(c, distance c p) | c <- cs]) | p <- allPoints]
 
 -- Gets the closest point from the given distances. If there is a draw then Nothing.
@@ -315,20 +327,20 @@ day6_1 = do
       ptc = pointToClosest pds
       ptc' = pointToClosest pds'
       areas = M.fromList $ allAreas bs ptc
-      areas' = M.fromList $ allAreas bs ptc' in
-        return 
-        $ snd . head
-        $ filter (\((_, x, y), _) -> x == y)
-        $ sortOn (Down . snd)
-        $ M.toList
-        $ M.mapKeys (\k -> (k, M.lookup k areas, M.lookup k areas')) areas
+      areas' = M.fromList $ allAreas bs ptc'
+   in return $
+        snd . head $
+          filter (\((_, x, y), _) -> x == y) $
+            sortOn (Down . snd) $
+              M.toList $
+                M.mapKeys (\k -> (k, M.lookup k areas, M.lookup k areas')) areas
 
 day6_2 :: IO Int
 day6_2 = do
   coords <- fmap toCoord . lines <$> readFile "input/2018/6.txt"
   let pds = pointDistances coords 0
-      pointsToSums = filter ( \(p, s) -> s < 10000) $ M.toList $ fmap (sum . fmap snd) pds in
-      return $ length pointsToSums
+      pointsToSums = filter (\(p, s) -> s < 10000) $ M.toList $ fmap (sum . fmap snd) pds
+   in return $ length pointsToSums
 
 -- Parse out the char->char relationship in the graph from a line.
 parseConstraint :: ReadP (Char, Char)
@@ -376,10 +388,12 @@ day7_1 = do
 type Task = (Node, Int)
 
 -- The state of the current system.
-data WorkerState = WorkerState { _workers :: V.Vector (Maybe Task)
-                               , _t :: Int
-                               , _nodes :: [Node]
-                               , _edges :: [(Node, Node)] }
+data WorkerState = WorkerState
+  { _workers :: V.Vector (Maybe Task),
+    _t :: Int,
+    _nodes :: [Node],
+    _edges :: [(Node, Node)]
+  }
 
 -- Run one step of the state.
 advanceState :: WorkerState -> WorkerState
@@ -414,10 +428,11 @@ nodeDuration n = ord n - 4
 -- Removes the node from the list.
 assignNode :: WorkerState -> Node -> WorkerState
 assignNode st n = case V.findIndex isNothing (_workers st) of
-                    Nothing -> st
-                    Just i -> let newWorkers = (_workers st V.// [(i, Just (n, nodeDuration n))])
-                                  newNodes = filter (/= n) (_nodes st)
-                               in WorkerState newWorkers (_t st) newNodes (_edges st)
+  Nothing -> st
+  Just i ->
+    let newWorkers = (_workers st V.// [(i, Just (n, nodeDuration n))])
+        newNodes = filter (/= n) (_nodes st)
+     in WorkerState newWorkers (_t st) newNodes (_edges st)
 
 -- Of the ready-to-go nodes, assigns any that are ready.
 -- A no-op if we are currently unable to assign.
@@ -443,15 +458,16 @@ day7_2 = do
 
 -- A tree where each node has multiple children and some integer metadata
 type Metadata = Int
+
 data Tree = Tree [Tree] [Metadata] deriving (Show)
 
 -- Parse a single tree and return the remainder
 parseTree :: [Int] -> (Tree, [Int])
-parseTree (0:numMeta:xs) = (Tree [] (take numMeta xs), drop numMeta xs)
-parseTree (numChild:numMeta:xs) = (Tree (reverse children) (take numMeta rem), drop numMeta rem)
+parseTree (0 : numMeta : xs) = (Tree [] (take numMeta xs), drop numMeta xs)
+parseTree (numChild : numMeta : xs) = (Tree (reverse children) (take numMeta rem), drop numMeta rem)
   where
     nTrees 0 acc rem = (acc, rem)
-    nTrees numChild acc xs = nTrees (numChild - 1) (tree:acc) rem
+    nTrees numChild acc xs = nTrees (numChild - 1) (tree : acc) rem
       where
         (tree, rem) = parseTree xs
     (children, rem) = nTrees numChild [] xs
@@ -469,58 +485,67 @@ day8 = do
   input <- fmap read . words . head . lines <$> readFile "input/2018/8.txt"
   let tree = fst . parseTree $ input
    in do
-     print $ sumMeta tree
-     print $ metaValue tree
+        print $ sumMeta tree
+        print $ metaValue tree
 
-data Game = Game { marbles :: SQ.Seq Int
-                 , scores :: V.Vector Int
-                 , currentMarble :: Int
-                 , nextCount :: Int
-                 , nextPlayer :: Int
-                 , numPlayers :: Int
-                 } deriving (Show)
+data Game = Game
+  { marbles :: SQ.Seq Int,
+    scores :: V.Vector Int,
+    currentMarble :: Int,
+    nextCount :: Int,
+    nextPlayer :: Int,
+    numPlayers :: Int
+  }
+  deriving (Show)
 
 -- Creates a new game with the initial marble placed.
 newGame :: Int -> Game
-newGame numPlayers = Game { marbles = SQ.fromList [0]
-                          , scores = V.replicate numPlayers 0
-                          , currentMarble = 0
-                          , nextCount = 1
-                          , nextPlayer = 0
-                          , numPlayers = numPlayers
-                          }
+newGame numPlayers =
+  Game
+    { marbles = SQ.fromList [0],
+      scores = V.replicate numPlayers 0,
+      currentMarble = 0,
+      nextCount = 1,
+      nextPlayer = 0,
+      numPlayers = numPlayers
+    }
 
 -- Run a single turn and return what the last marble was worth.
 runTurn :: Game -> (Game, Int)
-runTurn game = if (nextCount game `mod` 23) == 0
-                  then run23Turn game
-                  else runRegularTurn game
+runTurn game =
+  if (nextCount game `mod` 23) == 0
+    then run23Turn game
+    else runRegularTurn game
 
 run23Turn :: Game -> (Game, Int)
-run23Turn Game{..} =
-  ( Game { marbles = marbles'
-         , scores = scores V.// [(nextPlayer, (scores V.! nextPlayer) + score)]
-         , currentMarble = (removeIndex + 2) `mod` length marbles'
-         , nextCount = nextCount + 1
-         , nextPlayer = (nextPlayer + 1) `mod` numPlayers
-         , numPlayers = numPlayers
-         }
-  , score )
+run23Turn Game {..} =
+  ( Game
+      { marbles = marbles',
+        scores = scores V.// [(nextPlayer, (scores V.! nextPlayer) + score)],
+        currentMarble = (removeIndex + 2) `mod` length marbles',
+        nextCount = nextCount + 1,
+        nextPlayer = (nextPlayer + 1) `mod` numPlayers,
+        numPlayers = numPlayers
+      },
+    score
+  )
   where
     removeIndex = (currentMarble - 9 + length marbles) `mod` length marbles
     score = nextCount + marbles `SQ.index` removeIndex
     marbles' = SQ.deleteAt removeIndex marbles
 
 runRegularTurn :: Game -> (Game, Int)
-runRegularTurn Game{..} =
-  ( Game { marbles = marbles'
-         , scores = scores
-         , currentMarble = (currentMarble + 2) `mod` length marbles'
-         , nextCount = nextCount + 1
-         , nextPlayer = (nextPlayer + 1) `mod` numPlayers
-         , numPlayers = numPlayers
-         }
-  , 0 )
+runRegularTurn Game {..} =
+  ( Game
+      { marbles = marbles',
+        scores = scores,
+        currentMarble = (currentMarble + 2) `mod` length marbles',
+        nextCount = nextCount + 1,
+        nextPlayer = (nextPlayer + 1) `mod` numPlayers,
+        numPlayers = numPlayers
+      },
+    0
+  )
   where
     marbles' = SQ.insertAt currentMarble nextCount marbles
 

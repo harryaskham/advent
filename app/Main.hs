@@ -1,12 +1,6 @@
 module Main where
 
-import Common
-import TwentyEighteen
-import TwentyNineteen
-import Day15
-import Day17
-import Day18
-import Day19
+import qualified TwentyTwenty.Day1 as Day1
 
 main :: IO ()
-main = Day18.day18_2
+main = Day1.part1

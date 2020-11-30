@@ -1,36 +1,36 @@
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE MultiWayIf #-}
 
-module Day17 where
+module TwentyNineteen.Day17 where
 
-import qualified Data.Set as S
-import Data.List
+import Control.Applicative
+import Control.Concurrent
+import Control.Lens hiding (Empty)
+import Control.Monad
 import Data.Char
+import Data.Foldable
+import Data.Function ((&))
+import Data.List
+import qualified Data.List.Safe as LS
 import Data.List.Split hiding (condense)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Function ((&))
-import Control.Applicative
-import qualified Data.Vector as V
-import qualified Data.Tree as T
-import qualified Data.List.Safe as LS
-import Control.Monad
-import Data.Ord
-import Control.Lens hiding (Empty)
-import qualified Data.Vector.Split as VS
-import Data.Ratio
-import Data.Foldable
-import Text.ParserCombinators.ReadP
-import Debug.Trace
 import qualified Data.Matrix as MX
+import Data.Maybe
+import Data.Ord
+import Data.Ratio
+import qualified Data.Set as S
+import qualified Data.Tree as T
+import qualified Data.Vector as V
+import qualified Data.Vector.Split as VS
+import Debug.Trace
 import System.IO
 import System.IO.HiddenChar
-import Control.Concurrent
 import System.Random
-import TwentyNineteen (Machine(..), readProgram, stepUntilNOutputs, inputs, outputs, clear, runProgram)
+import Text.ParserCombinators.ReadP
+import TwentyNineteen.Solutions (Machine (..), clear, inputs, outputs, readProgram, runProgram, stepUntilNOutputs)
 
 data Space = Empty | Scaffold | RUp | RDown | RLeft | RRight | RFallen deriving (Eq)
 
@@ -62,12 +62,13 @@ intersectionCoords :: [[Space]] -> [(Int, Int)]
 intersectionCoords grid = filter isIntersection coords
   where
     coords = [(x, y) | x <- [1 .. length (head grid) - 2], y <- [1 .. length grid - 2]]
-    isIntersection (x, y) = ((grid !! y !! x) == Scaffold)
-                            && ((grid !! (y+1) !! x) == Scaffold)
-                            && ((grid !! (y-1) !! x) == Scaffold)
-                            && ((grid !! y !! (x+1)) == Scaffold)
-                            && ((grid !! y !! (x-1)) == Scaffold)
-    
+    isIntersection (x, y) =
+      ((grid !! y !! x) == Scaffold)
+        && ((grid !! (y + 1) !! x) == Scaffold)
+        && ((grid !! (y -1) !! x) == Scaffold)
+        && ((grid !! y !! (x + 1)) == Scaffold)
+        && ((grid !! y !! (x -1)) == Scaffold)
+
 day17_1 :: IO ()
 day17_1 = do
   program <- readProgram "input/2019/17.txt"
@@ -86,10 +87,12 @@ inputMovements routine funcA funcB funcC cameraOn machine =
     asciiFuncA = fromIntegral . fromEnum <$> funcA ++ "\n"
     asciiFuncB = fromIntegral . fromEnum <$> funcB ++ "\n"
     asciiFuncC = fromIntegral . fromEnum <$> funcC ++ "\n"
-    asciiCamera = [ if cameraOn
-                      then (fromIntegral . fromEnum) 'y'
-                      else (fromIntegral . fromEnum) 'n'
-                  , (fromIntegral . fromEnum) '\n']
+    asciiCamera =
+      [ if cameraOn
+          then (fromIntegral . fromEnum) 'y'
+          else (fromIntegral . fromEnum) 'n',
+        (fromIntegral . fromEnum) '\n'
+      ]
 
 -- Full string:
 -- A L,4,L,4,L,10,R,4,
@@ -107,13 +110,14 @@ day17_2 :: IO ()
 day17_2 = do
   program <- readProgram "input/2019/17.txt"
   let machine = Machine 0 [] [] (M.insert 0 2 program) 0
-      moved = inputMovements
-                "A,B,A,C,A,C,B,C,C,B"
-                "L,4,L,4,L,10,R,4"
-                "R,4,L,4,L,4,R,8,R,10"
-                "R,4,L,10,R,10"
-                False
-                machine
+      moved =
+        inputMovements
+          "A,B,A,C,A,C,B,C,C,B"
+          "L,4,L,4,L,10,R,4"
+          "R,4,L,4,L,4,R,8,R,10"
+          "R,4,L,10,R,10"
+          False
+          machine
   runMoved <- runProgram moved
   let rows = splitOn "\n" $ toEnum . fromIntegral <$> runMoved ^. outputs
   sequenceA_ $ print <$> rows
