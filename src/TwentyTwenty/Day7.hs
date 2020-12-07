@@ -72,12 +72,15 @@ containedWithin cm color = go cm S.empty (SQ.singleton color)
               (foldl' (flip S.insert) seen cs)
               (rest SQ.>< SQ.fromList cs)
 
+readRules :: IO [Rule]
+readRules = do
+  ls <- lines <$> readFile inputPath
+  return $ fst <$> concatMap (readP_to_S parseRule) ls
+
 part1 :: IO Int
 part1 = do
-  ls <- lines <$> readFile inputPath
-  let rules = fst <$> (concat $ readP_to_S parseRule <$> ls)
-      containedMap = buildContainedMap rules
-  return $ length $ containedWithin containedMap "shinygold"
+  rules <- readRules
+  return $ length $ containedWithin (buildContainedMap rules) "shinygold"
 
 type RuleMap = M.Map Color [(Quantity, Color)]
 
@@ -101,7 +104,5 @@ countBagsInside rm color =
 
 part2 :: IO Int
 part2 = do
-  ls <- lines <$> readFile inputPath
-  let rules = fst <$> (concat $ readP_to_S parseRule <$> ls)
-      ruleMap = buildRuleMap rules
-  return $ countBagsInside ruleMap "shinygold"
+  rules <- readRules
+  return $ countBagsInside (buildRuleMap rules) "shinygold"
