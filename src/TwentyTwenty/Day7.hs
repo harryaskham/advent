@@ -5,17 +5,8 @@ import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as SQ
 import qualified Data.Set as S
-import Text.ParserCombinators.ReadP
-  ( ReadP,
-    count,
-    eof,
-    many,
-    munch1,
-    readP_to_S,
-    satisfy,
-    string,
-    (<++),
-  )
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec.Char
 
 inputPath :: String
 inputPath = "input/2020/7.txt"
@@ -26,29 +17,37 @@ type Quantity = Int
 
 data Rule = Rule Color [(Quantity, Color)] deriving (Show)
 
-parseRule :: ReadP Rule
-parseRule = do
-  color <- parseColor
-  string "bags contain "
-  contains <-
-    ( do
-        string "no other bags."
-        return []
-      )
-      <++ ( many $ do
-              quantity <- satisfy isDigit
-              string " "
-              color' <- parseColor
-              string "bag, " <++ string "bag." <++ string "bags, " <++ string "bags."
-              return (digitToInt quantity, concat color')
-          )
+parseRules :: GenParser Char st [Rule]
+parseRules = do
+  result <- many line
   eof
-  return $ Rule (concat color) contains
+  return result
   where
     parseColor = count 2 $ do
-      c <- munch1 isLetter
+      c <- many1 letter
       string " "
       return c
+    line = do
+      color <- parseColor
+      string "bags contain "
+      contains <-
+        ( do
+            string "no other bags."
+            return []
+          )
+          <|> ( many $ do
+                  quantity <- satisfy isDigit
+                  string " "
+                  color' <- parseColor
+                  choice [ try (string "bag, "),
+                           try (string "bag."),
+                           try (string "bags, "),
+                           try (string "bags.")
+                         ]
+                  return (digitToInt quantity, concat color')
+              )
+      char '\n'
+      return $ Rule (concat color) contains
 
 type ContainedMap = M.Map Color [Color]
 
@@ -74,8 +73,12 @@ containedWithin cm color = go cm S.empty (SQ.singleton color)
 
 readRules :: IO [Rule]
 readRules = do
-  ls <- lines <$> readFile inputPath
-  return $ fst <$> concatMap (readP_to_S parseRule) ls
+  f <- readFile inputPath
+  case parse parseRules "(unknown)" f of
+    Left e -> do
+      print e
+      return []
+    Right rules -> return rules
 
 part1 :: IO Int
 part1 = do

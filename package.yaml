@@ -38,6 +38,7 @@ dependencies:
 - pqueue
 - monad-dijkstra
 - dequeue
+- parsec
 
 library:
   source-dirs: src

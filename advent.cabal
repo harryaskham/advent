@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f4a951ff233c641c9dfc8a16e784606ad31ccabc535912add5657ba4e1a66029
+-- hash: 932de608f0eb908afab7b6928893528faa82fe1455a563da3e734b3564b2a97c
 
 name:           advent
 version:        0.1.0.0
@@ -57,6 +57,7 @@ library
     , matrix
     , monad-dijkstra
     , mtl
+    , parsec
     , pqueue
     , random
     , regex-tdfa
@@ -86,6 +87,7 @@ executable advent-exe
     , matrix
     , monad-dijkstra
     , mtl
+    , parsec
     , pqueue
     , random
     , regex-tdfa
