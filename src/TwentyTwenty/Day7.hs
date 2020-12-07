@@ -43,11 +43,13 @@ parseRules = do
       contains <- noBags <|> many innerBag
       char '\n'
       return $ Rule (concat color') contains
+
     color :: GenParser Char st [Color]
     color = count 2 $ do
       c <- many1 letter
       string " "
       return c
+
     innerBag :: GenParser Char st (Quantity, Color)
     innerBag = do
       quantity <- satisfy isDigit
@@ -61,6 +63,7 @@ parseRules = do
           try (string "s.")
         ]
       return (digitToInt quantity, concat color')
+
     noBags :: GenParser Char st [(Quantity, Color)]
     noBags = do
       string "no other bags."
