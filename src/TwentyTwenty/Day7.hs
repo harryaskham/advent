@@ -20,7 +20,6 @@ import Text.ParserCombinators.Parsec
     try,
     (<|>),
   )
-import Text.ParserCombinators.Parsec.Char ()
 
 inputPath :: String
 inputPath = "input/2020/7.txt"
@@ -33,9 +32,9 @@ data Rule = Rule Color [(Quantity, Color)] deriving (Show)
 
 parseRules :: GenParser Char st [Rule]
 parseRules = do
-  result <- many line
+  rules <- many line
   eof
-  return result
+  return rules
   where
     line :: GenParser Char st Rule
     line = do
