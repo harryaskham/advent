@@ -51,6 +51,37 @@ parseRule = do
       string " "
       return c
 
+-- A map from color to all the colors that directly contain it
+type ContainedMap = M.Map Color [Color]
+
+buildContainedMap :: [Rule] -> ContainedMap
+buildContainedMap rules =
+  M.fromListWith (++) $ concatMap flipRule rules
+  where
+    flipRule (Rule color contains) = (\(_, c) -> (c, [color])) <$> contains
+
+-- BFS from the starting color to find all containing colors
+containedWithin :: ContainedMap -> Color -> [Color]
+containedWithin cm color = go cm S.empty (SQ.singleton color)
+  where
+    go cm seen queue =
+      case SQ.viewl queue of
+        SQ.EmptyL -> S.toList seen
+        (color SQ.:< rest) -> case M.lookup color cm of
+          Nothing -> go cm seen rest
+          Just cs ->
+            go
+              cm
+              (foldl' (flip S.insert) seen cs)
+              (rest SQ.>< SQ.fromList cs)
+
+part1 :: IO Int
+part1 = do
+  ls <- lines <$> readFile inputPath
+  let rules = fst <$> (concat $ readP_to_S parseRule <$> ls)
+      containedMap = buildContainedMap rules
+  return $ length $ containedWithin containedMap "shinygold"
+
 -- A map from color to all the colors it contains
 type RuleMap = M.Map Color [(Quantity, Color)]
 
@@ -58,34 +89,6 @@ buildRuleMap :: [Rule] -> RuleMap
 buildRuleMap rules =
   M.fromList $
     (\(Rule color contains) -> (color, contains)) <$> rules
-
--- A map from color to all the colors that directly contain it
-type ContainedMap = M.Map Color [Color]
-
-buildContainedMap :: RuleMap -> ContainedMap
-buildContainedMap rm = M.fromListWith (++) $ concat $ flipEntry <$> M.toList rm
-  where
-    flipEntry (color, contains) = (\(_, c) -> (c, [color])) <$> contains
-
--- BFS from the starting color to find all containing colors
-containedWithin :: ContainedMap -> Color -> [Color]
-containedWithin cm color = go cm S.empty (SQ.singleton color)
-  where
-    go cm seen queue
-      | SQ.null queue = S.toList seen
-      | otherwise =
-        let (color SQ.:< rest) = SQ.viewl queue
-         in case M.lookup color cm of
-              Nothing -> go cm seen rest
-              Just cs -> go cm (foldl' (flip S.insert) seen cs) (rest SQ.>< SQ.fromList cs)
-
-part1 :: IO Int
-part1 = do
-  ls <- lines <$> readFile inputPath
-  let rules = fst <$> (concat $ readP_to_S parseRule <$> ls)
-      ruleMap = buildRuleMap rules
-      containedMap = buildContainedMap ruleMap
-  return $ length $ containedWithin containedMap "shinygold"
 
 countBagsInside :: RuleMap -> Color -> Int
 countBagsInside rm color =
