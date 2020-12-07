@@ -1,12 +1,26 @@
 module TwentyTwenty.Day7 where
 
-import Data.Char (digitToInt, isDigit, isLetter)
+import Data.Char (digitToInt, isDigit)
 import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as SQ
 import qualified Data.Set as S
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Char
+  ( GenParser,
+    char,
+    choice,
+    count,
+    eof,
+    letter,
+    many,
+    many1,
+    parse,
+    satisfy,
+    string,
+    try,
+    (<|>),
+  )
+import Text.ParserCombinators.Parsec.Char ()
 
 inputPath :: String
 inputPath = "input/2020/7.txt"
@@ -23,31 +37,35 @@ parseRules = do
   eof
   return result
   where
-    parseColor = count 2 $ do
+    line :: GenParser Char st Rule
+    line = do
+      color' <- color
+      string "bags contain "
+      contains <- noBags <|> many innerBag
+      char '\n'
+      return $ Rule (concat color') contains
+    color :: GenParser Char st [Color]
+    color = count 2 $ do
       c <- many1 letter
       string " "
       return c
-    line = do
-      color <- parseColor
-      string "bags contain "
-      contains <-
-        ( do
-            string "no other bags."
-            return []
-          )
-          <|> ( many $ do
-                  quantity <- satisfy isDigit
-                  string " "
-                  color' <- parseColor
-                  choice [ try (string "bag, "),
-                           try (string "bag."),
-                           try (string "bags, "),
-                           try (string "bags.")
-                         ]
-                  return (digitToInt quantity, concat color')
-              )
-      char '\n'
-      return $ Rule (concat color) contains
+    innerBag :: GenParser Char st (Quantity, Color)
+    innerBag = do
+      quantity <- satisfy isDigit
+      string " "
+      color' <- color
+      string "bag"
+      choice
+        [ try (string ", "),
+          try (string "."),
+          try (string "s, "),
+          try (string "s.")
+        ]
+      return (digitToInt quantity, concat color')
+    noBags :: GenParser Char st [(Quantity, Color)]
+    noBags = do
+      string "no other bags."
+      return []
 
 type ContainedMap = M.Map Color [Color]
 
