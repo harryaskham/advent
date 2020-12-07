@@ -24,7 +24,6 @@ type Color = String
 
 type Quantity = Int
 
--- Encode the color and the contained quantity of other colours
 data Rule = Rule Color [(Quantity, Color)] deriving (Show)
 
 parseRule :: ReadP Rule
@@ -51,7 +50,6 @@ parseRule = do
       string " "
       return c
 
--- A map from color to all the colors that directly contain it
 type ContainedMap = M.Map Color [Color]
 
 buildContainedMap :: [Rule] -> ContainedMap
@@ -60,7 +58,6 @@ buildContainedMap rules =
   where
     flipRule (Rule color contains) = (\(_, c) -> (c, [color])) <$> contains
 
--- BFS from the starting color to find all containing colors
 containedWithin :: ContainedMap -> Color -> [Color]
 containedWithin cm color = go cm S.empty (SQ.singleton color)
   where
@@ -82,7 +79,6 @@ part1 = do
       containedMap = buildContainedMap rules
   return $ length $ containedWithin containedMap "shinygold"
 
--- A map from color to all the colors it contains
 type RuleMap = M.Map Color [(Quantity, Color)]
 
 buildRuleMap :: [Rule] -> RuleMap
