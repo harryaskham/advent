@@ -23,8 +23,8 @@ partition range (d : dirs) =
     'R' -> upper
     'B' -> upper
   where
-    lower = partition (take ((length range) `div` 2) range) dirs
-    upper = partition (drop ((length range) `div` 2) range) dirs
+    lower = partition (take (length range `div` 2) range) dirs
+    upper = partition (drop (length range `div` 2) range) dirs
 
 part1 :: IO Int
 part1 = do

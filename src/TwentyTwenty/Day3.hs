@@ -14,7 +14,7 @@ squareFromChar '#' = Tree
 -- Store the raw grid plus its width for repeating
 data Grid = Grid (M.Map (Int, Int) Square) Int
 
-gridFromLines :: [[Char]] -> Grid
+gridFromLines :: [String] -> Grid
 gridFromLines ls =
   Grid
     ( M.fromList
@@ -35,7 +35,7 @@ countTreesFrom pos (incX, incY) grid = go pos grid 0
     go (x, y) grid count =
       case gridLookup (x, y) grid of
         Just Tree -> go (x + incX, y + incY) grid (count + 1)
-        Just Empty -> go (x + incX, y + incY) grid (count)
+        Just Empty -> go (x + incX, y + incY) grid count
         Nothing -> count
 
 part1 :: IO Int

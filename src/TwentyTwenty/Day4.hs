@@ -12,7 +12,7 @@ type Passport = M.Map String String
 
 linesToPassport :: [String] -> Passport
 linesToPassport ls =
-  let kvPairs = splitOn ":" <$> (concat $ splitOn " " <$> ls)
+  let kvPairs = splitOn ":" <$> concat (splitOn " " <$> ls)
    in M.fromList ((\[a, b] -> (a, b)) <$> kvPairs)
 
 isValid :: Passport -> Bool
@@ -88,10 +88,9 @@ validate p =
       case M.lookup "hcl" p of
         Nothing -> Just $ HCLError Missing
         Just hcl ->
-          if ( length hcl == 7
-                 && head hcl == '#'
-                 && all (`S.member` S.fromList "abcdef0123456789") (drop 1 hcl)
-             )
+          if length hcl == 7
+            && head hcl == '#'
+            && all (`S.member` S.fromList "abcdef0123456789") (drop 1 hcl)
             then Nothing
             else Just $ HCLError Invalid,
       case M.lookup "ecl" p of
@@ -103,9 +102,8 @@ validate p =
       case M.lookup "pid" p of
         Nothing -> Just $ PIDError Missing
         Just pid ->
-          if ( length pid == 9
-                 && all (`S.member` S.fromList "0123456789") pid
-             )
+          if length pid == 9
+            && all (`S.member` S.fromList "0123456789") pid
             then Nothing
             else Just $ PIDError Invalid
     ]
