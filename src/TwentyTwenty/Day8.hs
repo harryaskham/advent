@@ -24,7 +24,7 @@ import Text.ParserCombinators.Parsec
 inputPath :: String
 inputPath = "input/2020/8.txt"
 
-data Instruction = Nop | Acc Int | Jmp Int deriving (Show)
+data Instruction = Nop Int | Acc Int | Jmp Int deriving (Show)
 
 newtype Accumulator = Accumulator Int deriving (Show)
 
@@ -46,7 +46,9 @@ parseInstructions = do
       value <- many1 digit
       char '\n'
       case opcode of
-        "nop" -> return Nop
+        "nop" -> case sign of
+          '+' -> return $ Nop (read value)
+          '-' -> return $ Nop (negate $ read value)
         "acc" -> case sign of
           '+' -> return $ Acc (read value)
           '-' -> return $ Acc (negate $ read value)
@@ -57,7 +59,7 @@ parseInstructions = do
 stepMachine :: Machine -> Machine
 stepMachine (Machine is (Counter c) (Accumulator a)) =
   case is V.! c of
-    Nop -> Machine is (Counter $ c + 1) (Accumulator a)
+    Nop _ -> Machine is (Counter $ c + 1) (Accumulator a)
     Acc inc -> Machine is (Counter $ c + 1) (Accumulator $ a + inc)
     Jmp inc -> Machine is (Counter $ c + inc) (Accumulator a)
 
@@ -84,14 +86,19 @@ part1 = do
   let machine = Machine (V.fromList is) (Counter 0) (Accumulator 0)
   return $ evalState accBeforeLooping $ MachineState machine S.empty
 
-jmpsToNops :: V.Vector Instruction -> [V.Vector Instruction]
-jmpsToNops is = replaceWithNop <$> jmpIxs
+jmpNopSwaps :: V.Vector Instruction -> [V.Vector Instruction]
+jmpNopSwaps is = (replaceWithNop <$> jmpIxs) ++ (replaceWithJmp <$> nopIxs)
   where
     isJmp i = case i of
       Jmp _ -> True
       _ -> False
+    isNop i = case i of
+      Nop _ -> True
+      _ -> False
     jmpIxs = [ix | (ix, i) <- zip [0 ..] (V.toList is), isJmp i]
-    replaceWithNop i = is V.// [(i, Nop)]
+    nopIxs = [ix | (ix, i) <- zip [0 ..] (V.toList is), isNop i]
+    replaceWithNop ix = let (Jmp v) = is V.! ix in is V.// [(ix, Nop v)]
+    replaceWithJmp ix = let (Nop v) = is V.! ix in is V.// [(ix, Jmp v)]
 
 checkForTermination :: State MachineState (Maybe Accumulator)
 checkForTermination = do
@@ -108,7 +115,7 @@ checkForTermination = do
 part2 :: IO Accumulator
 part2 = do
   is <- readInstructions
-  let iss = jmpsToNops (V.fromList is)
+  let iss = jmpNopSwaps (V.fromList is)
       machines = Machine <$> iss <*> pure (Counter 0) <*> pure (Accumulator 0)
       states = MachineState <$> machines <*> pure S.empty
   return $ head $ catMaybes $ evalState checkForTermination <$> states
