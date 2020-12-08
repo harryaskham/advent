@@ -72,13 +72,17 @@ accBeforeLooping = do
       put $ MachineState (stepMachine m) (S.insert c seen)
       accBeforeLooping
 
-part1 :: IO Accumulator
-part1 = do
+readInstructions :: IO [Instruction]
+readInstructions = do
   f <- readFile inputPath
   case parse parseInstructions "[input]" f of
-    Right is -> do
-      let machine = Machine (V.fromList is) (Counter 0) (Accumulator 0)
-      return $ evalState accBeforeLooping $ MachineState machine S.empty
+    Right is -> return is
+
+part1 :: IO Accumulator
+part1 = do
+  is <- readInstructions
+  let machine = Machine (V.fromList is) (Counter 0) (Accumulator 0)
+  return $ evalState accBeforeLooping $ MachineState machine S.empty
 
 jmpsToNops :: V.Vector Instruction -> [V.Vector Instruction]
 jmpsToNops is = replaceWithNop <$> jmpIxs
@@ -103,10 +107,8 @@ checkForTermination = do
 
 part2 :: IO Accumulator
 part2 = do
-  f <- readFile inputPath
-  case parse parseInstructions "[input]" f of
-    Right is -> do
-      let iss = jmpsToNops (V.fromList is)
-          machines = Machine <$> iss <*> pure (Counter 0) <*> pure (Accumulator 0)
-          states = MachineState <$> machines <*> pure S.empty
-      return $ head $ catMaybes $ evalState checkForTermination <$> states
+  is <- readInstructions
+  let iss = jmpsToNops (V.fromList is)
+      machines = Machine <$> iss <*> pure (Counter 0) <*> pure (Accumulator 0)
+      states = MachineState <$> machines <*> pure S.empty
+  return $ head $ catMaybes $ evalState checkForTermination <$> states
