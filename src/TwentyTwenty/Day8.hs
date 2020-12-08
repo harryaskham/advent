@@ -43,18 +43,16 @@ parseInstructions = do
       opcode <- many1 letter
       spaces
       sign <- char '+' <|> char '-'
-      value <- many1 digit
+      value' <- many1 digit
       char '\n'
+      let value =
+            case sign of
+              '+' -> read value'
+              '-' -> negate $ read value'
       case opcode of
-        "nop" -> case sign of
-          '+' -> return $ Nop (read value)
-          '-' -> return $ Nop (negate $ read value)
-        "acc" -> case sign of
-          '+' -> return $ Acc (read value)
-          '-' -> return $ Acc (negate $ read value)
-        "jmp" -> case sign of
-          '+' -> return $ Jmp (read value)
-          '-' -> return $ Jmp (negate $ read value)
+        "nop" -> return $ Nop value
+        "acc" -> return $ Acc value
+        "jmp" -> return $ Jmp value
 
 stepMachine :: Machine -> Machine
 stepMachine (Machine is (Counter c) (Accumulator a)) =
