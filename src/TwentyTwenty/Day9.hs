@@ -13,7 +13,7 @@ readInput = fmap read . lines <$> readFile inputPath
 canSum :: [Int] -> Int -> Bool
 canSum preamble x =
   or
-    [ (x - p) `S.member` (S.fromList preamble)
+    [ (x - p) `S.member` S.fromList preamble
       | p <- preamble,
         p /= x - p
     ]
@@ -28,9 +28,7 @@ findFirstInvalid all@(_ : xs) =
     (next : _) = drop 25 all
 
 part1 :: IO Int
-part1 = do
-  xs <- readInput
-  return $ findFirstInvalid xs
+part1 = findFirstInvalid <$> readInput
 
 findSubsetFrom :: Int -> V.Vector Int -> Int -> Int -> Int -> Maybe [Int]
 findSubsetFrom target xs i j s
