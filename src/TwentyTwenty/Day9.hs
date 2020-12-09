@@ -45,7 +45,5 @@ findRange target xs =
 
 part2 :: IO Int
 part2 = do
-  xs <- V.fromList <$> readInput
-  target <- part1
-  let range = findRange target xs
+  range <- findRange <$> part1 <*> (V.fromList <$> readInput)
   return $ maximum range + minimum range
