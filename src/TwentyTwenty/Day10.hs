@@ -1,8 +1,7 @@
 module TwentyTwenty.Day10 where
 
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Control.Monad.Memo (Memo, MonadMemo (memo), startEvalMemo)
 import Data.List (sort)
-import qualified Data.Map.Strict as M
 
 inputPath :: String
 inputPath = "input/2020/10.txt"
@@ -17,25 +16,16 @@ differences last ones threes (j : js)
 part1 :: IO Int
 part1 = differences 0 0 0 . sort . fmap read . lines <$> readFile inputPath
 
-arrangements :: IORef (M.Map (Int, Int) Int) -> Int -> [Int] -> IO Int
-arrangements _ _ [_] = return 1
-arrangements dRef last (j1 : j2 : js) = do
-  let get last = do
-        d <- readIORef dRef
-        case M.lookup (last, j2) d of
-          Just n -> return n
-          Nothing -> do
-            n <- arrangements dRef last (j2 : js)
-            modifyIORef' dRef (M.insert (last, j2) n)
-            return n
-  nWithoutSkip <- get j1
-  nWithSkip <- get last
+arrangements :: (Int, [Int]) -> Memo (Int, [Int]) Int Int
+arrangements (_, [_]) = return 1
+arrangements (last, (j1 : j2 : js)) = do
+  nWithoutSkip <- memo arrangements (j1, (j2 : js))
+  nWithSkip <- memo arrangements (last, (j2 : js))
   if j2 - last > 3
     then return nWithoutSkip
-    else return (nWithoutSkip + nWithSkip)
+    else return $ nWithoutSkip + nWithSkip
 
 part2 :: IO Int
 part2 = do
   js <- sort . fmap read . lines <$> readFile inputPath
-  dRef <- newIORef M.empty
-  arrangements dRef 0 js
+  return $ startEvalMemo (arrangements (0, js))

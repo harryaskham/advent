@@ -40,6 +40,7 @@ dependencies:
 - dequeue
 - parsec
 - memoize
+- monad-memo
 
 library:
   source-dirs: src

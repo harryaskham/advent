@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: af143abfe5ee531845f334c087128589e90212833c6e66cbe7d4061903b54de0
+-- hash: 80921e01311ff1cbc6100541a83e26b056e3e0e7d1f1103ee1f8e6e217123e97
 
 name:           advent
 version:        0.1.0.0
@@ -61,6 +61,7 @@ library
     , matrix
     , memoize
     , monad-dijkstra
+    , monad-memo
     , mtl
     , parsec
     , pqueue
@@ -92,6 +93,7 @@ executable advent-exe
     , matrix
     , memoize
     , monad-dijkstra
+    , monad-memo
     , mtl
     , parsec
     , pqueue
