@@ -10,6 +10,7 @@ data Square = Tree | Empty
 squareFromChar :: Char -> Square
 squareFromChar '.' = Empty
 squareFromChar '#' = Tree
+squareFromChar _ = error "Invalid cell"
 
 -- Store the raw grid plus its width for repeating
 data Grid = Grid (M.Map (Int, Int) Square) Int
@@ -30,12 +31,12 @@ gridLookup :: (Int, Int) -> Grid -> Maybe Square
 gridLookup (x, y) (Grid grid width) = M.lookup (x `mod` width, y) grid
 
 countTreesFrom :: (Int, Int) -> (Int, Int) -> Grid -> Int
-countTreesFrom pos (incX, incY) grid = go pos grid 0
+countTreesFrom pos (incX, incY) grid = go pos 0
   where
-    go (x, y) grid count =
+    go (x, y) count =
       case gridLookup (x, y) grid of
-        Just Tree -> go (x + incX, y + incY) grid (count + 1)
-        Just Empty -> go (x + incX, y + incY) grid count
+        Just Tree -> go (x + incX, y + incY) (count + 1)
+        Just Empty -> go (x + incX, y + incY) count
         Nothing -> count
 
 part1 :: IO Int

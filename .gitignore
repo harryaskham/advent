@@ -13,6 +13,7 @@ TAGS
 cabal-dev/
 cabal.sandbox.config
 dist/
+dist-newstyle/
 tags
 /_release/
 .vagrant/
