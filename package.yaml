@@ -39,6 +39,7 @@ dependencies:
 - monad-dijkstra
 - dequeue
 - parsec
+- memoize
 
 library:
   source-dirs: src
