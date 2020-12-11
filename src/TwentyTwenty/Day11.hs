@@ -72,25 +72,22 @@ part1 =
     . lines
     <$> readFile inputPath
 
+firstChair :: Grid -> [(Int, Int)] -> Maybe (Int, Int)
+firstChair _ [] = Nothing
+firstChair grid (c : cs) = case M.lookup c grid of
+  Just Floor -> firstChair grid cs
+  Just _ -> Just c
+
 firstChairsFrom :: Grid -> Int -> Int -> [(Int, Int)]
 firstChairsFrom grid x y =
   catMaybes $
-    firstChair
-      <$> [ [(x', y) | x' <- [x + 1 .. width - 1]],
-            [(x', y) | x' <- reverse [0 .. x - 1]],
-            [(x, y') | y' <- [y + 1 .. height - 1]],
-            [(x, y') | y' <- reverse [0 .. y - 1]],
-            zip [x + 1 .. width - 1] [y + 1 .. height - 1],
-            zip [x + 1 .. width - 1] (reverse [0 .. y - 1]),
-            zip (reverse [0 .. x - 1]) [y + 1 .. height - 1],
-            zip (reverse [0 .. x - 1]) (reverse [0 .. y - 1])
-          ]
+    firstChair grid
+      <$> drop 1 (zip <$> [repeat x, toLeft, toRight] <*> [repeat y, toUp, toDown])
   where
-    firstChair :: [(Int, Int)] -> Maybe (Int, Int)
-    firstChair [] = Nothing
-    firstChair (c : cs) = case M.lookup c grid of
-      Just Floor -> firstChair cs
-      Just _ -> Just c
+    toRight = [x + 1 .. width - 1]
+    toLeft = reverse [0 .. x - 1]
+    toDown = [y + 1 .. height - 1]
+    toUp = reverse [0 .. y - 1]
 
 firstChairMap :: Grid -> M.Map (Int, Int) [(Int, Int)]
 firstChairMap grid =
@@ -100,8 +97,8 @@ firstChairMap grid =
         y <- [0 .. height - 1]
     ]
 
-firstSeen :: M.Map (Int, Int) [(Int, Int)] -> AdjacencyFn
-firstSeen chairMap x y grid =
+lineOfSightAdjacents :: M.Map (Int, Int) [(Int, Int)] -> AdjacencyFn
+lineOfSightAdjacents chairMap x y grid =
   case M.lookup (x, y) chairMap of
     Just cs -> catMaybes $ M.lookup <$> cs <*> pure grid
 
@@ -114,5 +111,5 @@ part2 = do
       . filter (== Full)
       . fmap snd
       . M.toList
-      . fixGrid (firstSeen chairMap) 5
+      . fixGrid (lineOfSightAdjacents chairMap) 5
       $ grid
