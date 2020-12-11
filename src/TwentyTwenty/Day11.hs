@@ -105,11 +105,10 @@ lineOfSightAdjacents chairMap x y grid =
 part2 :: IO Int
 part2 = do
   grid <- fromLines . lines <$> readFile inputPath
-  let chairMap = firstChairMap grid
   return $
     length
       . filter (== Full)
       . fmap snd
       . M.toList
-      . fixGrid (lineOfSightAdjacents chairMap) 5
+      . fixGrid (lineOfSightAdjacents (firstChairMap grid)) 5
       $ grid
