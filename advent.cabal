@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80921e01311ff1cbc6100541a83e26b056e3e0e7d1f1103ee1f8e6e217123e97
+-- hash: 41cd0a35b3d90f89660cb3bdb5900a08723312c4fa11d92fbba45f703996a581
 
 name:           advent
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       TwentyTwenty.Day1
       TwentyTwenty.Day10
       TwentyTwenty.Day11
+      TwentyTwenty.Day12
       TwentyTwenty.Day2
       TwentyTwenty.Day3
       TwentyTwenty.Day4
