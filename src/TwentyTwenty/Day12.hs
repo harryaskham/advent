@@ -70,37 +70,36 @@ turn dir 90 facing = case dir of
   L -> leftOf facing
   R -> rightOf facing
 
-performAction :: Ship -> Action -> Ship
-performAction ship@(Ship facing x y) (Action dir val) =
-  case dir of
-    N -> Ship facing x (y + val)
-    S -> Ship facing x (y - val)
-    E -> Ship facing (x + val) y
-    W -> Ship facing (x - val) y
-    L -> Ship (turn L val facing) x y
-    R -> Ship (turn R val facing) x y
-    F -> performAction ship (Action facing val)
+class Actionable a where
+  performAction :: a -> Action -> a
 
-manhattan :: Ship -> Int
-manhattan (Ship _ x y) = abs x + abs y
+instance Actionable Ship where
+  performAction ship@(Ship facing x y) (Action dir val) =
+    case dir of
+      N -> Ship facing x (y + val)
+      S -> Ship facing x (y - val)
+      E -> Ship facing (x + val) y
+      W -> Ship facing (x - val) y
+      F -> performAction ship (Action facing val)
+      lr -> Ship (turn lr val facing) x y
 
-part1 :: IO Int
-part1 = do
-  Right as <- parse parseActions "[input]" <$> readFile inputPath
-  return . manhattan $ foldl' performAction (Ship E 0 0) as
+class Manhattanable a where
+  manhattan :: a -> Int
+
+instance Manhattanable Ship where
+  manhattan (Ship _ x y) = abs x + abs y
 
 data ShipWaypoint = ShipWaypoint Int Int Int Int
 
-performWaypointAction :: ShipWaypoint -> Action -> ShipWaypoint
-performWaypointAction sw@(ShipWaypoint sX sY wX wY) (Action dir val) =
-  case dir of
-    N -> ShipWaypoint sX sY wX (wY + val)
-    S -> ShipWaypoint sX sY wX (wY - val)
-    E -> ShipWaypoint sX sY (wX + val) wY
-    W -> ShipWaypoint sX sY (wX - val) wY
-    L -> rotate L val sw
-    R -> rotate R val sw
-    F -> ShipWaypoint (sX + val * wX) (sY + val * wY) wX wY
+instance Actionable ShipWaypoint where
+  performAction sw@(ShipWaypoint sX sY wX wY) (Action dir val) =
+    case dir of
+      N -> ShipWaypoint sX sY wX (wY + val)
+      S -> ShipWaypoint sX sY wX (wY - val)
+      E -> ShipWaypoint sX sY (wX + val) wY
+      W -> ShipWaypoint sX sY (wX - val) wY
+      F -> ShipWaypoint (sX + val * wX) (sY + val * wY) wX wY
+      lr -> rotate lr val sw
 
 rotate :: Dir -> Int -> ShipWaypoint -> ShipWaypoint
 rotate _ 180 (ShipWaypoint sX sY wX wY) =
@@ -111,10 +110,14 @@ rotate dir 90 (ShipWaypoint sX sY wX wY) =
     L -> ShipWaypoint sX sY (negate wY) wX
     R -> ShipWaypoint sX sY wY (negate wX)
 
-manhattanW :: ShipWaypoint -> Int
-manhattanW (ShipWaypoint x y _ _) = abs x + abs y
+instance Manhattanable ShipWaypoint where
+  manhattan (ShipWaypoint x y _ _) = abs x + abs y
 
-part2 :: IO Int
-part2 = do
+solve :: (Actionable a, Manhattanable a) => a -> [Action] -> Int
+solve s = manhattan . foldl' performAction s
+
+solution :: IO ()
+solution = do
   Right as <- parse parseActions "[input]" <$> readFile inputPath
-  return . manhattanW $ foldl' performWaypointAction (ShipWaypoint 0 0 10 1) as
+  print $ solve (Ship E 0 0) as
+  print $ solve (ShipWaypoint 0 0 10 1) as
