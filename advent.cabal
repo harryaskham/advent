@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f477aa31212b7a5f3b42c1af35b1b954fa3b0cec6befd3e3fb940a8ba446af65
+-- hash: 7aed78fb40de5a7ba0f435f12df8351fc18f0a77067f685256978aea6b1d740e
 
 name:           advent
 version:        0.1.0.0
@@ -59,6 +59,7 @@ library
     , dequeue
     , hidden-char
     , lens
+    , linearEqSolver
     , listsafe
     , matrix
     , memoize
@@ -71,6 +72,7 @@ library
     , regex-tdfa
     , regex-tdfa-text
     , split
+    , text
     , time
     , vector
     , vector-split
@@ -91,6 +93,7 @@ executable advent-exe
     , dequeue
     , hidden-char
     , lens
+    , linearEqSolver
     , listsafe
     , matrix
     , memoize
@@ -103,6 +106,7 @@ executable advent-exe
     , regex-tdfa
     , regex-tdfa-text
     , split
+    , text
     , time
     , vector
     , vector-split

@@ -41,6 +41,8 @@ dependencies:
 - parsec
 - memoize
 - monad-memo
+- text
+- linearEqSolver
 
 library:
   source-dirs: src
