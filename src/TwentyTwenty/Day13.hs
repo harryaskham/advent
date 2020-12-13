@@ -1,10 +1,9 @@
 module TwentyTwenty.Day13 where
 
-import Data.List (minimumBy)
+import Data.List (foldl', minimumBy)
 import Data.List.Split (splitOn)
 import Data.Maybe (mapMaybe)
 import Data.Ord (comparing)
-import Math.LinearEquationSolver
 import Text.Read (readMaybe)
 
 inputPath :: String
@@ -36,15 +35,14 @@ part1 = do
     ((*) <$> fst <*> snd)
       (minimumBy (comparing snd) (mapMaybe (timeAfter ts) busIds))
 
-busIdToEquation :: Int -> Int -> (Integer, BusId) -> [Integer]
-busIdToEquation len varIx (_, BusId busId) =
-  (-1) : [if i == varIx then fromIntegral busId else 0 | i <- [0 .. len - 1]]
+findNext :: (Int, Int) -> (Int, BusId) -> (Int, Int)
+findNext (current, step) (offset, BusId busId) =
+  if (current + offset) `mod` busId == 0
+    then (current, step * busId)
+    else findNext (current + step, step) (offset, BusId busId)
 
-part2 :: IO Integer
+part2 :: IO Int
 part2 = do
   (_, busIds) <- readInput
   let ixBusIds = filter ((/= BusX) . snd) (zip [0 ..] busIds)
-      equations = uncurry (busIdToEquation (length ixBusIds)) <$> zip [0 ..] ixBusIds
-      solutions = fst <$> ixBusIds
-  Just results <- solveIntegerLinearEqs Z3 equations solutions
-  return $ head results
+  return . fst $ foldl' findNext (1, 1) ixBusIds
