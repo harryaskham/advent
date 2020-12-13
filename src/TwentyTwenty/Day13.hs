@@ -8,7 +8,7 @@ import Math.LinearEquationSolver
 import Text.Read (readMaybe)
 
 inputPath :: String
-inputPath = "input/2020/13_example.txt"
+inputPath = "input/2020/13.txt"
 
 data BusId = BusId Int | BusX deriving (Show, Ord, Eq)
 
@@ -36,7 +36,6 @@ part1 = do
     ((*) <$> fst <*> snd)
       (minimumBy (comparing snd) (mapMaybe (timeAfter ts) busIds))
 
--- Represent as -t + a*busId = busIx
 busIdToEquation :: Int -> Int -> (Integer, BusId) -> [Integer]
 busIdToEquation len varIx (_, BusId busId) =
   (-1) : [if i == varIx then fromIntegral busId else 0 | i <- [0 .. len - 1]]
