@@ -43,6 +43,7 @@ dependencies:
 - monad-memo
 - text
 - linearEqSolver
+- bitvec
 
 library:
   source-dirs: src
