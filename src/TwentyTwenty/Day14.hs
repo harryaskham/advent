@@ -51,11 +51,10 @@ valueBitFromChar '1' = V1
 valueBitFromChar '0' = V0
 
 valueToInt :: Value -> Int
-valueToInt v = toDec $ toChar <$> v
+valueToInt v = foldl' (\acc x -> acc * 2 + x) 0 $ toInt <$> v
   where
-    toChar V1 = '1'
-    toChar V0 = '0'
-    toDec = foldl' (\acc x -> acc * 2 + digitToInt x) 0
+    toInt V1 = 1
+    toInt V0 = 0
 
 applyMask :: Mask -> Value -> Value
 applyMask mask value = uncurry applyBit <$> zip mask value
