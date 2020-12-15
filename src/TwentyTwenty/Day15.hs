@@ -8,7 +8,7 @@ import qualified Data.Map.Strict as M
 input :: [Int]
 input = read <$> splitOn "," "20,0,1,11,6,3"
 
-data GameState = GameState Int Int (M.Map Int [Int]) deriving (Show)
+data GameState = GameState Int Int (M.Map Int [Int])
 
 mkGameState :: [Int] -> GameState
 mkGameState xs =
