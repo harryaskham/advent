@@ -23,23 +23,23 @@ import Text.Printf (printf)
 inputPath :: String
 inputPath = "input/2020/14.txt"
 
-data MaskBit = M1 | M0 | MX deriving (Show)
+data MaskBit = M1 | M0 | MX
 
 type Mask = [MaskBit]
 
-data ValueBit = V1 | V0 | VX deriving (Show)
+data ValueBit = V1 | V0
 
-newtype DecimalValue = DecimalValue Int deriving (Show)
+newtype DecimalValue = DecimalValue Int
 
 type Value = [ValueBit]
 
-newtype Address = Address Int deriving (Show, Eq, Ord)
+newtype Address = Address Int deriving (Eq, Ord)
 
-data Instruction = SetMask Mask | SetMem Address DecimalValue deriving (Show)
+data Instruction = SetMask Mask | SetMem Address DecimalValue
 
 type Memory = M.Map Address Value
 
-data Machine = Machine Memory Mask [Instruction] deriving (Show)
+data Machine = Machine Memory Mask [Instruction]
 
 maskBitFromChar :: Char -> MaskBit
 maskBitFromChar '1' = M1
@@ -51,11 +51,10 @@ valueBitFromChar '1' = V1
 valueBitFromChar '0' = V0
 
 valueToInt :: Value -> Int
-valueToInt v = toDec $ toChar <$> v
+valueToInt v = foldl' (\acc x -> acc * 2 + x) 0 $ toInt <$> v
   where
-    toChar V1 = '1'
-    toChar V0 = '0'
-    toDec = foldl' (\acc x -> acc * 2 + digitToInt x) 0
+    toInt V1 = 1
+    toInt V0 = 0
 
 applyMask :: Mask -> Value -> Value
 applyMask mask value = uncurry applyBit <$> zip mask value
