@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module TwentyTwenty.Day15 where
 
 import Data.List.Split (splitOn)
@@ -20,11 +22,12 @@ stepGame (GameState step lastSaid ages) =
   let nextSaid =
         case M.lookup lastSaid ages of
           Just [_] -> 0
-          Just (age1 : age2 : _) -> age1 - age2
+          Just [age1, age2] -> age1 - age2
       nextAges =
         case M.lookup nextSaid ages of
           Nothing -> M.insert nextSaid [step] ages
-          Just as -> M.insert nextSaid (step : as) ages
+          Just [age] -> M.insert nextSaid [step, age] ages
+          Just [age, _] -> M.insert nextSaid [step, age] ages
    in GameState (step + 1) nextSaid nextAges
 
 stepUntil :: Int -> GameState -> GameState
