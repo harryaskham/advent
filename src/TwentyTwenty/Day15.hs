@@ -26,8 +26,7 @@ stepGame (GameState step lastSaid ages) =
       nextAges =
         case M.lookup nextSaid ages of
           Nothing -> M.insert nextSaid [step] ages
-          Just [age] -> M.insert nextSaid [step, age] ages
-          Just [age, _] -> M.insert nextSaid [step, age] ages
+          Just (age : _) -> M.insert nextSaid [step, age] ages
    in GameState (step + 1) nextSaid nextAges
 
 stepUntil :: Int -> GameState -> GameState
