@@ -1,7 +1,8 @@
 module TwentyTwenty.Day16 where
 
+import Control.Monad (guard)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.List (isPrefixOf, sort, transpose)
+import Data.List (isPrefixOf, transpose)
 import Data.Maybe (catMaybes)
 import qualified Data.Set as S
 import Text.ParserCombinators.Parsec
@@ -83,28 +84,24 @@ ticketValid cs = null . invalidValues cs
 findAssignment :: S.Set Constraint -> [[Int]] -> IO (Maybe [Constraint])
 findAssignment cs fs = do
   deadEnds' <- newIORef S.empty
-  go deadEnds' cs fs []
+  findAssignment' deadEnds' cs fs []
+
+findAssignment' :: IORef (S.Set (S.Set Constraint)) -> S.Set Constraint -> [[Int]] -> [Constraint] -> IO (Maybe [Constraint])
+findAssignment' _ _ [] constraints = return (Just (reverse constraints))
+findAssignment' deadEnds' constraintsLeft (fvs : fvss) constraints = do
+  deadEnds <- readIORef deadEnds'
+  if constraintsLeft `S.member` deadEnds
+    then return Nothing
+    else do
+      results <- traverse doNextIter possibleConstraints
+      case catMaybes results of
+        [] -> do
+          modifyIORef' deadEnds' (S.insert constraintsLeft)
+          return Nothing
+        (x : _) -> return $ Just x
   where
-    go :: IORef (S.Set (S.Set Constraint)) -> S.Set Constraint -> [[Int]] -> [Constraint] -> IO (Maybe [Constraint])
-    go _ _ [] constraints = return (Just (reverse constraints))
-    go deadEnds' constraintsLeft (fvs : fvss) constraints = do
-      deadEnds <- readIORef deadEnds'
-      if constraintsLeft `S.member` deadEnds
-        then return Nothing
-        else do
-          results <- traverse doNextIter possibleConstraints
-          case catMaybes results of
-            [] -> do
-              modifyIORef' deadEnds' (S.insert constraintsLeft)
-              return Nothing
-            (x : _) -> return $ Just x
-      where
-        possibleConstraints =
-          filter
-            (\c -> all (meetsConstraint c) fvs)
-            (S.toList constraintsLeft)
-        doNextIter c =
-          go deadEnds' (S.delete c constraintsLeft) fvss (c : constraints)
+    possibleConstraints = [c | c <- S.toList constraintsLeft, all (meetsConstraint c) fvs]
+    doNextIter c = findAssignment' deadEnds' (S.delete c constraintsLeft) fvss (c : constraints)
 
 part2 :: IO Int
 part2 = do
