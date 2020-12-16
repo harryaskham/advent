@@ -39,11 +39,8 @@ dependencies:
 - monad-dijkstra
 - dequeue
 - parsec
-- memoize
 - monad-memo
 - text
-- linearEqSolver
-- bitvec
 
 library:
   source-dirs: src

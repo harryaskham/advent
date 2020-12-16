@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9924aab7361f60db7bebd4655533b43581e5bbbcceac3742382c3ad6b2714ab0
+-- hash: 340b5b04dab731d6dd0dfb91f12530dd48fc9044e295776fe56615a6667649c1
 
 name:           advent
 version:        0.1.0.0
@@ -59,15 +59,12 @@ library
   build-depends:
       array
     , base >=4.7 && <5
-    , bitvec
     , containers
     , dequeue
     , hidden-char
     , lens
-    , linearEqSolver
     , listsafe
     , matrix
-    , memoize
     , monad-dijkstra
     , monad-memo
     , mtl
@@ -94,15 +91,12 @@ executable advent-exe
       advent
     , array
     , base >=4.7 && <5
-    , bitvec
     , containers
     , dequeue
     , hidden-char
     , lens
-    , linearEqSolver
     , listsafe
     , matrix
-    , memoize
     , monad-dijkstra
     , monad-memo
     , mtl
