@@ -80,39 +80,37 @@ part1 = do
 ticketValid :: [Constraint] -> Ticket -> Bool
 ticketValid cs = null . invalidValues cs
 
-findAssignment ::
-  IORef (S.Set (S.Set Constraint)) ->
-  S.Set Constraint ->
-  [[Int]] ->
-  [Constraint] ->
-  IO (Maybe [Constraint])
-findAssignment _ _ [] constraints = return (Just (reverse constraints))
-findAssignment deadEnds' constraintsLeft (fvs : fvss) constraints = do
-  deadEnds <- readIORef deadEnds'
-  if constraintsLeft `S.member` deadEnds
-    then return Nothing
-    else do
-      results <- traverse doNextIter possibleConstraints
-      case catMaybes results of
-        [] -> do
-          modifyIORef' deadEnds' (S.insert constraintsLeft)
-          return Nothing
-        (x : _) -> return $ Just x
+findAssignment :: S.Set Constraint -> [[Int]] -> IO (Maybe [Constraint])
+findAssignment cs fs = do
+  deadEnds' <- newIORef S.empty
+  go deadEnds' cs fs []
   where
-    possibleConstraints =
-      filter
-        (\c -> all (meetsConstraint c) fvs)
-        (S.toList constraintsLeft)
-    doNextIter c =
-      findAssignment deadEnds' (S.delete c constraintsLeft) fvss (c : constraints)
+    go :: IORef (S.Set (S.Set Constraint)) -> S.Set Constraint -> [[Int]] -> [Constraint] -> IO (Maybe [Constraint])
+    go _ _ [] constraints = return (Just (reverse constraints))
+    go deadEnds' constraintsLeft (fvs : fvss) constraints = do
+      deadEnds <- readIORef deadEnds'
+      if constraintsLeft `S.member` deadEnds
+        then return Nothing
+        else do
+          results <- traverse doNextIter possibleConstraints
+          case catMaybes results of
+            [] -> do
+              modifyIORef' deadEnds' (S.insert constraintsLeft)
+              return Nothing
+            (x : _) -> return $ Just x
+      where
+        possibleConstraints =
+          filter
+            (\c -> all (meetsConstraint c) fvs)
+            (S.toList constraintsLeft)
+        doNextIter c =
+          go deadEnds' (S.delete c constraintsLeft) fvss (c : constraints)
 
 part2 :: IO Int
 part2 = do
   (constraints, ticket, tickets) <- readInput
   let validTickets = ticket : filter (ticketValid constraints) tickets
-      fieldValues = sort <$> transpose validTickets
-  deadEnds <- newIORef S.empty
   Just fieldAssignments <-
-    findAssignment deadEnds (S.fromList constraints) fieldValues []
+    findAssignment (S.fromList constraints) (transpose validTickets)
   let isDeparture (Constraint name _, _) = "departure" `isPrefixOf` name
   return $ product (snd <$> filter isDeparture (zip fieldAssignments ticket))
