@@ -1,6 +1,5 @@
 module TwentyTwenty.Day16 where
 
-import Control.Monad (guard)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isPrefixOf, transpose)
 import Data.Maybe (catMaybes)
