@@ -89,17 +89,16 @@ findAssignment ::
 findAssignment _ _ [] constraints = return (Just (reverse constraints))
 findAssignment deadEnds' constraintsLeft (fvs : fvss) constraints = do
   deadEnds <- readIORef deadEnds'
-  if constraintsLeft `S.member` deadEnds || null possibleConstraints
-    then fail
+  if constraintsLeft `S.member` deadEnds
+    then return Nothing
     else do
       results <- traverse doNextIter possibleConstraints
       case catMaybes results of
-        [] -> fail
+        [] -> do
+          modifyIORef' deadEnds' (S.insert constraintsLeft)
+          return Nothing
         (x : _) -> return $ Just x
   where
-    fail = do
-      modifyIORef' deadEnds' (S.insert constraintsLeft)
-      return Nothing
     possibleConstraints =
       filter
         (\c -> all (meetsConstraint c) fvs)
