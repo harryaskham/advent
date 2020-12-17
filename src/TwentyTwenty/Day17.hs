@@ -2,36 +2,26 @@
 
 module TwentyTwenty.Day17 where
 
+import Data.List (nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
+import qualified Data.Set as S
 import Text.RawString.QQ (r)
 import Util ((<$$>))
 
-data Cell = Active | Inactive deriving (Eq)
-
-fromChar :: Char -> Cell
-fromChar '.' = Inactive
-fromChar '#' = Active
-
 type Coord = (Int, Int, Int, Int)
 
-type Bound = (Int, Int)
-
-type Bounds = (Bound, Bound, Bound, Bound)
-
 data Grid = Grid
-  { unGrid :: M.Map Coord Cell,
-    unBounds :: Bounds,
+  { unGrid :: S.Set Coord,
     unDim :: Dim
   }
 
 data Dim = Dim3 | Dim4
 
-input :: [[Cell]]
+input :: [String]
 input =
-  fromChar
-    <$$> lines
-      [r|...###.#
+  lines
+    [r|...###.#
 #.#.##..
 .##.##..
 ..##...#
@@ -40,86 +30,44 @@ input =
 .....###
 .####..#|]
 
-mkGrid :: [[Cell]] -> Dim -> Grid
-mkGrid ls dim = Grid grid bounds dim
+mkGrid :: [String] -> Dim -> Grid
+mkGrid ls = Grid grid
   where
     grid =
-      M.fromList
-        [ ((x, y, 0, 0), c)
+      S.fromList
+        [ (x, y, 0, 0)
           | (y, row) <- zip [0 ..] ls,
-            (x, c) <- zip [0 ..] row
+            (x, c) <- zip [0 ..] row,
+            c == '#'
         ]
-    h = length ls
-    w = length (head ls)
-    bounds =
-      ( (-1, w),
-        (-1, h),
-        (-1, 1),
-        case dim of
-          Dim3 -> (0, 0)
-          Dim4 -> (-1, 1)
-      )
-
-growBounds :: Grid -> Bounds
-growBounds
-  (Grid _ ((x1, x2), (y1, y2), (z1, z2), (w1, w2)) dim) =
-    ( (x1 - 1, x2 + 1),
-      (y1 - 1, y2 + 1),
-      (z1 - 1, z2 + 1),
-      case dim of
-        Dim3 -> (w1, w2)
-        Dim4 -> (w1 - 1, w2 + 1)
-    )
 
 getCoords :: Grid -> [Coord]
-getCoords (Grid _ ((x1, x2), (y1, y2), (z1, z2), (w1, w2)) dim) =
-  [ (x, y, z, w)
-    | x <- [x1 .. x2],
-      y <- [y1 .. y2],
-      z <- [z1 .. z2],
-      w <- case dim of
+getCoords g@(Grid grid dim) = nub $ concatMap (neighbours dim) (S.toList grid)
+
+neighbours :: Dim -> Coord -> [Coord]
+neighbours dim (x, y, z, w) =
+  [ (x + xi, y + yi, z + zi, w + wi)
+    | xi <- [-1 .. 1],
+      yi <- [-1 .. 1],
+      zi <- [-1 .. 1],
+      wi <- case dim of
         Dim3 -> [0]
-        Dim4 -> [w1 .. w2]
+        Dim4 -> [-1 .. 1],
+      xi /= 0 || yi /= 0 || zi /= 0 || wi /= 0
   ]
 
-neighbours :: Grid -> Coord -> [Cell]
-neighbours (Grid grid _ dim) (x, y, z, w) =
-  catMaybes $ M.lookup <$> neighbourCoords <*> pure grid
+shouldSetActive :: Grid -> Coord -> Bool
+shouldSetActive (Grid grid dim) coord =
+  if coord `S.member` grid
+    then activeNs == 2 || activeNs == 3
+    else activeNs == 3
   where
-    neighbourCoords =
-      [ (x + xi, y + yi, z + zi, w + wi)
-        | xi <- [-1 .. 1],
-          yi <- [-1 .. 1],
-          zi <- [-1 .. 1],
-          wi <- case dim of
-            Dim3 -> [0]
-            Dim4 -> [-1 .. 1],
-          xi /= 0 || yi /= 0 || zi /= 0 || wi /= 0
-      ]
-
-stepCoord :: Grid -> Coord -> Cell
-stepCoord g@(Grid grid _ _) coord =
-  case M.lookup coord grid of
-    Just Active ->
-      if activeNs == 2 || activeNs == 3
-        then Active
-        else Inactive
-    _ ->
-      if activeNs == 3
-        then Active
-        else Inactive
-  where
-    activeNs = length . filter (== Active) $ neighbours g coord
+    activeNs = length . filter (`S.member` grid) $ neighbours dim coord
 
 step :: Grid -> Grid
-step g@(Grid _ _ dim) = Grid grid' bounds' dim
+step g@(Grid _ dim) = Grid grid' dim
   where
-    grid' =
-      M.fromList
-        [ (coord, stepCoord g coord)
-          | coord <- getCoords g
-        ]
-    bounds' = growBounds g
+    grid' = S.fromList [coord | coord <- getCoords g, shouldSetActive g coord]
 
 stepN :: Int -> Grid -> Grid
 stepN 0 grid = grid
@@ -127,10 +75,7 @@ stepN n grid = stepN (n - 1) (step grid)
 
 solveForDim :: Dim -> Int
 solveForDim =
-  length
-    . filter (== Active)
-    . fmap snd
-    . M.toList
+  S.size
     . unGrid
     . stepN 6
     . mkGrid input
