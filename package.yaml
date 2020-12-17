@@ -41,6 +41,7 @@ dependencies:
 - parsec
 - monad-memo
 - text
+- raw-strings-qq
 
 library:
   source-dirs: src

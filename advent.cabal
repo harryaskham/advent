@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 340b5b04dab731d6dd0dfb91f12530dd48fc9044e295776fe56615a6667649c1
+-- hash: fe8cc2a693183b99f831f965c11a91c4d0ed88079bf603922e0c1a1d439c478c
 
 name:           advent
 version:        0.1.0.0
@@ -71,6 +71,7 @@ library
     , parsec
     , pqueue
     , random
+    , raw-strings-qq
     , regex-tdfa
     , regex-tdfa-text
     , split
@@ -103,6 +104,7 @@ executable advent-exe
     , parsec
     , pqueue
     , random
+    , raw-strings-qq
     , regex-tdfa
     , regex-tdfa-text
     , split
