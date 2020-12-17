@@ -3,11 +3,8 @@
 module TwentyTwenty.Day17 where
 
 import Data.List (nub)
-import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes)
 import qualified Data.Set as S
 import Text.RawString.QQ (r)
-import Util ((<$$>))
 
 type Coord = (Int, Int, Int, Int)
 
