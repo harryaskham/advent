@@ -123,14 +123,17 @@ step g@(Grid _ _ dim) = Grid grid' bounds' dim
 
 stepN :: Int -> Grid -> Grid
 stepN 0 grid = grid
-stepN n grid = stepN (n -1) (step grid)
+stepN n grid = stepN (n - 1) (step grid)
 
 solveForDim :: Dim -> Int
-solveForDim dim =
+solveForDim =
   length
     . filter (== Active)
     . fmap snd
-    $ M.toList (unGrid $ stepN 6 (mkGrid input dim))
+    . M.toList
+    . unGrid
+    . stepN 6
+    . mkGrid input
 
 part1 :: Int
 part1 = solveForDim Dim3
