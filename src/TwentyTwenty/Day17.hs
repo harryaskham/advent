@@ -39,7 +39,7 @@ mkGrid ls = Grid grid
         ]
 
 getCoords :: Grid -> [Coord]
-getCoords g@(Grid grid dim) = nub $ concatMap (neighbours dim) (S.toList grid)
+getCoords (Grid grid dim) = nub $ concatMap (neighbours dim) (S.toList grid)
 
 neighbours :: Dim -> Coord -> [Coord]
 neighbours dim (x, y, z, w) =
