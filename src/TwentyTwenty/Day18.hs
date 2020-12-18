@@ -55,10 +55,7 @@ parseEquations = do
 part1 :: IO Int
 part1 = do
   reversedInput <-
-    (++ "\n")
-      . intercalate "\n"
-      . fmap reverse
-      . lines
+    (++ "\n") . intercalate "\n" . fmap reverse . lines
       <$> readFile inputPath
   return . sum $ readWithParser parseEquations reversedInput
 
