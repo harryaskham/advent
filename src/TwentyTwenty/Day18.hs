@@ -5,12 +5,14 @@ import Data.List (intercalate)
 import Data.List.Utils (replace)
 import Text.ParserCombinators.Parsec
   ( GenParser,
+    between,
     char,
     choice,
     digit,
     eof,
     many,
     oneOf,
+    sepBy,
     spaces,
     try,
     (<|>),
@@ -20,37 +22,30 @@ import Util (eval, readWithParser)
 inputPath :: String
 inputPath = "input/2020/18.txt"
 
+operation :: GenParser Char () (Int -> Int -> Int)
+operation = do
+  op <- between spaces spaces (oneOf "+*")
+  return $ case op of
+    '+' -> (+)
+    '*' -> (*)
+
+-- Parens flipped because of reversed input
+parenExpression :: GenParser Char () Int
+parenExpression = between (char ')') (char '(') expression
+
+expression :: GenParser Char () Int
+expression = do
+  x <- parenExpression <|> digitToInt <$> digit
+  try (operation <*> pure x <*> expression) <|> return x
+
 parseEquations :: GenParser Char () [Int]
 parseEquations = do
   answers <- many $ do
-    eqs <- equations
+    answer <- expression
     char '\n'
-    return eqs
+    return answer
   eof
   return answers
-  where
-    operation = do
-      op <- oneOf "+*"
-      case op of
-        '+' -> return (+)
-        '*' -> return (*)
-    singleDigit = digitToInt <$> digit
-    -- Parens flipped because of reversed input
-    parenClause = do
-      char ')'
-      x <- equations
-      char '('
-      return x
-    clause = parenClause <|> singleDigit
-    equations = do
-      x <- clause
-      try (restOfEquation x) <|> return x
-    restOfEquation x = do
-      spaces
-      op <- operation
-      spaces
-      rest <- equations
-      return $ x `op` rest
 
 part1 :: IO Int
 part1 = do
