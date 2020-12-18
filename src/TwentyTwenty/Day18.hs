@@ -3,7 +3,6 @@ module TwentyTwenty.Day18 where
 import Data.Char (digitToInt)
 import Data.List (intercalate)
 import Data.List.Utils (replace)
-import qualified Language.Haskell.Interpreter as Hint
 import Text.ParserCombinators.Parsec
   ( GenParser,
     char,
@@ -16,7 +15,7 @@ import Text.ParserCombinators.Parsec
     try,
     (<|>),
   )
-import Util (readWithParser)
+import Util (eval, readWithParser)
 
 inputPath :: String
 inputPath = "input/2020/18.txt"
@@ -63,21 +62,10 @@ part1 = do
       <$> readFile inputPath
   return . sum $ readWithParser parseEquations reversedInput
 
-solve :: [String] -> IO [Integer]
-solve eqs = do
-  result <- Hint.runInterpreter $ do
-    Hint.loadModules ["src/HintMixins.hs"]
-    Hint.setTopLevelModules ["HintMixins"]
-    Hint.setImports ["Prelude"]
-    sequence $ Hint.interpret <$> eqs <*> pure (Hint.as :: Integer)
-  case result of
-    Right a -> return a
-    Left e -> error (show e)
-
 reverseFixity :: String -> String
 reverseFixity = replace "+" "+:" . replace "*" "*:"
 
 part2 :: IO Integer
 part2 = do
   equations <- fmap reverseFixity . lines <$> readFile inputPath
-  sum <$> solve equations
+  sum <$> eval equations
