@@ -1,7 +1,6 @@
 module TwentyTwenty.Day18 where
 
 import Data.Char (digitToInt)
-import Data.List (intercalate)
 import Data.List.Utils (replace)
 import Text.ParserCombinators.Parsec
   ( GenParser,
@@ -36,26 +35,15 @@ expression = do
   x <- parenExpression <|> digitToInt <$> digit
   try (operation <*> pure x <*> expression) <|> return x
 
-parseEquations :: GenParser Char () [Int]
-parseEquations = do
-  answers <- many $ do
-    answer <- expression
-    char '\n'
-    return answer
-  eof
-  return answers
-
 part1 :: IO Int
 part1 = do
-  reversedInput <-
-    (++ "\n") . intercalate "\n" . fmap reverse . lines
-      <$> readFile inputPath
-  return . sum $ readWithParser parseEquations reversedInput
+  expressions <- fmap reverse . lines <$> readFile inputPath
+  return . sum $ readWithParser expression <$> expressions
 
 reverseFixity :: String -> String
 reverseFixity = replace "+" "+:" . replace "*" "*:"
 
 part2 :: IO Integer
 part2 = do
-  equations <- fmap reverseFixity . lines <$> readFile inputPath
-  sum <$> eval equations
+  expressions <- fmap reverseFixity . lines <$> readFile inputPath
+  sum <$> eval expressions
