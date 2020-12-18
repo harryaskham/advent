@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 203ba47bf5cbc6280d2aae08cd655cbb5991c4e7f90a9aab4aae0057c27f59c4
+-- hash: 300957883744dc9f4dd49069928018ec5e8dc035450efde42630da71b95d7e4a
 
 name:           advent
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      HintMixins
       TwentyEighteen.Solutions
       TwentyNineteen.Day15
       TwentyNineteen.Day17
@@ -58,11 +59,13 @@ library
   hs-source-dirs:
       src
   build-depends:
-      array
+      MissingH
+    , array
     , base >=4.7 && <5
     , containers
     , dequeue
     , hidden-char
+    , hint
     , lens
     , listsafe
     , matrix
@@ -90,12 +93,14 @@ executable advent-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      advent
+      MissingH
+    , advent
     , array
     , base >=4.7 && <5
     , containers
     , dequeue
     , hidden-char
+    , hint
     , lens
     , listsafe
     , matrix

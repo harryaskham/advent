@@ -42,6 +42,8 @@ dependencies:
 - monad-memo
 - text
 - raw-strings-qq
+- hint
+- MissingH
 
 library:
   source-dirs: src
