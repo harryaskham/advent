@@ -77,8 +77,7 @@ mkVariantMap ts =
     (\t@(Tile tId _) -> (tId, variants t)) <$> ts
 
 edgeString :: [(Int, Int)] -> Tile -> String
-edgeString coords (Tile _ tiles) =
-  catMaybes $ M.lookup <$> coords <*> pure tiles
+edgeString coords (Tile _ tiles) = (tiles M.!) <$> coords
 
 leftEdge :: Tile -> String
 leftEdge = edgeString [(0, y) | y <- [0 .. 9]]
@@ -100,9 +99,9 @@ type Jigsaw = M.Map (Int, Int) Tile
 
 solvedJigsaws ::
   Int ->
-  (M.Map Int [Tile]) ->
-  (M.Map String [Tile]) ->
-  (M.Map String [Tile]) ->
+  M.Map Int [Tile] ->
+  M.Map String [Tile] ->
+  M.Map String [Tile] ->
   (Int, Int) ->
   S.Set Int ->
   Jigsaw ->
@@ -164,26 +163,27 @@ solveJigsaw = do
           M.empty
   return (head solutions, width)
 
+getId :: Tile -> Int
+getId (Tile tId _) = tId
+
+getTiles :: Tile -> M.Map (Int, Int) Char
+getTiles (Tile _ tiles) = tiles
+
 part1 :: IO Int
 part1 = do
   (jigsaw, width) <- solveJigsaw
   let corners =
-        catMaybes $
-          M.lookup
-            <$> [ (0, 0),
-                  (0, width - 1),
-                  (width - 1, 0),
-                  (width - 1, width - 1)
-                ]
-            <*> pure jigsaw
-      getId (Tile tId _) = tId
+        (jigsaw M.!)
+          <$> [ (0, 0),
+                (0, width - 1),
+                (width - 1, 0),
+                (width - 1, width - 1)
+              ]
   return $ product $ getId <$> corners
 
 getJT :: Jigsaw -> Int -> Int -> Int -> Int -> Char
 getJT jigsaw jx jy tx ty =
-  let (Just (Tile _ tiles)) = M.lookup (jx, jy) jigsaw
-      Just cell = M.lookup (tx, ty) tiles
-   in cell
+  getTiles (jigsaw M.! (jx, jy)) M.! (tx, ty)
 
 concatJigsaw :: Jigsaw -> Int -> Tile
 concatJigsaw jigsaw width =
@@ -238,7 +238,7 @@ nonMonsterCoords tiles =
       [ (x, y)
         | x <- [0 .. maxX],
           y <- [0 .. maxY],
-          M.lookup (x, y) tiles == Just '#',
+          tiles M.! (x, y) == '#',
           not ((x, y) `S.member` mCoords)
       ]
   where
@@ -249,7 +249,6 @@ part2 :: IO Int
 part2 = do
   (jigsaw, width) <- solveJigsaw
   let tile = concatJigsaw jigsaw width
-      getTiles (Tile _ tiles) = tiles
       images = getTiles <$> variants tile
   return
     . length
