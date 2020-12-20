@@ -46,6 +46,7 @@ dependencies:
 - MissingH
 - extra
 - MemoTrie
+- data-memocombinators
 
 library:
   source-dirs: src
