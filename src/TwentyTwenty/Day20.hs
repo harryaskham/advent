@@ -1,9 +1,6 @@
 module TwentyTwenty.Day20 where
 
-import Data.List
-  ( intersect,
-    nub,
-  )
+import Data.List (intersect, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Set as S
@@ -254,4 +251,8 @@ part2 = do
   let tile = concatJigsaw jigsaw width
       getTiles (Tile _ tiles) = tiles
       images = getTiles <$> variants tile
-  return $ length $ head $filter (not . null) (nonMonsterCoords <$> images)
+  return
+    . length
+    . head
+    . filter (not . null)
+    $ nonMonsterCoords <$> images
