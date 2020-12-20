@@ -45,6 +45,7 @@ dependencies:
 - hint
 - MissingH
 - extra
+- MemoTrie
 
 library:
   source-dirs: src

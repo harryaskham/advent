@@ -1,6 +1,5 @@
 module TwentyTwenty.Day14 where
 
-import Data.Char (digitToInt)
 import Data.Either (fromRight)
 import Data.List (foldl')
 import qualified Data.Map.Strict as M
