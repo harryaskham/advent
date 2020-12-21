@@ -55,8 +55,8 @@ findValidMappings (i : is) as fs aToI = if validAToI fs aToI then with ++ withou
     with = choose =<< S.toList as
     without = findValidMappings is as fs aToI
 
-numNonAllergyIngredients :: M.Map Allergen Ingredient -> [Food] -> Int
-numNonAllergyIngredients aToI fs =
+numNonAllergyIngredients :: [Food] -> M.Map Allergen Ingredient -> Int
+numNonAllergyIngredients fs aToI =
   length $ filter (not . (`S.member` allergyIngredients)) allIngredients
   where
     allergyIngredients = S.fromList $ M.elems aToI
@@ -71,11 +71,7 @@ solveForAToI = do
   return (fs, head aToIs)
 
 part1 :: IO Int
-part1 = do
-  (fs, aToI) <- solveForAToI
-  return $ numNonAllergyIngredients aToI fs
+part1 = uncurry numNonAllergyIngredients <$> solveForAToI
 
 part2 :: IO String
-part2 = do
-  (_, aToI) <- solveForAToI
-  return $ intercalate "," $ snd <$> sort (M.toList aToI)
+part2 = intercalate "," . fmap snd . sort . M.toList . snd <$> solveForAToI
