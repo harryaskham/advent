@@ -48,7 +48,7 @@ findValidMappings ::
   [Food] ->
   M.Map Ingredient Allergen ->
   [M.Map Ingredient Allergen]
-findValidMappings [] as fs aToI = [aToI | (S.null as) && validAToI fs aToI]
+findValidMappings [] as fs aToI = [aToI | S.null as && validAToI fs aToI]
 findValidMappings (i : is) as fs aToI = if validAToI fs aToI then with ++ without else []
   where
     choose a = findValidMappings is (S.delete a as) fs (M.insert a i aToI)
