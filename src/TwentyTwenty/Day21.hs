@@ -52,7 +52,7 @@ findValidMappings [] as fs aToI = [aToI | (S.null as) && validAToI fs aToI]
 findValidMappings (i : is) as fs aToI = if validAToI fs aToI then with ++ without else []
   where
     choose a = findValidMappings is (S.delete a as) fs (M.insert a i aToI)
-    with = concatMap choose (S.toList as)
+    with = choose =<< S.toList as
     without = findValidMappings is as fs aToI
 
 numNonAllergyIngredients :: M.Map Allergen Ingredient -> [Food] -> Int
@@ -60,7 +60,7 @@ numNonAllergyIngredients aToI fs =
   length $ filter (not . (`S.member` allergyIngredients)) allIngredients
   where
     allergyIngredients = S.fromList $ M.elems aToI
-    allIngredients = concatMap (\(Food is _) -> S.toList is) fs
+    allIngredients = (\(Food is _) -> S.toList is) =<< fs
 
 solveForAToI :: IO ([Food], M.Map Allergen Ingredient)
 solveForAToI = do
