@@ -24,7 +24,7 @@ play (x1 SQ.:<| xs1) (x2 SQ.:<| xs2)
   | x1 > x2 = play (xs1 SQ.>< SQ.fromList [x1, x2]) xs2
 
 scoreHand :: Hand -> Int
-scoreHand h = sum . zipWith (*) [1 .. length h] . reverse . F.toList $ h
+scoreHand = sum . zipWith (*) [1 ..] . reverse . F.toList
 
 part1 :: IO Int
 part1 = scoreHand . uncurry play <$> readInput
