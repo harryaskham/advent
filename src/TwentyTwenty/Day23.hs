@@ -1,11 +1,8 @@
 module TwentyTwenty.Day23 where
 
-import Control.Monad.State
+import Control.Monad.State (State, evalState, gets, modify)
 import Data.Char (digitToInt, intToDigit)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import qualified Data.IntMap as IM
-import qualified Data.Map.Strict as M
-import Debug.Trace
 
 input :: [Int]
 input = digitToInt <$> "496138527"
@@ -52,9 +49,7 @@ readOut n sofar = do
 moveSteps :: Int -> Int -> Int -> State (IM.IntMap Int) ()
 moveSteps steps target c
   | steps == target = return ()
-  | otherwise = do
-    c' <- move c
-    trace (show (steps, c)) $ moveSteps (steps + 1) target c'
+  | otherwise = moveSteps (steps + 1) target =<< move c
 
 longInput :: [Int]
 longInput = input ++ [10 .. 1000000]
