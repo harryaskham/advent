@@ -1,4 +1,6 @@
 module Main where
 
+import qualified TwentyTwenty.Day23 as D23
+
 main :: IO ()
-main = undefined
+main = print D23.part2
