@@ -63,25 +63,25 @@ type State = (Int, M.Map Int Int, SQ.Seq Int)
 
 move :: State -> State
 move (step, ixs, cups@(c :<| r1 :<| r2 :<| r3 :<| rest)) =
-  trace (show (step, cups, c, [r1, r2, r3], rest, (d, dIx), a, b, snd <$> sort (M.toList ixs))) $
+  --trace (show (step, cups, c, [r1, r2, r3], rest, (d, dIx), a, b, snd <$> sort (M.toList ixs))) $
+  trace (show step) $
     (step + 1, nextIxs, nextCups)
   where
     ds' = [c - 1, c - 2, c - 3, c - 4]
     ds = (\d -> if d <= 0 then d + length cups else d) <$> ds'
     d = head $ filter (not . (`elem` [r1, r2, r3])) ds
-    --dIx = ixs M.! d - step
+    --Just dIx = SQ.elemIndexL d rest
+    --dIx = 1000
+    -- dIx = ixs M.! d - step
     dIx = ixs M.! d
     (_ :<| _ :<| _ :<| _ :<| a, b) = SQ.splitAt (dIx + 1) cups
+    --(a, b) = SQ.splitAt (dIx + 1) rest
     nextCups = a >< ((r1 <| r2 <| r3 <| b) |> c)
-    --ixUpdates =
-    --  [(cup, subtract 3) | cup <- F.toList a]
-    --    ++ [(r, (+ (length a + 1))) | r <- [r1, r2, r3]]
-    --    ++ [(c, const $ length cups + step)]
     ixUpdates =
-      [(cup, const i) | (cup, i) <- zip (F.toList a) [0 ..]]
-        ++ [(r, const ((length a) + i)) | (r, i) <- zip [r1, r2, r3] [0 ..]]
-        ++ [(cup, const ((length a) + 3 + i)) | (cup, i) <- zip (F.toList b) [0 ..]]
-        ++ [(c, const $ length cups - 1)]
+      [(c, const $ length cups)]
+        ++ [(cup, const i) | (i, cup) <- zip [0 ..] (F.toList a)]
+        ++ [(r, const (length a + i)) | (i, r) <- zip [0 ..] [r1, r2, r3]]
+        ++ [(cup, const (length a + 3 + i)) | (i, cup) <- zip [0 ..] (F.toList b)]
     nextIxs = foldl' (\acc (k, f) -> M.adjust f k acc) ixs ixUpdates
 
 alignTo1 :: SQ.Seq Int -> SQ.Seq Int
@@ -97,7 +97,7 @@ part1 =
     . F.toList
     . alignTo1
     . thd3
-    $ (iterate move (0, makeIxs input, SQ.fromList input)) !! 100
+    $ (iterate move (1, makeIxs input, SQ.fromList input)) !! 100
 
 longInput :: [Int]
 longInput = input ++ [10 .. 1000000]
@@ -110,4 +110,4 @@ part2 =
     . F.toList
     . alignTo1
     . thd3
-    $ (iterate move (0, makeIxs input, SQ.fromList longInput)) !! 10000000
+    $ (iterate move (0, makeIxs longInput, SQ.fromList longInput)) !! 10000000
