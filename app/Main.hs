@@ -1,8 +1,6 @@
 module Main where
 
-import qualified TwentyTwenty.Day21 as D21
+import qualified TwentyTwenty.Day23 as D23
 
 main :: IO ()
-main = do
-  x <- D21.part2
-  print x
+main = print D23.part2
