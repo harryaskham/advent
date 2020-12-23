@@ -3,4 +3,6 @@ module Main where
 import qualified TwentyTwenty.Day23 as D23
 
 main :: IO ()
-main = print D23.part2
+main = do
+  x <- D23.part2P
+  print x

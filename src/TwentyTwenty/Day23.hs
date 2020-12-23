@@ -2,6 +2,7 @@ module TwentyTwenty.Day23 where
 
 import Data.Char (digitToInt, intToDigit)
 import qualified Data.Foldable as F
+import Data.IORef
 import Data.List
 import Data.List.Split (splitOn)
 import qualified Data.Map.Strict as M
@@ -11,9 +12,8 @@ import Data.Tuple.Extra
 import Debug.Trace
 
 input :: [Int]
-input = digitToInt <$> "389125467"
-
---input = digitToInt <$> "496138527"
+--input = digitToInt <$> "389125467"
+input = digitToInt <$> "496138527"
 
 {-
 move :: [Int] -> [Int]
@@ -121,11 +121,23 @@ move step target cix ring@(Ring s _)
     dIx = ixOf d ringWithout
     nextRing = insertNAt (dIx + 1) rs ringWithout
 
+-- fuzzy find in region
+matchWithin :: Int -> Int -> Int -> Seq Int -> Maybe Int
+matchWithin threshold d ix cups =
+  case SQ.elemIndexL d window of
+    Just i -> Just (length pre + i)
+    Nothing -> Nothing
+  where
+    (pre, splitCups) = SQ.splitAt (ix - threshold) cups
+    window = SQ.take (2 * threshold) splitCups
+    dIx = SQ.elemIndexR d window
+
 move' :: Int -> Int -> M.Map Int (Int, Int) -> Seq Int -> Seq Int
 move' step target ixs cups@(c :<| r1 :<| r2 :<| r3 :<| _)
   | step == target = cups
   | otherwise =
-    trace (show (step, c, [r1, r2, r3], d, dIx', dIx, age, step', sane)) $
+    trace (show (step, c, [r1, r2, r3], d, "lastDix", dIx', "nowDix", dIx, "age", age, "lastsaw", step', hit, hit2)) $
+      --trace (show (step)) $
       move' (step + 1) target nextIxs nextCups
   where
     ds' = [c - 1, c - 2, c - 3, c - 4]
@@ -136,12 +148,15 @@ move' step target ixs cups@(c :<| r1 :<| r2 :<| r3 :<| _)
         Just (ix, step') -> (ix, step - step', step')
         Nothing -> let Just ix = SQ.elemIndexR d cups in (ix, 0, 0)
     -- Nothing -> let Just ix = SQ.elemIndexR d cups in (ix, -1)
-    dIx = if age > 1 then length cups - age else dIx' -- let Just ix = SQ.elemIndexR d cups in ix else dIx'
+    --dIx = if age > 1 then length cups - age else dIx'
+    dIxH' = if age > 1 then dIx' + 1 - age else dIx'
+    (dIxH, hit) =
+      case matchWithin 20 d dIxH' cups of
+        Just ix -> (ix, True)
+        Nothing -> let Just ix = SQ.elemIndexR d cups in (ix, False)
+
+    (dIx, hit2) = let d' = cups `SQ.index` dIxH in if d' == d then (dIxH, True) else let Just ix = SQ.elemIndexR d cups in (ix, False)
     (_ :<| _ :<| _ :<| _ :<| a, b) = SQ.splitAt (dIx + 1) cups
-    -- sanity check
-    sane = case SQ.viewr a of
-      _ SQ.:> d' -> d == d
-    -- end sanity check
     nextCups = a >< ((r1 <| r2 <| r3 <| b) |> c)
     nextIxs =
       foldl'
@@ -150,8 +165,87 @@ move' step target ixs cups@(c :<| r1 :<| r2 :<| r3 :<| _)
         [ (r1, (length a, step)),
           (r2, (length a + 1, step)),
           (r3, (length a + 2, step)),
-          (c, (length cups, step))
+          (c, (length cups - 1, step))
         ]
+
+{-
+we have 1M pointers to linked list nodes
+pointer starts at first
+follow next 3 times, cut out, set next cyclicly
+look up dest, which is easy
+chop in 3x after dest
+set pointer to be original's current next
+-}
+
+-- all but last
+mkNodeMap' :: [Int] -> IO [(Int, IORef Int)]
+mkNodeMap' [_] = return []
+mkNodeMap' (n1 : n2 : s) = do
+  ref <- newIORef n2
+  rest <- mkNodeMap' (n2 : s)
+  return $ (n1, ref) : rest
+
+mkNodeMap :: [Int] -> IO (M.Map Int (IORef Int))
+mkNodeMap (n : ns) = do
+  nodes <- M.fromList <$> mkNodeMap' (n : ns)
+  cycleRef <- newIORef n
+  return $ M.insert (last ns) cycleRef nodes
+
+nextNode :: M.Map Int (IORef Int) -> Int -> IO Int
+nextNode nexts i = readIORef (nexts M.! i)
+
+setNextNode :: M.Map Int (IORef Int) -> Int -> Int -> IO ()
+setNextNode nexts n1 n2 = writeIORef (nexts M.! n1) n2
+
+moveP :: M.Map Int (IORef Int) -> Int -> IO (M.Map Int (IORef Int), Int)
+moveP nexts c = do
+  r1 <- nextNode nexts c
+  r2 <- nextNode nexts r1
+  r3 <- nextNode nexts r2
+  r4 <- nextNode nexts r3
+  setNextNode nexts c r4
+  let ds' = [c - 1, c - 2, c - 3, c - 4]
+      ds = (\d -> if d <= 0 then d + M.size nexts else d) <$> ds'
+      d = head $ filter (not . (`elem` [r1, r2, r3])) ds
+  dNext <- nextNode nexts d
+  setNextNode nexts d r1
+  setNextNode nexts r3 dNext
+  cNext <- nextNode nexts c
+  return (nexts, cNext)
+
+readOut :: M.Map Int (IORef Int) -> Int -> IO [Int]
+readOut nexts n = do
+  n' <- nextNode nexts n
+  rest <- readOut nexts n'
+  return (n : rest)
+
+movePSteps :: Int -> Int -> M.Map Int (IORef Int) -> Int -> IO (M.Map Int (IORef Int))
+movePSteps steps target nexts c
+  | steps == target = return nexts
+  | otherwise = do
+    (nexts', c') <- moveP nexts c
+    print steps
+    movePSteps (steps + 1) target nexts' c'
+
+part1P :: IO String
+part1P = do
+  nodes <- mkNodeMap input
+  movePSteps 0 100 nodes (head input)
+  ans <- readOut nodes 1
+  return $ intToDigit <$> drop 1 (take 9 ans)
+
+read2 :: M.Map Int (IORef Int) -> IO (Int, Int)
+read2 nexts = do
+  n1 <- nextNode nexts 1
+  n2 <- nextNode nexts n1
+  return (n1, n2)
+
+part2P :: IO Int
+part2P = do
+  nodes <- mkNodeMap longInput
+  nodes' <- movePSteps 0 10000000 nodes (head input)
+  (n1, n2) <- read2 nodes'
+  return (n1 * n2)
 
 {-
 --dIx = 1000
@@ -191,6 +285,15 @@ part1 =
     . alignTo1
     . ringToSeq
     $ move 0 100 0 (mkRing input)
+
+part1' :: Int
+part1' =
+  read
+    . drop 1
+    . fmap intToDigit
+    . F.toList
+    . alignTo1
+    $ move' 0 100 M.empty (SQ.fromList input)
 
 longInput :: [Int]
 longInput = input ++ [10 .. 1000000]
