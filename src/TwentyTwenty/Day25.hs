@@ -1,9 +1,20 @@
 module TwentyTwenty.Day25 where
 
-inputPath :: String
-inputPath = "input/2020/25.txt"
+keys :: (Int, Int)
+keys = (5290733, 15231938)
 
-part1 :: IO Int
-part1 = do
-  ls <- lines <$> readFile inputPath
-  return 0
+transform :: Int -> Int -> Int
+transform x loop = go 1 loop
+  where
+    go x' 0 = x'
+    go x' n = go ((x * x') `mod` 20201227) (n - 1)
+
+getLoopSize :: Int -> Int
+getLoopSize target = go 1 0
+  where
+    go x' n
+      | x' == target = n
+      | otherwise = go ((7 * x') `mod` 20201227) (n + 1)
+
+part1 :: Int
+part1 = transform (fst keys) (getLoopSize (snd keys))
