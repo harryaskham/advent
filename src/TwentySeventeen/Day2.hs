@@ -1,7 +1,7 @@
 module TwentySeventeen.Day2 where
 
-import Data.List.Split
-import Util
+import Data.List.Split (splitOn)
+import Util ((<$$>))
 
 inputPath :: String
 inputPath = "input/2017/2.txt"
