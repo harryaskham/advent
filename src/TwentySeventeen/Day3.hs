@@ -1,9 +1,8 @@
 module TwentySeventeen.Day3 where
 
 import qualified Data.Map.Strict as M
-import Data.Maybe
+import Data.Maybe (mapMaybe)
 import qualified Data.Set as S
-import Debug.Trace
 
 input :: Int
 input = 277678
@@ -37,7 +36,7 @@ part1 = spiralDistance input E 2 (1, 0) (S.singleton (0, 0))
 neighbours :: (Int, Int) -> M.Map (Int, Int) a -> [a]
 neighbours (x, y) mem =
   mapMaybe
-    (flip M.lookup mem)
+    (`M.lookup` mem)
     [ (x + xO, y + yO)
       | xO <- [-1 .. 1],
         yO <- [-1 .. 1],
@@ -51,8 +50,8 @@ firstLarger target dir current c@(x, y) mem
   | otherwise = firstLarger target (turn dir) (current + 1) (move c (turn dir)) mem'
   where
     ns = sum $ neighbours c mem
-    mem' = (M.insert (x, y) ns mem)
-    canTurn = trace (show ns) $ move c (turn dir) `M.member` mem
+    mem' = M.insert (x, y) ns mem
+    canTurn = move c (turn dir) `M.member` mem
 
 part2 :: Int
 part2 = firstLarger input E 2 (1, 0) (M.singleton (0, 0) 1)
