@@ -4,7 +4,7 @@ keys :: (Int, Int)
 keys = (5290733, 15231938)
 
 transform :: Int -> Int -> Int
-transform x loop = go 1 loop
+transform x = go 1
   where
     go x' 0 = x'
     go x' n = go ((x * x') `mod` 20201227) (n - 1)

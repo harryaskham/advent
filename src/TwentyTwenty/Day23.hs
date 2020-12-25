@@ -34,8 +34,7 @@ move c = do
   dNext <- nextNode d
   setNextNode d r1
   setNextNode r3 dNext
-  cNext <- nextNode c
-  return cNext
+  nextNode c
 
 readOut :: Int -> [Int] -> State (IM.IntMap Int) [Int]
 readOut n sofar = do
