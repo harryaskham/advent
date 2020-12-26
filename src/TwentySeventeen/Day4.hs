@@ -15,7 +15,7 @@ part1 = do
   return $ length (filter valid ls)
 
 letterCounts :: String -> M.Map Char Int
-letterCounts w = getSum <$> (M.fromListWith (<>) (zip w (repeat $ Sum 1)))
+letterCounts w = getSum <$> M.fromListWith (<>) (zip w (repeat $ Sum 1))
 
 part2 :: IO Int
 part2 = do
@@ -23,5 +23,5 @@ part2 = do
   let valid l =
         let ws = splitOn " " l
             cs = letterCounts <$> ws
-         in length ws == length (nub ws) && length cs == length (nub cs)
+         in length cs == length (nub cs)
   return $ length (filter valid ls)
