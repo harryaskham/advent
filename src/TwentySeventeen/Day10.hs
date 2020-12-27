@@ -15,7 +15,7 @@ step ring _ [] start = let (x1, x2) = SQ.splitAt start ring in x2 SQ.>< x1
 step ring skip (i : is) start = step (b SQ.>< a) (skip + 1) is newStart
   where
     (xs, rest') = SQ.splitAt i ring
-    reversed = (SQ.reverse xs) SQ.>< rest'
+    reversed = SQ.reverse xs SQ.>< rest'
     toMove = (skip + i) `mod` length ring
     (a, b) = SQ.splitAt toMove reversed
     newStart = (start - toMove) `mod` length ring
