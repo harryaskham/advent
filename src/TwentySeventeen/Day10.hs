@@ -26,9 +26,12 @@ part1 = product $ SQ.take 2 ring
     is = read <$> splitOn "," input
     ring = step (SQ.fromList [0 .. 255]) 0 is 0
 
-part2 :: String
-part2 = concat $ printf "%02x" . foldl1 xor <$> chunks
+knotHash :: String -> String
+knotHash a = concat $ printf "%02x" . foldl1 xor <$> chunks
   where
-    is = concat $ replicate 64 ((ord <$> input) ++ [17, 31, 73, 47, 23])
+    is = concat $ replicate 64 ((ord <$> a) ++ [17, 31, 73, 47, 23])
     ring = step (SQ.fromList [0 .. 255]) 0 is 0
     chunks = chunksOf 16 $ F.toList ring
+
+part2 :: String
+part2 = knotHash input
