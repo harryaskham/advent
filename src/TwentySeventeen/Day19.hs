@@ -14,7 +14,7 @@ readInput :: IO (M.Map (Int, Int) Char)
 readInput = do
   rows <- lines <$> readFile inputPath
   return $
-    M.fromList $
+    M.fromList
       [ ((x, y), c)
         | (y, row) <- zip [0 ..] rows,
           (x, c) <- zip [0 ..] row,
