@@ -1,22 +1,33 @@
 module TwentySeventeen.Day16 where
 
-import Control.Arrow
-import Control.Monad
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
+import Control.Arrow ((>>>))
 import qualified Data.Map.Strict as M
-import qualified Data.Sequence as SQ
-import Debug.Trace
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    char,
+    choice,
+    digit,
+    eof,
+    letter,
+    many1,
+    sepBy,
+    try,
+  )
+import Util (readWithParser)
 
 inputPath :: String
 inputPath = "input/2017/16.txt"
 
 data Programs = Programs (M.Map Int Char) (M.Map Char Int) Int
 
-parseOps :: GenParser Char () (SQ.Seq Char -> SQ.Seq Char)
+mkPrograms :: String -> Programs
+mkPrograms cs =
+  Programs
+    (M.fromList $ zip [0 ..] cs)
+    (M.fromList $ zip cs [0 ..])
+    0
+
+parseOps :: GenParser Char () (Programs -> Programs)
 parseOps = do
   ops <- op `sepBy` char ','
   char '\n'
@@ -44,31 +55,57 @@ parseOps = do
                   return $ partner a b
               ]
 
-spin :: Int -> SQ.Seq Char -> SQ.Seq Char
-spin x seq =
-  let (a, b) = SQ.splitAt (length seq - x) seq
-   in b SQ.>< a
+spin :: Int -> Programs -> Programs
+spin x (Programs iToC cToI headI) =
+  Programs iToC cToI ((headI - x) `mod` M.size iToC)
 
-exchange :: Int -> Int -> SQ.Seq Char -> SQ.Seq Char
-exchange posA posB seq =
-  let (a, b) = (seq `SQ.index` posA, seq `SQ.index` posB)
-   in SQ.update posA b . SQ.update posB a $ seq
+exchange :: Int -> Int -> Programs -> Programs
+exchange posA posB (Programs iToC cToI headI) =
+  Programs iToC' cToI' headI
+  where
+    posA' = (headI + posA) `mod` M.size iToC
+    posB' = (headI + posB) `mod` M.size iToC
+    a = iToC M.! posA'
+    b = iToC M.! posB'
+    iToC' = M.insert posA' b . M.insert posB' a $ iToC
+    aC = cToI M.! a
+    bC = cToI M.! b
+    cToI' = M.insert a bC . M.insert b aC $ cToI
 
-partner :: Char -> Char -> SQ.Seq Char -> SQ.Seq Char
-partner a b seq =
-  let (Just posA, Just posB) = (SQ.elemIndexL a seq, SQ.elemIndexL b seq)
-   in exchange posA posB seq
+partner :: Char -> Char -> Programs -> Programs
+partner a b (Programs iToC cToI headI) =
+  Programs iToC' cToI' headI
+  where
+    posA = cToI M.! a
+    posB = cToI M.! b
+    cToI' = M.insert a posB . M.insert b posA $ cToI
+    aI = iToC M.! posA
+    bI = iToC M.! posB
+    iToC' = M.insert posA bI . M.insert posB aI $ iToC
+
+toString :: Programs -> String
+toString (Programs iToC _ headI) =
+  (iToC M.!) . (`mod` M.size iToC)
+    <$> [headI .. headI + M.size iToC - 1]
 
 part1 :: IO String
 part1 = do
   dance <- readWithParser parseOps <$> readFile inputPath
-  return $ F.toList $ dance (SQ.fromList ['a' .. 'p'])
+  return . toString . dance $ mkPrograms ['a' .. 'p']
 
-run :: SQ.Seq Char -> (Int, (SQ.Seq Char -> SQ.Seq Char)) -> SQ.Seq Char
-run seq (i, dance) = trace (show i) $ dance seq
+findCycle dance step p@(Programs iToC _ headI) lastSeen
+  | (headI, iToC) `M.member` lastSeen = step
+  | otherwise =
+    findCycle
+      dance
+      (step + 1)
+      (dance p)
+      (M.insert (headI, iToC) step lastSeen)
 
 part2 :: IO String
 part2 = do
   dance <- readWithParser parseOps <$> readFile inputPath
-  let seq = SQ.fromList ['a' .. 'p']
-  return $ F.toList $ foldl' run seq (zip [1 .. 100] (repeat dance))
+  let programs = mkPrograms ['a' .. 'p']
+      cycleLength = findCycle dance 0 programs M.empty
+  return . toString $
+    iterate dance programs !! (1000000000 `rem` cycleLength)
