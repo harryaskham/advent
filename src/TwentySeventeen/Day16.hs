@@ -93,6 +93,7 @@ part1 = do
   dance <- readWithParser parseOps <$> readFile inputPath
   return . toString . dance $ mkPrograms ['a' .. 'p']
 
+findCycle :: (Programs -> Programs) -> Int -> Programs -> M.Map (Int, M.Map Int Char) Int -> Int
 findCycle dance step p@(Programs iToC _ headI) lastSeen
   | (headI, iToC) `M.member` lastSeen = step
   | otherwise =
