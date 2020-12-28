@@ -6,18 +6,16 @@ import qualified Data.Map.Strict as M
 inputPath :: String
 inputPath = "input/2017/19.txt"
 
-data Square = Path Char
-
-type Grid = M.Map (Int, Int) Square
+type Grid = M.Map (Int, Int) Char
 
 data Dir = DirUp | DirDown | DirLeft | DirRight deriving (Eq)
 
-readInput :: IO (M.Map (Int, Int) Square)
+readInput :: IO (M.Map (Int, Int) Char)
 readInput = do
   rows <- lines <$> readFile inputPath
   return $
     M.fromList $
-      [ ((x, y), Path c)
+      [ ((x, y), c)
         | (y, row) <- zip [0 ..] rows,
           (x, c) <- zip [0 ..] row,
           c /= ' '
@@ -39,10 +37,10 @@ walk :: Grid -> (Int, Int) -> Dir -> String -> Int -> (String, Int)
 walk grid pos dir letters steps =
   case M.lookup pos grid of
     Nothing -> (reverse letters, steps)
-    Just (Path '-') -> continue
-    Just (Path '|') -> continue
-    Just (Path '+') -> turn
-    Just (Path l) -> takeLetter l
+    Just '-' -> continue
+    Just '|' -> continue
+    Just '+' -> turn
+    Just l -> takeLetter l
   where
     continue = walk grid (move dir pos) dir letters (steps + 1)
     takeLetter l = walk grid (move dir pos) dir (l : letters) (steps + 1)
