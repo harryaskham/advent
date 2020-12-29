@@ -71,13 +71,13 @@ program = do
           (digitToInt value)
           ( case direction of
               "right" -> 1
-              "left" -> (-1)
+              "left" -> -1
           )
           nextState
 
 step :: M.Map Char Conditional -> (M.Map Int Int, Char, Int) -> (M.Map Int Int, Char, Int)
 step conditionals (tape, state, pos) =
-  ((M.insert pos value tape), nextState, (pos + offset))
+  (M.insert pos value tape, nextState, pos + offset)
   where
     current = M.findWithDefault 0 pos tape
     (Conditional b0 b1) = conditionals M.! state
@@ -92,6 +92,6 @@ part1 = do
     . M.filter (== 1)
     . fst3
     $ foldl'
-      (\s -> const $ step conditionals s)
+      (const . step conditionals)
       (M.empty, startState, 0)
       [1 .. steps]
