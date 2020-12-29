@@ -16,6 +16,9 @@ infixl 5 <$$>
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 (<$$>) = fmap . fmap
 
+toTuple2 :: [a] -> (a, a)
+toTuple2 [a, b] = (a, b)
+
 readWithParser :: GenParser Char () a -> String -> a
 readWithParser parser input = do
   case parse parser "[input]" input of
