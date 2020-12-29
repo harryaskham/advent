@@ -1,10 +1,10 @@
 module TwentySeventeen.Day24 where
 
-import Data.List
-import Data.List.Split
-import Data.Ord
+import Data.List (maximumBy)
+import Data.List.Split (splitOn)
+import Data.Ord (comparing)
 import qualified Data.Set as S
-import Util
+import Util (toTuple2)
 
 inputPath :: String
 inputPath = "input/2017/24.txt"
@@ -38,8 +38,8 @@ strength bridge = sum $ ((+) <$> fst <*> snd) <$> bridge
 part12 :: IO (Int, Int)
 part12 = do
   cs <- components
-  let bs = getBridges (S.fromList cs) 0 [] S.empty
+  let bs = S.toList $ getBridges (S.fromList cs) 0 [] S.empty
   return
-    ( maximum $ strength <$> S.toList bs,
-      strength $ maximumBy (comparing $ (,) <$> length <*> strength) (S.toList bs)
+    ( maximum $ strength <$> bs,
+      strength $ maximumBy (comparing $ (,) <$> length <*> strength) bs
     )
