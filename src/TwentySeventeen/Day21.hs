@@ -44,7 +44,8 @@ step rules grid = joinGrids expanded
 
 start :: Grid Cell
 start =
-  toGrid fromChar $
+  toGrid
+    fromChar
     [ ".#.",
       "..#",
       "###"
