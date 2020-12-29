@@ -47,6 +47,7 @@ dependencies:
 - extra
 - MemoTrie
 - data-memocombinators
+- primes
 
 library:
   source-dirs: src

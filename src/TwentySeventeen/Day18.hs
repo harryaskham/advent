@@ -20,6 +20,8 @@ data Instruction
   | Mod Value Value
   | Rcv Value
   | Jgz Value Value
+  | Sub Value Value
+  | Jnz Value Value
   deriving (Show)
 
 instructions :: GenParser Char () [Instruction]
@@ -46,6 +48,8 @@ instructions = do
             "mul" -> return $ Mul v1 v2
             "mod" -> return $ Mod v1 v2
             "jgz" -> return $ Jgz v1 v2
+            "sub" -> return $ Sub v1 v2
+            "jnz" -> return $ Jnz v1 v2
     value =
       choice
         [ try (Register <$> letter),
