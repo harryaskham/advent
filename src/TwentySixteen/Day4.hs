@@ -1,28 +1,36 @@
 module TwentySixteen.Day4 where
 
-import Data.Char
-import Data.List
-import Data.List.Extra
+import Data.Char (chr, ord)
+import Data.List (sortOn)
+import Data.List.Extra (groupOn)
 import qualified Data.Map.Strict as M
-import Data.Ord
-import Data.Tuple.Extra
+import Data.Ord (Down (Down))
+import Data.Tuple.Extra (snd3)
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    alphaNum,
+    between,
+    char,
+    eof,
+    letter,
+    many,
+    many1,
+    sepBy,
+  )
+import Util (countMap, eol, readWithParser, (<$$>))
 
 inputPath :: String
 inputPath = "input/2016/4.txt"
 
 rooms :: GenParser Char () [([String], Int, String)]
 rooms = do
-  rs <- many room
+  rs <- many $ do
+    segments <- many1 alphaNum `sepBy` char '-'
+    ordering <- between (char '[') (char ']') (many1 letter)
+    eol
+    return (init segments, read (last segments), ordering)
   eof
   return rs
-  where
-    room = do
-      segments <- many1 alphaNum `sepBy` char '-'
-      ordering <- between (char '[') (char ']') (many1 letter)
-      eol
-      return (init segments, read (last segments), ordering)
 
 getOrdering :: [String] -> String
 getOrdering =
