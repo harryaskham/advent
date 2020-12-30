@@ -33,13 +33,13 @@ step1 (State grid pos dir numInfections) =
     Clean ->
       State
         (M.insert pos Infected grid)
-        (move (turnCCW dir) pos)
+        (move (turnCCW dir) 1 pos)
         (turnCCW dir)
         (numInfections + 1)
     Infected ->
       State
         (M.insert pos Clean grid)
-        (move (turnCW dir) pos)
+        (move (turnCW dir) 1 pos)
         (turnCW dir)
         numInfections
 
@@ -64,25 +64,25 @@ step2 (State grid pos dir numInfections) =
     Clean ->
       State
         (M.insert pos Weakened grid)
-        (move (turnCCW dir) pos)
+        (move (turnCCW dir) 1 pos)
         (turnCCW dir)
         numInfections
     Weakened ->
       State
         (M.insert pos Infected grid)
-        (move dir pos)
+        (move dir 1 pos)
         dir
         (numInfections + 1)
     Infected ->
       State
         (M.insert pos Flagged grid)
-        (move (turnCW dir) pos)
+        (move (turnCW dir) 1 pos)
         (turnCW dir)
         numInfections
     Flagged ->
       State
         (M.insert pos Clean grid)
-        (move (turn180 dir) pos)
+        (move (turn180 dir) 1 pos)
         (turn180 dir)
         numInfections
 
