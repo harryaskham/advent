@@ -2,14 +2,13 @@
 
 module Util where
 
-import Data.Function (fix)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as M
-import qualified Data.MemoCombinators as Memo
+import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
 import qualified Language.Haskell.Interpreter as Hint
 import System.IO.Unsafe (unsafePerformIO)
-import Text.ParserCombinators.Parsec (GenParser, parse)
+import Text.ParserCombinators.Parsec (GenParser, char, parse)
 
 infixl 5 <$$>
 
@@ -27,6 +26,9 @@ readWithParser parser input = do
   case parse parser "[input]" input of
     Right x -> x
     Left e -> error (show e)
+
+eol :: GenParser Char () Char
+eol = char '\n'
 
 -- Run a set of expressions of the same type using Hint mixins.
 -- Expressions have HintMixins.hs in scope.
@@ -62,3 +64,6 @@ doUnsafe f =
 
 memoize :: Ord a => (a -> b) -> (a -> b)
 memoize = memoizeWithKey id
+
+countMap :: Ord a => [a] -> M.Map a Int
+countMap xs = getSum <$> M.fromListWith (+) (zip xs (repeat $ Sum 1))
