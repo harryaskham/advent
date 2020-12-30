@@ -13,9 +13,9 @@ input :: IO [(Dir2 -> Dir2, Int)]
 input =
   concatMap
     ( \(rl : n) ->
-        (rlToTurn rl, 1) : (replicate ((read n) - 1) (id, 1))
+        (rlToTurn rl, 1) : replicate (read n - 1) (id, 1)
     )
-    . (splitOn ", ")
+    . splitOn ", "
     . head
     . lines
     <$> readFile inputPath
