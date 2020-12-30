@@ -26,6 +26,7 @@ dependencies:
 - regex-tdfa
 - regex-tdfa-text
 - time
+- bytestring
 - vector
 - vector-split
 - listsafe
@@ -48,6 +49,9 @@ dependencies:
 - MemoTrie
 - data-memocombinators
 - primes
+- cryptohash-md5
+- utf8-string
+- base16-bytestring
 
 library:
   source-dirs: src
