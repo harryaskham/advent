@@ -2,12 +2,10 @@
 
 module Util where
 
-import Data.IORef (modifyIORef', newIORef, readIORef)
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
 import qualified Language.Haskell.Interpreter as Hint
-import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, parse)
 
 infixl 5 <$$>
@@ -42,28 +40,6 @@ eval exprs = do
   case result of
     Right a -> return a
     Left e -> error (show e)
-
-memoizeWithKey :: Ord k => (a -> k) -> (a -> b) -> (a -> b)
-memoizeWithKey memoKey f = doUnsafe $ do
-  cacheRef <- newIORef M.empty
-  let f' x = do
-        cache <- readIORef cacheRef
-        let key = memoKey x
-        case M.lookup key cache of
-          Nothing -> do
-            let v = f x
-            modifyIORef' cacheRef (M.insert key v)
-            return v
-          Just v -> return v
-  return f'
-
-doUnsafe :: IO (a -> IO b) -> (a -> b)
-doUnsafe f =
-  let f' = unsafePerformIO f
-   in \x -> unsafePerformIO (f' x)
-
-memoize :: Ord a => (a -> b) -> (a -> b)
-memoize = memoizeWithKey id
 
 countMap :: Ord a => [a] -> M.Map a Int
 countMap xs = getSum <$> M.fromListWith (+) (zip xs (repeat $ Sum 1))
