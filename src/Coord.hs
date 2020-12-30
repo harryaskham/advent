@@ -4,8 +4,8 @@ data Dir2 = DirUp | DirDown | DirLeft | DirRight
 
 type Coord2 = (Int, Int)
 
-manhattan :: Coord2 -> Int
-manhattan = ((+) <$> (abs . fst) <*> (abs . snd))
+manhattan0 :: Coord2 -> Int
+manhattan0 = (+) <$> (abs . fst) <*> (abs . snd)
 
 move :: Dir2 -> Int -> Coord2 -> Coord2
 move DirUp n (x, y) = (x, y - n)

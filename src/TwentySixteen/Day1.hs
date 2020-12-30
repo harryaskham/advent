@@ -1,6 +1,6 @@
 module TwentySixteen.Day1 where
 
-import Coord (Dir2 (DirUp), manhattan, move, rlToTurn)
+import Coord (Dir2 (DirUp), manhattan0, move, rlToTurn)
 import Data.List (foldl')
 import Data.List.Split (splitOn)
 import qualified Data.Set as S
@@ -22,7 +22,7 @@ input =
 
 part1 :: IO Int
 part1 =
-  manhattan
+  manhattan0
     . fst
     . foldl'
       ( \(pos, dir) (turn, n) ->
@@ -33,7 +33,7 @@ part1 =
 
 part2 :: IO Int
 part2 =
-  manhattan
+  manhattan0
     . fst3
     . head
     . filter (S.member <$> fst3 <*> thd3)
