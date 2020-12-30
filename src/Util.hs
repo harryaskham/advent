@@ -19,6 +19,9 @@ infixl 5 <$$>
 toTuple2 :: [a] -> (a, a)
 toTuple2 [a, b] = (a, b)
 
+toTuple3 :: [a] -> (a, a, a)
+toTuple3 [a, b, c] = (a, b, c)
+
 readWithParser :: GenParser Char () a -> String -> a
 readWithParser parser input = do
   case parse parser "[input]" input of
