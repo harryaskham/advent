@@ -1,11 +1,21 @@
 module TwentySixteen.Day8 where
 
-import Control.Arrow
+import Control.Arrow ((>>>))
 import qualified Data.Foldable as F
-import Data.List
+import Data.List (intercalate)
 import qualified Data.Sequence as SQ
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    char,
+    digit,
+    eof,
+    many,
+    many1,
+    string,
+    try,
+    (<|>),
+  )
+import Util (eol, readWithParser)
 
 inputPath :: String
 inputPath = "input/2016/8.txt"
