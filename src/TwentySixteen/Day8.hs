@@ -61,7 +61,10 @@ operations = do
 rect :: Int -> Int -> Operation
 rect w h grid = setRow <$> SQ.zip grid (SQ.fromList [0 .. SQ.length grid - 1])
   where
-    setRow (row, y) = if y < h then SQ.replicate w On SQ.>< SQ.drop w row else row
+    setRow (row, y) =
+      if y < h
+        then SQ.replicate w On SQ.>< SQ.drop w row
+        else row
 
 rotateC :: Int -> Int -> Operation
 rotateC x n grid = (\(row, v) -> SQ.update x v row) <$> SQ.zip grid col'
