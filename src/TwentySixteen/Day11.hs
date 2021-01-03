@@ -4,7 +4,7 @@ import Data.List (sortOn)
 import Data.List.Extra (breakOn)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe (mapMaybe)
+import Data.Maybe (isJust, mapMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
@@ -101,12 +101,12 @@ keyState floorState = countMap $ zip generatorFloors microchipFloors
           | (f, is) <- M.toList floorState,
             i <- S.toList is
         ]
-    generatorFloors = [f | (f, i) <- floorItems, getGenerator i /= Nothing]
-    microchipFloors = [f | (f, i) <- floorItems, getMicrochip i /= Nothing]
+    generatorFloors = [f | (f, i) <- floorItems, isJust (getGenerator i)]
+    microchipFloors = [f | (f, i) <- floorItems, isJust (getMicrochip i)]
 
 bfs :: Seq FloorState -> Set (Int, CacheKey) -> Maybe Int
 bfs SQ.Empty _ = Nothing
-bfs ((FloorState floor floorItems steps) SQ.:<| rest) seen
+bfs (FloorState floor floorItems steps SQ.:<| rest) seen
   | terminal floorItems = Just steps
   | keyST `S.member` seen || not (valid floorItems) = bfs rest seen
   | otherwise = bfs (rest SQ.>< SQ.fromList nextStates) (S.insert keyST seen)
@@ -118,8 +118,8 @@ bfs ((FloorState floor floorItems steps) SQ.:<| rest) seen
     nextState f toCarry =
       FloorState
         f
-        ( (M.adjust (S.\\ toCarry) floor)
-            . (M.adjust (S.union toCarry) f)
+        ( M.adjust (S.\\ toCarry) floor
+            . M.adjust (S.union toCarry) f
             $ floorItems
         )
         (steps + 1)
