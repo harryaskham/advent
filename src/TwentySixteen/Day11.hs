@@ -24,7 +24,10 @@ import Text.ParserCombinators.Parsec
   )
 import Util (countMap, eol, input, readWithParser)
 
-data Item = Microchip String | Generator String deriving (Show, Ord, Eq)
+data Item
+  = Microchip String
+  | Generator String
+  deriving (Show, Ord, Eq)
 
 data FloorState = FloorState Int (Map Int (Set Item)) Int deriving (Show, Ord, Eq)
 
