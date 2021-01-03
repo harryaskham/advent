@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3e0ff0c1677a826a297ccd22c1bcb8245ebd83dc08eaa259c908f0ab3975c698
+-- hash: 22c3ea3a92d2924b4bfe5b5dd290bd5f5e5b9e8acaa437c6ee0abb800bd2c2a2
 
 name:           advent
 version:        0.1.0.0
@@ -31,31 +31,6 @@ library
       Grid
       HintMixins
       TwentyEighteen.Solutions
-      TwentyFifteen.Day1
-      TwentyFifteen.Day10
-      TwentyFifteen.Day11
-      TwentyFifteen.Day12
-      TwentyFifteen.Day13
-      TwentyFifteen.Day14
-      TwentyFifteen.Day15
-      TwentyFifteen.Day16
-      TwentyFifteen.Day17
-      TwentyFifteen.Day18
-      TwentyFifteen.Day19
-      TwentyFifteen.Day2
-      TwentyFifteen.Day20
-      TwentyFifteen.Day21
-      TwentyFifteen.Day22
-      TwentyFifteen.Day23
-      TwentyFifteen.Day24
-      TwentyFifteen.Day25
-      TwentyFifteen.Day3
-      TwentyFifteen.Day4
-      TwentyFifteen.Day5
-      TwentyFifteen.Day6
-      TwentyFifteen.Day7
-      TwentyFifteen.Day8
-      TwentyFifteen.Day9
       TwentyNineteen.Day15
       TwentyNineteen.Day17
       TwentyNineteen.Day18
@@ -90,20 +65,7 @@ library
       TwentySixteen.Day10
       TwentySixteen.Day11
       TwentySixteen.Day12
-      TwentySixteen.Day13
-      TwentySixteen.Day14
-      TwentySixteen.Day15
-      TwentySixteen.Day16
-      TwentySixteen.Day17
-      TwentySixteen.Day18
-      TwentySixteen.Day19
       TwentySixteen.Day2
-      TwentySixteen.Day20
-      TwentySixteen.Day21
-      TwentySixteen.Day22
-      TwentySixteen.Day23
-      TwentySixteen.Day24
-      TwentySixteen.Day25
       TwentySixteen.Day3
       TwentySixteen.Day4
       TwentySixteen.Day5

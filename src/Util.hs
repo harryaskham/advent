@@ -11,6 +11,9 @@ import Text.ParserCombinators.Parsec (GenParser, char, parse)
 input :: Int -> Int -> IO String
 input year day = readFile $ "input/" ++ show year ++ "/" ++ show day ++ ".txt"
 
+exampleInput :: Int -> Int -> IO String
+exampleInput year day = readFile $ "input/" ++ show year ++ "/" ++ show day ++ "_example.txt"
+
 infixl 5 <$$>
 
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)

@@ -5,7 +5,6 @@ import qualified Data.Foldable as F
 import Data.Function
 import Data.List
 import Data.List.Extra
-import Data.List.Split
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -22,6 +21,5 @@ import Util
 
 part1 :: IO Int
 part1 = do
-  ls <- lines <$> input 2016 11
-  print ls
+  ls <- lines <$> input 2016 1
   return 0
