@@ -8,6 +8,9 @@ import Data.Typeable (Typeable)
 import qualified Language.Haskell.Interpreter as Hint
 import Text.ParserCombinators.Parsec (GenParser, char, parse)
 
+input :: Int -> Int -> IO String
+input year day = readFile $ "input/" ++ show year ++ "/" ++ show day ++ ".txt"
+
 infixl 5 <$$>
 
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
