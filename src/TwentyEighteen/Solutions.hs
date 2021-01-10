@@ -23,30 +23,6 @@ import Text.ParserCombinators.ReadP
 import Text.Regex.TDFA
 import Text.Regex.TDFA.Text ()
 
--- Read signed ints from file.
-freqsToNums :: IO [Int]
-freqsToNums = do
-  content <- readFile "input/2018/1.txt"
-  return $ parseLine <$> lines content
-  where
-    parseLine :: String -> Int
-    parseLine (sign : number) =
-      case sign of
-        '+' -> read number
-        '-' -> -1 * read number
-
-day1_1 :: IO Int
-day1_1 = sum <$> freqsToNums
-
-day1_2 :: IO Int
-day1_2 = do
-  nums <- cycle <$> freqsToNums
-  return $ next S.empty nums 0
-  where
-    next :: S.Set Int -> [Int] -> Int -> Int
-    next seen (n : ns) frequency =
-      if frequency `S.member` seen then frequency else next (S.insert frequency seen) ns (frequency + n)
-
 -- Get a count of unique items in a list.
 itemCounts :: Ord a => [a] -> M.Map a Int
 itemCounts = foldl (\acc x -> M.insertWith (+) x 1 acc) M.empty

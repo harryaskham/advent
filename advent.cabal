@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2ae0c017b581278db918a397078739fe3b420d6fb617eebcd4abfdf279dc4381
+-- hash: 2d13ae4187a6507566a289de835cd6bc7a72abe23d8f94e5d096ed2af2a029b7
 
 name:           advent
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       Coord
       Grid
       HintMixins
+      TwentyEighteen.Day1
       TwentyEighteen.Solutions
       TwentyNineteen.Day15
       TwentyNineteen.Day17
