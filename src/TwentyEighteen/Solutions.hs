@@ -22,35 +22,7 @@ import qualified Data.Vector as V
 import Text.ParserCombinators.ReadP
 import Text.Regex.TDFA
 import Text.Regex.TDFA.Text ()
-
--- Get a count of unique items in a list.
-itemCounts :: Ord a => [a] -> M.Map a Int
-itemCounts = foldl (\acc x -> M.insertWith (+) x 1 acc) M.empty
-
--- Does the list contain the same thing exactly n times?
-exactlyN :: Ord a => Int -> [a] -> Bool
-exactlyN n xs = n `elem` (snd <$> M.toList (itemCounts xs))
-
-day2_1 :: IO Int
-day2_1 = do
-  content <- readFile "input/2018/2.txt"
-  return $ go 2 (lines content) * go 3 (lines content)
-  where
-    go :: Int -> [String] -> Int
-    go n ls = length $ filter (exactlyN n) ls
-
--- Get the number of differences between the two strings.
-editDistance :: Eq a => [a] -> [a] -> Int
-editDistance xs ys = length $ filter (== False) $ fmap (uncurry (==)) (zip xs ys)
-
--- Gets only the items that are the same in both cases.
-common :: Eq a => [a] -> [a] -> [a]
-common xs ys = catMaybes $ filter (/= Nothing) $ fmap (\(x, y) -> if x == y then Just x else Nothing) (zip xs ys)
-
-day2_2 :: IO String
-day2_2 = do
-  ls <- lines <$> readFile "input/2018/2.txt"
-  return $ head [common x y | x <- ls, y <- ls, editDistance x y == 1]
+import Util
 
 -- The details of a fabric rectangle
 data FabRect = FabRect
@@ -79,7 +51,7 @@ coordsForRect :: FabRect -> [(Int, Int)]
 coordsForRect fr = [(x, y) | x <- [_xC fr .. _xC fr + _width fr - 1], y <- [_yC fr .. _yC fr + _height fr - 1]]
 
 coordCounts :: [FabRect] -> M.Map (Int, Int) Int
-coordCounts frs = itemCounts coords
+coordCounts frs = countMap coords
   where
     coords = concat $ coordsForRect <$> frs
 
@@ -183,7 +155,7 @@ mostCommonGuardMinute guards guardId = maybe 0 (fst . mostCommon) (M.lookup guar
 
 -- Get the most common thing along with its count.
 mostCommon :: (Ord a, Eq a) => [a] -> (a, Int)
-mostCommon xs = maximumBy (comparing snd) $ M.toList (itemCounts xs)
+mostCommon xs = maximumBy (comparing snd) $ M.toList (countMap xs)
 
 -- Converts a timestamp pair to the list of minute-values it contains
 getMinutes :: TimeOfDay -> TimeOfDay -> [Int]
@@ -285,7 +257,7 @@ pointToClosest = fmap closestPoint
 
 -- Gets the largest finite area from the map.
 allAreas :: ((Int, Int), (Int, Int)) -> M.Map (Int, Int) (Maybe (Int, Int)) -> [((Int, Int), Int)]
-allAreas bounds = sortOn (Down . snd) . M.toList . itemCounts . removeEdges bounds . mapMaybe snd . M.toList
+allAreas bounds = sortOn (Down . snd) . M.toList . countMap . removeEdges bounds . mapMaybe snd . M.toList
 
 -- Get rid of any points that lie on the given bounds.
 removeEdges :: ((Int, Int), (Int, Int)) -> [(Int, Int)] -> [(Int, Int)]
