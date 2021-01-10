@@ -1,5 +1,6 @@
 module TwentySixteen.DayX where
 
+import Data.Bits
 import Data.Char
 import qualified Data.Foldable as F
 import Data.Function
