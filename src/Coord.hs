@@ -40,3 +40,19 @@ rlToTurn 'r' = turnCW
 rlToTurn 'R' = turnCW
 rlToTurn 'l' = turnCCW
 rlToTurn 'L' = turnCCW
+
+neighbors :: Coord2 -> [Coord2]
+neighbors (x, y) =
+  [ (x + xO, y + yO)
+    | xO <- [-1 .. 1],
+      yO <- [-1 .. 1],
+      xO /= 0 || yO /= 0
+  ]
+
+neighborsNoDiags :: Coord2 -> [Coord2]
+neighborsNoDiags (x, y) =
+  [ (x + 1, y),
+    (x - 1, y),
+    (x, y + 1),
+    (x, y -1)
+  ]
