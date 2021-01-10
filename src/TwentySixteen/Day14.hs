@@ -1,19 +1,14 @@
 module TwentySixteen.Day14 where
 
-import qualified Crypto.Hash.MD5 as MD5
-import qualified Data.ByteString.Base16 as B16
-import qualified Data.ByteString.Char8 as BC
 import Data.List (nub)
+import Util (md5String)
 
 salt :: String
 salt = "zpqevtbw"
 
-hashString :: String -> String
-hashString = BC.unpack . B16.encode . MD5.hash . BC.pack
-
 hashes :: Int -> [String]
 hashes n =
-  foldr (.) id (replicate n hashString)
+  foldr1 (.) (replicate n md5String)
     . (salt ++)
     . show
     <$> [0 ..]

@@ -2,6 +2,9 @@
 
 module Util where
 
+import qualified Crypto.Hash.MD5 as MD5
+import qualified Data.ByteString.Base16 as B16
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
@@ -58,3 +61,6 @@ adjustWithDefault def f k m = case M.lookup k m of
 
 traceS :: Show a => a -> b -> b
 traceS a = trace (show a)
+
+md5String :: String -> String
+md5String = BC.unpack . B16.encode . MD5.hash . BC.pack
