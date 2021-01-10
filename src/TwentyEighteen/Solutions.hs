@@ -24,37 +24,6 @@ import Text.Regex.TDFA
 import Text.Regex.TDFA.Text ()
 import Util
 
--- Do two chars react with one another?
-react :: Char -> Char -> Bool
-react x y = x /= y && (toLower x == toLower y)
-
--- Reduces a polymer by exploding pairs of Aa, Bb etc. Only runs 1 step (e.g. needs applying recursively)
-reducePolymer :: String -> String
-reducePolymer "" = ""
-reducePolymer [x] = [x]
-reducePolymer (x : y : xs) =
-  if
-      | react x y -> reducePolymer xs
-      | otherwise -> x : reducePolymer (y : xs)
-
--- Iterate reductioun until a fixed point.
-reduceCompletely :: String -> String
-reduceCompletely xs = if reducePolymer xs == xs then xs else reduceCompletely (reducePolymer xs)
-
-day5_1 :: IO Int
-day5_1 = do
-  p <- head . lines <$> readFile "input/2018/5.txt"
-  return $ length . reduceCompletely $ p
-
--- Gets a string without the given character
-without :: Char -> String -> String
-without c xs = [x | x <- xs, x /= toLower c, x /= toUpper c]
-
-day5_2 :: IO Int
-day5_2 = do
-  p <- head . lines <$> readFile "input/2018/5.txt"
-  return $ minimum $ length . reduceCompletely <$> (without <$> ['a' .. 'z'] <*> pure p)
-
 tuplify2 :: [a] -> (a, a)
 tuplify2 [x, y] = (x, y)
 

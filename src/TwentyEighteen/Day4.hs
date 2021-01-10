@@ -120,5 +120,5 @@ part2 = do
   ls <- sort . fmap (fst . head . readP_to_S parseLogSleep) . lines <$> readFile "input/2018/4.txt"
   let guards = guardTotals . guardMinutesAsleep . groupSplitLogs . splitLogs $ ls
       guardsToMostCommonMinute = (\(g, ms) -> (g, mostCommon ms)) <$> filter (not . null . snd) (M.toList guards)
-      (guard, (minute, count)) = maximumBy (comparing $ snd . snd) guardsToMostCommonMinute
+      (guard, (minute, _)) = maximumBy (comparing $ snd . snd) guardsToMostCommonMinute
    in return $ guard * minute
