@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module TwentyEighteen.Solutions where
+module TwentyEighteen.Day9 where
 
 import Control.Applicative
 import Control.Monad
@@ -95,8 +95,9 @@ runTurnUntilPoints pointsTarget game = do
   where
     (nextGame, points) = runTurn game
 
-day9 :: IO Int
-day9 = do
-  game <- runTurnUntilPoints 72058 (newGame 426)
-  game <- runTurnUntilPoints 7205800 (newGame 426)
-  return $ maximum . scores $ game
+part12 :: IO ()
+part12 = do
+  game1 <- runTurnUntilPoints 72058 (newGame 426)
+  game2 <- runTurnUntilPoints 7205800 (newGame 426)
+  print $ maximum . scores $ game1
+  print $ maximum . scores $ game2
