@@ -1,28 +1,10 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module TwentyEighteen.Day9 where
 
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Fix
-import Data.Char
-import Data.Function ((&))
-import Data.List
-import Data.List.Split
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Ord
+import Control.Monad (when)
 import qualified Data.Sequence as SQ
-import qualified Data.Set as S
-import Data.Time
 import qualified Data.Vector as V
-import Text.ParserCombinators.ReadP
-import Text.Regex.TDFA
-import Text.Regex.TDFA.Text ()
-import Util
 
 data Game = Game
   { marbles :: SQ.Seq Int,
@@ -95,9 +77,12 @@ runTurnUntilPoints pointsTarget game = do
   where
     (nextGame, points) = runTurn game
 
-part12 :: IO ()
-part12 = do
-  game1 <- runTurnUntilPoints 72058 (newGame 426)
-  game2 <- runTurnUntilPoints 7205800 (newGame 426)
-  print $ maximum . scores $ game1
-  print $ maximum . scores $ game2
+part1 :: IO Int
+part1 = do
+  game <- runTurnUntilPoints 72058 (newGame 426)
+  return $ maximum . scores $ game
+
+part2 :: IO Int
+part2 = do
+  game <- runTurnUntilPoints 7205800 (newGame 426)
+  return $ maximum . scores $ game
