@@ -21,11 +21,11 @@ step (ix1, ix2, rs) = (newIx1, newIx2, newRs)
 
 tenAfter :: Int -> ElfState -> [Int]
 tenAfter n s@(_, _, rs)
-  | length rs >= n + 10 = F.toList $ SQ.take 10 $ SQ.drop n $ rs
+  | length rs >= n + 10 = F.toList $ SQ.take 10 $ SQ.drop n rs
   | otherwise = tenAfter n (step s)
 
 part1 :: String
-part1 = intToDigit <$> (tenAfter 598701 mkElfState)
+part1 = intToDigit <$> tenAfter 598701 mkElfState
 
 stepUntil :: ElfState -> Int
 stepUntil s@(_, _, rs)
