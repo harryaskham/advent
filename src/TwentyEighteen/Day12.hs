@@ -1,26 +1,19 @@
 module TwentyEighteen.Day12 where
 
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
+import Data.List (elemIndices)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    count,
+    eof,
+    many1,
+    oneOf,
+    string,
+  )
+import Util (eol, input, readWithParser)
 
 parseInput :: GenParser Char () (Set Int, Map String Char)
 parseInput = do
@@ -39,7 +32,8 @@ parseInput = do
       return (rs, c)
 
 segmentAtCenter :: Set Int -> Int -> String
-segmentAtCenter line c = [if x `S.member` line then '#' else '.' | x <- [c - 2 .. c + 2]]
+segmentAtCenter line c =
+  [if x `S.member` line then '#' else '.' | x <- [c - 2 .. c + 2]]
 
 stepLine :: Map String Char -> Set Int -> Set Int
 stepLine rules line =
