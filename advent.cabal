@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e753c25857847fd7d9fedfd1b7a45b452981a499006eccce9702cec63d9d337b
+-- hash: 6677f019cd42c28135e4cf229c5455d17fead373b6ed0df3dc7aff41d526d41c
 
 name:           advent
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       HintMixins
       TwentyEighteen.Day1
       TwentyEighteen.Day10
+      TwentyEighteen.Day11
       TwentyEighteen.Day2
       TwentyEighteen.Day3
       TwentyEighteen.Day4
@@ -40,6 +41,7 @@ library
       TwentyEighteen.Day7
       TwentyEighteen.Day8
       TwentyEighteen.Day9
+      TwentyEighteen.DayX
       TwentyNineteen.Day15
       TwentyNineteen.Day17
       TwentyNineteen.Day18
@@ -136,6 +138,7 @@ library
     , monad-dijkstra
     , monad-memo
     , mtl
+    , parallel
     , parsec
     , pqueue
     , primes
@@ -179,6 +182,7 @@ executable advent-exe
     , monad-dijkstra
     , monad-memo
     , mtl
+    , parallel
     , parsec
     , pqueue
     , primes

@@ -8,7 +8,6 @@ import qualified Data.ByteString.Char8 as BC
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
-import Debug.Trace (trace)
 import qualified Language.Haskell.Interpreter as Hint
 import Text.ParserCombinators.Parsec (GenParser, char, parse)
 
@@ -58,9 +57,6 @@ adjustWithDefault :: Ord k => a -> (a -> a) -> k -> M.Map k a -> M.Map k a
 adjustWithDefault def f k m = case M.lookup k m of
   Nothing -> M.insert k (f def) m
   Just a -> M.insert k (f a) m
-
-traceS :: Show a => a -> b -> b
-traceS a = trace (show a)
 
 md5String :: String -> String
 md5String = BC.unpack . B16.encode . MD5.hash . BC.pack

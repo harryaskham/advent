@@ -52,6 +52,7 @@ dependencies:
 - cryptohash-md5
 - utf8-string
 - base16-bytestring
+- parallel
 
 library:
   source-dirs: src
