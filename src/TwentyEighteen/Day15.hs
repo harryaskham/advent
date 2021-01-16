@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 
 module TwentyEighteen.Day15 where
@@ -24,6 +25,7 @@ import Debug.Trace
 import Grid
 import System.IO.Unsafe
 import Text.ParserCombinators.Parsec
+import Text.RawString.QQ (r)
 import Util
 
 data Cell
@@ -67,6 +69,9 @@ enemies (Elf _ _) (Goblin _ _) = True
 enemies (Goblin _ _) (Elf _ _) = True
 enemies _ _ = False
 
+-- TODO: here and below, stopping A* as soon as one branch is good doesn't mean the rest are good
+-- we need all-shortest-paths instead
+{-
 getMins :: Ord k => PQ.MinPQueue k a -> [a]
 getMins q = let (k, _) = PQ.findMin q in go k q
   where
@@ -74,28 +79,52 @@ getMins q = let (k, _) = PQ.findMin q in go k q
       | PQ.null q = []
       | fst (PQ.findMin q) /= k = []
       | otherwise = let ((_, a), q') = PQ.deleteFindMin q in a : go k q'
+-}
+
+shortestBetweenBfs :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
+shortestBetweenBfs grid start dest =
+  go (SQ.singleton ([start], S.empty)) Nothing []
+  where
+    go SQ.Empty _ paths = drop 1 . reverse <$> paths
+    go ((path@(pos : _), seen) SQ.:<| rest) best paths
+      | pos == dest = go rest (Just $ length path) (path : paths)
+      | otherwise = go (rest SQ.>< next) best paths
+      where
+        ns = neighborsNoDiags pos
+        canVisit n =
+          n `elem` ns -- only consider neighbours
+            && M.lookup n grid == Just Empty -- that are empty
+            && not (n `S.member` seen) -- that we didn't go to yet
+            && (isNothing best || Just (length path) < best) -- where it's possible to be a shortest path
+        nextPositions = filter canVisit $ neighborsNoDiags pos
+        next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
 
 shortestPathsBetween :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
 shortestPathsBetween grid start dest =
-  go (PQ.singleton (manhattan start dest) ([start], S.singleton start))
+  drop 1 . reverse <$> go (PQ.singleton (h start) ([start], S.singleton start)) Nothing
   where
-    go :: PQ.MinPQueue Int ([Coord2], Set Coord2) -> [[Coord2]]
-    go queue
+    h pos = manhattan pos dest
+    go :: PQ.MinPQueue Int ([Coord2], Set Coord2) -> Maybe Int -> [[Coord2]]
+    go queue best
       | PQ.null queue = []
-      | (head . fst . snd $ PQ.findMin queue) == dest = fst <$> getMins queue
       | otherwise =
         let ((_, (path@(pos : _), seen)), queue') = PQ.deleteFindMin queue
-            h pos = manhattan pos dest
             ns = neighborsNoDiags pos
             canVisit n =
               n `elem` ns -- only consider neighbours
-                && grid M.! n == Empty -- that are empty
-                && n `S.member` seen -- that we didn't go to yet
+                && M.lookup n grid == Just Empty -- that are empty
+                && not (n `S.member` seen) -- that we didn't go to yet
+                && (isNothing best || Just (length path + h n) < best) -- where it's possible to be a shortest path
             nextPositions = filter canVisit $ neighborsNoDiags pos
             nextStates = (\p -> (length path + 1 + h pos, p : path, S.insert p seen)) <$> nextPositions
-         in go $ foldl' (\q (k, paths, seen) -> PQ.insert k (paths, seen) q) queue' nextStates
+            nextBest = if pos == dest then Just (length path) else best
+            nextRun = go (foldl' (\q (k, paths, seen) -> PQ.insert k (paths, seen) q) queue' nextStates) nextBest
+         in traceShow (length path, best, start, pos, dest) $
+              if pos == dest
+                then path : nextRun
+                else nextRun
 
--- TODO: Need faster. Need shortest paths between here and a fixed set of other coordinates.
+{-
 shortestPaths :: Grid Cell -> Coord2 -> Map Coord2 [[Coord2]]
 shortestPaths grid start = go (SQ.singleton [start]) M.empty
   where
@@ -120,20 +149,34 @@ shortestPaths grid start = go (SQ.singleton [start]) M.empty
             . M.keys
             . M.filterWithKey canVisit
             $ grid
+-}
 
 nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
 nextStep grid pos unit
-  | null targets = Nothing
+  | all null pathsToTargets = Nothing
   | otherwise = Just selectedStep
   where
-    paths = shortestPaths grid pos
     targets =
       filter
-        ((&&) <$> (`M.member` paths) <*> (/= pos))
+        (\c -> c /= pos && grid M.! c == Empty)
         (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid)))
-    sortKey (x, y) = (length . head $ paths M.! (x, y), y, x)
-    target = traceShowId $ head $ sortOn sortKey targets
-    targetPaths = paths M.! target
+    pathsToTargets = shortestBetweenBfs grid pos <$> targets
+    targetPathsDistance :: [(Coord2, [[Coord2]], Int)]
+    targetPathsDistance =
+      [ (t, paths, length (head paths))
+        | (t, paths) <- zip targets pathsToTargets,
+          not (null paths)
+      ]
+    closestTriples :: [(Coord2, [[Coord2]], Int)]
+    closestTriples =
+      head
+        . groupOn fst3
+        . sortOn (swap . fst3)
+        . head
+        . groupOn thd3
+        . sortOn thd3
+        $ targetPathsDistance
+    targetPaths = snd3 =<< closestTriples
     steps = head <$> targetPaths
     selectedStep = head $ sortOn swap steps
 
@@ -214,7 +257,7 @@ runGame n grid = traceShow n $
 
 part1 :: IO Int
 part1 = do
-  (n, grid) <- runGame 0 . toGrid fromChar . lines <$> input 2018 15
+  (n, grid) <- runGame 0 . toGrid fromChar . lines <$> exampleInput 2018 15
   let totalHp = sum (getHp <$> grid)
   print (n, totalHp)
   return $ n * totalHp
