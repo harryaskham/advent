@@ -9,6 +9,7 @@ import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
 import qualified Language.Haskell.Interpreter as Hint
+import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, parse)
 
 input :: Int -> Int -> IO String
@@ -60,3 +61,14 @@ adjustWithDefault def f k m = case M.lookup k m of
 
 md5String :: String -> String
 md5String = BC.unpack . B16.encode . MD5.hash . BC.pack
+
+tracePause :: String -> a -> a
+tracePause s a = unsafePerformIO $ do
+  putStrLn s
+  getLine
+  return a
+
+traceStrLn :: String -> a -> a
+traceStrLn s a = unsafePerformIO $ do
+  putStrLn s
+  return a

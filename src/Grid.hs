@@ -1,6 +1,6 @@
 module Grid where
 
-import Data.List (nub)
+import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 
 type Grid a = M.Map (Int, Int) a
@@ -67,3 +67,8 @@ joinGrids grids =
   where
     (maxGX, maxGY) = maxXY grids
     (maxX, maxY) = maxXY $ grids M.! (0, 0)
+
+pretty :: Show a => Grid a -> String
+pretty grid = intercalate "\n" [concat [show $ grid M.! (x, y) | x <- [0 .. maxX]] | y <- [0 .. maxY]]
+  where
+    (maxX, maxY) = maxXY grid
