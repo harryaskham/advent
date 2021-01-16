@@ -81,6 +81,36 @@ getMins q = let (k, _) = PQ.findMin q in go k q
       | otherwise = let ((_, a), q') = PQ.deleteFindMin q in a : go k q'
 -}
 
+-- TODO: Maybe we can do all paths in one swoop disambiguating along the way
+-- i.e. don't set a dest, but when we get back to a dest another way, compare paths and see
+-- if we should store the new one based on FIRST STEP ONLY this is cheap!
+
+-- Okay this one tiebreaks and gives the paths
+-- TODO: Still need to run this once per move
+-- It doesn't even complete once, but simple memoization of the
+-- blocked / unblocked locations would work for future speedup
+-- returns the paths whose first move is in reading order to every position
+-- TODO: OMG it also gets it wrong!!! example big is slow, fucks sake
+allPaths :: Grid Cell -> Coord2 -> Map Coord2 [Coord2]
+allPaths grid start = go (SQ.singleton ([start], S.empty)) M.empty
+  where
+    go SQ.Empty paths = paths
+    go q@((path@(pos : _), seen) SQ.:<| rest) paths =
+      case M.lookup pos paths of
+        Nothing -> go (rest SQ.>< next) (M.insert pos (drop 1 . reverse $ path) paths)
+        Just oldPath ->
+          go
+            (rest SQ.>< next)
+            (M.insert pos (minimumOn ((,) <$> length <*> (swap . head)) [oldPath, drop 1 . reverse $ path]) paths)
+      where
+        ns = neighborsNoDiags pos
+        canVisit n =
+          n `elem` ns -- only consider neighbours
+            && M.lookup n grid == Just Empty -- that are empty
+            && not (n `S.member` seen) -- that we didn't go to yet
+        nextPositions = filter canVisit $ neighborsNoDiags pos
+        next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
+
 shortestBetweenBfs :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
 shortestBetweenBfs grid start dest =
   go (SQ.singleton ([start], S.empty)) Nothing []
@@ -88,7 +118,7 @@ shortestBetweenBfs grid start dest =
     go SQ.Empty _ paths = drop 1 . reverse <$> paths
     go ((path@(pos : _), seen) SQ.:<| rest) best paths
       | pos == dest = go rest (Just $ length path) (path : paths)
-      | otherwise = go (rest SQ.>< next) best paths
+      | otherwise = traceShow (length rest) $ go (rest SQ.>< next) best paths
       where
         ns = neighborsNoDiags pos
         canVisit n =
@@ -99,8 +129,8 @@ shortestBetweenBfs grid start dest =
         nextPositions = filter canVisit $ neighborsNoDiags pos
         next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
 
-shortestPathsBetween :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
-shortestPathsBetween grid start dest =
+shortestBetweenAStar :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
+shortestBetweenAStar grid start dest =
   drop 1 . reverse <$> go (PQ.singleton (h start) ([start], S.singleton start)) Nothing
   where
     h pos = manhattan pos dest
@@ -153,13 +183,19 @@ shortestPaths grid start = go (SQ.singleton [start]) M.empty
 
 nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
 nextStep grid pos unit
-  | all null pathsToTargets = Nothing
+  | null pathsToTargets = Nothing
   | otherwise = Just selectedStep
   where
+    paths = allPaths grid pos
     targets =
       filter
         (\c -> c /= pos && grid M.! c == Empty)
         (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid)))
+    pathsToTargets = catMaybes $ M.lookup <$> targets <*> pure paths
+    shortestPath = head $ sortOn length pathsToTargets
+    selectedStep = head shortestPath
+
+{-
     pathsToTargets = shortestBetweenBfs grid pos <$> targets
     targetPathsDistance :: [(Coord2, [[Coord2]], Int)]
     targetPathsDistance =
@@ -179,6 +215,7 @@ nextStep grid pos unit
     targetPaths = snd3 =<< closestTriples
     steps = head <$> targetPaths
     selectedStep = head $ sortOn swap steps
+-}
 
 move :: Coord2 -> Coord2 -> Grid Cell -> Grid Cell
 move source dest grid =
