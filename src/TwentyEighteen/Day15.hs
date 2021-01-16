@@ -12,6 +12,7 @@ import Data.List.Extra
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.PQueue.Prio.Min as PQ
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
@@ -66,6 +67,35 @@ enemies (Elf _ _) (Goblin _ _) = True
 enemies (Goblin _ _) (Elf _ _) = True
 enemies _ _ = False
 
+getMins :: Ord k => PQ.MinPQueue k a -> [a]
+getMins q = let (k, _) = PQ.findMin q in go k q
+  where
+    go k q
+      | PQ.null q = []
+      | fst (PQ.findMin q) /= k = []
+      | otherwise = let ((_, a), q') = PQ.deleteFindMin q in a : go k q'
+
+shortestPathsBetween :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
+shortestPathsBetween grid start dest =
+  go (PQ.singleton (manhattan start dest) ([start], S.singleton start))
+  where
+    go :: PQ.MinPQueue Int ([Coord2], Set Coord2) -> [[Coord2]]
+    go queue
+      | PQ.null queue = []
+      | (head . fst . snd $ PQ.findMin queue) == dest = fst <$> getMins queue
+      | otherwise =
+        let ((_, (path@(pos : _), seen)), queue') = PQ.deleteFindMin queue
+            h pos = manhattan pos dest
+            ns = neighborsNoDiags pos
+            canVisit n =
+              n `elem` ns -- only consider neighbours
+                && grid M.! n == Empty -- that are empty
+                && n `S.member` seen -- that we didn't go to yet
+            nextPositions = filter canVisit $ neighborsNoDiags pos
+            nextStates = (\p -> (length path + 1 + h pos, p : path, S.insert p seen)) <$> nextPositions
+         in go $ foldl' (\q (k, paths, seen) -> PQ.insert k (paths, seen) q) queue' nextStates
+
+-- TODO: Need faster. Need shortest paths between here and a fixed set of other coordinates.
 shortestPaths :: Grid Cell -> Coord2 -> Map Coord2 [[Coord2]]
 shortestPaths grid start = go (SQ.singleton [start]) M.empty
   where

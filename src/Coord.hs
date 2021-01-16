@@ -17,6 +17,9 @@ type Coord2 = (Int, Int)
 manhattan0 :: Coord2 -> Int
 manhattan0 = (+) <$> (abs . fst) <*> (abs . snd)
 
+manhattan :: Coord2 -> Coord2 -> Int
+manhattan (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
+
 move :: Dir2 -> Int -> Coord2 -> Coord2
 move DirUp n (x, y) = (x, y - n)
 move DirDown n (x, y) = (x, y + n)
