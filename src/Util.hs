@@ -18,6 +18,9 @@ input year day = readFile $ "input/" ++ show year ++ "/" ++ show day ++ ".txt"
 exampleInput :: Int -> Int -> IO String
 exampleInput year day = readFile $ "input/" ++ show year ++ "/" ++ show day ++ "_example.txt"
 
+exampleInputN :: Int -> Int -> Int -> IO String
+exampleInputN year day n = readFile $ "input/" ++ show year ++ "/" ++ show day ++ "_example_" ++ show n ++ ".txt"
+
 infixl 5 <$$>
 
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
@@ -71,5 +74,4 @@ tracePause s a = unsafePerformIO $ do
 traceStrLn :: String -> a -> a
 traceStrLn s a = unsafePerformIO $ do
   putStrLn s
-  getLine
   return a

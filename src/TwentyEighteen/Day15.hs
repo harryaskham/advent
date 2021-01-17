@@ -110,9 +110,28 @@ allPaths grid start = go (SQ.singleton ([start], S.empty)) M.empty
           n `elem` ns -- only consider neighbours
             && M.lookup n grid == Just Empty -- that are empty
             && not (n `S.member` seen) -- that we didn't go to yet
-            && (not (n `M.member` paths) || length (paths M.! n) >= length path) -- and stop for longer paths
-        nextPositions = filter canVisit $ neighborsNoDiags pos
+            && not (n `M.member` paths)
+        nextPositions = sortOn swap $ filter canVisit $ neighborsNoDiags pos
         next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
+
+-- TODO early stopping if we are longer than any target path
+simpleAllPaths :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
+simpleAllPaths grid start targets = go (SQ.singleton [start]) M.empty
+  where
+    go SQ.Empty paths = paths
+    go (path@(pos : _) SQ.:<| rest) paths
+      -- stop early if we already longer than the targets
+      | not (null targetPaths) && length path > minimum (length <$> targetPaths) = paths
+      | otherwise = go (rest SQ.>< next) (M.insert pos (drop 1 . reverse $ path) paths)
+      where
+        targetPaths = catMaybes $ M.lookup <$> targets <*> pure paths
+        ns = neighborsNoDiags pos
+        canVisit n =
+          n `elem` ns
+            && M.lookup n grid == Just Empty
+            && not (n `M.member` paths)
+        nextPositions = sortOn swap $ filter canVisit ns
+        next = SQ.fromList ((: path) <$> nextPositions)
 
 shortestBetweenBfs :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
 shortestBetweenBfs grid start dest =
@@ -121,7 +140,9 @@ shortestBetweenBfs grid start dest =
     go SQ.Empty _ paths = drop 1 . reverse <$> paths
     go ((path@(pos : _), seen) SQ.:<| rest) best paths
       | pos == dest = go rest (Just $ length path) (path : paths)
-      | otherwise = traceShow (length rest) $ go (rest SQ.>< next) best paths
+      | otherwise =
+        -- traceShow (length rest) $
+        go (rest SQ.>< next) best paths
       where
         ns = neighborsNoDiags pos
         canVisit n =
@@ -132,8 +153,8 @@ shortestBetweenBfs grid start dest =
         nextPositions = filter canVisit $ neighborsNoDiags pos
         next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
 
-shortestBetweenAStar :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
-shortestBetweenAStar grid start dest =
+shortestBetweenAStarAllPaths :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
+shortestBetweenAStarAllPaths grid start dest =
   drop 1 . reverse <$> go (PQ.singleton (h start) ([start], S.singleton start)) Nothing
   where
     h pos = manhattan pos dest
@@ -152,10 +173,49 @@ shortestBetweenAStar grid start dest =
             nextStates = (\p -> (length path + 1 + h pos, p : path, S.insert p seen)) <$> nextPositions
             nextBest = if pos == dest then Just (length path) else best
             nextRun = go (foldl' (\q (k, paths, seen) -> PQ.insert k (paths, seen) q) queue' nextStates) nextBest
-         in traceShow (length path, best, start, pos, dest) $
-              if pos == dest
-                then path : nextRun
-                else nextRun
+         in -- traceShow (length path, best, start, pos, dest) $
+            if pos == dest
+              then path : nextRun
+              else nextRun
+
+-- TODO: Do an early-terminating all-targets A* starting with the targets closest manhattanwise
+-- TODO: That will place caps on the other A* searches
+-- TODO: Could also consider an A* with a cost function that naturally takes it towards the closest most appropriate target
+-- TODO: So zero when we're on top-left
+
+-- TODO: e.g. terminate after N steps once we've found the good one
+shortestBetweenAStarMany :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
+shortestBetweenAStarMany grid start targets =
+  go (sortOn (manhattan start) targets) Nothing M.empty
+  where
+    go [] _ paths = paths
+    go (t : ts) best paths =
+      let path = shortestBetweenAStar grid start t best
+       in go ts (if Just (length path) < best then Just (length path) else best) (M.insert t path paths)
+
+shortestBetweenAStar :: Grid Cell -> Coord2 -> Coord2 -> Maybe Int -> [Coord2]
+shortestBetweenAStar grid start dest stopAfter =
+  -- traceShow (start, dest) $
+  drop 1 . reverse $ go (PQ.singleton (h start) ([start], S.singleton start))
+  where
+    h pos = manhattan pos dest
+    go :: PQ.MinPQueue Int ([Coord2], Set Coord2) -> [Coord2]
+    go queue
+      | PQ.null queue = []
+      | otherwise =
+        let ((_, (path@(pos : _), seen)), queue') = PQ.deleteFindMin queue
+            ns = neighborsNoDiags pos
+            canVisit n =
+              n `elem` ns -- only consider neighbours
+                && M.lookup n grid == Just Empty -- that are empty
+                && not (n `S.member` seen) -- that we didn't go to yet
+                && (isNothing stopAfter || Just (length path + 1) <= stopAfter)
+            -- explore in reading order
+            nextPositions = sortOn swap $ filter canVisit $ neighborsNoDiags pos
+            nextStates = (\p -> (length path + 1 + h pos, p : path, S.insert p seen)) <$> nextPositions
+            nextRun = go (foldl' (\q (k, paths, seen) -> PQ.insert k (paths, seen) q) queue' nextStates)
+         in --traceShow (PQ.size queue, length path) $
+            if pos == dest then path else nextRun
 
 {-
 shortestPaths :: Grid Cell -> Coord2 -> Map Coord2 [[Coord2]]
@@ -184,16 +244,102 @@ shortestPaths grid start = go (SQ.singleton [start]) M.empty
             $ grid
 -}
 
+-- TODO: Reachability should be done with flood fill
+-- use reachability to make the choice of target
+-- once we have the choice of target we do a single AStar
+
+reachable :: Grid Cell -> Coord2 -> Set Coord2
+reachable grid start = go (SQ.singleton start) S.empty
+  where
+    go SQ.Empty seen = seen
+    go (pos SQ.:<| queue) seen = go (queue SQ.>< next) (S.insert pos seen)
+      where
+        next =
+          SQ.fromList
+            [ p
+              | p <- neighborsNoDiags pos,
+                M.lookup p grid == Just Empty,
+                not $ p `S.member` seen
+            ]
+
+-- TODO: Make this efficient to win
+-- TODO: Could also A* to every possible reachable target
+-- TODO: Look at neighbours in READING ORDER to get a best-path A*!
+-- TODO: Think this is still bad
+bfsTowards :: Grid Cell -> Coord2 -> Set Coord2 -> Map Coord2 [Coord2]
+bfsTowards grid start targets =
+  go (SQ.singleton ([start], S.empty)) Nothing M.empty
+  where
+    go SQ.Empty _ paths = drop 1 . reverse <$> paths
+    go ((path@(pos : _), seen) SQ.:<| rest) best paths
+      | pos `S.member` targets = go rest (Just $ length path) (M.insertWith (flip const) pos path paths)
+      | otherwise = go (rest SQ.>< next) best paths
+      where
+        ns = neighborsNoDiags pos
+        canVisit n =
+          (isNothing best || Just (length path) < best) -- where it's possible to be a shortest path
+            && n `elem` ns -- only consider neighbours
+            && M.lookup n grid == Just Empty -- that are empty
+            && not (n `S.member` seen) -- that we didn't go to yet
+            -- If we explore next-positions in reading order then the first path we see to each target should be the one
+        nextPositions = sortOn swap $ filter canVisit $ neighborsNoDiags pos
+        next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
+
 nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
 nextStep grid pos unit
-  | null targetPathsDistances = Nothing
+  | null targetPathDistance = Nothing
   | otherwise = Just selectedStep
   where
-    paths = allPaths grid pos
     targets =
-      filter
-        (\c -> c /= pos && grid M.! c == Empty)
-        (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid)))
+      [ t
+        | t <- (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid))),
+          t /= pos
+      ]
+    paths = simpleAllPaths grid pos targets
+    targetPathDistance =
+      [ (t, paths M.! t, length (paths M.! t))
+        | t <- targets,
+          t `M.member` paths
+      ]
+    selectedStep = head . snd3 . head . head . groupOn fst3 . sortOn (swap . fst3) . head . groupOn thd3 . sortOn thd3 $ targetPathDistance
+
+{-
+canReach = reachable grid pos
+allTargets =
+  [ t
+    | t <- (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid))),
+      t /= pos,
+      t `S.member` canReach
+  ]
+targetPaths = M.toList $ shortestBetweenAStarMany grid pos allTargets
+selectedStep = head . snd . head . sortOn (swap . head . snd) . head . groupOn fst . sortOn (swap . fst) . head . groupOn (length . snd) . sortOn (length . snd) $ targetPaths
+-}
+
+-- TODO: impl this, it's a bfs that stops at any target but then also
+-- returns any targets towards other paths of the same length
+-- enture this BFS also prefers paths whose first steps are in reading order.
+
+{-
+targetPaths =
+  sortOn (swap . head . snd)
+    . head
+    . groupOn (fst)
+    . sortOn (swap . fst)
+    . head
+    . groupOn (length . snd)
+    . sortOn (length . snd)
+    $ [(t, shortestBetweenAStar grid pos t) | t <- allTargets]
+(_, targetPath) = head targetPaths
+selectedStep = head targetPath
+-}
+
+{-
+targetPaths = M.toList $ bfsTowards grid pos (S.fromList allTargets)
+(_, path) = head $ sortOn (swap . fst) targetPaths
+selectedStep = head path
+-}
+
+{-
     targetPathsDistances =
       [ (t, paths M.! t, length $ paths M.! t)
         | t <- targets,
@@ -202,6 +348,7 @@ nextStep grid pos unit
     validPaths = fmap snd3 . head . groupOn thd3 . sortOn thd3 $ targetPathsDistances
     validSteps = head <$> validPaths
     selectedStep = head $ sortOn swap validSteps
+-}
 
 {-
     pathsToTargets = shortestBetweenBfs grid pos <$> targets
@@ -268,15 +415,23 @@ cellTurn :: Grid Cell -> (Coord2, Cell) -> EndTurn
 cellTurn grid (pos, unit)
   | gameOver grid = GameOver grid
   | grid M.! pos == Empty = Running grid
-  | canAttack grid pos unit = traceShow (unit, pos) $ traceShow "attack" Running $ attack grid pos unit
-  | otherwise = traceShow (unit, pos) $
+  | canAttack grid pos unit =
+    -- traceShow (unit, pos) $
+    --  traceShow "attack" $
+    Running $ attack grid pos unit
+  | otherwise =
+    -- traceShow (unit, pos) $
     case moveToTarget grid pos unit of
-      Nothing -> traceShow "can't move" $ Running grid
+      Nothing ->
+        -- traceShow "can't move" $
+        Running grid
       Just (grid', pos') ->
-        traceShow "moved" $
-          if canAttack grid' pos' unit
-            then traceShow "attack" $ Running $ attack grid' pos' unit
-            else traceShow "no attack" $ Running grid'
+        -- traceShow "moved" $
+        if canAttack grid' pos' unit
+          then -- traceShow "attack" $
+            Running $ attack grid' pos' unit
+          else -- traceShow "no attack" $
+            Running grid'
 
 gameTurn :: Grid Cell -> EndTurn
 gameTurn grid = runTurns grid sortedCells
@@ -285,8 +440,12 @@ gameTurn grid = runTurns grid sortedCells
     runTurns grid [] = Running grid
     runTurns grid (c : cs) =
       case cellTurn grid c of
-        GameOver grid' -> traceStrLn (pretty grid') $ GameOver grid'
-        Running grid' -> traceStrLn (pretty grid') $ runTurns grid' cs
+        GameOver grid' ->
+          traceStrLn (pretty grid') $
+            GameOver grid'
+        Running grid' ->
+          traceStrLn (pretty grid') $
+            runTurns grid' cs
 
 gameOver :: Grid Cell -> Bool
 gameOver grid = noElves || noGoblins
@@ -295,14 +454,29 @@ gameOver grid = noElves || noGoblins
     noGoblins = M.size (M.filter (isGoblin) grid) == 0
 
 runGame :: Int -> Grid Cell -> (Int, Grid Cell)
-runGame n grid = traceShow n $
+runGame n grid =
+  -- traceShow n $
   case gameTurn grid of
     Running grid' -> runGame (n + 1) grid'
     GameOver grid' -> (n, grid')
 
+solve :: Grid Cell -> Int
+solve grid = n * totalHp
+  where
+    (n, grid') = runGame 0 grid
+    totalHp = sum (getHp <$> grid')
+
 part1 :: IO Int
-part1 = do
-  (n, grid) <- runGame 0 . toGrid fromChar . lines <$> input 2018 15
-  let totalHp = sum (getHp <$> grid)
-  print (n, totalHp)
-  return $ n * totalHp
+part1 = solve . toGrid fromChar . lines <$> input 2018 15
+
+tests :: IO ()
+tests = do
+  let f (input, expected) = do
+        i <- input
+        print (solve . toGrid fromChar . lines $ i, expected)
+  f (exampleInputN 2018 15 1, 27730)
+  f (exampleInputN 2018 15 2, 36334)
+  f (exampleInputN 2018 15 3, 39514)
+  f (exampleInputN 2018 15 4, 27755)
+  f (exampleInputN 2018 15 5, 28944)
+  f (exampleInputN 2018 15 6, 18740)
