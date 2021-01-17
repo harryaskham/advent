@@ -69,17 +69,23 @@ enemies (Elf _ _) (Goblin _ _) = True
 enemies (Goblin _ _) (Elf _ _) = True
 enemies _ _ = False
 
+bestPath :: [Coord2] -> [Coord2] -> [Coord2]
+bestPath p1 p2 = minimumOn ((,) <$> length <*> (swap . head)) [p1, p2]
+
+fixPath :: [Coord2] -> [Coord2]
+fixPath = drop 1 . reverse
+
 allPaths :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
 allPaths grid start targets = go (SQ.singleton [start]) M.empty
   where
     go SQ.Empty paths = paths
     go (path@(pos : _) SQ.:<| rest) paths
       -- stop early if we already longer than the targets
-      | not (null targetPaths) && length path >= minimum (length <$> targetPaths) = paths
+      | not (null targetPaths) && length path > minimum (length <$> targetPaths) = go rest paths
       -- if we already have a path to this point then stop
       | pos `M.member` paths = go rest paths
       -- otherwise track the path
-      | otherwise = go (rest SQ.>< next) (M.insert pos (drop 1 . reverse $ path) paths)
+      | otherwise = go (rest SQ.>< next) (M.insert pos (fixPath path) paths)
       where
         targetPaths = catMaybes $ M.lookup <$> targets <*> pure paths
         ns = neighborsNoDiags pos
@@ -196,7 +202,8 @@ nextStep grid pos unit
     targets =
       [ t
         | t <- (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid))),
-          t /= pos
+          t /= pos,
+          M.lookup t grid == Just Empty
       ]
     paths = allPaths grid pos targets
     targetPathDistance =
@@ -287,11 +294,11 @@ gameTurn grid = runTurns grid sortedCells
     runTurns grid (c : cs) =
       case cellTurn grid c of
         GameOver grid' ->
-          --traceStrLn (pretty grid') $
-          GameOver grid'
+          traceStrLn (pretty grid') $
+            GameOver grid'
         Running grid' ->
-          --traceStrLn (pretty grid') $
-          runTurns grid' cs
+          traceStrLn (pretty grid') $
+            runTurns grid' cs
 
 gameOver :: Grid Cell -> Bool
 gameOver grid = noElves || noGoblins
