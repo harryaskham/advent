@@ -122,6 +122,9 @@ simpleAllPaths grid start targets = go (SQ.singleton [start]) M.empty
     go (path@(pos : _) SQ.:<| rest) paths
       -- stop early if we already longer than the targets
       | not (null targetPaths) && length path > minimum (length <$> targetPaths) = paths
+      -- if we already have a path to this point then stop
+      | pos `M.member` paths = go rest paths
+      -- otherwise track the path
       | otherwise = go (rest SQ.>< next) (M.insert pos (drop 1 . reverse $ path) paths)
       where
         targetPaths = catMaybes $ M.lookup <$> targets <*> pure paths
@@ -244,10 +247,6 @@ shortestPaths grid start = go (SQ.singleton [start]) M.empty
             $ grid
 -}
 
--- TODO: Reachability should be done with flood fill
--- use reachability to make the choice of target
--- once we have the choice of target we do a single AStar
-
 reachable :: Grid Cell -> Coord2 -> Set Coord2
 reachable grid start = go (SQ.singleton start) S.empty
   where
@@ -258,6 +257,26 @@ reachable grid start = go (SQ.singleton start) S.empty
           SQ.fromList
             [ p
               | p <- neighborsNoDiags pos,
+                M.lookup p grid == Just Empty,
+                not $ p `S.member` seen
+            ]
+
+-- Faster reachability check to see if any enemy is reachable
+enemyReachable :: Grid Cell -> Coord2 -> Cell -> Bool
+enemyReachable grid pos unit = go (SQ.singleton pos) S.empty
+  where
+    go SQ.Empty _ = False
+    go (pos SQ.:<| queue) seen
+      | enemyFound = True
+      | pos `S.member` seen = go queue seen
+      | otherwise = go (queue SQ.>< next) (S.insert pos seen)
+      where
+        ns = neighborsNoDiags pos
+        enemyFound = any (enemies unit) (catMaybes $ M.lookup <$> ns <*> pure grid)
+        next =
+          SQ.fromList
+            [ p
+              | p <- ns,
                 M.lookup p grid == Just Empty,
                 not $ p `S.member` seen
             ]
@@ -287,7 +306,7 @@ bfsTowards grid start targets =
 
 nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
 nextStep grid pos unit
-  | null targetPathDistance = Nothing
+  | not $ enemyReachable grid pos unit = Nothing
   | otherwise = Just selectedStep
   where
     targets =
@@ -416,22 +435,24 @@ cellTurn grid (pos, unit)
   | gameOver grid = GameOver grid
   | grid M.! pos == Empty = Running grid
   | canAttack grid pos unit =
-    -- traceShow (unit, pos) $
-    --  traceShow "attack" $
-    Running $ attack grid pos unit
+    traceShow (unit, pos) $
+      traceShow "attack" $
+        Running $ attack grid pos unit
   | otherwise =
-    -- traceShow (unit, pos) $
-    case moveToTarget grid pos unit of
-      Nothing ->
-        -- traceShow "can't move" $
-        Running grid
-      Just (grid', pos') ->
-        -- traceShow "moved" $
-        if canAttack grid' pos' unit
-          then -- traceShow "attack" $
-            Running $ attack grid' pos' unit
-          else -- traceShow "no attack" $
-            Running grid'
+    traceShow (unit, pos) $
+      case moveToTarget grid pos unit of
+        Nothing ->
+          traceShow "can't move" $
+            Running grid
+        Just (grid', pos') ->
+          traceShow "moved" $
+            if canAttack grid' pos' unit
+              then
+                traceShow "attack" $
+                  Running $ attack grid' pos' unit
+              else
+                traceShow "no attack" $
+                  Running grid'
 
 gameTurn :: Grid Cell -> EndTurn
 gameTurn grid = runTurns grid sortedCells
@@ -441,11 +462,11 @@ gameTurn grid = runTurns grid sortedCells
     runTurns grid (c : cs) =
       case cellTurn grid c of
         GameOver grid' ->
-          traceStrLn (pretty grid') $
-            GameOver grid'
+          --traceStrLn (pretty grid') $
+          GameOver grid'
         Running grid' ->
-          traceStrLn (pretty grid') $
-            runTurns grid' cs
+          --traceStrLn (pretty grid') $
+          runTurns grid' cs
 
 gameOver :: Grid Cell -> Bool
 gameOver grid = noElves || noGoblins
@@ -455,10 +476,10 @@ gameOver grid = noElves || noGoblins
 
 runGame :: Int -> Grid Cell -> (Int, Grid Cell)
 runGame n grid =
-  -- traceShow n $
-  case gameTurn grid of
-    Running grid' -> runGame (n + 1) grid'
-    GameOver grid' -> (n, grid')
+  traceShow n $
+    case gameTurn grid of
+      Running grid' -> runGame (n + 1) grid'
+      GameOver grid' -> (n, grid')
 
 solve :: Grid Cell -> Int
 solve grid = n * totalHp
@@ -474,6 +495,8 @@ tests = do
   let f (input, expected) = do
         i <- input
         print (solve . toGrid fromChar . lines $ i, expected)
+        _ <- getLine
+        print ""
   f (exampleInputN 2018 15 1, 27730)
   f (exampleInputN 2018 15 2, 36334)
   f (exampleInputN 2018 15 3, 39514)
