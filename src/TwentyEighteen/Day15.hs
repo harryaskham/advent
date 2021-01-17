@@ -91,6 +91,7 @@ getMins q = let (k, _) = PQ.findMin q in go k q
 -- blocked / unblocked locations would work for future speedup
 -- returns the paths whose first move is in reading order to every position
 -- TODO: OMG it also gets it wrong!!! example big is slow, fucks sake
+-- we are suffering from the backtracking G again
 allPaths :: Grid Cell -> Coord2 -> Map Coord2 [Coord2]
 allPaths grid start = go (SQ.singleton ([start], S.empty)) M.empty
   where
@@ -108,6 +109,7 @@ allPaths grid start = go (SQ.singleton ([start], S.empty)) M.empty
           n `elem` ns -- only consider neighbours
             && M.lookup n grid == Just Empty -- that are empty
             && not (n `S.member` seen) -- that we didn't go to yet
+            && (not (n `M.member` paths) || length (paths M.! n) >= length path) -- and stop for longer paths
         nextPositions = filter canVisit $ neighborsNoDiags pos
         next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
 
@@ -183,7 +185,7 @@ shortestPaths grid start = go (SQ.singleton [start]) M.empty
 
 nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
 nextStep grid pos unit
-  | null pathsToTargets = Nothing
+  | null targetPathsDistances = Nothing
   | otherwise = Just selectedStep
   where
     paths = allPaths grid pos
@@ -191,9 +193,14 @@ nextStep grid pos unit
       filter
         (\c -> c /= pos && grid M.! c == Empty)
         (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid)))
-    pathsToTargets = catMaybes $ M.lookup <$> targets <*> pure paths
-    shortestPath = head $ sortOn length pathsToTargets
-    selectedStep = head shortestPath
+    targetPathsDistances =
+      [ (t, paths M.! t, length $ paths M.! t)
+        | t <- targets,
+          t `M.member` paths
+      ]
+    validPaths = fmap snd3 . head . groupOn thd3 . sortOn thd3 $ targetPathsDistances
+    validSteps = head <$> validPaths
+    selectedStep = head $ sortOn swap validSteps
 
 {-
     pathsToTargets = shortestBetweenBfs grid pos <$> targets

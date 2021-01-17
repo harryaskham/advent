@@ -71,4 +71,5 @@ tracePause s a = unsafePerformIO $ do
 traceStrLn :: String -> a -> a
 traceStrLn s a = unsafePerformIO $ do
   putStrLn s
+  getLine
   return a
