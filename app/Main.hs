@@ -1,6 +1,8 @@
 module Main where
 
-import TwentyEighteen.Day14
+import TwentyEighteen.Day15
 
 main :: IO ()
-main = print part2
+main = do
+  x <- part1
+  print x

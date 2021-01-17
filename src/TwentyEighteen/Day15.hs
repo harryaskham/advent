@@ -90,13 +90,14 @@ getMins q = let (k, _) = PQ.findMin q in go k q
 -- It doesn't even complete once, but simple memoization of the
 -- blocked / unblocked locations would work for future speedup
 -- returns the paths whose first move is in reading order to every position
--- TODO: OMG it also gets it wrong!!! example big is slow, fucks sake
--- we are suffering from the backtracking G again
+-- TODO: way more pruning
+-- TODO: way simple memo
 allPaths :: Grid Cell -> Coord2 -> Map Coord2 [Coord2]
 allPaths grid start = go (SQ.singleton ([start], S.empty)) M.empty
   where
     go SQ.Empty paths = paths
     go q@((path@(pos : _), seen) SQ.:<| rest) paths =
+      -- traceShow (M.size paths, length q) $
       case M.lookup pos paths of
         Nothing -> go (rest SQ.>< next) (M.insert pos (drop 1 . reverse $ path) paths)
         Just oldPath ->
@@ -301,7 +302,7 @@ runGame n grid = traceShow n $
 
 part1 :: IO Int
 part1 = do
-  (n, grid) <- runGame 0 . toGrid fromChar . lines <$> exampleInput 2018 15
+  (n, grid) <- runGame 0 . toGrid fromChar . lines <$> input 2018 15
   let totalHp = sum (getHp <$> grid)
   print (n, totalHp)
   return $ n * totalHp
