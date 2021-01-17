@@ -319,7 +319,17 @@ nextStep grid pos unit
         | t <- targets,
           t `M.member` paths
       ]
-    selectedStep = head . snd3 . head . head . groupOn fst3 . sortOn (swap . fst3) . head . groupOn thd3 . sortOn thd3 $ targetPathDistance
+    selectedStep =
+      head
+        . snd3
+        . head
+        . head
+        . groupOn fst3
+        . sortOn (swap . fst3)
+        . head
+        . groupOn thd3
+        . sortOn thd3
+        $ targetPathDistance
 
 {-
 canReach = reachable grid pos
