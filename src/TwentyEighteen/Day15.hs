@@ -114,14 +114,13 @@ allPaths grid start = go (SQ.singleton ([start], S.empty)) M.empty
         nextPositions = sortOn swap $ filter canVisit $ neighborsNoDiags pos
         next = SQ.fromList [(p, S.insert pos seen) | p <- ((: path) <$> nextPositions)]
 
--- TODO early stopping if we are longer than any target path
 simpleAllPaths :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
 simpleAllPaths grid start targets = go (SQ.singleton [start]) M.empty
   where
     go SQ.Empty paths = paths
     go (path@(pos : _) SQ.:<| rest) paths
       -- stop early if we already longer than the targets
-      | not (null targetPaths) && length path > minimum (length <$> targetPaths) = paths
+      | not (null targetPaths) && length path >= minimum (length <$> targetPaths) = paths
       -- if we already have a path to this point then stop
       | pos `M.member` paths = go rest paths
       -- otherwise track the path
@@ -482,7 +481,7 @@ runGame n grid =
       GameOver grid' -> (n, grid')
 
 solve :: Grid Cell -> Int
-solve grid = n * totalHp
+solve grid = traceShow (n, totalHp) $ n * totalHp
   where
     (n, grid') = runGame 0 grid
     totalHp = sum (getHp <$> grid')
@@ -503,3 +502,5 @@ tests = do
   f (exampleInputN 2018 15 4, 27755)
   f (exampleInputN 2018 15 5, 28944)
   f (exampleInputN 2018 15 6, 18740)
+
+-- 209838 too low
