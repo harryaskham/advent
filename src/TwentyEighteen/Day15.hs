@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
 
 module TwentyEighteen.Day15 where
@@ -8,6 +7,7 @@ import Data.Bits
 import Data.Char
 import qualified Data.Foldable as F
 import Data.Function
+import Data.IORef
 import Data.List
 import Data.List.Extra
 import Data.Map (Map)
@@ -75,26 +75,51 @@ bestPath p1 p2 = minimumOn ((,) <$> length <*> (swap . head)) [p1, p2]
 fixPath :: [Coord2] -> [Coord2]
 fixPath = drop 1 . reverse
 
-allPaths :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
-allPaths grid start targets = go (SQ.singleton [start]) M.empty
+allPathsBfs :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
+allPathsBfs grid start targets = go (SQ.singleton [start]) M.empty
   where
     go SQ.Empty paths = paths
     go (path@(pos : _) SQ.:<| rest) paths
-      -- stop early if we already longer than the targets
-      | not (null targetPaths) && length path > minimum (length <$> targetPaths) = go rest paths
-      -- if we already have a path to this point then stop
-      | pos `M.member` paths = go rest paths
-      -- otherwise track the path
-      | otherwise = go (rest SQ.>< next) (M.insert pos (fixPath path) paths)
+      -- at this point, if we are already on long paths, we can stop
+      | not (null targetPaths) && length fixedPath > minimum (length <$> targetPaths) = paths
+      -- if we already have a path to this point then keep only the best one
+      | pos `M.member` paths = go rest (M.insert pos (bestPath (paths M.! pos) fixedPath) paths)
+      -- otherwise track the path for the first time
+      | otherwise = go (rest SQ.>< next) (M.insert pos fixedPath paths)
       where
+        fixedPath = fixPath path
         targetPaths = catMaybes $ M.lookup <$> targets <*> pure paths
         ns = neighborsNoDiags pos
         canVisit n =
           n `elem` ns
             && M.lookup n grid == Just Empty
-            && not (n `M.member` paths)
+        -- && not (n `M.member` paths)
         nextPositions = sortOn swap $ filter canVisit ns
         next = SQ.fromList ((: path) <$> nextPositions)
+
+allPathsDfs :: Grid Cell -> Coord2 -> Map Coord2 [Coord2]
+allPathsDfs grid start = unsafePerformIO $ do
+  pathsRef <- newIORef M.empty
+  go pathsRef [start]
+  readIORef pathsRef
+  where
+    go :: IORef (Map Coord2 [Coord2]) -> [Coord2] -> IO ()
+    go pathsRef path@(pos : _) = do
+      paths <- readIORef pathsRef
+      let fixedPath = fixPath path
+          oldPath = M.lookup pos paths
+          newPaths =
+            case oldPath of
+              Nothing -> M.insert pos fixedPath paths
+              Just op -> M.insert pos (bestPath op fixedPath) paths
+          ns = neighborsNoDiags pos
+          canVisit n =
+            n `elem` ns
+              && M.lookup n grid == Just Empty
+              && (not (n `M.member` paths) || (length <$> oldPath) > Just (length fixedPath))
+          nextPositions = sortOn swap $ filter canVisit ns
+      modifyIORef' pathsRef (const newPaths)
+      mapM_ (go pathsRef) ((: path) <$> nextPositions)
 
 shortestBetweenAStarAllPaths :: Grid Cell -> Coord2 -> Coord2 -> [[Coord2]]
 shortestBetweenAStarAllPaths grid start dest =
@@ -194,18 +219,39 @@ enemyReachable grid pos unit = go (SQ.singleton pos) S.empty
                 not $ p `S.member` seen
             ]
 
-nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
-nextStep grid pos unit
-  | not $ enemyReachable grid pos unit = Nothing
+nextStepDfs :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
+nextStepDfs grid pos unit
+  | null targetPathDistance = Nothing
+  | otherwise = Just selectedStep
+  where
+    paths = allPathsDfs grid pos
+    targetPathDistance =
+      [ (t, paths M.! t, length (paths M.! t))
+        | t <- (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid))),
+          M.lookup t grid == Just Empty,
+          t `M.member` paths
+      ]
+    selectedStep =
+      head
+        . snd3
+        . head
+        . sortOn (swap . fst3)
+        . head
+        . groupOn thd3
+        . sortOn thd3
+        $ targetPathDistance
+
+nextStepBfs :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
+nextStepBfs grid pos unit
+  | null targetPathDistance = Nothing
   | otherwise = Just selectedStep
   where
     targets =
       [ t
         | t <- (nub (neighborsNoDiags =<< (M.keys $ M.filter (enemies unit) grid))),
-          t /= pos,
           M.lookup t grid == Just Empty
       ]
-    paths = allPaths grid pos targets
+    paths = allPathsBfs grid pos targets
     targetPathDistance =
       [ (t, paths M.! t, length (paths M.! t))
         | t <- targets,
@@ -215,8 +261,6 @@ nextStep grid pos unit
       head
         . snd3
         . head
-        . head
-        . groupOn fst3
         . sortOn (swap . fst3)
         . head
         . groupOn thd3
@@ -229,18 +273,20 @@ move source dest grid =
 
 moveToTarget :: Grid Cell -> Coord2 -> Cell -> Maybe (Grid Cell, Coord2)
 moveToTarget grid pos unit =
-  case nextStep grid pos unit of
+  case nextStepBfs grid pos unit of
     Nothing -> Nothing
     Just dest -> Just (move pos dest grid, dest)
 
 canAttack :: Grid Cell -> Coord2 -> Cell -> Bool
-canAttack grid pos unit = not . null $ attackTargets grid pos unit
+canAttack grid pos unit = isJust $ attackTarget grid pos unit
 
-attackTargets :: Grid Cell -> Coord2 -> Cell -> [(Coord2, Cell)]
-attackTargets grid pos unit = sortOn (\(_, u) -> getHp u) ts
+attackTarget :: Grid Cell -> Coord2 -> Cell -> Maybe (Coord2, Cell)
+attackTarget grid pos unit
+  | null targets = Nothing
+  | otherwise = Just $ head $ sortOn (\(c, u) -> (getHp u, swap c)) targets
   where
     ns = neighborsNoDiags pos
-    ts = M.toList $ M.filterWithKey (\k v -> k `elem` ns && enemies unit v) grid
+    targets = M.toList $ M.filterWithKey (\k v -> k `elem` ns && enemies unit v) grid
 
 performAttack :: Grid Cell -> Coord2 -> Cell -> Int -> Grid Cell
 performAttack grid tPos tUnit atk
@@ -256,9 +302,9 @@ kill grid pos = M.insert pos Empty grid
 
 attack :: Grid Cell -> Coord2 -> Cell -> Grid Cell
 attack grid pos unit =
-  case attackTargets grid pos unit of
-    [] -> grid
-    ((tPos, tUnit) : _) -> performAttack grid tPos tUnit (getAtk unit)
+  case attackTarget grid pos unit of
+    Nothing -> grid
+    Just (tPos, tUnit) -> traceShow (getAtk unit) $ performAttack grid tPos tUnit (getAtk unit)
 
 data EndTurn = Running (Grid Cell) | GameOver (Grid Cell)
 
@@ -314,7 +360,7 @@ runGame n grid =
       GameOver grid' -> (n, grid')
 
 solve :: Grid Cell -> Int
-solve grid = traceShow (n, totalHp) $ n * totalHp
+solve grid = n * totalHp
   where
     (n, grid') = runGame 0 grid
     totalHp = sum (getHp <$> grid')
@@ -322,18 +368,29 @@ solve grid = traceShow (n, totalHp) $ n * totalHp
 part1 :: IO Int
 part1 = solve . toGrid fromChar . lines <$> input 2018 15
 
-tests :: IO ()
-tests = do
-  let f (input, expected) = do
-        i <- input
-        print (solve . toGrid fromChar . lines $ i, expected)
-        _ <- getLine
-        print ""
-  f (exampleInputN 2018 15 1, 27730)
-  f (exampleInputN 2018 15 2, 36334)
-  f (exampleInputN 2018 15 3, 39514)
-  f (exampleInputN 2018 15 4, 27755)
-  f (exampleInputN 2018 15 5, 28944)
-  f (exampleInputN 2018 15 6, 18740)
+setAtk :: Int -> Cell -> Cell
+setAtk atk (Elf hp _) = Elf hp atk
+setAtk _ c = c
 
--- 209838 too low
+numElves :: Grid Cell -> Int
+numElves grid = M.size (M.filter (isElf) grid)
+
+runGameUnlessDeath :: Int -> Int -> Grid Cell -> Maybe (Int, Grid Cell)
+runGameUnlessDeath n beforeElves grid
+  | numElves grid < beforeElves = Nothing
+  | otherwise =
+    case gameTurn grid of
+      Running grid' -> runGameUnlessDeath (n + 1) beforeElves grid'
+      GameOver grid' -> Just (n, grid')
+
+solveUntilAllElvesSurvive :: [Grid Cell] -> Int
+solveUntilAllElvesSurvive (grid : grids) =
+  case runGameUnlessDeath 0 (numElves grid) grid of
+    Nothing -> solveUntilAllElvesSurvive grids
+    Just (n, grid') -> n * sum (getHp <$> grid')
+
+part2 :: IO Int
+part2 = do
+  grid <- toGrid fromChar . lines <$> input 2018 15
+  let grids = [setAtk atk <$> grid | atk <- [4 ..]]
+  return $ solveUntilAllElvesSurvive grids
