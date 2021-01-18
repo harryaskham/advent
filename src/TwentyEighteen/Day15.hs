@@ -58,8 +58,8 @@ bestPath p1 p2 = minimumOn ((,) <$> length <*> (swap . head)) [p1, p2]
 fixPath :: [Coord2] -> [Coord2]
 fixPath = drop 1 . reverse
 
-allPathsBfs :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
-allPathsBfs grid start targets = go (SQ.singleton [start]) M.empty
+allPaths :: Grid Cell -> Coord2 -> [Coord2] -> Map Coord2 [Coord2]
+allPaths grid start targets = go (SQ.singleton [start]) M.empty
   where
     go SQ.Empty paths = paths
     go (path@(pos : _) SQ.:<| rest) paths
@@ -76,8 +76,8 @@ allPathsBfs grid start targets = go (SQ.singleton [start]) M.empty
         nextPositions = sortOn swap $ filter canVisit ns
         next = SQ.fromList ((: path) <$> nextPositions)
 
-nextStepBfs :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
-nextStepBfs grid pos unit
+nextStep :: Grid Cell -> Coord2 -> Cell -> Maybe Coord2
+nextStep grid pos unit
   | null targetPathDistance = Nothing
   | otherwise = Just selectedStep
   where
@@ -86,7 +86,7 @@ nextStepBfs grid pos unit
         | t <- nub (neighborsNoDiags =<< M.keys (M.filter (enemies unit) grid)),
           M.lookup t grid == Just Empty
       ]
-    paths = allPathsBfs grid pos targets
+    paths = allPaths grid pos targets
     targetPathDistance =
       [ (t, paths M.! t, length (paths M.! t))
         | t <- targets,
@@ -108,7 +108,7 @@ move source dest grid =
 
 moveToTarget :: Grid Cell -> Coord2 -> Cell -> Maybe (Grid Cell, Coord2)
 moveToTarget grid pos unit =
-  case nextStepBfs grid pos unit of
+  case nextStep grid pos unit of
     Nothing -> Nothing
     Just dest -> Just (move pos dest grid, dest)
 
