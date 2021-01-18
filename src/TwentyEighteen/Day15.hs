@@ -161,7 +161,10 @@ cellTurn grid (pos, unit)
 gameTurn :: Grid Cell -> EndTurn
 gameTurn grid = runTurns grid sortedCells
   where
-    sortedCells = filter (\(_, c) -> isElf c || isGoblin c) $ sortOn (\((x, y), _) -> (y, x)) $ M.toList grid
+    sortedCells =
+      filter
+        (\(_, c) -> isElf c || isGoblin c)
+        (sortOn (swap . fst) (M.toList grid))
     runTurns grid [] = Running grid
     runTurns grid (c : cs) =
       case cellTurn grid c of
