@@ -16,6 +16,9 @@ toGrid fromChar rows =
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
 maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
 
+minXY :: M.Map (Int, Int) a -> (Int, Int)
+minXY m = (minimum $ fst <$> M.keys m, minimum $ snd <$> M.keys m)
+
 modifyCoords :: ((Int, Int) -> (Int, Int)) -> Grid a -> Grid a
 modifyCoords f grid = M.mapKeys (fromOrigin . f . toOrigin) grid
   where
