@@ -1,8 +1,11 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module TwentyEighteen.Day16 where
 
 import Coord
 import Data.Bits
 import Data.Char
+import Data.Data
 import qualified Data.Foldable as F
 import Data.Function
 import Data.List
@@ -24,9 +27,9 @@ import Util
 
 type Memory = Map Register Int
 
-newtype Register = Register Int deriving (Show, Eq, Ord)
+newtype Register = Register Int deriving (Show, Eq, Ord, Data)
 
-newtype Immediate = Immediate Int deriving (Show, Eq, Ord)
+newtype Immediate = Immediate Int deriving (Show, Eq, Ord, Data)
 
 class Evaluable a where
   value :: Memory -> a -> Int
@@ -52,7 +55,13 @@ data Instruction
   | EqIR Immediate Register Register
   | EqRI Register Immediate Register
   | EqRR Register Register Register
-  deriving (Show)
+  deriving (Show, Data)
+
+instance Ord Instruction where
+  compare a b = compare (showConstr $ toConstr a) (showConstr $ toConstr b)
+
+instance Eq Instruction where
+  a == b = toConstr a == toConstr b
 
 data Operation = Operation Int Int Int Int deriving (Show)
 
@@ -138,7 +147,45 @@ part1 = do
   (constraints, _) <- readWithParser parseInput <$> input 2018 16
   return . length . filter ((>= 3) . length) $ validOpcodes <$> constraints
 
+inferOps :: [Constraint] -> Map Int (Set Instruction)
+inferOps =
+  foldl'
+    ( \opMap con@(Constraint _ (Operation opcode a b c) _) ->
+        adjustWithDefault
+          (S.fromList (allOps <*> [a] <*> [b] <*> [c]))
+          (S.intersection $ S.fromList ((validOpcodes con) <*> [a] <*> [b] <*> [c]))
+          opcode
+          opMap
+    )
+    M.empty
+
+reduce :: Map Int (Set Instruction) -> Maybe (Map Int (Set Instruction))
+reduce opMap
+  | M.size opMap == M.size unambiguous = Nothing
+  | otherwise = Just $ M.union ((`S.difference` is) <$> ambiguous) unambiguous
+  where
+    unambiguous = M.filter ((== 1) . S.size) opMap
+    ambiguous = M.filterWithKey (\k _ -> not (k `M.member` unambiguous)) opMap
+    is = foldl1 S.union (M.elems unambiguous)
+
+reduceFully :: Map Int (Set Instruction) -> Map Int Instruction
+reduceFully opMap = case reduce opMap of
+  Nothing -> head . S.toList <$> opMap
+  Just opMap' -> reduceFully opMap'
+
+runInstruction :: Map Int Instruction -> Operation -> Memory -> Memory
+runInstruction opMap (Operation opcode a b c) mem =
+  traceShow mem $
+    (flip runI) mem . head $ filter (== (opMap M.! opcode)) (allOps <*> [a] <*> [b] <*> [c])
+
 part2 :: IO Int
 part2 = do
   (constraints, program) <- readWithParser parseInput <$> input 2018 16
-  return 0
+  let opMap = reduceFully $ inferOps constraints
+      mem =
+        traceShowId $
+          foldl'
+            (\mem i -> runInstruction opMap i mem)
+            (M.fromList $ zip (Register <$> [0 ..]) (replicate 4 0))
+            program
+  return $ mem M.! (Register 0)
