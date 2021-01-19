@@ -2,28 +2,27 @@
 
 module TwentyEighteen.Day16 where
 
-import Coord
-import Data.Bits
-import Data.Char
-import Data.Data
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
+import Data.Bits (Bits ((.&.), (.|.)))
+import Data.Char (digitToInt)
+import Data.Data (Data (toConstr), showConstr)
+import Data.List (foldl', (\\))
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
+import Data.Maybe (catMaybes)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    char,
+    digit,
+    eof,
+    many,
+    many1,
+    sepBy,
+    spaces,
+    string,
+  )
+import Util (adjustWithDefault, eol, input, readWithParser)
 
 type Memory = Map Register Int
 
@@ -43,6 +42,8 @@ instance Evaluable Immediate where
 data Instruction
   = AddR Register Register Register
   | AddI Register Immediate Register
+  | MulR Register Register Register
+  | MulI Register Immediate Register
   | BandR Register Register Register
   | BandI Register Immediate Register
   | BorR Register Register Register
@@ -84,7 +85,7 @@ parseInput = do
         char ':'
         spaces
         char '['
-        ds <- digit `sepBy` (string ", ")
+        ds <- digit `sepBy` string ", "
         char ']'
         eol
         return $ digitToInt <$> ds
@@ -98,13 +99,15 @@ parseInput = do
       return $ Constraint before op after
     operation :: GenParser Char () Operation
     operation = do
-      [a, b, c, d] <- many1 digit `sepBy` (char ' ')
+      [a, b, c, d] <- many1 digit `sepBy` char ' '
       eol
       return $ Operation (read a) (read b) (read c) (read d)
 
 runI :: Instruction -> Memory -> Memory
 runI (AddR a b c) mem = M.insert c (value mem a + value mem b) mem
 runI (AddI a b c) mem = M.insert c (value mem a + value mem b) mem
+runI (MulR a b c) mem = M.insert c (value mem a * value mem b) mem
+runI (MulI a b c) mem = M.insert c (value mem a * value mem b) mem
 runI (BandR a b c) mem = M.insert c (value mem a .&. value mem b) mem
 runI (BandI a b c) mem = M.insert c (value mem a .&. value mem b) mem
 runI (BorR a b c) mem = M.insert c (value mem a .|. value mem b) mem
@@ -118,10 +121,12 @@ runI (EqIR a b c) mem = M.insert c (if value mem a == value mem b then 1 else 0)
 runI (EqRI a b c) mem = M.insert c (if value mem a == value mem b then 1 else 0) mem
 runI (EqRR a b c) mem = M.insert c (if value mem a == value mem b then 1 else 0) mem
 
-allOps :: [(Int -> Int -> Int -> Instruction)]
+allOps :: [Int -> Int -> Int -> Instruction]
 allOps =
   [ \a b c -> AddR (Register a) (Register b) (Register c),
     \a b c -> AddI (Register a) (Immediate b) (Register c),
+    \a b c -> MulR (Register a) (Register b) (Register c),
+    \a b c -> MulI (Register a) (Immediate b) (Register c),
     \a b c -> BandR (Register a) (Register b) (Register c),
     \a b c -> BandI (Register a) (Immediate b) (Register c),
     \a b c -> BorR (Register a) (Register b) (Register c),
@@ -136,7 +141,7 @@ allOps =
     \a b c -> EqRR (Register a) (Register b) (Register c)
   ]
 
-validOpcodes :: Constraint -> [(Int -> Int -> Int -> Instruction)]
+validOpcodes :: Constraint -> [Int -> Int -> Int -> Instruction]
 validOpcodes (Constraint before (Operation _ a b c) after) =
   filter (possible a b c) allOps
   where
@@ -153,39 +158,47 @@ inferOps =
     ( \opMap con@(Constraint _ (Operation opcode a b c) _) ->
         adjustWithDefault
           (S.fromList (allOps <*> [a] <*> [b] <*> [c]))
-          (S.intersection $ S.fromList ((validOpcodes con) <*> [a] <*> [b] <*> [c]))
+          (S.intersection $ S.fromList (validOpcodes con <*> [a] <*> [b] <*> [c]))
           opcode
           opMap
     )
     M.empty
 
-reduce :: Map Int (Set Instruction) -> Maybe (Map Int (Set Instruction))
-reduce opMap
-  | M.size opMap == M.size unambiguous = Nothing
-  | otherwise = Just $ M.union ((`S.difference` is) <$> ambiguous) unambiguous
+findAssignment :: Map Int (Set Instruction) -> Maybe (Map Int Instruction)
+findAssignment opSetMap = go S.empty M.empty
   where
-    unambiguous = M.filter ((== 1) . S.size) opMap
-    ambiguous = M.filterWithKey (\k _ -> not (k `M.member` unambiguous)) opMap
-    is = foldl1 S.union (M.elems unambiguous)
-
-reduceFully :: Map Int (Set Instruction) -> Map Int Instruction
-reduceFully opMap = case reduce opMap of
-  Nothing -> head . S.toList <$> opMap
-  Just opMap' -> reduceFully opMap'
+    go :: Set Instruction -> Map Int Instruction -> Maybe (Map Int Instruction)
+    go assignedOpcodes opMap
+      | null unassignedOpcodes = Just opMap
+      | otherwise =
+        case nextRuns of
+          [] -> Nothing
+          next -> case catMaybes next of
+            [] -> Nothing
+            (m : _) -> Just m
+      where
+        unassignedOpcodes = M.keys opSetMap \\ M.keys opMap
+        opcode = head unassignedOpcodes
+        possibleOps = S.difference (opSetMap M.! opcode) assignedOpcodes
+        nextRuns =
+          fmap
+            (\op -> go (S.insert op assignedOpcodes) (M.insert opcode op opMap))
+            (S.toList possibleOps)
 
 runInstruction :: Map Int Instruction -> Operation -> Memory -> Memory
 runInstruction opMap (Operation opcode a b c) mem =
-  traceShow mem $
-    (flip runI) mem . head $ filter (== (opMap M.! opcode)) (allOps <*> [a] <*> [b] <*> [c])
+  flip runI mem
+    . head
+    . filter (== (opMap M.! opcode))
+    $ (allOps <*> [a] <*> [b] <*> [c])
 
 part2 :: IO Int
 part2 = do
   (constraints, program) <- readWithParser parseInput <$> input 2018 16
-  let opMap = reduceFully $ inferOps constraints
+  let Just opMap = findAssignment $ inferOps constraints
       mem =
-        traceShowId $
-          foldl'
-            (\mem i -> runInstruction opMap i mem)
-            (M.fromList $ zip (Register <$> [0 ..]) (replicate 4 0))
-            program
-  return $ mem M.! (Register 0)
+        foldl'
+          (flip $ runInstruction opMap)
+          (M.fromList $ zip (Register <$> [0 ..]) (replicate 4 0))
+          program
+  return $ mem M.! Register 0
