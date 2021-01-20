@@ -11,7 +11,7 @@ import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ord
-import Data.PQueue.Prio.Min
+import qualified Data.PQueue.Prio.Min as PQ
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
