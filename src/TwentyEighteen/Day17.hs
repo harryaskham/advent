@@ -11,7 +11,7 @@ import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ord
-import qualified Data.PQueue.Prio.Min as PQ
+import qualified Data.PQueue.Prio.Max as PQ
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
@@ -95,25 +95,20 @@ drip maxY grid (x, y) = go (SQ.singleton ((x, y), S.empty)) S.empty
 -- always fill from the lowest unseen with no water?
 
 fill :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
-fill maxY grid startPos = go grid (SQ.singleton startPos) S.empty
+fill maxY grid startPos = go grid (PQ.singleton (snd startPos) startPos) S.empty
   where
-    go grid SQ.Empty seen = (grid, seen)
-    go grid (source SQ.:<| queue) seen =
-      traceShow (S.size seen) $
-        case gridM of
-          Nothing -> (grid, nextSeen)
-          Just grid' ->
-            let lowestWetClays =
-                  SQ.fromList
-                    . head
-                    . groupOn (snd)
-                    . sortOn (Down . snd)
-                    . S.toList
-                    . S.filter ((/= Water) . (grid' M.!))
-                    $ nextSeen
-             in --traceStrLn (prettyWithWater grid' nextSeen) $
-                go grid' (queue SQ.>< lowestWetClays) nextSeen
+    go grid queue seen
+      | PQ.null queue = (grid, seen)
+      | otherwise =
+        traceShow (S.size seen) $
+          case gridM of
+            Nothing -> (grid, nextSeen)
+            Just grid' ->
+              let wetClay = SQ.fromList . S.toList . S.filter ((/= Water) . (grid' M.!)) $ seen'
+               in --traceStrLn (prettyWithWater grid' nextSeen) $
+                  go grid' (foldl' (\q (x, y) -> PQ.insert y (x, y) q) rest wetClay) nextSeen
       where
+        ((_, source), rest) = PQ.deleteFindMax queue
         (gridM, seen') = drip maxY grid source
         nextSeen = S.union seen seen'
 
@@ -136,7 +131,8 @@ readGrid = do
 
 prettyWithWater :: Grid Cell -> Set Coord2 -> String
 prettyWithWater grid seen =
-  pretty $ M.filterWithKey (\(_, y) _ -> y < 40) (foldl' (\g p -> if g M.! p /= Water then M.insert p SeenWater g else g) grid (S.toList seen'))
+  --pretty $ M.filterWithKey (\(_, y) _ -> y < 40) (foldl' (\g p -> if g M.! p /= Water then M.insert p SeenWater g else g) grid (S.toList seen'))
+  pretty $ (foldl' (\g p -> if g M.! p /= Water then M.insert p SeenWater g else g) grid (S.toList seen'))
   where
     (minX, minY) = minXY grid
     (maxX, maxY) = maxXY grid
