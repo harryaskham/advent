@@ -10,6 +10,8 @@ import Data.List.Extra
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Ord
+import Data.PQueue.Prio.Min
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
@@ -75,9 +77,8 @@ drip maxY grid (x, y) = go (SQ.singleton ((x, y), S.empty)) S.empty
     go (((x, y), seen) SQ.:<| queue) allSeen
       | y > maxY = go queue (S.union nextAllSeen seen)
       | null nextStates && closedIn grid (x, y) =
-        traceStrLn ("grid:\n" ++ prettyWithWater (M.insert (x, y) Water grid) (S.insert (x, y) nextAllSeen)) $
-          --traceShow "landed water" $
-          (Just (M.insert (x, y) Water grid), S.insert (x, y) nextAllSeen)
+        --traceStrLn ("grid:\n" ++ prettyWithWater (M.insert (x, y) Water grid) (S.insert (x, y) nextAllSeen)) $
+        (Just allPlacedWater, S.insert (x, y) nextAllSeen)
       | otherwise = go (queue SQ.>< SQ.fromList nextStates) (S.union nextAllSeen seen)
       where
         downState = if not ((x, y + 1) `S.member` seen) && (not ((x, y + 1) `M.member` grid) || M.lookup (x, y + 1) grid == Just Sand) then Just ((x, y + 1), (S.insert (x, y) seen)) else Nothing
@@ -87,15 +88,34 @@ drip maxY grid (x, y) = go (SQ.singleton ((x, y), S.empty)) S.empty
           Just ds -> [ds]
           Nothing -> catMaybes [leftState, rightState]
         nextAllSeen = foldl' (flip S.insert) allSeen (fst <$> nextStates)
+        placedWater = M.insert (x, y) Water grid
+        closedSeen = filter (closedIn grid) (S.toList seen)
+        allPlacedWater = foldl' (\m p -> M.insert p Water m) placedWater closedSeen
 
-fill :: Grid Cell -> Coord2 -> Set Coord2 -> (Grid Cell, Set Coord2)
-fill grid startPos seen =
-  let (_, maxY) = maxXY grid
-      (gridM, seen') = drip maxY grid startPos
-   in case gridM of
-        Nothing -> (grid, S.union seen seen')
-        Just grid' ->
-          fill grid' startPos (S.union seen seen')
+-- always fill from the lowest unseen with no water?
+
+fill :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
+fill maxY grid startPos = go grid (SQ.singleton startPos) S.empty
+  where
+    go grid SQ.Empty seen = (grid, seen)
+    go grid (source SQ.:<| queue) seen =
+      traceShow (S.size seen) $
+        case gridM of
+          Nothing -> (grid, nextSeen)
+          Just grid' ->
+            let lowestWetClays =
+                  SQ.fromList
+                    . head
+                    . groupOn (snd)
+                    . sortOn (Down . snd)
+                    . S.toList
+                    . S.filter ((/= Water) . (grid' M.!))
+                    $ nextSeen
+             in --traceStrLn (prettyWithWater grid' nextSeen) $
+                go grid' (queue SQ.>< lowestWetClays) nextSeen
+      where
+        (gridM, seen') = drip maxY grid source
+        nextSeen = S.union seen seen'
 
 readGrid :: IO (Grid Cell, Coord2)
 readGrid = do
@@ -116,18 +136,22 @@ readGrid = do
 
 prettyWithWater :: Grid Cell -> Set Coord2 -> String
 prettyWithWater grid seen =
-  (pretty (foldl' (\g p -> if g M.! p /= Water then M.insert p SeenWater g else g) grid (S.toList seen')))
+  pretty $ M.filterWithKey (\(_, y) _ -> y < 40) (foldl' (\g p -> if g M.! p /= Water then M.insert p SeenWater g else g) grid (S.toList seen'))
   where
     (minX, minY) = minXY grid
     (maxX, maxY) = maxXY grid
     seen' = S.filter (\(x, y) -> x >= minX && x <= maxX && y >= minY && y <= maxY) seen
 
+-- TODO: abstract into concepts of bucket, and which side it will spill over, and distance to next bucket.
+-- spill on one side == distance to bottom, on both it sthat times two
+-- buckets in buckets present a problem or maybe they dont? we can fill all at aonce anyway
+
 part1 :: IO Int
 part1 = do
   (grid, startPos) <- readGrid
-  let (grid', seen) = fill grid startPos S.empty
-      (minX, minY) = minXY grid
+  let (minX, minY) = minXY grid
       (maxX, maxY) = maxXY grid
+      (grid', seen) = fill maxY grid startPos
       seen' = S.filter (\(x, y) -> x >= minX && x <= maxX && y >= minY && y <= maxY) seen
   putStrLn $ prettyWithWater grid' seen
   return $ S.size seen'
