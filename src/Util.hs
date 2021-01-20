@@ -8,6 +8,7 @@ import qualified Data.ByteString.Char8 as BC
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
+import Debug.Trace (trace)
 import qualified Language.Haskell.Interpreter as Hint
 import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, parse)
@@ -76,3 +77,13 @@ traceStrLn s a = unsafePerformIO $ do
   putStrLn s
   -- getLine
   return a
+
+traceWhen :: Bool -> String -> a -> a
+traceWhen p s a = if p then trace s a else a
+
+traceStrLnWhen :: Bool -> String -> a -> a
+traceStrLnWhen p s a
+  | p = unsafePerformIO $ do
+    putStrLn s
+    return a
+  | otherwise = a

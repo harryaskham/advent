@@ -51,7 +51,7 @@ veins = do
 data Cell = Sand | Clay | Water | SeenWater deriving (Eq)
 
 instance Show Cell where
-  show Sand = "."
+  show Sand = " "
   show Clay = "#"
   show Water = "~"
   show SeenWater = "|"
@@ -98,7 +98,8 @@ drip maxY grid' (x, y) = go grid' (SQ.singleton ((x, y), S.empty)) S.empty
         placedWater = foldl' (\m p -> M.insert p Water m) grid closedSeen
 
 fill :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
-fill maxY grid startPos = go grid (PQ.singleton (snd startPos) startPos) S.empty S.empty
+fill maxY grid startPos =
+  go grid (PQ.singleton (snd startPos) startPos) S.empty S.empty
   where
     go grid queue seen filledFrom
       | PQ.null queue = (grid, seen)
@@ -107,7 +108,8 @@ fill maxY grid startPos = go grid (PQ.singleton (snd startPos) startPos) S.empty
       | M.lookup source grid `elem` [Nothing, Just Water] = go grid rest seen filledFrom
       | otherwise =
         traceShow (S.size seen, source, M.lookup source grid, S.size seen', length wetClay) $
-          go grid' (foldl' (\q (x, y) -> PQ.insert y (x, y) q) rest wetClay) nextSeen nextFilledFrom
+          traceStrLnWhen (S.size seen == 27176) (prettyWithWater grid seen) $
+            go grid' (foldl' (\q (x, y) -> PQ.insert y (x, y) q) rest wetClay) nextSeen nextFilledFrom
       where
         ((_, source), rest) = PQ.deleteFindMax queue
         (grid', seen') = drip maxY grid source
