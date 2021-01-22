@@ -87,3 +87,11 @@ traceStrLnWhen p s a
     putStrLn s
     return a
   | otherwise = a
+
+fst4 (a, _, _, _) = a
+
+snd4 (_, a, _, _) = a
+
+thd4 (_, _, a, _) = a
+
+fth4 (_, _, _, a) = a
