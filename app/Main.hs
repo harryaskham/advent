@@ -4,5 +4,5 @@ import TwentyEighteen.Day17
 
 main :: IO ()
 main = do
-  x <- part1
+  x <- part12
   print x
