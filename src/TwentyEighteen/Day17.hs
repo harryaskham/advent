@@ -204,15 +204,15 @@ fillDfs :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
 fillDfs maxY grid startPos = go grid S.empty startPos S.empty S.empty
   where
     go grid seen source waterPositions seenSourceWater
-      | (maxY + 1) `S.member` S.map snd seen' = (grid, S.map swap nextSeen) -- stop if we overflow the bottom
-      -- | snd source <= 1 && isNothing gridM = (grid, S.map swap nextSeen) -- stop if we cant drip from top ever
+      -- | (maxY + 1) `S.member` S.map snd seen' = (grid, S.map swap nextSeen) -- stop if we overflow the bottom
+      | source == startPos && isNothing gridM = (grid, S.map swap nextSeen) -- stop if we cant drip from top ever
       -- | isNothing gridM = (grid, S.map swap nextSeen)
       -- TODO: bettersource choice below
-      | isNothing gridM = go grid seen (second (subtract 1) source) nextWaterPositions nextSeenSourceWater -- if we can't drip from here, move up one
+      | isNothing gridM = go grid seen nextSource nextWaterPositions nextSeenSourceWater -- if we can't drip from here, move up one
       -- | (source, waterPositions) `S.member` seenSourceWater = goFromNewSourceAbove
       | otherwise =
         traceShow (S.size waterPositions, S.size nextSeen, source) $
-          traceStrLnWhen (S.size waterPositions `mod` 1000 == 0) (prettyWithWater grid (S.map swap seen) source) $
+          traceStrLnWhen (S.size waterPositions `mod` 3000 == 0) (prettyWithWater grid (S.map swap seen) source) $
           -- traceStrLnWhen (S.size waterPositions == 368) (prettyWithWater grid (S.map swap seen) source) $
           case gridM of
             -- Nothing -> goFromNewSourceAbove
@@ -220,7 +220,7 @@ fillDfs maxY grid startPos = go grid S.empty startPos S.empty S.empty
             Just grid' -> go grid' nextSeen nextSource nextWaterPositions nextSeenSourceWater
             -- Just grid' -> go grid' nextSeen (getSource grid' seen startPos Nothing) nextWaterPositions nextSeenSourceWater
       where
-        (gridM, seen', waterPositions', nextSourceM) = traceShow source $ dripDfs maxY grid source waterPositions seenSourceWater
+        (gridM, seen', waterPositions', nextSourceM) = dripDfs maxY grid source waterPositions seenSourceWater
         -- If we failed to drop, search for a new pos. Otherwise move to the last point of overflow
         nextSource = case gridM of
           Nothing -> getNextSource grid nextSeen source startPos
