@@ -80,44 +80,38 @@ mergeCell Sand Water = Water
 mergeCell Water Sand = Water
 mergeCell a _ = a
 
-dripBfs :: Int -> Grid Cell -> Coord2 -> (Maybe (Grid Cell), Set Coord2, Set Coord2)
-dripBfs maxY grid source@(x', y') = massage (go (SQ.singleton ((x', y'), S.empty)) S.empty S.empty S.empty)
+dripBfs :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
+dripBfs maxY grid source =
+  go (SQ.singleton (source, S.empty)) grid S.empty
   where
-    massage (water, seen, sources) =
-      if S.null water
-        then (Nothing, seen, sources)
-        else (Just $ S.foldl' (\m p -> M.insert p Water m) grid water, seen, sources)
-    go :: Seq (Coord2, Set Coord2) -> Set Coord2 -> Set Coord2 -> Set Coord2 -> (Set Coord2, Set Coord2, Set Coord2)
-    go SQ.Empty waterPositions allSeen sources = (waterPositions, allSeen, sources)
-    go ((pos@(x, y), seen) SQ.:<| queue) waterPositions allSeen sources
+    go SQ.Empty grid allSeen = (grid, allSeen)
+    go ((pos@(x, y), seen) SQ.:<| queue) grid allSeen
       | not (pos `M.member` grid) = continue
       | grid M.! pos == Water = continue -- needed for when we get trapped and become the source
       | pos `S.member` seen = continue
-      -- | null nextStates && closedIn grid (x, y) =  (Just (M.insert (x, y) Water grid), nextSeen, S.insert (x, y) waterPositions, Just (x, y - 1))
-      | null nextStates && closedIn grid (x, y) = go queue (S.insert (x, y) waterPositions) nextAllSeen sources
-      | null nextStates = go queue waterPositions nextAllSeen (if snd pos >= maxY then sources else S.insert pos sources) -- if we hit a dead end, we can use it as a new source
-      -- | null nextStates = (Nothing, nextSeen, waterPositions, Nothing) -- if we hit a dead end, we can use it as a new source
-      | otherwise =
-        -- traceShow (pos, S.size seen) $
-          --traceStrLnWhen (True) (prettyWithWater grid (seen) source) $
-          --mergeBranches (go <$> nextStates <*> pure nextSeen <*> pure waterPositions)
-          go nextQueue waterPositions nextAllSeen sources
+      | null nextStates && closedIn grid (x, y) = go queueFromWater (M.insert pos Water grid) nextAllSeen
+      | otherwise = continue
       where
-        continue = go nextQueue waterPositions nextAllSeen sources
+        continue =
+          traceShow (S.size nextAllSeen) $
+          -- traceStrLnWhen (S.size allSeen `mod` 1000 == 0) (prettyWithWater grid allSeen source) $
+          go nextQueue grid nextAllSeen
         nextAllSeen = S.insert pos allSeen
         nextSeen = S.insert pos seen
-        mkState pos@(x, y) =
+        mkState seen pos@(x, y) =
           if (not (pos `S.member` seen)) && M.lookup pos grid == Just Sand
             then Just pos
             else Nothing
-        downState = mkState (x, y + 1)
-        leftState = if y < maxY then mkState (x - 1, y) else Nothing
-        rightState = if y < maxY then mkState (x + 1, y) else Nothing
+        downState = mkState seen (x, y + 1)
+        leftState = if y < maxY then mkState seen (x - 1, y) else Nothing
+        rightState = if y < maxY then mkState seen (x + 1, y) else Nothing
         nextPositions = case downState of
           Just ds -> [ds]
           Nothing -> catMaybes [leftState, rightState]
-        nextStates = (,nextSeen) <$> nextPositions
+        nextStates = (, nextSeen) <$> nextPositions
+        fromWaterStates = (, S.empty) <$> catMaybes [mkState S.empty n | n <- neighborsNoDiags pos, n `S.member` nextAllSeen]
         nextQueue = queue SQ.>< SQ.fromList nextStates
+        queueFromWater = queue SQ.>< SQ.fromList fromWaterStates
 
 -- Maybe just make drip handle a single drip efficiently
 dripDfs :: Int -> Grid Cell -> Coord2 -> (Maybe (Grid Cell), Set Coord2, Maybe Coord2)
@@ -191,7 +185,7 @@ fillDfs maxY grid startPos = go grid S.empty (S.singleton (swap startPos))
               Nothing -> sources
               Just s -> S.insert (swap s) sources
         nextSeen = seen `S.union` S.map swap seen'
-
+{-
 fillBfs :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
 fillBfs maxY grid startPos = go grid S.empty (S.singleton (swap startPos))
   where
@@ -216,23 +210,25 @@ fillBfs maxY grid startPos = go grid S.empty (S.singleton (swap startPos))
           Nothing -> sourcesWithout `S.union` (S.map swap newSources)
           Just _ -> sources `S.union` (S.map swap newSources)
         nextSeen = seen `S.union` newSeen
+-}
 
-readGrid :: IO (Grid Cell, Coord2, Int)
+readGrid :: IO (Grid Cell, Coord2, Int, Int)
 readGrid = do
   veins <- readWithParser veins <$> input 2018 17
-  --veins <- readWithParser veins <$> exampleInput 2018 17
+  -- veins <- readWithParser veins <$> exampleInput 2018 17
   let clayCoords = S.fromList $ concat veins
       minX = fst $ minimumOn fst (concat veins)
       maxX = fst $ maximumOn fst (concat veins)
+      minY = snd $ minimumOn snd (concat veins)
       maxY = snd $ maximumOn snd (concat veins)
-      startPos = (500 - minX + 1, 1)
+      startPos = (500 - minX + 1, 0)
       grid =
         M.fromList
           [ ((x, y), if (x + minX - 1, y) `S.member` clayCoords then Clay else Sand)
             | x <- [0 .. (maxX - minX) + 2],
-              y <- [0 .. maxY + 1]
+              y <- [0 .. maxY]
           ]
-  return (grid, startPos, maxY)
+  return (grid, startPos, minY, maxY)
 
 prettyWithWater :: Grid Cell -> Set Coord2 -> Coord2 -> String
 prettyWithWater grid seen source =
@@ -244,8 +240,7 @@ prettyWithWater grid seen source =
 
 part1 :: IO Int
 part1 = do
-  (grid, startPos, maxY) <- readGrid
-  --let (grid', seen) = fillDfs maxY grid startPos
-  let (grid', seen) = fillBfs maxY grid startPos
+  (grid, startPos, minY, maxY) <- readGrid
+  let (grid', seen) = dripBfs maxY grid startPos
   putStrLn $ prettyWithWater grid' seen startPos
-  return $ S.size (S.filter ((<= maxY) . snd) seen)
+  return $ S.size (S.filter (\(_, y) -> y >= minY && y <= maxY) seen)
