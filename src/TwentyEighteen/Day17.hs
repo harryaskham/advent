@@ -6,7 +6,7 @@ import Coord (Coord2, neighborsNoDiags)
 import Data.List (foldl')
 import Data.List.Extra (maximumOn, minimumOn)
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, isNothing)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -61,12 +61,12 @@ closedIn grid (x, y) = closedToRight (x, y) && closedToLeft (x, y)
   where
     closedToRight (x, y)
       | M.lookup (x, y + 1) grid `elem` [Nothing, Just Sand] = False
-      | M.lookup (x + 1, y) grid == Nothing = False
+      | isNothing $ M.lookup (x + 1, y) grid = False
       | M.lookup (x + 1, y) grid == Just Clay = True
       | otherwise = closedToRight (x + 1, y)
     closedToLeft (x, y)
       | M.lookup (x, y + 1) grid `elem` [Nothing, Just Sand] = False
-      | M.lookup (x - 1, y) grid == Nothing = False
+      | isNothing $ M.lookup (x - 1, y) grid = False
       | M.lookup (x - 1, y) grid == Just Clay = True
       | otherwise = closedToLeft (x - 1, y)
 
@@ -87,7 +87,7 @@ dripBfs maxY grid source =
         nextAllSeen = S.insert pos allSeen
         nextSeen = S.insert pos seen
         mkState seen pos =
-          if (not (pos `S.member` seen)) && M.lookup pos grid == Just Sand
+          if not (pos `S.member` seen) && M.lookup pos grid == Just Sand
             then Just pos
             else Nothing
         downState = mkState seen (x, y + 1)
