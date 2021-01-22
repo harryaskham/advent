@@ -95,3 +95,5 @@ snd4 (_, a, _, _) = a
 thd4 (_, _, a, _) = a
 
 fth4 (_, _, _, a) = a
+
+first3 f (a, b, c) = (f a, b, c)
