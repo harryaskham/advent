@@ -71,8 +71,9 @@ closedIn grid (x, y) = closedToRight (x, y) && closedToLeft (x, y)
       | M.lookup (x - 1, y) grid == Just Clay = True
       | otherwise = closedToLeft (x - 1, y)
 
-drip :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
-drip maxY grid' (x, y) = go grid' (SQ.singleton ((x, y), S.empty)) S.empty
+{-
+dripBfs :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
+dripBfs maxY grid' (x, y) = go grid' (SQ.singleton ((x, y), S.empty)) S.empty
   where
     go grid SQ.Empty allSeen = (grid, S.insert (x, y) allSeen)
     go grid (((x, y), seen) SQ.:<| queue) allSeen
@@ -97,6 +98,7 @@ drip maxY grid' (x, y) = go grid' (SQ.singleton ((x, y), S.empty)) S.empty
         nextAllSeen = foldl' (flip S.insert) allSeen (fst <$> nextStates)
         closedSeen = filter (closedIn grid) ((x, y) : S.toList seen)
         placedWater = foldl' (\m p -> M.insert p Water m) grid closedSeen
+-}
 
 mergeCell :: Cell -> Cell -> Cell
 mergeCell Sand Water = Water
@@ -129,7 +131,9 @@ dripDfs maxY grid' source@(x', y') waterPositions' seenSourceWater = go grid' (x
             mergedGrids =
               case branchesWithDrips of
                 [] -> Nothing
-                bs -> Just $ foldl1 (M.unionWith mergeCell) bs
+                -- bs -> Just $ foldl1 (M.unionWith mergeCell) bs -- just merge all the maps
+                -- bs -> Just $ head bs -- temporarily avoid merging by throwing away other good drips
+                _ -> Just $ foldl' (\m p -> M.insert p Water m) grid (S.toList $ mergedWaterPositions `S.difference` waterPositions) -- just fold in any new water position
             withClosedSeen = (foldl' (\m p -> M.insert p Water m)) <$> (mergedGrids <|> (Just grid)) <*> (pure closedSeen)
             mergedSeen = foldl1 S.union (snd3 <$> bs)
             mergedWaterPositions = foldl1 S.union (thd3 <$> bs)
@@ -145,8 +149,9 @@ dripDfs maxY grid' source@(x', y') waterPositions' seenSourceWater = go grid' (x
           Just ds -> [ds]
           Nothing -> catMaybes [leftState, rightState]
 
-fill :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
-fill maxY grid startPos =
+{-
+fillBfs :: Int -> Grid Cell -> Coord2 -> (Grid Cell, Set Coord2)
+fillBfs maxY grid startPos =
   go grid (PQ.singleton (snd startPos) startPos) S.empty S.empty
   where
     go grid queue seen filledFrom
@@ -164,6 +169,7 @@ fill maxY grid startPos =
         wetClay = SQ.fromList . S.toList . S.filter (not . (`elem` [Nothing, Just Water]) . (`M.lookup` grid')) $ seen'
         nextSeen = S.union seen seen'
         nextFilledFrom = S.insert source filledFrom
+-}
 
 getSource :: Grid Cell -> Set Coord2 -> Coord2 -> Maybe Coord2 -> Coord2
 getSource grid seen def lastSourceM
@@ -187,11 +193,11 @@ fillDfs maxY grid startPos = go grid S.empty startPos S.empty S.empty
   where
     go grid seen source waterPositions seenSourceWater
       -- | source == startPos && isNothing gridM = (grid, S.map swap nextSeen) -- stop if we cant drip from top ever
-      | isNothing gridM = (grid, S.map swap nextSeen) -- stop if we cant drip from top ever
+      | isNothing gridM = (grid, S.map swap nextSeen)
       -- | (source, waterPositions) `S.member` seenSourceWater = goFromNewSourceAbove
       | otherwise =
         traceShow (S.size waterPositions, S.size nextSeen) $
-          --traceStrLnWhen (S.size seen `mod` 100 == True) (prettyWithWater grid (S.map swap seen)) $
+          traceStrLnWhen (S.size waterPositions `mod` 1000 == 0) (prettyWithWater grid (S.map swap seen)) $
           case gridM of
             -- Nothing -> goFromNewSourceAbove
             Nothing -> error "wat"
@@ -206,8 +212,8 @@ fillDfs maxY grid startPos = go grid S.empty startPos S.empty S.empty
 
 readGrid :: IO (Grid Cell, Coord2)
 readGrid = do
-  --veins <- readWithParser veins <$> input 2018 17
-  veins <- readWithParser veins <$> exampleInput 2018 17
+  veins <- readWithParser veins <$> input 2018 17
+  -- veins <- readWithParser veins <$> exampleInput 2018 17
   let clayCoords = S.fromList $ concat veins
       minX = fst $ minimumOn fst (concat veins)
       maxX = fst $ maximumOn fst (concat veins)
