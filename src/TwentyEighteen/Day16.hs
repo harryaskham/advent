@@ -121,24 +121,56 @@ runI (EqIR a b c) mem = M.insert c (if value mem a == value mem b then 1 else 0)
 runI (EqRI a b c) mem = M.insert c (if value mem a == value mem b then 1 else 0) mem
 runI (EqRR a b c) mem = M.insert c (if value mem a == value mem b then 1 else 0) mem
 
+mkAddr a b c = AddR (Register a) (Register b) (Register c)
+
+mkAddi a b c = AddI (Register a) (Immediate b) (Register c)
+
+mkMulr a b c = MulR (Register a) (Register b) (Register c)
+
+mkMuli a b c = MulI (Register a) (Immediate b) (Register c)
+
+mkBandr a b c = BandR (Register a) (Register b) (Register c)
+
+mkBandi a b c = BandI (Register a) (Immediate b) (Register c)
+
+mkBorr a b c = BorR (Register a) (Register b) (Register c)
+
+mkBori a b c = BorI (Register a) (Immediate b) (Register c)
+
+mkSetr a _ c = SetR (Register a) (Register c)
+
+mkSeti a _ c = SetI (Immediate a) (Register c)
+
+mkGtir a b c = GtIR (Immediate a) (Register b) (Register c)
+
+mkGtri a b c = GtRI (Register a) (Immediate b) (Register c)
+
+mkGtrr a b c = GtRR (Register a) (Register b) (Register c)
+
+mkEqir a b c = EqIR (Immediate a) (Register b) (Register c)
+
+mkEqri a b c = EqRI (Register a) (Immediate b) (Register c)
+
+mkEqrr a b c = EqRR (Register a) (Register b) (Register c)
+
 allOps :: [Int -> Int -> Int -> Instruction]
 allOps =
-  [ \a b c -> AddR (Register a) (Register b) (Register c),
-    \a b c -> AddI (Register a) (Immediate b) (Register c),
-    \a b c -> MulR (Register a) (Register b) (Register c),
-    \a b c -> MulI (Register a) (Immediate b) (Register c),
-    \a b c -> BandR (Register a) (Register b) (Register c),
-    \a b c -> BandI (Register a) (Immediate b) (Register c),
-    \a b c -> BorR (Register a) (Register b) (Register c),
-    \a b c -> BorI (Register a) (Immediate b) (Register c),
-    \a _ c -> SetR (Register a) (Register c),
-    \a _ c -> SetI (Immediate a) (Register c),
-    \a b c -> GtIR (Immediate a) (Register b) (Register c),
-    \a b c -> GtRI (Register a) (Immediate b) (Register c),
-    \a b c -> GtRR (Register a) (Register b) (Register c),
-    \a b c -> EqIR (Immediate a) (Register b) (Register c),
-    \a b c -> EqRI (Register a) (Immediate b) (Register c),
-    \a b c -> EqRR (Register a) (Register b) (Register c)
+  [ mkAddr,
+    mkAddi,
+    mkMulr,
+    mkMuli,
+    mkBandr,
+    mkBandi,
+    mkBorr,
+    mkBori,
+    mkSetr,
+    mkSeti,
+    mkGtir,
+    mkGtri,
+    mkGtrr,
+    mkEqir,
+    mkEqri,
+    mkEqrr
   ]
 
 validOpcodes :: Constraint -> [Int -> Int -> Int -> Instruction]
