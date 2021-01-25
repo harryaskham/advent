@@ -75,7 +75,7 @@ data Machine = Machine Register Int (Map Int Instruction) Memory deriving (Show)
 runMachine :: Machine -> Memory
 runMachine (Machine boundReg ip is mem)
   | not (ip `M.member` is) = mem
-  | otherwise = runMachine $ Machine boundReg ip' is mem'
+  | otherwise = tracePause (show $ (ip, mem')) $ runMachine $ Machine boundReg ip' is mem'
   where
     i = is M.! ip
     mem' = runI i . M.insert boundReg ip $ mem
@@ -89,12 +89,5 @@ part1 = do
       mem' = runMachine machine
   return $ mem' M.! Register 0
 
--- TODO: Will need to manually figure out what the program's doing
-
-part2 :: IO Int
-part2 = do
-  (boundReg, is) <- readWithParser instructions <$> input 2018 19
-  let mem = M.fromList (zip (Register <$> [0 .. 5]) (repeat 0))
-      machine = Machine (Register boundReg) 0 is (M.insert (Register 0) 1 mem)
-      mem' = runMachine machine
-  return $ mem' M.! Register 0
+part2 :: Int
+part2 = sum [a | a <- [1 .. 10551288], 10551288 `mod` a == 0]
