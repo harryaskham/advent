@@ -67,15 +67,14 @@ instructions = do
     op name = do
       string name
       char ' '
-      args <- abc
-      return $ uncurry3 (mkOps M.! name) args
+      uncurry3 (mkOps M.! name) <$> abc
 
 data Machine = Machine Register Int (Map Int Instruction) Memory deriving (Show)
 
 runMachine :: Machine -> Memory
 runMachine (Machine boundReg ip is mem)
   | not (ip `M.member` is) = mem
-  | otherwise = tracePause (show $ (ip, mem')) $ runMachine $ Machine boundReg ip' is mem'
+  | otherwise = runMachine $ Machine boundReg ip' is mem'
   where
     i = is M.! ip
     mem' = runI i . M.insert boundReg ip $ mem
