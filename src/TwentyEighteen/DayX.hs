@@ -1,5 +1,8 @@
 module TwentyEighteen.DayX where
 
+import Control.Arrow
+import Control.Monad
+import Control.Monad.Memo
 import Coord
 import Data.Bits
 import Data.Char
