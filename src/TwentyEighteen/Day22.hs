@@ -35,6 +35,14 @@ indexLevelRisk =
         let g = snd3 (acc M.! (x - 1, y)) * snd3 (acc M.! (x, y - 1))
          in M.insert (x, y) (getIndexLevelRisk g) acc
 
+part1 :: Int
+part1 =
+  sum
+    [ thd3 $ indexLevelRisk M.! (x, y)
+      | x <- [0 .. fst target],
+        y <- [0 .. snd target]
+    ]
+
 data RegionType = Rocky | Wet | Narrow deriving (Eq)
 
 rType :: Coord2 -> RegionType
@@ -43,14 +51,6 @@ rType pos =
     0 -> Rocky
     1 -> Wet
     2 -> Narrow
-
-part1 :: Int
-part1 =
-  sum
-    [ thd3 $ indexLevelRisk M.! (x, y)
-      | x <- [0 .. fst target],
-        y <- [0 .. snd target]
-    ]
 
 data Tool = Torch | ClimbingGear | Neither deriving (Eq, Ord, Show)
 
