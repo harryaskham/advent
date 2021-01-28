@@ -5,10 +5,11 @@ module Util where
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as BC
+import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Typeable (Typeable)
-import Debug.Trace (trace)
+import Debug.Trace (trace, traceShow)
 import qualified Language.Haskell.Interpreter as Hint
 import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, parse)

@@ -30,8 +30,8 @@ mkOps =
       ("addi", mkAddi),
       ("mulr", mkMulr),
       ("muli", mkMuli),
-      ("bandr", mkBandr),
-      ("bandi", mkBandi),
+      ("banr", mkBandr),
+      ("bani", mkBandi),
       ("borr", mkBorr),
       ("bori", mkBori),
       ("setr", mkSetr),
@@ -69,16 +69,22 @@ instructions = do
       char ' '
       uncurry3 (mkOps M.! name) <$> abc
 
-data Machine = Machine Register Int (Map Int Instruction) Memory deriving (Show)
+data Machine = Machine Register Int (Map Int Instruction) Memory deriving (Show, Eq)
 
-runMachine :: Machine -> Memory
-runMachine (Machine boundReg ip is mem)
-  | not (ip `M.member` is) = mem
-  | otherwise = runMachine $ Machine boundReg ip' is mem'
+stepMachine :: Machine -> Maybe Machine
+stepMachine (Machine boundReg ip is mem)
+  | not (ip `M.member` is) = Nothing
+  | otherwise = Just $ Machine boundReg ip' is mem'
   where
     i = is M.! ip
     mem' = runI i . M.insert boundReg ip $ mem
     ip' = mem' M.! boundReg + 1
+
+runMachine :: Machine -> Memory
+runMachine m@(Machine _ _ _ mem) =
+  case stepMachine m of
+    Nothing -> mem
+    Just m -> runMachine m
 
 part1 :: IO Int
 part1 = do
