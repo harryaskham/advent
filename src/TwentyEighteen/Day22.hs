@@ -24,6 +24,8 @@ indexLevelRisk =
     M.empty
     (sort [(x, y) | x <- [0 .. fst target * 20], y <- [0 .. snd target * 3]])
   where
+    getIndexLevelRisk :: Int -> (Int, Int, Int)
+    getIndexLevelRisk g = let e = eLevel g in (g, e, e `mod` 3)
     f acc (0, 0) = M.insert (0, 0) (getIndexLevelRisk 0) acc
     f acc (x, y)
       | (x, y) == target = M.insert (x, y) (getIndexLevelRisk 0) acc
@@ -34,9 +36,6 @@ indexLevelRisk =
          in M.insert (x, y) (getIndexLevelRisk g) acc
 
 data RegionType = Rocky | Wet | Narrow deriving (Eq)
-
-getIndexLevelRisk :: Int -> (Int, Int, Int)
-getIndexLevelRisk g = let e = eLevel g in (g, e, e `mod` 3)
 
 rType :: Coord2 -> RegionType
 rType pos =
