@@ -14,9 +14,6 @@ depth = 11109
 target :: Coord2
 target = (9, 731)
 
-eLevel :: Int -> Int
-eLevel g = (g + depth) `mod` 20183
-
 indexLevelRisk :: Map Coord2 (Int, Int, Int)
 indexLevelRisk =
   foldl'
@@ -24,6 +21,8 @@ indexLevelRisk =
     M.empty
     (sort [(x, y) | x <- [0 .. fst target * 20], y <- [0 .. snd target * 3]])
   where
+    eLevel :: Int -> Int
+    eLevel g = (g + depth) `mod` 20183
     getIndexLevelRisk :: Int -> (Int, Int, Int)
     getIndexLevelRisk g = let e = eLevel g in (g, e, e `mod` 3)
     f acc (0, 0) = M.insert (0, 0) (getIndexLevelRisk 0) acc
