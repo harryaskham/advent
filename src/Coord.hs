@@ -12,6 +12,16 @@ udlrToDir2 'D' = DirDown
 udlrToDir2 'L' = DirLeft
 udlrToDir2 'R' = DirRight
 
+nsewToDir2 :: Char -> Dir2
+nsewToDir2 'n' = DirUp
+nsewToDir2 's' = DirDown
+nsewToDir2 'e' = DirRight
+nsewToDir2 'w' = DirLeft
+nsewToDir2 'N' = DirUp
+nsewToDir2 'S' = DirDown
+nsewToDir2 'E' = DirRight
+nsewToDir2 'W' = DirLeft
+
 type Coord2 = (Int, Int)
 
 manhattan0 :: Coord2 -> Int
