@@ -58,14 +58,10 @@ data ClimbState = ClimbState Coord2 Tool Int
 startState :: ClimbState
 startState = ClimbState (0, 0) Torch 0
 
-nextStates :: ClimbState -> Map Coord2 RegionType -> ([ClimbState], Map Coord2 RegionType)
-nextStates (ClimbState pos gear t) rTypes =
-  (moveStates ++ gearChangeStates, nextRTypes)
+nextStates :: ClimbState -> [ClimbState]
+nextStates (ClimbState pos gear t) = moveStates ++ gearChangeStates
   where
-    (currentRType, nextRTypes) =
-      case M.lookup pos rTypes of
-        Just rType -> (rType, rTypes)
-        Nothing -> let rt = rType pos in (rt, M.insert pos rt rTypes)
+    currentRType = rType pos
     allowedGearChange =
       case currentRType of
         Rocky -> [ClimbingGear, Torch]
@@ -93,18 +89,17 @@ heuristic (ClimbState pos gear t) =
     _ -> 7
 
 aStar :: Int
-aStar = go (PQ.singleton (heuristic startState) startState) S.empty M.empty
+aStar = go (PQ.singleton (heuristic startState) startState) S.empty
   where
-    go queue seen rTypes
-      | (pos, gear) `S.member` seen = go rest nextSeen nextRTypes
+    go queue seen
       | pos == target && gear == Torch = t
-      | otherwise = go nextQueue nextSeen nextRTypes
+      | (pos, gear) `S.member` seen = go rest seen
+      | otherwise =
+        go
+          (foldl' (\q s -> PQ.insert (heuristic s) s q) rest (nextStates cs))
+          (S.insert (pos, gear) seen)
       where
-        nextSeen = S.insert (pos, gear) seen
         ((_, cs@(ClimbState pos gear t)), rest) = PQ.deleteFindMin queue
-        (nss, nextRTypes) = nextStates cs rTypes
-        next = [(heuristic s, s) | s <- nss]
-        nextQueue = foldl' (\q (h, s) -> PQ.insert h s q) rest next
 
 part2 :: Int
 part2 = aStar
