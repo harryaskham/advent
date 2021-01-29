@@ -24,11 +24,16 @@ nsewToDir2 'W' = DirLeft
 
 type Coord2 = (Int, Int)
 
+type Coord3 = (Int, Int, Int)
+
 manhattan0 :: Coord2 -> Int
 manhattan0 = (+) <$> (abs . fst) <*> (abs . snd)
 
 manhattan :: Coord2 -> Coord2 -> Int
 manhattan (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
+
+manhattan3 :: Coord3 -> Coord3 -> Int
+manhattan3 (x1, y1, z1) (x2, y2, z2) = abs (x1 - x2) + abs (y1 - y2) + abs (z1 - z2)
 
 move :: Dir2 -> Int -> Coord2 -> Coord2
 move DirUp n (x, y) = (x, y - n)
@@ -68,4 +73,13 @@ neighborsNoDiags (x, y) =
     (x - 1, y),
     (x, y + 1),
     (x, y -1)
+  ]
+
+neighbors3 :: Coord3 -> [Coord3]
+neighbors3 (x, y, z) =
+  [ (x + xO, y + yO, z + zO)
+    | xO <- [-1 .. 1],
+      yO <- [-1 .. 1],
+      zO <- [-1 .. 1],
+      xO /= 0 || yO /= 0 || zO /= 0
   ]
