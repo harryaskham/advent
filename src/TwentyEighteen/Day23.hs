@@ -31,7 +31,7 @@ import System.IO.Unsafe
 import Text.ParserCombinators.Parsec
 import Util
 
-data Nanobot = Nanobot Coord3 Int
+data Nanobot = Nanobot Coord3 Int deriving (Eq, Ord, Show)
 
 radius :: Nanobot -> Int
 radius (Nanobot _ r) = r
@@ -62,6 +62,9 @@ part1 = do
 seenBy :: Coord3 -> Nanobot -> Bool
 seenBy pos (Nanobot botPos r) = manhattan3 pos botPos <= r
 
+botsOverlap :: Nanobot -> Nanobot -> Bool
+botsOverlap (Nanobot pos1 r1) (Nanobot pos2 r2) = manhattan3 pos1 pos2 <= r1 + r2
+
 -- TODO: Fuck me. it's not cubes, it's radii of manhattan distance
 type Cube = (Coord3, Coord3)
 
@@ -75,33 +78,40 @@ intersectAll (c1 : c2 : cs) = case c1 `cubeIntersect` c2 of
 distanceToOrigin :: Cube -> Int
 distanceToOrigin = minimum . fmap (manhattan3 (0, 0, 0)) . corners
 
--- TODO: The problem is that valid points are not being taken into account
--- We are constructing the sections of greatest coverage but not finding
+overlappingPointClosestToOrigin :: Set Nanobot -> Coord3
+overlappingPointClosestToOrigin = undefined
+
+-- TODO: could do astar always only looking at the biggest groups so far?
 dfs :: [Nanobot] -> Int
 dfs bots = unsafePerformIO $ do
-  let cubes = botToCube <$> sortOn (Down . radius) bots
-  best <- newIORef (0, 0, Nothing)
+  best <- newIORef []
   seen <- newIORef (S.empty)
-  traverse (\c -> go ((S.singleton c), c, 0, S.fromList (delete c cubes)) seen best) cubes
-  (bestDepth, bestDistance, bestInt) <- readIORef best
-  return bestDistance
+  traverse (\b -> go ((S.singleton b), S.fromList (delete b bots)) seen best) bots
+  bestBots <- readIORef best
+  let botList = S.toList <$> bestBots
+      points = (pointsSeen <$$> botList)
+      inters = concat $ foldl1 intersect <$> points
+      distances = manhattan3 (0, 0, 0) <$> inters
+  return (minimum distances)
   where
-    go (cubeSet, int, depth, remaining) seenRef bestRef = do
+    go (botSet, remaining) seenRef bestRef = do
       seen <- readIORef seenRef
       best <- readIORef bestRef
-      print $ best
-      let nextBest = minimumOn (\(depth, distance, _) -> (negate depth, distance)) [best, (depth, distanceToOrigin int, Just int)]
+      when (not $ null best) $ print (S.size $ head best)
+      let nextBest =
+            if null best || S.size (head best) == S.size botSet
+              then botSet : best
+              else if S.size botSet > S.size (head best) then [botSet] else best
       let nextStates = do
-            c <- S.toList remaining
-            let int' = int `cubeIntersect` c
-            guard $ isJust int'
-            let Just int'' = int'
-            return (S.insert c cubeSet, int'', depth + 1, S.delete c remaining)
-      if cubeSet `S.member` seen
+            b <- S.toList remaining
+            guard $ all (botsOverlap b) botSet
+            let nextBotSet = S.insert b botSet
+            return (nextBotSet, S.filter (\b -> all (== True) (botsOverlap b `S.map` nextBotSet)) remaining)
+      if botSet `S.member` seen
         then return ()
         else do
           writeIORef bestRef nextBest
-          writeIORef seenRef (S.insert cubeSet seen)
+          writeIORef seenRef (S.insert botSet seen)
           sequence_ $ go <$> nextStates <*> pure seenRef <*> pure bestRef
 
 {-
@@ -202,7 +212,7 @@ solve bots =
 
 pointsSeen :: Nanobot -> [Coord3]
 pointsSeen (Nanobot (x, y, z) r) =
-  [ traceShowId $ (x + xO, y + yO, z + zO)
+  [ (x + xO, y + yO, z + zO)
     | xO <- [negate r .. r],
       yO <- [negate (r - abs xO) .. r - abs xO],
       zO <- [negate (r - abs yO - abs xO) .. r - abs yO - abs xO]
@@ -212,10 +222,11 @@ pointsSeen (Nanobot (x, y, z) r) =
 
 part2 :: IO Int
 part2 = do
-  --bots <- readWithParser nanobots <$> input 2018 23
-  bots <- readWithParser nanobots <$> exampleInput 2018 23
-  -- return $ dfs bots
-  return . minimum . fmap (manhattan3 (0, 0, 0) . fst) . head . groupOn snd . sortOn (Down . snd) . M.toList $ M.fromListWith (<>) ((,Sum 1) <$> (pointsSeen =<< bots))
+  bots <- readWithParser nanobots <$> input 2018 23
+  --bots <- readWithParser nanobots <$> exampleInput 2018 23
+  return $ dfs bots
+
+--return . minimum . fmap (manhattan3 (0, 0, 0) . fst) . head . groupOn snd . sortOn (Down . snd) . M.toList $ M.fromListWith (<>) ((,Sum 1) <$> (pointsSeen =<< bots))
 
 --return . minimum $ manhattan3 (0, 0, 0) <$> (corners =<< intersectReduce (botToCube <$> bots))
 
