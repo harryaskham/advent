@@ -53,6 +53,7 @@ dependencies:
 - utf8-string
 - base16-bytestring
 - parallel
+- maximal-cliques
 
 library:
   source-dirs: src

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4568b4e0efcd6340ca99378236b950eea1c8e12cc667b359309c26e37f1579ce
+-- hash: 3b97a0c329950d2b278ddfcf5c1645255eeca155fbbd8fe57cf6aeff3d9d55cd
 
 name:           advent
 version:        0.1.0.0
@@ -147,6 +147,7 @@ library
     , lens
     , listsafe
     , matrix
+    , maximal-cliques
     , monad-dijkstra
     , monad-memo
     , mtl
@@ -191,6 +192,7 @@ executable advent-exe
     , lens
     , listsafe
     , matrix
+    , maximal-cliques
     , monad-dijkstra
     , monad-memo
     , mtl
