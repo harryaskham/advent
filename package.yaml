@@ -54,6 +54,9 @@ dependencies:
 - base16-bytestring
 - parallel
 - maximal-cliques
+- sgd
+- ad
+- backprop
 
 library:
   source-dirs: src

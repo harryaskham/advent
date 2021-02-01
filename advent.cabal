@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3b97a0c329950d2b278ddfcf5c1645255eeca155fbbd8fe57cf6aeff3d9d55cd
+-- hash: b8019bc28f39a460258fdd685002c6c5af65f0dd7956d006034612cb54bf736c
 
 name:           advent
 version:        0.1.0.0
@@ -133,7 +133,9 @@ library
   build-depends:
       MemoTrie
     , MissingH
+    , ad
     , array
+    , backprop
     , base >=4.7 && <5
     , base16-bytestring
     , bytestring
@@ -159,6 +161,7 @@ library
     , raw-strings-qq
     , regex-tdfa
     , regex-tdfa-text
+    , sgd
     , split
     , text
     , time
@@ -177,8 +180,10 @@ executable advent-exe
   build-depends:
       MemoTrie
     , MissingH
+    , ad
     , advent
     , array
+    , backprop
     , base >=4.7 && <5
     , base16-bytestring
     , bytestring
@@ -204,6 +209,7 @@ executable advent-exe
     , raw-strings-qq
     , regex-tdfa
     , regex-tdfa-text
+    , sgd
     , split
     , text
     , time
