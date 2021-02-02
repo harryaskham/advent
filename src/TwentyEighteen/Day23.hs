@@ -34,6 +34,7 @@ import qualified Numeric.AD as AD
 import Numeric.Backprop
 import qualified Numeric.SGD as SGD
 import qualified Numeric.SGD.AdaDelta as ADA
+import qualified Numeric.SGD.Adam as ADAM
 import qualified Numeric.SGD.Momentum as MOM
 import System.IO.Unsafe
 import Text.ParserCombinators.Parsec
@@ -159,7 +160,6 @@ part2 = do
   --let cs = cliques botsOverlap bots
   let clique = head . sortOn (Down . length) $ cs
   print $ length $ clique
-  print $ length $ filter ((24764164, 11698538, 11739450) `seenBy`) clique
   --guard False
   {-
       overlaps =
@@ -177,38 +177,61 @@ part2 = do
   --return $ minimalPoint clique
   --return $ solve clique
   step <- newIORef 0
-  let xyzrs = (\(Nanobot (x, y, z) r) -> (auto $ fromIntegral x, auto $ fromIntegral y, auto $ fromIntegral z, auto $ fromIntegral r)) <$> bots
+  best <- newIORef (0, (0, 0, 0))
+  let xyzrs =
+        ( \(Nanobot (x, y, z) r) ->
+            (auto $ fromIntegral x, auto $ fromIntegral y, auto $ fromIntegral z, auto $ fromIntegral r)
+        )
+          <$> clique
       botLoss x y z (bx, by, bz, r) =
         let d = abs (bx - x) + abs (by - y) + abs (bz - z)
-         in if d <= r then 0 else (d - r)
+         in if d <= r then 0.0 else d -- TODO: Could potentially have x,y,z separate losses here?
       seenByPs x y z = length $ filter ((round x, round y, round z) `seenBy`) bots
-      loss (sequenceVar -> [x, y, z]) = sum (botLoss x y z <$> (0, 0, 0, 0) : xyzrs)
+      --loss (sequenceVar -> [x, y, z]) = sum (botLoss x y z <$> (0, 0, 0, 0) : xyzrs)
+      botLosses x y z = sum (botLoss x y z <$> xyzrs)
+      originLoss x y z = manhattan3 (0, 0, 0) (x, y, z)
+      loss (sequenceVar -> [x, y, z]) = botLosses x y z
       deriv xyzM =
         let [x, y, z] = (xyzM M.!) <$> "xyz"
-            [x', y', z'] = traceShowId $ gradBP loss [x, y, z]
+            --[x', y', z'] = traceShowId $ gradBP loss [x, y, z]
+            [x', y', z'] = gradBP loss [x, y, z]
+            numSeen = seenByPs x y z
          in traceShow
-              ( unsafePerformIO $ do
-                  x <- readIORef step
-                  modifyIORef' step (+ 1)
-                  return x,
-                seenByPs x y z,
+              ( unsafePerformIO $
+                  do
+                    step' <- readIORef step
+                    (b, bPos) <- readIORef best
+                    modifyIORef' step (+ 1)
+                    when (numSeen > b) (writeIORef best (numSeen, (round x, round y, round z)))
+                    return (step', b, bPos),
+                numSeen,
                 manhattan3 (0, 0, 0) (round x, round y, round z),
-                (round x, round y, round z)
+                (round x, round y, round z),
+                round $ evalBP loss [x, y, z]
               )
               $ M.fromList (zip "xyz" [x', y', z'])
       result :: Map Char Double
       result =
         SGD.run
-          (SGD.momentum (MOM.Config {MOM.alpha0 = 100, MOM.gamma = 0.9, MOM.tau = 1000}) id)
+          --(SGD.momentum (MOM.Config {MOM.alpha0 = 10, MOM.gamma = 0.9, MOM.tau = 1000}) id) -- pretty good settings
+          --(SGD.momentum (MOM.Config {MOM.alpha0 = 100, MOM.gamma = 0.0, MOM.tau = 1000}) id)
+          ( SGD.adam
+              ( ADAM.Config
+                  { ADAM.alpha0 = 100000,
+                    ADAM.tau = 100,
+                    ADAM.beta1 = 0.9,
+                    ADAM.beta2 = 0.999,
+                    ADAM.eps = 1.0e-8
+                  }
+              )
+              id
+          )
           --(SGD.adaDelta (ADA.Config 0.99 1.0e-5) id)
           (replicate 10000000 deriv)
-          -- (0.0, (0.0, 0.0))
-          -- (4007281.321, ((-280509.371), 378799.147)) -- precomputed mean position
-          --(37740596.0, (-11777554.0, 22239198.0)) -- precomputed close position
           (M.fromList (zip "xyz" [37740596.0, -11777554.0, 22239198.0])) -- precomputed close positio)
-          --(24764164, (11698538, 11739450))
-          --(8772,965,48202224,(24764191,11698569,11739464))
-          --(24764163, (11698571, 11739463))
+
+      --(8772,965,48202224,(24764191,11698569,11739464))
+      --(24764163, (11698571, 11739463))
       [x, y, z] = (result M.!) <$> "xyz"
   -- print start
   print (x, y, z)
