@@ -26,6 +26,8 @@ type Coord2 = (Int, Int)
 
 type Coord3 = (Int, Int, Int)
 
+type Coord4 = (Int, Int, Int, Int)
+
 manhattan0 :: Coord2 -> Int
 manhattan0 = (+) <$> (abs . fst) <*> (abs . snd)
 
@@ -34,6 +36,9 @@ manhattan (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
 
 manhattan3 :: Coord3 -> Coord3 -> Int
 manhattan3 (x1, y1, z1) (x2, y2, z2) = abs (x1 - x2) + abs (y1 - y2) + abs (z1 - z2)
+
+manhattan4 :: Coord4 -> Coord4 -> Int
+manhattan4 (x1, y1, z1, w1) (x2, y2, z2, w2) = abs (x1 - x2) + abs (y1 - y2) + abs (z1 - z2) + abs (w1 - w2)
 
 move :: Dir2 -> Int -> Coord2 -> Coord2
 move DirUp n (x, y) = (x, y - n)
