@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b8019bc28f39a460258fdd685002c6c5af65f0dd7956d006034612cb54bf736c
+-- hash: 43c3b319cc29923f2a0243a15b7989079c1cd40fd00790592d192ba3fdf0ea71
 
 name:           advent
 version:        0.1.0.0
@@ -46,6 +46,7 @@ library
       TwentyEighteen.Day21
       TwentyEighteen.Day22
       TwentyEighteen.Day23
+      TwentyEighteen.Day24
       TwentyEighteen.Day3
       TwentyEighteen.Day4
       TwentyEighteen.Day5
@@ -161,6 +162,7 @@ library
     , raw-strings-qq
     , regex-tdfa
     , regex-tdfa-text
+    , safe
     , sgd
     , split
     , text
@@ -209,6 +211,7 @@ executable advent-exe
     , raw-strings-qq
     , regex-tdfa
     , regex-tdfa-text
+    , safe
     , sgd
     , split
     , text

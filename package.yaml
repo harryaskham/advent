@@ -30,6 +30,7 @@ dependencies:
 - vector
 - vector-split
 - listsafe
+- safe
 - array
 - lens
 - mtl
