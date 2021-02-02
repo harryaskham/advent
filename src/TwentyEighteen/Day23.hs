@@ -71,11 +71,12 @@ part2 = do
   bots <- readWithParser nanobots <$> input 2018 23
   let cliques = getMaximalCliques botsOverlap bots
       clique = head . sortOn (Down . length) $ cliques
-  --print $ manhattan3 (0, 0, 0) (24764201, 11698589, 11739489)
+
   -- Run gradient descent using the SGD and Backprop libraries for auto-differentiation.
   -- Set up two IORef trackers to keep step count and the most-covered location.
   step <- newIORef 0
   best <- newIORef (0, (0, 0, 0))
+
   -- Convert bots to more gradient-convenient BVars.
   -- Only consider the bots in the clique
   let xyzrs =
@@ -87,18 +88,23 @@ part2 = do
             )
         )
           <$> clique
+
       -- A single bot's loss is zero if we're in its range, otherwise scales with the manhattan distance.
       botLoss x y z (bx, by, bz, r) =
         let d = abs (bx - x) + abs (by - y) + abs (bz - z)
          in if d <= r then 0.0 else d
+
       -- The combined loss function is the distance to all bots, plus tries to minimise distance to origin.
       -- This should allow us to find the minimal overlap, but in my example,
       -- only a single coordinate was visible to all bots.
       botLosses x y z = sum (botLoss x y z <$> (0, 0, 0, 0) : xyzrs)
+
       -- A helper to compute the number seen for a given coordinate so we know when we're fully covered.
       seenByPs x y z = length $ filter ((round x, round y, round z) `seenBy`) bots
+
       -- Finally construct the loss using ViewPatterns to enable vector inputs.
       loss (sequenceVar -> [x, y, z]) = botLosses x y z
+
       -- Use Backprop's gradBP to autodifferentiate the loss
       deriv xyzM =
         let [x, y, z] = (xyzM M.!) <$> "xyz"
@@ -123,6 +129,7 @@ part2 = do
               )
               -- Return an updated parameter map
               $ M.fromList (zip "xyz" [x', y', z'])
+
       -- Run the SGD representing (x,y,z) as a Map, which implements SGD's ParamSet
       -- These parameters happen to converge in around 108,000 steps
       result :: Map Char Double
@@ -143,8 +150,10 @@ part2 = do
           (replicate 110000 deriv)
           -- Start search at the origin
           (M.fromList (zip "xyz" [0, 0, 0]))
+
   -- Print the final result - unlikely to be the best as it won't have fully converged.
   print $ (result M.!) <$> "xyz"
+
   -- Instead, we found the best position, so we take its distance to origin.
   (_, bestPos) <- readIORef best
   return $ manhattan3 (0, 0, 0) bestPos
