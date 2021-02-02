@@ -33,6 +33,8 @@ import Grid
 import qualified Numeric.AD as AD
 import Numeric.Backprop
 import qualified Numeric.SGD as SGD
+import qualified Numeric.SGD.AdaDelta as ADA
+import qualified Numeric.SGD.Momentum as MOM
 import System.IO.Unsafe
 import Text.ParserCombinators.Parsec
 import Util
@@ -137,6 +139,16 @@ mkLoss posRs pos = sum (botLoss <$> posRs) + mhat [0.0, 0.0, 0.0] pos
     botLoss (botPos, r) =
       let d = mhat pos botPos in if d <= r then 0.0 else d
 
+getClose :: [Nanobot] -> Coord3
+getClose bots = go bots (0, 0, 0) 0
+  where
+    go [] best d = best
+    go (b : bs) best d =
+      let bd = bestDistance b
+       in if bd > d
+            then go bs (minimumOn (manhattan3 (0, 0, 0)) (corners b)) bd
+            else go bs best d
+
 part2 :: IO Int
 part2 = do
   bots <- readWithParser nanobots <$> input 2018 23
@@ -146,6 +158,9 @@ part2 = do
   let cs = getMaximalCliques botsOverlap bots
   --let cs = cliques botsOverlap bots
   let clique = head . sortOn (Down . length) $ cs
+  print $ length $ clique
+  print $ length $ filter ((24764164, 11698538, 11739450) `seenBy`) clique
+  --guard False
   {-
       overlaps =
         sortOn
@@ -161,29 +176,40 @@ part2 = do
   -- print $ maximum $ bestDistance <$> clique
   --return $ minimalPoint clique
   --return $ solve clique
+  step <- newIORef 0
   let xyzrs = (\(Nanobot (x, y, z) r) -> (auto $ fromIntegral x, auto $ fromIntegral y, auto $ fromIntegral z, auto $ fromIntegral r)) <$> bots
-      botLoss x y z (bx, by, bz, r) = let d = abs (bx - x) + abs (by - y) + abs (bz - z) in if d <= r then 0 else d
+      botLoss x y z (bx, by, bz, r) =
+        let d = abs (bx - x) + abs (by - y) + abs (bz - z)
+         in if d <= r then 0 else (d - r)
+      seenByPs x y z = length $ filter ((round x, round y, round z) `seenBy`) bots
       loss (sequenceVar -> [x, y, z]) = sum (botLoss x y z <$> (0, 0, 0, 0) : xyzrs)
-      deriv = [\(x, (y, z)) -> let [x', y', z'] = gradBP loss [x, y, z] in (x', (y', z'))]
-      start :: (Double, (Double, Double))
-      start =
-        let (sx, sy, sz) =
-              foldl'
-                ( \(x, y, z) (Nanobot (x', y', z') _) ->
-                    (x + fromIntegral x', y + fromIntegral y', z + fromIntegral z')
-                )
-                (0.0, 0.0, 0.0)
-                bots
-            l = fromIntegral $ length bots
-         in (sx / l, (sy / l, sz / l))
-      result :: (Double, (Double, Double))
+      deriv xyzM =
+        let [x, y, z] = (xyzM M.!) <$> "xyz"
+            [x', y', z'] = traceShowId $ gradBP loss [x, y, z]
+         in traceShow
+              ( unsafePerformIO $ do
+                  x <- readIORef step
+                  modifyIORef' step (+ 1)
+                  return x,
+                seenByPs x y z,
+                manhattan3 (0, 0, 0) (round x, round y, round z),
+                (round x, round y, round z)
+              )
+              $ M.fromList (zip "xyz" [x', y', z'])
+      result :: Map Char Double
       result =
         SGD.run
-          (SGD.adam SGD.def id)
-          (take 1000000 $ cycle deriv)
-          --(0.0, (0.0, 0.0))
-          (4007281.321, ((-280509.371), 378799.147)) -- precomputed mean position
-      (x, (y, z)) = result
+          (SGD.momentum (MOM.Config {MOM.alpha0 = 100, MOM.gamma = 0.9, MOM.tau = 1000}) id)
+          --(SGD.adaDelta (ADA.Config 0.99 1.0e-5) id)
+          (replicate 10000000 deriv)
+          -- (0.0, (0.0, 0.0))
+          -- (4007281.321, ((-280509.371), 378799.147)) -- precomputed mean position
+          --(37740596.0, (-11777554.0, 22239198.0)) -- precomputed close position
+          (M.fromList (zip "xyz" [37740596.0, -11777554.0, 22239198.0])) -- precomputed close positio)
+          --(24764164, (11698538, 11739450))
+          --(8772,965,48202224,(24764191,11698569,11739464))
+          --(24764163, (11698571, 11739463))
+      [x, y, z] = (result M.!) <$> "xyz"
   -- print start
   print (x, y, z)
   return $ manhattan3 (0, 0, 0) (round x, round y, round z)
