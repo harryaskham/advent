@@ -1,5 +1,8 @@
 module TwentySixteen.DayX where
 
+import Control.Monad
+import Control.Monad.Memo
+import Coord
 import Data.Bits
 import Data.Char
 import qualified Data.Foldable as F
@@ -9,6 +12,8 @@ import Data.List.Extra
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
+import Data.Ord
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
@@ -17,6 +22,7 @@ import Data.Tuple.Extra
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Debug.Trace
+import Grid
 import Text.ParserCombinators.Parsec
 import Util
 
