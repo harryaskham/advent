@@ -83,3 +83,19 @@ neighbors3 (x, y, z) =
       zO <- [-1 .. 1],
       xO /= 0 || yO /= 0 || zO /= 0
   ]
+
+partitionSpace :: Coord3 -> Coord3 -> [(Coord3, Coord3)]
+partitionSpace (lx, ly, lz) (ux, uy, uz) =
+  [ ((lx, ly, lz), (hx, hy, hz)),
+    ((hx, ly, lz), (ux, hy, hz)),
+    ((lx, hy, lz), (hx, uy, hz)),
+    ((hx, hy, lz), (ux, uy, hz)),
+    ((lx, ly, hz), (hx, hy, uz)),
+    ((hx, ly, hz), (ux, hy, uz)),
+    ((lx, hy, hz), (hx, uy, uz)),
+    ((hx, hy, hz), (ux, uy, uz))
+  ]
+  where
+    hx = (lx + ux) `div` 2
+    hy = (ly + uy) `div` 2
+    hz = (lz + uz) `div` 2

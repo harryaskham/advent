@@ -1,44 +1,34 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module TwentyEighteen.Day23 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Algorithm.MaximalCliques
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.IORef
-import Data.List
-import Data.List.Extra
+import Control.Monad (when)
+import Coord (Coord3, manhattan3)
+import Data.Algorithm.MaximalCliques (getMaximalCliques)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Data.List (sortOn)
+import Data.List.Extra (maximumOn)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import qualified Data.PQueue.Prio.Min as PQ
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import qualified Numeric.AD as AD
-import Numeric.Backprop
+import Data.Ord (Down (Down))
+import Debug.Trace (traceShow)
+import Numeric.Backprop (auto, evalBP, gradBP, sequenceVar)
 import qualified Numeric.SGD as SGD
-import qualified Numeric.SGD.AdaDelta as ADA
 import qualified Numeric.SGD.Adam as ADAM
-import qualified Numeric.SGD.Momentum as MOM
-import System.IO.Unsafe
+import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    between,
+    char,
+    eof,
+    many,
+    many1,
+    oneOf,
+    sepBy,
+    string,
+  )
+import Util (eol, input, readWithParser)
 
 data Nanobot = Nanobot Coord3 Int deriving (Eq, Ord, Show)
 
@@ -66,7 +56,7 @@ part1 = do
   bots <- readWithParser nanobots <$> input 2018 23
   let maxBot = maximumOn radius bots
       inRange bot = manhattan3 (pos bot) (pos maxBot) <= radius maxBot
-  return . length . filter (inRange) $ bots
+  return . length . filter inRange $ bots
 
 seenBy :: Coord3 -> Nanobot -> Bool
 seenBy pos (Nanobot botPos r) = manhattan3 pos botPos <= r
@@ -74,147 +64,70 @@ seenBy pos (Nanobot botPos r) = manhattan3 pos botPos <= r
 botsOverlap :: Nanobot -> Nanobot -> Bool
 botsOverlap (Nanobot pos1 r1) (Nanobot pos2 r2) = manhattan3 pos1 pos2 <= r1 + r2
 
-overlappingPointClosestToOrigin :: Set Nanobot -> Coord3
-overlappingPointClosestToOrigin = undefined
-
--- Switch to a PQ keeping track of the best possible / worst possible distance?
--- Then we could kind of do an astar here
--- Underestimate for a cluster would be minimum distance to
-
-worstDistance :: Nanobot -> Int
-worstDistance (Nanobot pos r) = manhattan3 (0, 0, 0) pos + r
-
-bestDistance :: Nanobot -> Int
-bestDistance (Nanobot pos r)
-  | d < 0 = 0
-  | otherwise = d
-  where
-    d = manhattan3 (0, 0, 0) pos - r
-
-lowerBound :: Set Nanobot -> Int
-lowerBound bots = S.findMax (S.map bestDistance bots)
-
-upperBound :: Set Nanobot -> Int
-upperBound bots = S.findMin (S.map worstDistance bots)
-
--- when two bots intersect, it's either the case that the old one's best is seen by the new one
--- adding a bot can never make the case any better
--- so we add a bot, it's always the worst-of-bests
-
--- Its a graph clique problem
--- find the maximum clique all of which see each other
--- then just to lowerbound on those
-
-connectionMap :: [Nanobot] -> Map Nanobot (Set Nanobot)
-connectionMap bots =
-  S.fromList
-    <$> M.fromListWith
-      (++)
-      [(b1, [b2]) | b1 <- bots, b2 <- bots, b1 /= b2, botsOverlap b1 b2]
-
-maxCliques :: (Eq a, Ord a) => Map a (Set a) -> [[a]]
-maxCliques conn = getMaximalCliques (\a b -> b `S.member` (conn M.! a)) (M.keys conn)
-
-botsDistance :: [Nanobot] -> Int
-botsDistance bots = maximum (bestDistance <$> bots)
-
-overlapAmount :: Nanobot -> Nanobot -> Int
-overlapAmount (Nanobot pos1 r1) (Nanobot pos2 r2) = r1 + r2 - manhattan3 pos1 pos2
-
--- points must be:
--- - inside each radius
--- - distance to p1 <= r1 && distance to p2 <= r2 && ..., minimise distance to 000
--- - lots of equations i e (xr)
-
-mhat :: [Double] -> [Double] -> Double
-mhat [x1, y1, z1] [x2, y2, z2] = abs (x1 - x2) + abs (y1 - y2) + abs (z1 - z2)
-
-type D3 = (Double, Double, Double)
-
-m3 :: D3 -> D3 -> Double
-m3 (x1, y1, z1) (x2, y2, z2) = abs (x1 - x2) + abs (y1 - y2) + abs (z1 - z2)
-
-mkLoss :: [([Double], Double)] -> [Double] -> Double
-mkLoss posRs pos = sum (botLoss <$> posRs) + mhat [0.0, 0.0, 0.0] pos
-  where
-    botLoss (botPos, r) =
-      let d = mhat pos botPos in if d <= r then 0.0 else d
-
-getClose :: [Nanobot] -> Coord3
-getClose bots = go bots (0, 0, 0) 0
-  where
-    go [] best d = best
-    go (b : bs) best d =
-      let bd = bestDistance b
-       in if bd > d
-            then go bs (minimumOn (manhattan3 (0, 0, 0)) (corners b)) bd
-            else go bs best d
-
+-- Solve part two by SGD over 3D space looking for the single point of maximal intersection.
 part2 :: IO Int
 part2 = do
+  -- First identify the maximal clique of overlapping bots - turns out to be 982 of them.
   bots <- readWithParser nanobots <$> input 2018 23
-  --bots <- readWithParser nanobots <$> exampleInput 2018 23
-  --print $ M.elems $ length <$> connectionMap bots
-  --let cs = maxCliques (connectionMap bots)
-  let cs = getMaximalCliques botsOverlap bots
-  --let cs = cliques botsOverlap bots
-  let clique = head . sortOn (Down . length) $ cs
-  print $ length $ clique
-  --guard False
-  {-
-      overlaps =
-        sortOn
-          thd3
-          [ (b1, b2, overlapAmount b1 b2)
-            | (i1, b1) <- zip [0 ..] clique,
-              (i2, b2) <- zip [0 ..] clique,
-              i2 > i1
-          ]
-  -}
-  -- print $ take 100 $ overlaps
-  -- print $ length (filter ((0, 0, 0) `seenBy`) clique)
-  -- print $ maximum $ bestDistance <$> clique
-  --return $ minimalPoint clique
-  --return $ solve clique
+  let cliques = getMaximalCliques botsOverlap bots
+      clique = head . sortOn (Down . length) $ cliques
+  --print $ manhattan3 (0, 0, 0) (24764201, 11698589, 11739489)
+  -- Run gradient descent using the SGD and Backprop libraries for auto-differentiation.
+  -- Set up two IORef trackers to keep step count and the most-covered location.
   step <- newIORef 0
   best <- newIORef (0, (0, 0, 0))
+  -- Convert bots to more gradient-convenient BVars.
+  -- Only consider the bots in the clique
   let xyzrs =
         ( \(Nanobot (x, y, z) r) ->
-            (auto $ fromIntegral x, auto $ fromIntegral y, auto $ fromIntegral z, auto $ fromIntegral r)
+            ( auto $ fromIntegral x,
+              auto $ fromIntegral y,
+              auto $ fromIntegral z,
+              auto $ fromIntegral r
+            )
         )
           <$> clique
+      -- A single bot's loss is zero if we're in its range, otherwise scales with the manhattan distance.
       botLoss x y z (bx, by, bz, r) =
         let d = abs (bx - x) + abs (by - y) + abs (bz - z)
-         in if d <= r then 0.0 else d -- TODO: Could potentially have x,y,z separate losses here?
+         in if d <= r then 0.0 else d
+      -- The combined loss function is the distance to all bots, plus tries to minimise distance to origin.
+      -- This should allow us to find the minimal overlap, but in my example,
+      -- only a single coordinate was visible to all bots.
+      botLosses x y z = sum (botLoss x y z <$> (0, 0, 0, 0) : xyzrs)
+      -- A helper to compute the number seen for a given coordinate so we know when we're fully covered.
       seenByPs x y z = length $ filter ((round x, round y, round z) `seenBy`) bots
-      --loss (sequenceVar -> [x, y, z]) = sum (botLoss x y z <$> (0, 0, 0, 0) : xyzrs)
-      botLosses x y z = sum (botLoss x y z <$> xyzrs)
-      originLoss x y z = manhattan3 (0, 0, 0) (x, y, z)
+      -- Finally construct the loss using ViewPatterns to enable vector inputs.
       loss (sequenceVar -> [x, y, z]) = botLosses x y z
+      -- Use Backprop's gradBP to autodifferentiate the loss
       deriv xyzM =
         let [x, y, z] = (xyzM M.!) <$> "xyz"
-            --[x', y', z'] = traceShowId $ gradBP loss [x, y, z]
             [x', y', z'] = gradBP loss [x, y, z]
             numSeen = seenByPs x y z
-         in traceShow
-              ( unsafePerformIO $
-                  do
-                    step' <- readIORef step
-                    (b, bPos) <- readIORef best
-                    modifyIORef' step (+ 1)
-                    when (numSeen > b) (writeIORef best (numSeen, (round x, round y, round z)))
-                    return (step', b, bPos),
+            -- Update step counters / best tracker.
+            (s, b, bPos) = unsafePerformIO $ do
+              step' <- readIORef step
+              (b, bPos) <- readIORef best
+              modifyIORef' step (+ 1)
+              when (numSeen > b) (writeIORef best (numSeen, (round x, round y, round z)))
+              return (step', b, bPos)
+         in -- Do some per-step logging.
+            traceShow
+              ( s,
+                b,
+                bPos,
                 numSeen,
                 manhattan3 (0, 0, 0) (round x, round y, round z),
                 (round x, round y, round z),
                 round $ evalBP loss [x, y, z]
               )
+              -- Return an updated parameter map
               $ M.fromList (zip "xyz" [x', y', z'])
+      -- Run the SGD representing (x,y,z) as a Map, which implements SGD's ParamSet
+      -- These parameters happen to converge in around 108,000 steps
       result :: Map Char Double
       result =
         SGD.run
-          --(SGD.momentum (MOM.Config {MOM.alpha0 = 10, MOM.gamma = 0.9, MOM.tau = 1000}) id) -- pretty good settings
-          --(SGD.momentum (MOM.Config {MOM.alpha0 = 100, MOM.gamma = 0.0, MOM.tau = 1000}) id)
           ( SGD.adam
               ( ADAM.Config
                   { ADAM.alpha0 = 100000,
@@ -226,125 +139,12 @@ part2 = do
               )
               id
           )
-          --(SGD.adaDelta (ADA.Config 0.99 1.0e-5) id)
-          (replicate 10000000 deriv)
-          (M.fromList (zip "xyz" [37740596.0, -11777554.0, 22239198.0])) -- precomputed close positio)
-
-      --(8772,965,48202224,(24764191,11698569,11739464))
-      --(24764163, (11698571, 11739463))
-      [x, y, z] = (result M.!) <$> "xyz"
-  -- print start
-  print (x, y, z)
-  return $ manhattan3 (0, 0, 0) (round x, round y, round z)
-
--- return $ botsDistance clique
-
--- TODO: now that we have the clique, we can actually find the region of 3d space represented by the turned-cube, and keep intersecting this with all others until we get a region of space
--- Easier if we rotate our axes
--- The issue is that the virtual point is not necessarily on any bot's efficient path to the origin
--- or we do have a system of equations / inequalities now as well
-
-pointsSeen :: Nanobot -> [Coord3]
-pointsSeen (Nanobot (x, y, z) r) =
-  [ (x + xO, y + yO, z + zO)
-    | xO <- [negate r .. r],
-      yO <- [negate (r - abs xO) .. r - abs xO],
-      zO <- [negate (r - abs yO - abs xO) .. r - abs yO - abs xO]
-  ]
-
-corners :: Nanobot -> [Coord3]
-corners (Nanobot (x, y, z) r) =
-  [ (x + r, y, z),
-    (x - r, y, z),
-    (x, y + r, z),
-    (x, y - r, z),
-    (x, y, z + r),
-    (x, y, z - r)
-  ]
-
-edges :: Nanobot -> [Coord3]
-edges (Nanobot (x, y, z) r) =
-  traceShow "bot" $
-    [ (x + xO, y + yO, z + zO)
-      | xO <- [- r .. r],
-        yO <- [- r + abs xO .. r - abs xO],
-        let zO = r - xO - yO
-    ]
-
-solve bots = minimum $ manhattan3 (0, 0, 0) <$> (filter (\c -> all (c `seenBy`) bots) (edges =<< bots))
-
-partitionSpace :: Coord3 -> Coord3 -> [(Coord3, Coord3)]
-partitionSpace (lx, ly, lz) (ux, uy, uz) =
-  [ ((lx, ly, lz), (hx, hy, hz)),
-    ((hx, ly, lz), (ux, hy, hz)),
-    ((lx, hy, lz), (hx, uy, hz)),
-    ((hx, hy, lz), (ux, uy, hz)),
-    ((lx, ly, hz), (hx, hy, uz)),
-    ((hx, ly, hz), (ux, hy, uz)),
-    ((lx, hy, hz), (hx, uy, uz)),
-    ((hx, hy, hz), (ux, uy, uz))
-  ]
-  where
-    hx = (lx + ux) `div` 2
-    hy = (ly + uy) `div` 2
-    hz = (lz + uz) `div` 2
-
--- try a BFS of space partitioning looking for the minimum
-minimalPoint :: [Nanobot] -> Int
-minimalPoint bots = minimum $ manhattan3 (0, 0, 0) <$> go (SQ.singleton (lb, ub, 0)) []
-  where
-    lb = traceShowId $ minimumOn (manhattan3 (0, 0, 0)) (pos <$> bots)
-    ub = traceShowId $ maximumOn (manhattan3 (0, 0, 0)) (pos <$> bots)
-    inRegion point = all (\(Nanobot pos r) -> manhattan3 pos point <= r) bots
-    go SQ.Empty points = points
-    go ((lb, ub, depth) SQ.:<| queue) points
-      | manhattan3 lb ub <= 3 = go queue points
-      | not (null points)
-          && (manhattan3 (0, 0, 0) ub > manhattan3 (0, 0, 0) (head points))
-          && (manhattan3 (0, 0, 0) lb > manhattan3 (0, 0, 0) (head points)) =
-        go queue points
-      | inLb && inUb = go nextQueue (lb : ub : points)
-      | inLb = go nextQueue (lb : points)
-      | inUb = go nextQueue (ub : points)
-      | otherwise = traceShow (length points, depth, length queue) $ go nextQueue points
-      where
-        nextQueue = queue SQ.>< SQ.fromList ((\(a, b) -> (a, b, depth + 1)) <$> partitionSpace lb ub)
-        inLb = inRegion lb
-        inUb = inRegion ub
-
--- TODO: Rotate 90 degrees, treat as cubes, do it by intersection
-
--- | x-x1| + |y-y1| + |z-z1| <= r1 is equation of manhattansphere
-
--- TODO erm
--- Can we do this?
--- We can bound the area with the closest-to-origin 8 planes making the irregularly octahedral regino
--- all planes actually exist and are O(1) to compute
--- and if wedo this we get real points of intersection
--- should work due to all 90 degree angles
--- All planes are just defined by slope adn intersection with the axis
--- but. small ones would fuck it up
-{-
-x + y + z <
-pos=<10,12,12>, r=2
-pos=<12,14,12>, r=2
-pos=<16,12,12>, r=4
-pos=<14,14,14>, r=6
-pos=<50,50,50>, r=200
-
-this clique gives
-10 + a = x, 12 + b = y, 12 + c = z, a + b + c <= 2,
-12 + d = x, 14 + e = y, 12 + f = z, d + e + f <= 2,
-16 + g = x, 12 + h = y, 12 + i = z, g + h + i <= 4,
-14 + j = x, 14 + k = y, 14 + l = z, j + k + l <= 6,
-14 + j = x, 14 + k = y, 14 + l = z, j + k + l <= 6,
--}
-
---return . minimum . fmap (manhattan3 (0, 0, 0) . fst) . head . groupOn snd . sortOn (Down . snd) . M.toList $ M.fromListWith (<>) ((,Sum 1) <$> (pointsSeen =<< bots))
-
---return . minimum $ manhattan3 (0, 0, 0) <$> (corners =<< intersectReduce (botToCube <$> bots))
-
--- return $ solve bots
-
--- 54689610 too high
--- 48202240 too low
+          -- Construct 'dataset' of 110000 steps of grad updates
+          (replicate 110000 deriv)
+          -- Start search at the origin
+          (M.fromList (zip "xyz" [0, 0, 0]))
+  -- Print the final result - unlikely to be the best as it won't have fully converged.
+  print $ (result M.!) <$> "xyz"
+  -- Instead, we found the best position, so we take its distance to origin.
+  (_, bestPos) <- readIORef best
+  return $ manhattan3 (0, 0, 0) bestPos
