@@ -34,6 +34,9 @@ toTuple2 [a, b] = (a, b)
 toTuple3 :: [a] -> (a, a, a)
 toTuple3 [a, b, c] = (a, b, c)
 
+uncurry4 :: (a -> b -> c -> d -> e) -> ((a, b, c, d) -> e)
+uncurry4 f = let f' (a, b, c, d) = f a b c d in f'
+
 readWithParser :: GenParser Char () a -> String -> a
 readWithParser parser input = do
   case parse parser "[input]" input of

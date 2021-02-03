@@ -7,6 +7,7 @@ import Data.Bits
 import Data.Char
 import qualified Data.Foldable as F
 import Data.Function
+import Data.IORef
 import Data.List
 import Data.List.Extra
 import Data.Map (Map)
@@ -23,6 +24,7 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Debug.Trace
 import Grid
+import System.IO.Unsafe
 import Text.ParserCombinators.Parsec
 import Util
 
@@ -61,44 +63,74 @@ nodes = do
       eol
       return $ Node (x, y) used avail
 
+canMove :: Node -> Node -> Bool
+canMove a b = used a > 0 && used a <= avail b
+
 viablePairs :: [Node] -> [(Node, Node)]
-viablePairs ns = [(a, b) | a <- ns, b <- ns, a /= b, used a > 0, used a <= avail b]
+viablePairs ns = [(a, b) | a <- ns, b <- ns, a /= b, canMove a b]
 
 part1 :: IO Int
 part1 = do
   ns <- readWithParser nodes <$> input 2016 22
   return . length . viablePairs $ ns
 
-viableConnectedPairs :: [Node] -> [(Node, Node)]
-viableConnectedPairs ns = [(a, b) | (a, b) <- viablePairs ns, manhattan (pos a) (pos b) == 1]
+viableConnectedPairs :: [Node] -> Map Coord2 [Coord2]
+viableConnectedPairs ns =
+  M.fromListWith
+    (++)
+    [ (pos a, [pos b])
+      | (a, b) <- viablePairs ns,
+        manhattan (pos a) (pos b) == 1
+    ]
 
+-- TODO: A* with a heuristic that favours both distance to G,
+-- and estimates of the cost of opening up the path to G.
+-- Simple manhattan to G is not tight enough, but cost of opening path up is quite suble
 fewestSteps :: Map Coord2 Node -> Coord2 -> Int
-fewestSteps nodeMap gPos = go (SQ.singleton (gPos, nodeMap, 0)) S.empty
+fewestSteps nodeMap gPos = go (SQ.singleton (gPos, nodeMap, 0, S.empty, viableConnectedPairs (M.elems nodeMap)))
   where
-    go ((gPos, nodeMap, steps) SQ.:<| queue) seen
+    go SQ.Empty = 0
+    go ((gPos, nodeMap, steps, seen, viable) SQ.:<| queue)
       | gPos == (0, 0) = steps
-      | (gPos, nodeMap) `S.member` seen = go queue seen
+      -- | (gPos, nodeMap) `S.member` seen = go queue seen
       | otherwise =
-        traceShow (steps, gPos, length queue, length nextStates) $
-          go
-            (queue SQ.>< SQ.fromList nextStates)
-            (S.insert (gPos, nodeMap) seen)
+        traceShow (steps, gPos, length queue, length nextStates, M.size viable) $
+        go (queue SQ.>< SQ.fromList nextStates)
       where
-        moveData (n1, n2) =
-          ( n1 {used = 0, avail = (avail n1 + used n1)},
-            n2 {used = (used n2 + used n1), avail = (avail n2 - used n1)}
+        moveData (a, b) =
+          ( a {used = 0, avail = (avail a + used a)},
+            b {used = (used b + used a), avail = (avail b - used a)}
           )
+        nodeNeighbors nodeMap a = catMaybes (M.lookup <$> neighborsNoDiags (pos a) <*> pure nodeMap)
         nextStates =
-          [ ( if pos n1 == gPos then pos n2 else gPos,
-              M.insert (pos n1) n1 . M.insert (pos n2) n2 $ nodeMap,
-              steps + 1
+          [ ( if pos a == gPos then pos b else gPos,
+              nextNodeMap,
+              steps + 1,
+              nextSeen,
+              nextViable
             )
-            | (n1, n2) <- moveData <$> viableConnectedPairs (M.elems nodeMap)
+            | aPos <- M.keys viable,
+              bPos <- viable M.! aPos,
+              not ((aPos, bPos) `S.member` seen),
+              let a' = nodeMap M.! aPos
+                  b' = nodeMap M.! bPos,
+              canMove a' b',
+              let (a, b) = moveData (a', b')
+                  nextNodeMap = M.insert (pos a) a . M.insert (pos b) b $ nodeMap
+                  nextSeen = S.insert (pos a, pos b) seen
+                  nextViable =
+                    --viableConnectedPairs (M.elems nextNodeMap)
+                    viable
+                      & M.delete aPos
+                      & M.delete bPos
+                      & M.unionWith (union) (viableConnectedPairs (a : (nodeNeighbors nextNodeMap a)))
+                      & M.unionWith (intersect) (viableConnectedPairs (b : (nodeNeighbors nextNodeMap b)))
           ]
 
 part2 :: IO Int
 part2 = do
   ns <- readWithParser nodes <$> input 2016 22
+  --ns <- readWithParser nodes <$> exampleInput 2016 22
   let nodeMap = M.fromList [(pos n, n) | n <- ns]
       maxX = maximum (fst . pos <$> ns)
   return $ fewestSteps nodeMap (maxX, 0)
