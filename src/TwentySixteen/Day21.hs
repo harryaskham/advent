@@ -26,7 +26,6 @@ data Transformation
   | RotateLetter Char
   | ReversePositions Int Int
   | MovePosition Int Int
-  deriving (Show)
 
 transformations :: GenParser Char () [Transformation]
 transformations = do
