@@ -1,6 +1,6 @@
 module Main where
 
-import TwentyEighteen.Day23
+import TwentySixteen.Day18
 
 main :: IO ()
 main = do
