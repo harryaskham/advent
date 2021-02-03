@@ -1,4 +1,4 @@
-module TwentySixteen.DayX where
+module TwentySixteen.Day22 where
 
 import Control.Monad
 import Control.Monad.Memo
@@ -28,5 +28,5 @@ import Util
 
 part1 :: IO Int
 part1 = do
-  ls <- lines <$> input 2016 1
+  ls <- lines <$> input 2016 22
   return 0
