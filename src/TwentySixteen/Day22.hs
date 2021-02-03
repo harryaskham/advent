@@ -1,33 +1,27 @@
 module TwentySixteen.Day22 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.IORef
-import Data.List
-import Data.List.Extra
+import Coord (Coord2, manhattan, neighborsNoDiags)
+import Data.List (foldl')
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
+import Data.Maybe (catMaybes)
 import qualified Data.PQueue.Prio.Min as PQ
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import System.IO.Unsafe
+import Debug.Trace (traceShow)
+import Grid (pretty)
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    char,
+    count,
+    digit,
+    eof,
+    many,
+    many1,
+    noneOf,
+    spaces,
+    string,
+  )
+import Util (eol, input, readWithParser, tracePause, traceStrLn)
 
 data Node = Node
   { pos :: Coord2,
@@ -46,7 +40,7 @@ nodes = do
     tVal = do
       val <- read <$> many1 digit
       char 'T'
-      return $ val
+      return val
     node = do
       string "/dev/grid/node-x"
       x <- read <$> many1 digit
@@ -101,8 +95,8 @@ astar nodeMap gPos =
       where
         ((_, (gPos, nodeMap, steps)), rest) = PQ.deleteFindMin queue
         moveData (a, b) =
-          ( a {used = 0, avail = (avail a + used a)},
-            b {used = (used b + used a), avail = (avail b - used a)}
+          ( a {used = 0, avail = avail a + used a},
+            b {used = used b + used a, avail = avail b - used a}
           )
         nodeNeighbors nodeMap a = catMaybes (M.lookup <$> neighborsNoDiags (pos a) <*> pure nodeMap)
         nextStates =
