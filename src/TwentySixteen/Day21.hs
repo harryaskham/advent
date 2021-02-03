@@ -1,30 +1,22 @@
 module TwentySixteen.Day21 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
+import Data.Char (digitToInt)
 import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
+import Data.List (foldl')
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    choice,
+    digit,
+    eof,
+    letter,
+    many,
+    noneOf,
+    string,
+    try,
+  )
+import Util (eol, input, readWithParser)
 
 data Transformation
   = SwapPosition Int Int
