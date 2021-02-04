@@ -1,32 +1,49 @@
 module TwentyFifteen.Day3 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
+import Coord (Coord2, Dir2 (..), move)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Data.Tuple.Extra (first, second)
+import Util (adjustWithDefault, input)
+
+toDir2 :: Char -> Dir2
+toDir2 '^' = DirUp
+toDir2 'v' = DirDown
+toDir2 '<' = DirLeft
+toDir2 '>' = DirRight
+
+locationCounts :: Coord2 -> [Dir2] -> Map Coord2 Int
+locationCounts start dirs = go start dirs M.empty
+  where
+    go pos [] counts = adjustWithDefault 0 (+ 1) pos counts
+    go pos (d : dirs) counts =
+      go
+        (move d 1 pos)
+        dirs
+        (adjustWithDefault 0 (+ 1) pos counts)
+
+solve :: (Coord2 -> [Dir2] -> Map Coord2 Int) -> IO Int
+solve f = do
+  dirs <- fmap toDir2 . head . lines <$> input 2015 3
+  return . M.size . M.filter (>= 1) . f (0, 0) $ dirs
 
 part1 :: IO Int
-part1 = do
-  ls <- lines <$> input 2015 3
-  return 0
+part1 = solve locationCounts
+
+pairLocationCounts :: Coord2 -> [Dir2] -> Map Coord2 Int
+pairLocationCounts start dirs =
+  go (start, start) dirs (cycle [(fst, first), (snd, second)]) M.empty
+  where
+    go ps [] (turn : _) counts =
+      let (access, _) = turn
+       in adjustWithDefault 0 (+ 1) (access ps) counts
+    go ps (d : dirs) (turn : turns) counts =
+      let (access, update) = turn
+       in go
+            (update (move d 1) ps)
+            dirs
+            turns
+            (adjustWithDefault 0 (+ 1) (access ps) counts)
+
+part2 :: IO Int
+part2 = solve pairLocationCounts
