@@ -7,6 +7,7 @@ import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
+import Data.Tuple.Extra (swap)
 import Data.Typeable (Typeable)
 import Debug.Trace (trace)
 import qualified Language.Haskell.Interpreter as Hint
@@ -103,3 +104,9 @@ thd4 (_, _, a, _) = a
 fth4 (_, _, _, a) = a
 
 first3 f (a, b, c) = (f a, b, c)
+
+swapMap :: (Ord a, Ord b) => M.Map a b -> M.Map b a
+swapMap = M.fromList . fmap swap . M.toList
+
+unjust :: Maybe a -> a
+unjust (Just a) = a
