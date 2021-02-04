@@ -34,16 +34,14 @@ pairLocationCounts :: Coord2 -> [Dir2] -> Map Coord2 Int
 pairLocationCounts start dirs =
   go (start, start) dirs (cycle [(fst, first), (snd, second)]) M.empty
   where
-    go ps [] (turn : _) counts =
-      let (access, _) = turn
-       in adjustWithDefault 0 (+ 1) (access ps) counts
-    go ps (d : dirs) (turn : turns) counts =
-      let (access, update) = turn
-       in go
-            (update (move d 1) ps)
-            dirs
-            turns
-            (adjustWithDefault 0 (+ 1) (access ps) counts)
+    go ps [] ((access, _) : _) counts =
+      adjustWithDefault 0 (+ 1) (access ps) counts
+    go ps (d : dirs) ((access, update) : turns) counts =
+      go
+        (update (move d 1) ps)
+        dirs
+        turns
+        (adjustWithDefault 0 (+ 1) (access ps) counts)
 
 part2 :: IO Int
 part2 = solve pairLocationCounts
