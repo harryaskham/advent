@@ -4,6 +4,7 @@ import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Debug.Trace
 import Text.ParserCombinators.Parsec
   ( GenParser,
     char,
@@ -27,6 +28,7 @@ data Instruction
   | Dec Char
   | Jnz Value Value
   | Tgl Value
+  | Out Value
   deriving (Show)
 
 coerce :: Map Char Int -> Value -> Int
@@ -39,7 +41,7 @@ instructions = do
   eof
   return is
   where
-    instruction = choice $ try <$> [cpy, inc, dec, jnz, tgl]
+    instruction = choice $ try <$> [cpy, inc, dec, jnz, tgl, out]
     literal = read <$> many1 (oneOf "-0123456789")
     value = (Register <$> letter) <|> (Literal <$> literal)
     cpy = do
@@ -71,26 +73,30 @@ instructions = do
       x <- value
       eol
       return $ Tgl x
+    out = do
+      string "out "
+      x <- value
+      eol
+      return $ Out x
 
 data Machine = Machine Int (Map Char Int)
 
 mkMachine :: Machine
 mkMachine = Machine 0 (M.fromList $ zip ['a' .. 'd'] (repeat 0))
 
-run :: Vector Instruction -> Machine -> (Vector Instruction, Machine)
-run is m@(Machine pc mem) =
-  case is V.!? pc of
-    Nothing -> (is, m)
-    Just (Cpy v r) -> case r of
+step :: Instruction -> Vector Instruction -> Machine -> (Vector Instruction, Machine, Maybe Int)
+step i is m@(Machine pc mem) =
+  case i of
+    (Cpy v r) -> case r of
       Literal _ -> error "Invalid CPY"
-      Register r -> run is $ Machine (pc + 1) (M.insert r (coerce mem v) mem)
-    Just (Inc r) -> run is $ Machine (pc + 1) (M.adjust (+ 1) r mem)
-    Just (Dec r) -> run is $ Machine (pc + 1) (M.adjust (subtract 1) r mem)
-    Just (Jnz v inc) ->
+      Register r -> (is, Machine (pc + 1) (M.insert r (coerce mem v) mem), Nothing)
+    (Inc r) -> (is, Machine (pc + 1) (M.adjust (+ 1) r mem), Nothing)
+    (Dec r) -> (is, Machine (pc + 1) (M.adjust (subtract 1) r mem), Nothing)
+    (Jnz v inc) ->
       if coerce mem v == 0
-        then run is $ Machine (pc + 1) mem
-        else run is $ Machine (pc + coerce mem inc) mem
-    Just (Tgl x) ->
+        then (is, Machine (pc + 1) mem, Nothing)
+        else (is, Machine (pc + coerce mem inc) mem, Nothing)
+    (Tgl x) ->
       let tgl (Inc r) = Dec r
           tgl (Dec r) = Inc r
           tgl (Jnz v inc) = Cpy v inc
@@ -98,8 +104,15 @@ run is m@(Machine pc mem) =
           tgl (Tgl (Register r)) = Inc r
           ix = (pc + coerce mem x)
        in case is V.!? ix of
-            Nothing -> run is $ Machine (pc + 1) mem
-            Just i -> run (is V.// [(ix, tgl i)]) $ Machine (pc + 1) mem
+            Nothing -> (is, Machine (pc + 1) mem, Nothing)
+            Just i -> (is V.// [(ix, tgl i)], Machine (pc + 1) mem, Nothing)
+    (Out x) -> (is, Machine (pc + 1) mem, Just (coerce mem x))
+
+run :: Vector Instruction -> Machine -> (Vector Instruction, Machine)
+run is m@(Machine pc _) =
+  case is V.!? pc of
+    Nothing -> (is, m)
+    Just i -> let (is', m', _) = step i is m in run is' m'
 
 part1 :: IO Int
 part1 = do
