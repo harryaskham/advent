@@ -76,7 +76,7 @@ part12 = do
             )
             | a <- M.keys numToPosition
           ]
-  return $
+  return
     ( shortestVisitationFrom numToDistances 0 Nothing,
       shortestVisitationFrom numToDistances 0 (Just 0)
     )
