@@ -89,7 +89,7 @@ run is m@(Machine pc mem) =
     Just (Jnz v inc) ->
       if coerce mem v == 0
         then run is $ Machine (pc + 1) mem
-        else run is $ Machine (pc + (coerce mem inc)) mem
+        else run is $ Machine (pc + coerce mem inc) mem
     Just (Tgl x) ->
       let tgl (Inc r) = Dec r
           tgl (Dec r) = Inc r
@@ -104,13 +104,13 @@ run is m@(Machine pc mem) =
 part1 :: IO Int
 part1 = do
   is <- readWithParser instructions <$> input 2016 12
-  let (_, (Machine _ mem)) = run (V.fromList is) mkMachine
+  let (_, Machine _ mem) = run (V.fromList is) mkMachine
   return $ mem M.! 'a'
 
 part2 :: IO Int
 part2 = do
   is <- readWithParser instructions <$> input 2016 12
-  let (_, (Machine _ mem)) =
+  let (_, Machine _ mem) =
         run
           (V.fromList is)
           (Machine 0 (M.fromList (zip ['a' .. 'd'] [0, 0, 1, 0])))
