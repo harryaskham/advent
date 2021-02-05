@@ -1,32 +1,29 @@
 module TwentyFifteen.Day8 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Data.Maybe (fromMaybe)
+import Util (countMap, input)
+
+escape :: String -> String
+escape [] = []
+escape [x] = [x]
+escape ('\\' : '\\' : xs) = '\\' : escape xs
+escape ('\\' : '"' : xs) = '"' : escape xs
+escape ('\\' : 'x' : a : b : xs) = 'x' : escape xs
+escape (x : xs) = x : escape xs
 
 part1 :: IO Int
 part1 = do
-  ls <- lines <$> input 2015 8
-  return 0
+  rawStrings <- lines <$> input 2015 8
+  let evalStrings = (\s -> escape $ drop 1 $ take (length s - 1) s) <$> rawStrings
+  return $ sum (length <$> rawStrings) - sum (length <$> evalStrings)
+
+part2 :: IO Int
+part2 = do
+  rawStrings <- lines <$> input 2015 8
+  let enLen s =
+        let cm = countMap s
+         in 2 + length s
+              + fromMaybe 0 (M.lookup '"' cm)
+              + fromMaybe 0 (M.lookup '\\' cm)
+  return $ sum (enLen <$> rawStrings) - sum (length <$> rawStrings)
