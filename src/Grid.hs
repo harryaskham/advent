@@ -1,7 +1,10 @@
 module Grid where
 
+import qualified Data.Array.Unboxed as A
 import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
+
+type AGrid a = A.UArray (Int, Int) a
 
 type Grid a = M.Map (Int, Int) a
 
