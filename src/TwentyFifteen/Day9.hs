@@ -1,30 +1,20 @@
 module TwentyFifteen.Day9 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    digit,
+    eof,
+    letter,
+    many,
+    many1,
+    string,
+  )
+import Util (eol, input, readWithParser)
 
 connections :: GenParser Char () (Map String [(String, Int)])
 connections = M.fromListWith (++) . concat <$> many connection <* eof
