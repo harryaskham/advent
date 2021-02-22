@@ -11,7 +11,7 @@ import Data.Monoid (Sum (Sum, getSum))
 import Data.Ord (Down (Down))
 import Data.Tuple.Extra (swap)
 import Data.Typeable (Typeable)
-import Debug.Trace (trace)
+import Debug.Trace (trace, traceShow)
 import qualified Language.Haskell.Interpreter as Hint
 import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, many1, oneOf, parse)
@@ -86,6 +86,12 @@ tracePause s a = unsafePerformIO $ do
   getLine
   return a
 
+traceShowPauseId :: Show a => a -> a
+traceShowPauseId a = unsafePerformIO $ do
+  print a
+  getLine
+  return a
+
 traceStrLn :: String -> a -> a
 traceStrLn s a = unsafePerformIO $ do
   putStrLn s
@@ -101,6 +107,9 @@ traceStrLnWhen p s a
     putStrLn s
     return a
   | otherwise = a
+
+traceShowF :: Show b => (a -> b) -> a -> a
+traceShowF f a = traceShow (f a) a
 
 fst4 (a, _, _, _) = a
 
