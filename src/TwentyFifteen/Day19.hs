@@ -14,6 +14,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import Data.Ord
+import qualified Data.PQueue.Prio.Min as PQ
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
@@ -81,16 +82,21 @@ shortestConstruction rs target = go (SQ.singleton ("e", 0)) S.empty
         nextStates = SQ.fromList [(s, steps + 1) | s <- singleReplacements rs current]
 
 shortestConstructionRev :: Map String [String] -> String -> Maybe Int
-shortestConstructionRev rs' target = go (SQ.singleton (target, 0)) S.empty
+shortestConstructionRev rs' target = go (PQ.singleton (length target) (target, 0)) S.empty
   where
-    rs = M.fromListWith (++) [(b, [a]) | (a, bs) <- M.toList rs', b <- bs]
-    go SQ.Empty _ = Nothing
-    go ((current, steps) SQ.:<| queue) seen
+    rs = traceShowId $ M.fromListWith (++) [(b, [a]) | (a, bs) <- M.toList rs', b <- bs]
+    go queue seen
+      | null queue = Nothing
       | current == "e" = Just steps
-      | current `S.member` seen = go queue seen
-      | otherwise = traceShow steps $ go (queue SQ.>< nextStates) (S.insert current seen)
+      | current `S.member` seen = go rest seen
+      | otherwise = traceShow (current, steps, length queue) $ go nextQueue (S.insert current seen)
       where
-        nextStates = SQ.fromList [(s, steps + 1) | s <- singleReplacements rs current]
+        ((_, (current, steps)), rest) = PQ.deleteFindMin queue
+        nextStates =
+          [ (length s, (s, steps + 1))
+            | s <- singleReplacements rs current
+          ]
+        nextQueue = foldl' (\q (h, v) -> PQ.insert h v q) rest nextStates
 
 part2 :: IO (Maybe Int)
 part2 = do
