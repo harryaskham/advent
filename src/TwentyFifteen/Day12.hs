@@ -28,11 +28,7 @@ json = obj <|> lst <|> strLit <|> numLit
     strLit = StrLit <$> between (char '"') (char '"') (many1 letter)
     lst = Lst <$> between (char '[') (char ']') (json `sepBy` char ',')
     obj = Obj <$> between (char '{') (char '}') (keyVal `sepBy` char ',')
-    keyVal = do
-      k <- strLit
-      char ':'
-      v <- json
-      return (k, v)
+    keyVal = (,) <$> strLit <* char ':' <*> json
 
 sumJson :: Json -> Int
 sumJson (StrLit _) = 0
