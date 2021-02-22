@@ -1,32 +1,57 @@
 module TwentyFifteen.Day14 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
+import Data.List (group, sort, transpose)
 import Text.ParserCombinators.Parsec
-import Util
+  ( GenParser,
+    digit,
+    eof,
+    letter,
+    many,
+    many1,
+    string,
+  )
+import Util (eol, input, maxIndices, readWithParser)
+
+reindeer :: GenParser Char () [(Int, Int, Int)]
+reindeer = many line <* eof
+  where
+    line = do
+      many1 letter
+      string " can fly "
+      speed <- read <$> many1 digit
+      string " km/s for "
+      duration <- read <$> many1 digit
+      string " seconds, but then must rest for "
+      rest <- read <$> many1 digit
+      string " seconds."
+      eol
+      return (speed, duration, rest)
+
+distanceAtTime :: Int -> (Int, Int, Int) -> Int
+distanceAtTime t (speed, duration, rest) =
+  sum
+    . take t
+    . cycle
+    $ replicate duration speed ++ replicate rest 0
 
 part1 :: IO Int
 part1 = do
-  ls <- lines <$> input 2015 14
-  return 0
+  rs <- readWithParser reindeer <$> input 2015 14
+  return . maximum $ distanceAtTime 2503 <$> rs
+
+distancesAtTime :: (Int, Int, Int) -> [Int]
+distancesAtTime (speed, duration, rest) =
+  scanl1 (+)
+    . cycle
+    $ replicate duration speed ++ replicate rest 0
+
+part2 :: IO Int
+part2 = do
+  rs <- readWithParser reindeer <$> input 2015 14
+  return
+    . maximum
+    . fmap length
+    . group
+    . sort
+    . concat
+    $ maxIndices <$> (take 2503 $ transpose (distancesAtTime <$> rs))

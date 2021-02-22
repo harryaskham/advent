@@ -5,8 +5,10 @@ module Util where
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as BC
+import Data.List.Extra (groupOn, sortOn)
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
+import Data.Ord (Down (Down))
 import Data.Tuple.Extra (swap)
 import Data.Typeable (Typeable)
 import Debug.Trace (trace)
@@ -110,3 +112,6 @@ swapMap = M.fromList . fmap swap . M.toList
 
 unjust :: Maybe a -> a
 unjust (Just a) = a
+
+maxIndices :: Ord a => [a] -> [Int]
+maxIndices = fmap fst . head . groupOn snd . sortOn (Down . snd) . zip [0 ..]
