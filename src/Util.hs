@@ -5,7 +5,7 @@ module Util where
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as BC
-import Data.List.Extra (groupOn, sortOn)
+import Data.List.Extra (groupOn, sortOn, stripInfix)
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Ord (Down (Down))
@@ -29,6 +29,11 @@ infixl 5 <$$>
 
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 (<$$>) = fmap . fmap
+
+infixl 5 <***>
+
+(<***>) :: (Applicative f, Applicative g) => f (g (a -> b)) -> g a -> f (g b)
+f <***> a = (<*> a) <$> f
 
 toTuple2 :: [a] -> (a, a)
 toTuple2 [a, b] = (a, b)
@@ -115,3 +120,15 @@ unjust (Just a) = a
 
 maxIndices :: Ord a => [a] -> [Int]
 maxIndices = fmap fst . head . groupOn snd . sortOn (Down . snd) . zip [0 ..]
+
+replaceFirst :: Eq a => [a] -> [a] -> [a] -> [a]
+replaceFirst old new xs =
+  let Just (a, b) = stripInfix old xs
+   in a ++ new ++ b
+
+replaceOnes :: Eq a => [a] -> [a] -> [a] -> [[a]]
+replaceOnes old new [] = []
+replaceOnes old new xs =
+  case stripInfix old xs of
+    Just (a, b) -> (a ++ new ++ b) : (((a ++ old) ++) <$> replaceOnes old new b)
+    Nothing -> []
