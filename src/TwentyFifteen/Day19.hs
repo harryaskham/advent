@@ -32,7 +32,12 @@ replacements = do
       return (a, [b])
 
 singleReplacements :: Map String [String] -> String -> [String]
-singleReplacements rs xs = nub . concat $ [replaceOnes old new xs | (old, news) <- M.toList rs, new <- news]
+singleReplacements rs xs =
+  nub . concat $
+    [ replaceOnes old new xs
+      | (old, news) <- M.toList rs,
+        new <- news
+    ]
 
 part1 :: IO Int
 part1 = do
