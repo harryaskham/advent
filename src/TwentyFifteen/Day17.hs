@@ -1,32 +1,32 @@
 module TwentyFifteen.Day17 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
+import Data.List (delete, sortOn)
+import Data.List.Extra (groupOn)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Util (input)
+
+pack :: Int -> [Int] -> Set (Set (Int, Int))
+pack target xs = go (SQ.singleton ((zip [0 ..] xs), S.empty)) S.empty S.empty
+  where
+    go SQ.Empty _ packings = packings
+    go ((remaining, packed) SQ.:<| queue) seen packings
+      | packed `S.member` seen = go queue seen packings
+      | currentSum == target = go queue (S.insert packed seen) (S.insert packed packings)
+      | currentSum > target = go queue (S.insert packed seen) packings
+      | otherwise = go (queue SQ.>< nextStates) (S.insert packed seen) packings
+      where
+        currentSum = sum (snd <$> S.toList packed)
+        nextStates = SQ.fromList [(delete r remaining, S.insert r packed) | r <- remaining]
 
 part1 :: IO Int
 part1 = do
-  ls <- lines <$> input 2015 17
-  return 0
+  xs <- fmap read . lines <$> input 2015 17
+  return $ S.size (pack 150 xs)
+
+part2 :: IO Int
+part2 = do
+  xs <- fmap read . lines <$> input 2015 17
+  let packings = S.toList $ pack 150 xs
+  return . length . head . groupOn S.size . sortOn S.size $ packings
