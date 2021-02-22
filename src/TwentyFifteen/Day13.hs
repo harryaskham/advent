@@ -36,7 +36,11 @@ happiness = M.fromList <$$> (M.fromListWith (++) <$> (many line <* eof))
       return (name1, [(name2, score')])
 
 scoreArrangement :: Map String (Map String Int) -> [String] -> Int
-scoreArrangement h xs = foldl' (\acc (a, b) -> acc + h M.! a M.! b + h M.! b M.! a) 0 (zip xs (drop 1 $ cycle xs))
+scoreArrangement h xs =
+  foldl'
+    (\acc (a, b) -> acc + h M.! a M.! b + h M.! b M.! a)
+    0
+    (zip xs (drop 1 $ cycle xs))
 
 part1 :: IO Int
 part1 = do
