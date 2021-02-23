@@ -1,32 +1,31 @@
 module TwentyFifteen.Day20 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Data.List (nub)
 
-part1 :: IO Int
-part1 = do
-  ls <- lines <$> input 2015 20
-  return 0
+target :: Int
+target = 34000000
+
+presentsAtHouseNumber :: Int -> Int
+presentsAtHouseNumber n =
+  (10 *) . sum . nub . concat $
+    [ [a, n `div` a]
+      | a <- n : [1 .. floor . sqrt . fromIntegral $ n],
+        n `rem` a == 0
+    ]
+
+solve :: (Int -> Int) -> Int
+solve f = fst . head . dropWhile ((< target) . snd) $ [(n, f n) | n <- [1 ..]]
+
+part1 :: Int
+part1 = solve presentsAtHouseNumber
+
+presentsAtHouseNumber2 :: Int -> Int
+presentsAtHouseNumber2 n =
+  (11 *) . sum . nub . concat $
+    [ [x | x <- [a, n `div` a], n `div` x <= 50]
+      | a <- n : [1 .. floor . sqrt . fromIntegral $ n],
+        n `rem` a == 0
+    ]
+
+part2 :: Int
+part2 = solve presentsAtHouseNumber2
