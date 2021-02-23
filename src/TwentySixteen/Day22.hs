@@ -21,7 +21,7 @@ import Text.ParserCombinators.Parsec
     spaces,
     string,
   )
-import Util (eol, input, readWithParser, tracePause, traceStrLn)
+import Util (eol, input, pauseId, readWithParser, traceStrLn)
 
 data Node = Node
   { pos :: Coord2,
@@ -80,18 +80,17 @@ astar nodeMap gPos =
       | nodeMap `S.member` seen = go rest seen
       | gPos == (0, 0) = steps
       | otherwise =
-        tracePause "" $
-          traceStrLn (pretty nodeMap) $
-            traceShow (steps, gPos, length queue, length nextStates) $
-              go
-                ( foldl'
-                    ( \q st@(gPos, nextNodeMap, _) ->
-                        PQ.insert (h gPos (emptyPos nextNodeMap) (steps + 1)) st q
-                    )
-                    rest
-                    nextStates
-                )
-                (S.insert nodeMap seen)
+        pauseId . traceStrLn (pretty nodeMap) $
+          traceShow (steps, gPos, length queue, length nextStates) $
+            go
+              ( foldl'
+                  ( \q st@(gPos, nextNodeMap, _) ->
+                      PQ.insert (h gPos (emptyPos nextNodeMap) (steps + 1)) st q
+                  )
+                  rest
+                  nextStates
+              )
+              (S.insert nodeMap seen)
       where
         ((_, (gPos, nodeMap, steps)), rest) = PQ.deleteFindMin queue
         moveData (a, b) =

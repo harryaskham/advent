@@ -11,7 +11,6 @@ import Data.Monoid (Sum (Sum, getSum))
 import Data.Ord (Down (Down))
 import Data.Tuple.Extra (swap)
 import Data.Typeable (Typeable)
-import Debug.Trace (trace, traceShow)
 import qualified Language.Haskell.Interpreter as Hint
 import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, many1, oneOf, parse)
@@ -80,37 +79,6 @@ adjustWithDefault def f k m = case M.lookup k m of
 md5String :: String -> String
 md5String = BC.unpack . B16.encode . MD5.hash . BC.pack
 
-tracePause :: String -> a -> a
-tracePause s a = unsafePerformIO $ do
-  putStrLn s
-  getLine
-  return a
-
-traceShowPauseId :: Show a => a -> a
-traceShowPauseId a = unsafePerformIO $ do
-  print a
-  getLine
-  return a
-
-traceStrLn :: String -> a -> a
-traceStrLn s a = unsafePerformIO $ do
-  putStrLn s
-  -- getLine
-  return a
-
-traceWhen :: Bool -> String -> a -> a
-traceWhen p s a = if p then trace s a else a
-
-traceStrLnWhen :: Bool -> String -> a -> a
-traceStrLnWhen p s a
-  | p = unsafePerformIO $ do
-    putStrLn s
-    return a
-  | otherwise = a
-
-traceShowF :: Show b => (a -> b) -> a -> a
-traceShowF f a = traceShow (f a) a
-
 fst4 (a, _, _, _) = a
 
 snd4 (_, a, _, _) = a
@@ -135,9 +103,30 @@ replaceFirst old new xs =
   let Just (a, b) = stripInfix old xs
    in a ++ new ++ b
 
+-- Returns all possible single replacements of old with new.
 replaceOnes :: Eq a => [a] -> [a] -> [a] -> [[a]]
-replaceOnes old new [] = []
+replaceOnes _ _ [] = []
 replaceOnes old new xs =
   case stripInfix old xs of
     Just (a, b) -> (a ++ new ++ b) : (((a ++ old) ++) <$> replaceOnes old new b)
     Nothing -> []
+
+-- TODO: Move tracing functions to their own module.
+
+pauseId :: a -> a
+pauseId a = unsafePerformIO $ do
+  getLine
+  return a
+
+traceStrLn :: String -> a -> a
+traceStrLn s a = unsafePerformIO $ do
+  putStrLn s
+  return a
+
+traceWhen :: Bool -> (a -> a) -> a -> a
+traceWhen True traceFn a = traceFn a
+traceWhen False _ a = a
+
+traceUnless :: Bool -> (a -> a) -> a -> a
+traceUnless True _ a = a
+traceUnless False traceFn a = traceFn a
