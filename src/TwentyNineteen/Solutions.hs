@@ -33,67 +33,6 @@ import Text.ParserCombinators.ReadP
 import TwentyNineteen.Intcode
 import Util
 
-rdbg = False
-
-traceIf b x y = if b then trace x y else y
-
-type Chemical = String
-
-type Quantity = Integer
-
-data Reaction = Reaction [(Chemical, Quantity)] (Chemical, Quantity) deriving (Show)
-
-parseReaction :: String -> Reaction
-parseReaction line = Reaction inputs' (outputChemical, read outputQuantity)
-  where
-    [inputLine, outputLine] = splitOn " => " line
-    [outputQuantity, outputChemical] = words outputLine
-    inputs = words <$> splitOn ", " inputLine
-    inputs' = (\[q, c] -> (c, read q)) <$> inputs
-
--- Create map from chemical to the resources it needs and its yield
-reactionMap :: [Reaction] -> M.Map Chemical Reaction
-reactionMap = foldl' (\acc r@(Reaction _ (c, _)) -> M.insert c r acc) M.empty
-
-ore :: M.Map Chemical Reaction -> [(Chemical, Quantity)] -> M.Map Chemical Quantity -> M.Map Chemical Quantity
-ore _ [] haves = haves
-ore rm (("ORE", q) : needs) haves = ore rm needs $ M.insertWith (+) "ORE" q haves
-ore rm ((c, q) : needs) haves = ore rm (needs ++ multipliedReqs) newHaves
-  where
-    (Reaction requirements (_, outputQ)) = unjust $ M.lookup c rm
-    alreadyHave = fromMaybe 0 $ M.lookup c haves
-    additionalNeed = q - alreadyHave
-    multiplier = ceiling (fromIntegral additionalNeed / fromIntegral outputQ)
-    multipliedReqs = (fmap . fmap) (* multiplier) requirements
-    actualOutput = multiplier * outputQ
-    surplus = actualOutput - q
-    newHaves = M.insertWith (+) c surplus haves
-
-oreNeeded :: M.Map Chemical Reaction -> Quantity -> Quantity
-oreNeeded rm fuel = unjust $ M.lookup "ORE" $ ore rm [("FUEL", fuel)] M.empty
-
-search :: M.Map Chemical Reaction -> Quantity -> Quantity -> IO Quantity
-search rm lower upper =
-  if oreNeeded rm midpoint > 1000000000000
-    then print midpoint >> search rm lower midpoint
-    else print midpoint >> search rm midpoint upper
-  where
-    midpoint = (lower + upper) `div` 2
-
-day14 :: IO ()
-day14 = do
-  --ls <- lines <$> readFile "input/2019/14_example.txt"
-  ls <- lines <$> readFile "input/2019/14.txt"
-  --ls <- lines <$> readFile "input/2019/14_example2.txt"
-  --ls <- lines <$> readFile "input/2019/14_example3.txt"
-  --ls <- lines <$> readFile "input/2019/14_example4.txt"
-  --ls <- lines <$> readFile "input/2019/14_example5.txt"
-  let reactions = parseReaction <$> ls
-      rMap = reactionMap reactions
-  print $ M.lookup "ORE" $ ore rMap [("FUEL", 1)] M.empty
-  _ <- search rMap 1 10000000000
-  return ()
-
 errorCode :: Int -> Int -> [Integer]
 errorCode l 0 = take l $ tail $ cycle [0, 1, 0, -1]
 errorCode l n = take l $ tail . cycle $ concat $ replicate (n + 1) <$> [0, 1, 0, -1]
