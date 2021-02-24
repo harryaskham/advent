@@ -13,6 +13,7 @@ import Control.Exception
 import Control.Lens hiding (Empty)
 import Control.Monad
 import Control.Monad.Search
+import Coord
 import Data.Char
 import qualified Data.Dequeue as DQ
 import Data.Foldable
@@ -37,7 +38,7 @@ import System.IO
 import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
-import TwentyNineteen.Solutions (mDistance, unsafeJ)
+import TwentyNineteen.Solutions (unsafeJ)
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 
