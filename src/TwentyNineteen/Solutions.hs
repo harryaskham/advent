@@ -32,37 +32,6 @@ import System.Random
 import Text.ParserCombinators.ReadP
 import TwentyNineteen.Intcode
 
-pixelsToLayers :: Int -> Int -> [Int] -> [[Int]]
-pixelsToLayers width height ps = chunksOf layerSize ps
-  where
-    layerSize = width * height
-    numLayers = length ps `div` layerSize
-
-numNs :: Int -> [Int] -> Int
-numNs n layer = length (filter (== n) layer)
-
--- Go through ignoring 2s until we hit a 1 or a 0
-combinePixel :: [Int] -> Int
-combinePixel (2 : xs) = combinePixel xs
-combinePixel (1 : xs) = 1
-combinePixel (0 : xs) = 0
-
-stackLayers :: [[Int]] -> [Int]
-stackLayers layers = combinePixel <$> stacks
-  where
-    stacks = [(!! i) <$> layers | i <- [0 .. length (head layers)]]
-
-day8 :: IO [()]
-day8 = do
-  ls <- lines <$> readFile "input/2019/8.txt"
-  let pixels = fmap digitToInt . head $ ls
-      layers = pixelsToLayers 25 6 pixels
-      layerWithFewestZeros = minimumBy (comparing $ numNs 0) layers
-      stackedLayers = stackLayers layers
-      image = chunksOf 25 stackedLayers
-  print $ numNs 1 layerWithFewestZeros * numNs 2 layerWithFewestZeros
-  sequenceA $ print <$> image
-
 day9 :: IO ()
 day9 = do
   --let xs = [1102,34915192,34915192,7,4,7,99,0]
