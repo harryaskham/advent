@@ -31,40 +31,6 @@ import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
 
--- Run a single operation on the given locations.
-runOp :: (Int -> Int -> Int) -> Int -> Int -> Int -> V.Vector Int -> V.Vector Int
-runOp op loc1 loc2 locR program = program V.// [(locR, res)]
-  where
-    x1 = program V.! loc1
-    x2 = program V.! loc2
-    res = op x1 x2
-
-runProgramD2 :: Int -> ([String], V.Vector Int) -> ([String], V.Vector Int)
-runProgramD2 counter (logs, program) =
-  case program V.! counter of
-    99 -> (l : logs, program)
-    1 -> runProgramD2 (counter + 4) (l : logs, runOp (+) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
-    2 -> runProgramD2 (counter + 4) (l : logs, runOp (*) (program V.! (counter + 1)) (program V.! (counter + 2)) (program V.! (counter + 3)) program)
-    _ -> error ("invalid opcode " ++ show (program V.! counter))
-  where
-    l = show (counter, program)
-
-day2_1 :: IO Int
-day2_1 = do
-  -- Read program in as vector of ints.
-  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/2.txt"
-  -- Make initial modifications for 1202 program and run to completion.
-  let (logs, finalProgram) = runProgramD2 0 ([], program V.// [(1, 12), (2, 2)])
-   in return $ head . V.toList $ finalProgram
-
-day2_2 :: IO Int
-day2_2 = do
-  program <- V.fromList . fmap read . splitOn "," . head . lines <$> readFile "input/2019/2.txt"
-  let variants = [[(1, noun), (2, verb)] | noun <- [0 .. 99], verb <- [0 .. 99]]
-      allRuns = zip (runProgramD2 0 <$> [([], program V.// variant) | variant <- variants]) variants
-      ((logs, finalProgram), variant) = head $ filter (\((_, p), _) -> p V.! 0 == 19690720) allRuns
-   in return $ (100 * snd (head variant)) + snd (variant !! 1)
-
 type Wire = [String]
 
 -- Get all the coordinates that a wire occupies including how long it took to first get there in steps.

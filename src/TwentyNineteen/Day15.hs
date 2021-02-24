@@ -6,31 +6,13 @@
 
 module TwentyNineteen.Day15 where
 
-import Control.Applicative
-import Control.Concurrent
-import Control.Lens hiding (Empty)
-import Control.Monad
-import Data.Char
-import Data.Foldable
+import Control.Lens ((.~), (^.))
+import Control.Monad (when)
 import Data.Function ((&))
-import Data.List
-import qualified Data.List.Safe as LS
-import Data.List.Split hiding (condense)
 import qualified Data.Map.Strict as M
 import qualified Data.Matrix as MX
-import Data.Maybe
-import Data.Ord
-import Data.Ratio
-import qualified Data.Set as S
-import qualified Data.Tree as T
-import qualified Data.Vector as V
-import qualified Data.Vector.Split as VS
-import Debug.Trace
-import System.IO
-import System.IO.HiddenChar
-import System.Random
-import Text.ParserCombinators.ReadP
-import TwentyNineteen.Solutions (Machine (..), clear, inputs, outputs, readProgram, stepUntilNOutputs)
+import Data.Maybe (fromMaybe, isNothing)
+import TwentyNineteen.Solutions (Machine (..), inputs, outputs, readProgram, stepUntilNOutputs)
 
 data Dir = North | South | West | East deriving (Show, Enum)
 
