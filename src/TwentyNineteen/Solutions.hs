@@ -31,45 +31,6 @@ import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
 
-hasTwoAdjacent :: Int -> Bool
-hasTwoAdjacent x = go $ show x
-  where
-    go :: String -> Bool
-    go [] = False
-    go [_] = False
-    go (a : b : xs) = (a == b) || go (b : xs)
-
-hasMonotonicDigits :: Int -> Bool
-hasMonotonicDigits x = go $ show x
-  where
-    go :: String -> Bool
-    go [] = True
-    go [_] = True
-    go (a : b : xs) = (digitToInt b >= digitToInt a) && go (b : xs)
-
-day4_1 :: Int
-day4_1 = length [x | x <- input, hasTwoAdjacent x, hasMonotonicDigits x]
-  where
-    input = [265275 .. 781584]
-
-hasPreciselyTwoAdjacent :: Int -> Bool
-hasPreciselyTwoAdjacent x = go $ show x
-  where
-    go :: String -> Bool
-    go [a, b, c, d, e, f] =
-      or
-        [ (a == b) && (b /= c),
-          (a /= b) && (b == c) && (c /= d),
-          (b /= c) && (c == d) && (d /= e),
-          (c /= d) && (d == e) && (e /= f),
-          (d /= e) && (e == f)
-        ]
-
-day4_2 :: Int
-day4_2 = length [x | x <- input, hasPreciselyTwoAdjacent x, hasMonotonicDigits x]
-  where
-    input = [265275 .. 781584]
-
 data Opcode
   = Add
   | Mul
