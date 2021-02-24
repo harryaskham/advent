@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2cf5658ca879ad79b0f3c225f89a8520d67cbab043276eccebca40ca84c8cd1e
+-- hash: f8a38d358339ab91e04977361409486f25b02472adcd7c8ba01298f033c7365f
 
 name:           advent
 version:        0.1.0.0
@@ -89,6 +89,7 @@ library
       TwentyNineteen.Day3
       TwentyNineteen.Day4
       TwentyNineteen.Day5
+      TwentyNineteen.Day6
       TwentyNineteen.Intcode
       TwentyNineteen.Solutions
       TwentySeventeen.Day1
