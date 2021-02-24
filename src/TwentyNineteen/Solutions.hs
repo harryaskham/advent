@@ -31,26 +31,6 @@ import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
 
--- Convert the given mass to basic fuel requirement.
-massToFuel :: Int -> Int
-massToFuel m = (m `div` 3) - 2
-
-day1_1 :: IO Int
-day1_1 = do
-  masses <- fmap read . lines <$> readFile "input/2019/1.txt"
-  return $ sum $ massToFuel <$> masses
-
--- How much fuel does the fuel itself need including the mass
-massToFuelIncludingFuel :: Int -> Int
-massToFuelIncludingFuel m
-  | massToFuel m <= 0 = 0
-  | otherwise = massToFuel m + massToFuelIncludingFuel (massToFuel m)
-
-day1_2 :: IO Int
-day1_2 = do
-  masses <- fmap read . lines <$> readFile "input/2019/1.txt"
-  return $ sum $ massToFuelIncludingFuel <$> masses
-
 -- Run a single operation on the given locations.
 runOp :: (Int -> Int -> Int) -> Int -> Int -> Int -> V.Vector Int -> V.Vector Int
 runOp op loc1 loc2 locR program = program V.// [(locR, res)]
