@@ -219,8 +219,8 @@ fullCache starts keyLocations grid =
   M.fromList $
     (\p -> (p, reachableKeys p keyLocations grid)) <$> (starts ++ keyLocations)
 
-day18_1 :: IO ()
-day18_1 = do
+part1 :: IO ()
+part1 = do
   ls <- lines <$> readFile "input/2019/18.txt"
   let grid = V.fromList (V.fromList <$> (fmap . fmap) fromChar ls)
       keyLocations =
@@ -377,11 +377,9 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
 
               return (NumSteps minCost)
 
-day18_2 :: IO ()
-day18_2 = do
-  --ls <- lines <$> readFile "input/2019/18_2_cut.txt"
+part2 :: IO ()
+part2 = do
   ls <- lines <$> readFile "input/2019/18_2.txt"
-  --ls <- lines <$> readFile "input/2019/18_2_example.txt"
   let grid = V.fromList (V.fromList <$> (fmap . fmap) fromChar ls)
       keyLocations =
         fmap head $
@@ -396,35 +394,3 @@ day18_2 = do
   bestSoFarRef <- newIORef Dead
   finalState <- runDFS' 0 grid costCacheRef bestSoFarRef cache nkeys explorers
   print finalState
-
--- Okay, weird - even with NO DOORS the shortest path is lower than reference value.
--- Let alone without the doors we can't open from each quadrant
--- Aiming for 1940 but getting 1976 with no doors
-
-day18_cheat :: IO ()
-day18_cheat = do
-  ls <- lines <$> readFile "input/2019/18_2.txt"
-  let grid = V.fromList (V.fromList <$> (fmap . fmap) fromChar ls)
-      grid1 = chopGrid 0 41 0 41 grid
-      grid2 = chopGrid 40 41 0 41 grid
-      grid3 = chopGrid 0 41 40 41 grid
-      grid4 = chopGrid 40 41 40 41 grid
-      --grids = removeAllDoors <$> [grid1, grid2, grid3, grid4]
-      grids = removeDoorsWithoutKeys <$> [grid1, grid2, grid3, grid4]
-      solveGrid g =
-        let keyLocations =
-              fmap head $
-                M.filter (not . null) $
-                  (`gridFind` g)
-                    <$> M.fromList [(a, KeySpace a) | a <- ['a' .. 'z']]
-            nkeys = numKeys g
-            startPos = head $ gridFind Entrance g
-            explorer = Explorer startPos S.empty (NumSteps 0)
-            cache = fullCache [startPos] (snd <$> M.toList keyLocations) g
-         in do
-              costCacheRef <- newIORef M.empty
-              bestSoFarRef <- newIORef Dead
-              runDFS 0 g costCacheRef bestSoFarRef cache nkeys explorer
-  scores <- sequenceA $ solveGrid <$> grids
-  print scores
-  print $ sum $ getNumSteps <$> scores

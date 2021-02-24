@@ -69,8 +69,8 @@ intersectionCoords grid = filter isIntersection coords
         && ((grid !! y !! (x + 1)) == Scaffold)
         && ((grid !! y !! (x -1)) == Scaffold)
 
-day17_1 :: IO ()
-day17_1 = do
+part1 :: IO ()
+part1 = do
   program <- readProgram "input/2019/17.txt"
   machine <- runProgram (Machine 0 [] [] program 0)
   let grid = asciiToGrid $ machine ^. outputs
@@ -106,8 +106,8 @@ inputMovements routine funcA funcB funcC cameraOn machine =
 -- C R,4,L,10,R,10,
 -- B R,4,L,4,L,4,R,8,R,10
 
-day17_2 :: IO ()
-day17_2 = do
+part2 :: IO ()
+part2 = do
   program <- readProgram "input/2019/17.txt"
   let machine = Machine 0 [] [] (M.insert 0 2 program) 0
       moved =

@@ -1,37 +1,7 @@
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
+module TwentyNineteen.Day16 where
 
-module TwentyNineteen.Solutions where
-
-import Control.Applicative
-import Control.Concurrent
-import Control.Lens
-import Control.Monad
-import Data.Char
-import Data.Foldable
-import Data.Function ((&))
-import Data.List
-import qualified Data.List.Safe as LS
-import Data.List.Split hiding (condense)
-import qualified Data.Map.Strict as M
-import qualified Data.Matrix as MX
-import Data.Maybe
-import Data.Ord
-import Data.Ratio
-import qualified Data.Set as S
-import qualified Data.Tree as T
-import qualified Data.Vector as V
-import qualified Data.Vector.Split as VS
-import Debug.Trace
-import System.IO
-import System.IO.HiddenChar
-import System.Random
-import Text.ParserCombinators.ReadP
-import TwentyNineteen.Intcode
-import Util
+import Data.Char (digitToInt, intToDigit)
+import Data.List (scanl')
 
 errorCode :: Int -> Int -> [Integer]
 errorCode l 0 = take l $ tail $ cycle [0, 1, 0, -1]
@@ -96,12 +66,12 @@ modGet n xs = xs !! (n `mod` length xs)
 efficientLastN :: Int -> [Integer] -> [Integer]
 efficientLastN n xs = modGet <$> [length xs - n .. length xs - 1] <*> pure xs
 
-day16 :: IO ()
-day16 = do
+part12 :: IO ()
+part12 = do
   ls <- lines <$> readFile "input/2019/16.txt"
   let number = fromIntegral . digitToInt <$> head ls
       target = 5970807
       bigNumber = concat $ replicate 10000 number
       lastNumber = drop target bigNumber -- efficientLastN (length bigNumber - target) bigNumber
-      --print $ take 8 $ runPhases 100 number
+  print $ take 8 $ runPhases 100 number
   print $ take 8 . reverse $ runEfficientPhases 100 (reverse lastNumber)

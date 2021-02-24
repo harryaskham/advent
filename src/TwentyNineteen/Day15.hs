@@ -186,10 +186,10 @@ floodUntilComplete n m =
   where
     flooded = floodPass m
 
-day15 :: IO ()
-day15 = do
+part2 :: IO Int
+part2 = do
   program <- readProgram "input/2019/15.txt"
   let droid = Droid (Machine 0 [] [] program 0) M.empty (0, 0) North
   droid'@(Droid _ completeGrid _ _) <- runDroid 0 [] droid
   let matrix = gridToMatrix completeGrid
-  print $ floodUntilComplete 0 matrix
+  return $ floodUntilComplete 0 matrix
