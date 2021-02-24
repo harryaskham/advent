@@ -32,54 +32,6 @@ import System.Random
 import Text.ParserCombinators.ReadP
 import TwentyNineteen.Intcode
 
-data OrbitTree = OrbitTree String [OrbitTree] deriving (Show)
-
-orbitMap :: [String] -> M.Map String [String]
-orbitMap = foldl addEntry M.empty
-  where
-    addEntry acc orbit = M.insertWith (++) oTo [oFrom] acc
-      where
-        [oTo, oFrom] = splitOn ")" orbit
-
-toTree :: M.Map String [String] -> OrbitTree
-toTree om = go "COM"
-  where
-    go :: String -> OrbitTree
-    go n = OrbitTree n (go <$> childStrings)
-      where
-        childStrings = fromMaybe [] $ M.lookup n om
-
-countOrbits :: OrbitTree -> Int
-countOrbits = go 0
-  where
-    go depth (OrbitTree _ []) = depth
-    go depth (OrbitTree _ cs) = depth + sum (go (depth + 1) <$> cs)
-
-santaDistance :: OrbitTree -> Maybe Int
-santaDistance ot@(OrbitTree _ cs) =
-  (-)
-    <$> (LS.minimum =<< sequenceA (filter isJust (distanceFromHere : distanceFromChildren)))
-    <*> Just 2
-  where
-    distanceTo depth target (OrbitTree n []) =
-      if n == target then Just depth else Nothing
-    distanceTo depth target (OrbitTree n cs) =
-      if n == target then Just depth else join $ LS.head $ filter isJust children
-      where
-        children = distanceTo (depth + 1) target <$> cs
-    distanceFromHere = (+) <$> distanceTo 0 "SAN" ot <*> distanceTo 0 "YOU" ot
-    distanceFromChildren = santaDistance <$> cs
-
-day6 :: IO ()
-day6 = do
-  --orbits <- lines <$> readFile "input/2019/6_example.txt"
-  orbits <- lines <$> readFile "input/2019/6.txt"
-  let tree = toTree . orbitMap $ orbits
-   in do
-        print tree
-        print $ countOrbits tree
-        print $ santaDistance tree
-
 runPhaseConfiguration :: [Integer] -> Integer -> Program -> IO Integer
 runPhaseConfiguration [] lastOutput _ = return lastOutput
 runPhaseConfiguration (p : ps) lastOutput program = do
