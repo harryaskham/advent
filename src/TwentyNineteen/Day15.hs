@@ -12,7 +12,7 @@ import Data.Function ((&))
 import qualified Data.Map.Strict as M
 import qualified Data.Matrix as MX
 import Data.Maybe (fromMaybe, isNothing)
-import TwentyNineteen.Solutions (Machine (..), inputs, outputs, readProgram, stepUntilNOutputs)
+import TwentyNineteen.Intcode
 
 data Dir = North | South | West | East deriving (Show, Enum)
 

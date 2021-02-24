@@ -30,7 +30,7 @@ import System.IO
 import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
-import TwentyNineteen.Solutions (Machine (..), clear, inputs, outputs, readProgram, runProgram, stepUntilNOutputs)
+import TwentyNineteen.Intcode
 
 data Space = Empty | Scaffold | RUp | RDown | RLeft | RRight | RFallen deriving (Eq)
 

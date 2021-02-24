@@ -30,7 +30,8 @@ import System.IO
 import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
-import TwentyNineteen.Solutions (Machine (..), clear, inputs, outputs, readProgram, runProgram, stepUntilNOutputs, unsafeJ)
+import TwentyNineteen.Intcode
+import Util
 
 day19_1 :: IO ()
 day19_1 = do
@@ -49,5 +50,5 @@ day19_2 = do
       machines = M.fromList [(i, Machine 0 i [] program 0) | i <- inputs]
   runMachines <- sequenceA $ runProgram <$> machines
   let coords = view outputs <$> runMachines
-  let grid = MX.matrix 50 50 (\(y, x) -> head . unsafeJ $ M.lookup [fromIntegral x -1, fromIntegral y -1] coords)
+  let grid = MX.matrix 50 50 (\(y, x) -> head . unjust $ M.lookup [fromIntegral x -1, fromIntegral y -1] coords)
   print $ MX.prettyMatrix grid
