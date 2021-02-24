@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2ec40c80db1c8d50f3084a0e547e73c6dd9a370db742fdc780f53c6cd636ebf7
+-- hash: 7ac9a5c9a722749c88bd693d82f3980186bffa69563de818b09d6e5994828b4b
 
 name:           advent
 version:        0.1.0.0
@@ -175,6 +175,7 @@ library
     , base >=4.7 && <5
     , base16-bytestring
     , bytestring
+    , combinatorial
     , containers
     , cryptohash-md5
     , data-memocombinators
@@ -224,6 +225,7 @@ executable advent-exe
     , base >=4.7 && <5
     , base16-bytestring
     , bytestring
+    , combinatorial
     , containers
     , cryptohash-md5
     , data-memocombinators

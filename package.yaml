@@ -58,6 +58,7 @@ dependencies:
 - sgd
 - ad
 - backprop
+- combinatorial
 
 library:
   source-dirs: src

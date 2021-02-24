@@ -1,70 +1,54 @@
 module TwentyFifteen.Day24 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
+import Combinatorics (tuples)
+import Data.List (delete, foldl', permutations, sortOn, (\\))
+import Data.Maybe (isJust)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as SQ
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Util (input)
 
--- TODO: symmetry of second two groups, can key seen better
--- maybe a PQ? keyed by number allocated, size of first group, quantum number
-
-allocate :: [Int] -> Maybe (Set Int, Set Int, Set Int)
-allocate xs = go (SQ.singleton (reverse xs, S.empty, S.empty, S.empty)) Nothing
+partitionWithSum :: Int -> Int -> [Int] -> Maybe ([[Int]])
+partitionWithSum n target xs
+  | sum xs == n * target = go (SQ.singleton (xs, replicate n S.empty)) S.empty
+  | otherwise = Nothing
   where
-    go SQ.Empty best = best
-    go ((remaining, g1, g2, g3) SQ.:<| queue) best
-      | null remaining = go queue nextBest
-      | isJust best && (Just $ S.size g1) > (S.size . fst3 <$> best) = go queue best
-      | sr < abs (sg2 - sg1) || sr < abs (sg3 - sg2) || sr < abs (sg3 - sg1) = go queue best
-      -- | (g1, g2, g3) `S.member` seen = traceShow "seen" $ go queue seen best
-      -- | (g1, g3, g2) `S.member` seen = traceShow "seen" $ go queue seen best
-      | otherwise =
-        traceShow  best $
-           go (nextStates SQ.>< queue) best
-          --go (queue SQ.>< nextStates) best
+    go :: (Seq ([Int], [Set Int])) -> Set ([Set Int]) -> Maybe ([[Int]])
+    go SQ.Empty _ = Nothing
+    go ((remaining, partitions) SQ.:<| queue) seen
+      | null remaining && all (== target) sps = Just (S.toList <$> partitions)
+      | partitions `S.member` seen = go queue seen
+      | null remaining = go queue nextSeen
+      | any (> target) sps = go queue nextSeen
+      | otherwise = go nextQueue nextSeen
       where
-        (sr, sg1, sg2, sg3) = (sum remaining, sum g1, sum g2, sum g3)
-        nextBest = case best of
-          Nothing ->
-            if sg1 == sg2 && sg2 == sg3
-              then Just (g1, g2, g3)
-              else Nothing
-          Just (bg1, _, _) ->
-            if sg1 == sg2 && sg2 == sg3
-              then
-                if (S.size g1 < S.size bg1) || (S.size g1 == S.size bg1 && product g1 < product bg1)
-                  then Just (g1, g2, g3)
-                  else best
-              else best
-        (r : rs) = remaining
+        sps = sum <$> partitions
+        nextSeen = foldl' (flip S.insert) seen (permutations partitions)
         nextStates =
-          SQ.fromList [
-              (rs, g1, S.insert r g2, g3),
-              (rs, g1, g2, S.insert r g3),
-              (rs, S.insert r g1, g2, g3)]
+          SQ.fromList . concat $
+            [ [ (rs, [if i == i' then S.insert r p else p | (i', p) <- zip [0 ..] partitions])
+                | i <- [0 .. n -1]
+              ]
+              | r <- remaining,
+                let rs = delete r remaining
+            ]
+        nextQueue = nextStates SQ.>< queue
 
--- 317793762227 too highi
+solve :: Int -> IO Int
+solve n = do
+  xs <- fmap read . lines <$> input 2015 24
+  return $
+    head
+      [ product g
+        | g <- concat [sortOn product (tuples n xs) | n <- [1 ..]],
+          canAllocate g (xs \\ g)
+      ]
+  where
+    canAllocate g1 xs = isJust $ partitionWithSum n (sum g1) xs
 
 part1 :: IO Int
-part1 = product . fst3 . unjust . allocate . fmap read . lines <$> input 2015 24
+part1 = solve 2
+
+part2 :: IO Int
+part2 = solve 3
