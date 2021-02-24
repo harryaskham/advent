@@ -130,3 +130,5 @@ traceWhen False _ a = a
 traceUnless :: Bool -> (a -> a) -> a -> a
 traceUnless True _ a = a
 traceUnless False traceFn a = traceFn a
+
+iterate' f x = x `seq` x : iterate' f (f x)
