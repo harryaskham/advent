@@ -38,7 +38,7 @@ import System.IO
 import System.IO.HiddenChar
 import System.Random
 import Text.ParserCombinators.ReadP
-import TwentyNineteen.Solutions (unsafeJ)
+import Util
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 
@@ -133,7 +133,7 @@ reachableKeys :: (Int, Int) -> [(Int, Int)] -> Grid -> KeyDoorCache
 reachableKeys from keyLocations grid =
   M.filter ((> 0) . fst) $
     M.fromList $
-      (\(t, d) -> (t, unsafeJ d))
+      (\(t, d) -> (t, unjust d))
         <$> filter
           (isJust . snd)
           [(to, keyDistance (SQ.singleton (from, 0, S.empty, S.empty)) to grid) | to <- keyLocations]
@@ -159,7 +159,7 @@ runDFS n grid costCacheRef bestSoFarRef cache nkeys e = do
 
   -- If we cached this location we can just return its cost, trusting we DFS'd properly first time
   if isJust cachedCost
-    then return $ unsafeJ cachedCost
+    then return $ unjust cachedCost
     else -- If we are already greater than our largest path, terminate early.
 
       if numSteps > bestSoFar
@@ -182,7 +182,7 @@ runDFS n grid costCacheRef bestSoFarRef cache nkeys e = do
               let filterAccessibleKeys (kx, ky) (_, need) =
                     let (KeySpace c) = grid V.! ky V.! kx
                      in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
-                  rKeys = fst <$> M.filterWithKey filterAccessibleKeys (unsafeJ $ M.lookup (x, y) cache)
+                  rKeys = fst <$> M.filterWithKey filterAccessibleKeys (unjust $ M.lookup (x, y) cache)
                   rKeyList = M.toList rKeys
                   -- Create next states for all reachable keys to explore.
                   nextStates =
@@ -315,7 +315,7 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
 
   -- If we cached this location we can just return its cost, trusting we DFS'd properly first time
   if isJust cachedCost
-    then return $ unsafeJ cachedCost
+    then return $ unjust cachedCost
     else -- If we are already greater than our largest path, terminate early.
 
       if numSteps > bestSoFar
@@ -340,7 +340,7 @@ runDFS' n grid costCacheRef bestSoFarRef cache nkeys e = do
                     let (KeySpace c) = grid V.! ky V.! kx
                      in need `S.isSubsetOf` nextKeys && not (Key c `S.member` nextKeys)
                   -- Per-robot reachable keys
-                  rKeys = (\pos -> fst <$> M.filterWithKey filterAccessibleKeys (unsafeJ $ M.lookup pos cache)) <$> positions
+                  rKeys = (\pos -> fst <$> M.filterWithKey filterAccessibleKeys (unjust $ M.lookup pos cache)) <$> positions
                   rKeyList = M.toList <$> rKeys
                   -- Create next states for all reachable keys to explore.
                   -- We need to create all combinations of positions with each element swapped out for corresponding rKeysList
