@@ -32,18 +32,6 @@ import System.Random
 import Text.ParserCombinators.ReadP
 import TwentyNineteen.Intcode
 
-day9 :: IO ()
-day9 = do
-  --let xs = [1102,34915192,34915192,7,4,7,99,0]
-  --let xs = [104,1125899906842624,99]
-  --let xs = [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]
-  --program = M.fromList $ zip [0..toInteger (length xs - 1)] xs
-  program <- readProgram "input/2019/9.txt"
-  machine1 <- runProgram $ Machine 0 [1] [] program 0
-  print $ machine1 ^. outputs
-  machine2 <- runProgram $ Machine 0 [2] [] program 0
-  print $ machine2 ^. outputs
-
 data Asteroid = Asteroid | NoAsteroid deriving (Eq)
 
 type Grid = V.Vector (V.Vector Asteroid)
