@@ -45,7 +45,6 @@ numParams Equals = 3
 numParams AdjustBase = 1
 numParams Terminate = 0
 
--- The state of a machine.
 data Machine = Machine
   { _counter :: Counter,
     _inputs :: [Integer],
@@ -57,7 +56,6 @@ data Machine = Machine
 
 makeLenses ''Machine
 
--- Wrap memory accesses so that previously unused locations are 0
 unsafeMemAccess (Just a) = a
 unsafeMemAccess Nothing = 0
 
@@ -133,7 +131,6 @@ opFromStr "09" = AdjustBase
 opFromStr "99" = Terminate
 opFromStr s = error s
 
--- Parses out the opcode and the modes.
 parseOpcode :: Integer -> (Opcode, [Mode])
 parseOpcode x =
   ( opcode,
