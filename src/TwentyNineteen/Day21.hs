@@ -1,32 +1,48 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module TwentyNineteen.Day21 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Control.Lens (view)
+import Data.Char (ord)
+import Text.RawString.QQ (r)
+import TwentyNineteen.Intcode
+  ( Machine (Machine),
+    outputs,
+    readProgram,
+    runProgram,
+  )
 
-part1 :: IO Int
-part1 = do
-  ls <- lines <$> input 2019 21
-  return 0
+solve :: String -> IO Integer
+solve script = do
+  program <- readProgram "input/2019/21.txt"
+  machine <- runProgram (Machine 0 (fromIntegral . ord <$> script) [] program 0)
+  return . last $ view outputs machine
+
+part1 :: IO Integer
+part1 =
+  solve
+    [r|NOT C J
+NOT A T
+OR T J
+NOT D T
+NOT T T
+AND T J
+WALK
+|]
+
+part2 :: IO Integer
+part2 =
+  solve
+    [r|NOT A T
+OR T J
+NOT B T
+OR T J
+NOT C T
+OR T J
+AND D J
+NOT H T
+NOT T T
+OR E T
+AND T J
+RUN
+|]
