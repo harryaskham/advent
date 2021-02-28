@@ -41,6 +41,8 @@ extra-deps:
 - monad-dijkstra-0.1.1.2@sha256:4bca3eca6358f916b06501f82c7bfa4c59236af0ac8cac551854c2e928e78c37
 - dequeue-0.1.12@sha256:547c2a71819dca0ae1bf7c15fb290b39f80d5d9a6f9985a06a1cb8645b578df2
 - sgd-0.8.0.3@sha256:1afe2ee01c09029c023d79cbc729e839adf9ab3193dfa1021f3134140f90b121,2606
+- mod-0.1.1.0@sha256:57f230d5664b1c311d1044c259ef880875e4b3bcbfc7c57eab3bf03fce87f445,1838
+- semirings-0.5.3@sha256:4b0d243f88bb07c0673978a37b6b9fd16da44f15e8d552fb08795d9a88a3dc76,3791
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

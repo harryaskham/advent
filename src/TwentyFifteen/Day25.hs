@@ -1,6 +1,6 @@
 module TwentyFifteen.Day25 where
 
-import Util (iterate')
+import Data.List (iterate')
 
 part1 :: Int
 part1 =

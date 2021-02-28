@@ -59,6 +59,7 @@ dependencies:
 - ad
 - backprop
 - combinatorial
+- mod
 
 library:
   source-dirs: src

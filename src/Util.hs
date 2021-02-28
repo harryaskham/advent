@@ -11,6 +11,7 @@ import Data.Monoid (Sum (Sum, getSum))
 import Data.Ord (Down (Down))
 import Data.Tuple.Extra (swap)
 import Data.Typeable (Typeable)
+import Debug.Trace (traceShow, traceShowId)
 import qualified Language.Haskell.Interpreter as Hint
 import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, many1, oneOf, parse)
@@ -127,8 +128,14 @@ traceWhen :: Bool -> (a -> a) -> a -> a
 traceWhen True traceFn a = traceFn a
 traceWhen False _ a = a
 
+traceShowIdWhen :: Show a => (a -> Bool) -> a -> a
+traceShowIdWhen p a
+  | p a = traceShowId a
+  | otherwise = a
+
 traceUnless :: Bool -> (a -> a) -> a -> a
 traceUnless True _ a = a
 traceUnless False traceFn a = traceFn a
 
-iterate' f x = x `seq` x : iterate' f (f x)
+traceShowF :: Show b => (a -> b) -> a -> a
+traceShowF f a = traceShow (f a) a
