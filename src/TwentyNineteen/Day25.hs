@@ -1,32 +1,95 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module TwentyNineteen.Day25 where
 
-import Control.Monad
-import Control.Monad.Memo
-import Coord
-import Data.Bits
-import Data.Char
-import qualified Data.Foldable as F
-import Data.Function
-import Data.List
-import Data.List.Extra
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Sequence (Seq)
-import qualified Data.Sequence as SQ
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Tuple.Extra
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import Debug.Trace
-import Grid
-import Text.ParserCombinators.Parsec
-import Util
+import Control.Lens (set, view)
+import Control.Monad.Loops (iterateM_)
+import Data.Char (chr, ord)
+import Data.List (intercalate, isInfixOf, isSuffixOf, sortOn)
+import Text.RawString.QQ (r)
+import TwentyNineteen.Intcode
+  ( Machine (Machine),
+    outputs,
+    readProgram,
+    stepProgram,
+  )
+import Util (powerset)
 
-part1 :: IO Int
+directions :: String
+directions =
+  [r|west
+take cake
+west
+take pointer
+west
+south
+take tambourine
+east
+east
+east
+take mug
+west
+west
+west
+north
+east
+south
+take monolith
+north
+east
+east
+south
+take coin
+east
+take mouse
+south
+south
+take hypercube
+north
+north
+west
+south
+west
+north
+north
+|]
+
+dropAttempts :: [String]
+dropAttempts =
+  sortOn length $
+    [ intercalate "\n" ((("drop " ++) <$> items) ++ ["north"] ++ (("take " ++) <$> items)) ++ "\n"
+      | items <-
+          powerset
+            [ "cake",
+              "pointer",
+              "tambourine",
+              "mug",
+              "monolith",
+              "coin",
+              "mouse",
+              "hypercube"
+            ]
+    ]
+
+runTurn :: Machine -> IO Machine
+runTurn m = do
+  m' <- stepProgram m
+  let out = (chr . fromIntegral <$> view outputs m)
+  if "Command?" `isSuffixOf` out
+    then putStrLn out >> return (set outputs [] m')
+    else
+      if "Santa" `isInfixOf` out
+        then putStrLn out >> return m'
+        else return m'
+
+part1 :: IO ()
 part1 = do
-  ls <- lines <$> input 2019 25
-  return 0
+  program <- readProgram "input/2019/25.txt"
+  let machine =
+        Machine
+          0
+          (fromIntegral . ord <$> (directions ++ concat dropAttempts))
+          []
+          program
+          0
+  iterateM_ runTurn machine

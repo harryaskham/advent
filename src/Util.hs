@@ -2,6 +2,7 @@
 
 module Util where
 
+import Control.Monad (filterM)
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as BC
@@ -139,3 +140,8 @@ traceUnless False traceFn a = traceFn a
 
 traceShowF :: Show b => (a -> b) -> a -> a
 traceShowF f a = traceShow (f a) a
+
+clear :: IO ()
+clear = putStr "\ESC[2J"
+
+powerset = filterM (const [True, False])

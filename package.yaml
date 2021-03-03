@@ -60,6 +60,7 @@ dependencies:
 - backprop
 - combinatorial
 - mod
+- monad-loops
 
 library:
   source-dirs: src

@@ -82,10 +82,6 @@ updateDisplay [x, y, eId] (Display d score)
 mkDisplay :: Int -> Int -> Display
 mkDisplay x y = Display (MX.matrix y x (const EEmpty)) 0
 
--- | Clear the terminal screen.
-clear :: IO ()
-clear = putStr "\ESC[2J"
-
 completeArcade :: Arcade -> IO Arcade
 completeArcade arcade = do
   arcade'@(Arcade m d) <- stepArcade arcade
