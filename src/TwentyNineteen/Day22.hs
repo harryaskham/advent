@@ -103,13 +103,13 @@ bwdShuffles = foldl1 (.) <$> many op <* eof
     cutOp = bwdCut <$> (string "cut " *> (fromIntegral <$> number))
 
 fwdDealInto :: MInt -> MInt
-fwdDealInto x = negate x - 1
+fwdDealInto = subtract 1 . negate
 
 fwdDealWith :: MInt -> MInt -> MInt
 fwdDealWith = (*)
 
 fwdCut :: MInt -> MInt -> MInt
-fwdCut n x = x - n
+fwdCut = flip (-)
 
 fwdShuffles :: GenParser Char () (MInt -> MInt)
 fwdShuffles = foldl1 (.) . reverse <$> many op <* eof
@@ -119,31 +119,31 @@ fwdShuffles = foldl1 (.) . reverse <$> many op <* eof
     dealWithOp = fwdDealWith <$> (string "deal with increment " *> (fromIntegral <$> number))
     cutOp = fwdCut <$> (string "cut " *> (fromIntegral <$> number))
 
-getCycle :: (Eq a, Show a) => (a -> a) -> a -> [a]
-getCycle f start = go start []
-  where
-    go !x !cyc
-      | not (null cyc) && x == start = reverse cyc
-      | otherwise = traceShow (length cyc, x) $ go (f x) (x : cyc)
+-- TODO: This wont work! we need to figur eout the cycle length (hopefully huge) based on the instructinos in the deck-
+-- example
+{-
+deal into new stack
+cut -2
+deal with increment 7
+cut 8
+cut -4
+deal with increment 7
+cut 3
+deal with increment 9
+deal with increment 3
+cut -1
+Result: 9 2 5 8 1 4 7 0 3 6
+
+this is:
+-}
+
+tf x = ((((((((x * (-1)) - 1 + 2) * 7) + 8 - 4) * 7) + 3) * 9 * 3) - 1) `mod` 10
 
 part2 :: IO ()
 part2 = forward
 
 backward :: IO ()
 backward = do
-  let l = 119315717514047
-      n = 101741582076661
-  undoShuffle <- readWithParser (undoShuffles l) <$> input 2019 22
-  let cyc = getCycle undoShuffle 2020
-  print $ length cyc
-  print (cyc !! (n `mod` (length cyc)))
-
-type MInt = Mod 119315717514047
-
---type MInt = Mod 10007
-
-backward' :: IO ()
-backward' = do
   let n = 101741582076661
       --let n = 10006
       target = 2020
@@ -158,7 +158,8 @@ backward' = do
 forward :: IO ()
 forward = do
   let n = 101741582076661
-      target = 2003
+      --let n = 5003
+      target = 2020
   fwdShuffle <- readWithParser fwdShuffles <$> input 2019 22
   -- let cyc =
   --takeWhile ((/= target) . snd . traceShowIdWhen ((== 0) . (`mod` 100000) . (fst))) (drop 1 $ zip [0 ..] (iterate' fwdShuffle target))
@@ -170,4 +171,30 @@ forward = do
   print $ cycLen
   print $ iterate' fwdShuffle target !! ((cycLen - n) `mod` cycLen)
 
--- let cyc = getCycle fwdShuffle 2020
+type MInt = Mod 119315717514047
+
+--type MInt = Mod 10007
+
+test :: IO ()
+test = do
+  bwdShuffle <- readWithParser bwdShuffles <$> input 2019 22
+  let shuffleInc = bwdShuffle 1 - bwdShuffle 0
+      shuffle0 = bwdShuffle 0
+      shuffleOnce x = shuffle0 + x * shuffleInc
+      -- shuffleN n x = n * shuffle0 + n * x * shuffleInc
+      -- n = 10007
+      -- target = 2020
+      n = 101741582076661
+      target = 2020
+      cycLen =
+        fst . head . filter ((== target) . snd . traceShowIdWhen ((== 0) . (`mod` 100000) . (fst))) $
+          (drop 1 $ zip [0 ..] (iterate' shuffleOnce target))
+  print $ cycLen
+  print $ iterate' shuffleOnce target !! (n `mod` (cycLen + 1))
+
+-- shuffling once is:
+--print $ (shuffleOnce . shuffleOnce) x
+--print $ (bwdShuffle . bwdShuffle) x
+--print $ shuffleN 2 x
+
+-- 4012511964501 too low
