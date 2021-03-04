@@ -49,13 +49,13 @@ part1 = do
 type MInt = Mod 119315717514047
 
 bwdDealInto :: MInt -> MInt
-bwdDealInto x = negate x - 1
+bwdDealInto = subtract 1 . negate
 
 bwdDealWith :: MInt -> MInt -> MInt
-bwdDealWith n x = x / n
+bwdDealWith = flip (/)
 
 bwdCut :: MInt -> MInt -> MInt
-bwdCut n x = x + n
+bwdCut = (+)
 
 bwdShuffles :: GenParser Char () (MInt -> MInt)
 bwdShuffles = foldl1 (.) <$> many op <* eof
@@ -69,9 +69,6 @@ part2 :: IO MInt
 part2 = do
   bwdShuffle <- readWithParser bwdShuffles <$> input 2019 22
   let r = bwdShuffle 1 - bwdShuffle 0
-      s0 = bwdShuffle 0
-      bwdShuffleN :: MInt -> MInt -> MInt
-      bwdShuffleN n x =
-        let rn = r ^% unMod n
-         in s0 * (1 - rn) / (1 - r) + x * rn
+      a = bwdShuffle 0
+      bwdShuffleN n x = a * (1 - r ^% n) / (1 - r) + x * r ^% n
   return $ bwdShuffleN 101741582076661 2020

@@ -1,44 +1,28 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 
 module TwentyNineteen.Day18 where
 
-import Control.Applicative
-import Control.Concurrent
-import Control.Exception
-import Control.Lens hiding (Empty)
-import Control.Monad
-import Control.Monad.Search
-import Coord
-import Data.Char
-import qualified Data.Dequeue as DQ
-import Data.Foldable
+import Control.Applicative (ZipList (ZipList, getZipList))
+import Control.Lens (Ixed (ix), (.~))
+import Control.Monad (when)
+import Data.Char (isUpper, toLower)
+import Data.Foldable (Foldable (foldl'), maximumBy, sequenceA_)
 import Data.Function ((&))
 import Data.IORef
-import Data.List
-import qualified Data.List.Safe as LS
-import Data.List.Split hiding (condense)
+  ( IORef,
+    modifyIORef',
+    newIORef,
+    readIORef,
+    writeIORef,
+  )
 import qualified Data.Map.Strict as M
-import qualified Data.Matrix as MX
-import Data.Maybe
-import Data.Ord
-import qualified Data.PQueue.Prio.Min as PQ
-import Data.Ratio
+import Data.Maybe (isJust)
+import Data.Ord (comparing)
 import qualified Data.Sequence as SQ
 import qualified Data.Set as S
-import qualified Data.Tree as T
 import qualified Data.Vector as V
-import qualified Data.Vector.Split as VS
-import Debug.Trace
-import System.IO
-import System.IO.HiddenChar
-import System.Random
-import Text.ParserCombinators.ReadP
-import Util
+import Util (unjust)
 
 data Space = Entrance | Empty | Door Char | KeySpace Char | Wall deriving (Eq)
 
