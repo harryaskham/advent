@@ -1,36 +1,17 @@
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
-
 module TwentyNineteen.Day17 where
 
-import Control.Applicative
-import Control.Concurrent
-import Control.Lens hiding (Empty)
-import Control.Monad
-import Data.Char
-import Data.Foldable
+import Control.Lens ((.~), (^.))
+import Data.Foldable (sequenceA_)
 import Data.Function ((&))
-import Data.List
-import qualified Data.List.Safe as LS
-import Data.List.Split hiding (condense)
+import Data.List.Split (splitOn)
 import qualified Data.Map.Strict as M
-import qualified Data.Matrix as MX
-import Data.Maybe
-import Data.Ord
-import Data.Ratio
-import qualified Data.Set as S
-import qualified Data.Tree as T
-import qualified Data.Vector as V
-import qualified Data.Vector.Split as VS
-import Debug.Trace
-import System.IO
-import System.IO.HiddenChar
-import System.Random
-import Text.ParserCombinators.ReadP
 import TwentyNineteen.Intcode
+  ( Machine (Machine),
+    inputs,
+    outputs,
+    readProgram,
+    runProgram,
+  )
 
 data Space = Empty | Scaffold | RUp | RDown | RLeft | RRight | RFallen deriving (Eq)
 
@@ -93,18 +74,6 @@ inputMovements routine funcA funcB funcC cameraOn machine =
           else (fromIntegral . fromEnum) 'n',
         (fromIntegral . fromEnum) '\n'
       ]
-
--- Full string:
--- A L,4,L,4,L,10,R,4,
--- B R,4,L,4,L,4,R,8,R,10,
--- A L,4,L,4,L,10,R,4,
--- C R,4,L,10,R,10,
--- A L,4,L,4,L,10,R,4,
--- C R,4,L,10,R,10,
--- B R,4,L,4,L,4,R,8,R,10,
--- C R,4,L,10,R,10,
--- C R,4,L,10,R,10,
--- B R,4,L,4,L,4,R,8,R,10
 
 part2 :: IO ()
 part2 = do
