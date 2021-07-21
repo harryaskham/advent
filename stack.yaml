@@ -22,6 +22,8 @@ resolver: lts-14.16
 nix:
   # Contains 8.6.5
   path: ["nixpkgs=https://github.com/NixOS/nixpkgs/archive/596739026bbe0c693708119e5cd3e1b3aa88fd2d.tar.gz"]
+  # needed by hmatrix
+  packages: [ blas liblapack ]
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
