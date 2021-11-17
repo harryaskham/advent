@@ -1,0 +1,11 @@
+#+TITLE: 2021 Solutions
+
+* Running
+- To run with Nix, ~nix-build release.nix && result/bin/x2021~
+- To run with Cabal, just ~cabal run~
+- To keep these in sync, ~cabal2nix . > default.nix~
+  -  For a one-liner, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2021~
+- For GHCi, ~cabal v2-repl~
+
+* Profiling
+~cabal v2-run --enable-profiling exes --  +RTS -p~
