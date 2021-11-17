@@ -180,7 +180,6 @@ library
       TwentyTwenty.Day7
       TwentyTwenty.Day8
       TwentyTwenty.Day9
-      TwentyTwentyOne.Day1
       Util
   other-modules:
       Paths_advent
