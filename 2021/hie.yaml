@@ -2,3 +2,6 @@ cradle:
   cabal:
     - path: "app/Main.hs"
       component: "x2021:exe:x2021"
+
+    - path: "app/Day1.hs"
+      component: "x2021:exe:x2021"
