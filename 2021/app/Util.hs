@@ -84,4 +84,5 @@ swapMap = M.fromList . fmap swap . M.toList
 maxIndices :: Ord a => [a] -> [Int]
 maxIndices = fmap fst . head . groupOn snd . sortOn (Down . snd) . zip [0 ..]
 
+powerset :: [a] -> [[a]]
 powerset = filterM (const [True, False])
