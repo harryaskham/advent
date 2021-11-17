@@ -84,5 +84,8 @@ cradle:
     - path: "app/Grid.hs"
       component: "x2021:exe:x2021"
 
+    - path: "app/Tracers.hs"
+      component: "x2021:exe:x2021"
+
     - path: "app/Util.hs"
       component: "x2021:exe:x2021"

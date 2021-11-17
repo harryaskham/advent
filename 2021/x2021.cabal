@@ -52,6 +52,7 @@ executable x2021
                       Day25,
                       Coord,
                       Grid,
+                      Tracers,
                       Util
 
     -- LANGUAGE extensions used by modules in this package.
