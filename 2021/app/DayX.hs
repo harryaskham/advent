@@ -1,9 +1,8 @@
 module DayX where
 
-inputPath :: String
-inputPath = "input/X.txt"
+import Util
 
 part1 :: IO ()
 part1 = do
-  xs <- fmap read . lines <$> readFile inputPath
+  xs <- fmap read . lines <$> input X
   print (xs :: [Int])

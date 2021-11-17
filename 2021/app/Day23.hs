@@ -1,9 +1,8 @@
 module Day23 where
 
-inputPath :: String
-inputPath = "input/23.txt"
+import Util
 
 part1 :: IO ()
 part1 = do
-  xs <- fmap read . lines <$> readFile inputPath
+  xs <- fmap read . lines <$> input 23
   print (xs :: [Int])
