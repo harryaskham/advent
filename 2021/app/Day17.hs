@@ -1,6 +1,6 @@
 module Day17 where
 
-import Util (input)
+import Util
 
 part1 :: IO ()
 part1 = do
