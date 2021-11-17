@@ -1,7 +1,11 @@
+{-# LANGUAGE TupleSections #-}
+
 module Util where
 
 import Control.Monad (filterM)
+import Control.Monad.State.Lazy
 import Data.List.Extra (groupOn, sortOn, stripInfix)
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Ord (Down (Down))
@@ -55,7 +59,7 @@ first3 f (a, b, c) = (f a, b, c)
 -- Parser Combinator Utils
 
 readWithParser :: GenParser Char () a -> String -> a
-readWithParser parser input = do
+readWithParser parser input =
   case parse parser "[input]" input of
     Right x -> x
     Left e -> error (show e)
@@ -86,3 +90,24 @@ maxIndices = fmap fst . head . groupOn snd . sortOn (Down . snd) . zip [0 ..]
 
 powerset :: [a] -> [[a]]
 powerset = filterM (const [True, False])
+
+-- Memoization
+
+memoize :: Ord a => (a -> b) -> ((Map a b, a) -> (Map a b, b))
+memoize f (m, a) =
+  case M.lookup a m of
+    Just b -> (m, b)
+    Nothing -> let b = f a in (M.insert a b m, b)
+
+fibM :: (Map Int Int, Int) -> (Map Int Int, Int)
+fibM (m, 1) = (m, 1)
+fibM (m, 2) = (m, 1)
+fibM (m, a) = case M.lookup a m of
+  Just b -> (m, b)
+  Nothing ->
+    let (m1, f1) = fibM (m, a - 1)
+        (m2, f2) = fibM (m1, a - 2)
+        b = f1 + f2
+     in (M.insert a b m2, b)
+
+fib n = snd $ fibM (M.empty, n)
