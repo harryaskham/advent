@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ebaf479e8765cde9edfba17c3b876b84daa4a7d28adf47dc10a3db7a92ca2af7
+-- hash: b0255376bbb818530c8ce0ea8452daa21d331d995003c604c7a0d92b9612d7b7
 
 name:           advent
 version:        0.1.0.0
@@ -12,7 +12,7 @@ description:    Please see the README on GitHub at <https://github.com/harryaskh
 homepage:       https://github.com/harryaskham/advent#readme
 bug-reports:    https://github.com/harryaskham/advent/issues
 author:         Harry Askham
-maintainer:     harry@askham.ai
+maintainer:     harryaskham@gmail.com
 copyright:      2019 Harry Askham
 license:        BSD3
 license-file:   LICENSE
