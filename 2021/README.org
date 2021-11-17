@@ -1,4 +1,4 @@
-#+TITLE: 2021 Solutions
+#+TITLE: Advent of Code 2021 Solutions
 
 * Running
 - To run with Nix, ~nix-build release.nix && result/bin/x2021~
@@ -8,4 +8,4 @@
 - For GHCi, ~cabal v2-repl~
 
 * Profiling
-~cabal v2-run --enable-profiling exes --  +RTS -p~
+Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~

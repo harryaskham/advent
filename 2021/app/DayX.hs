@@ -1,5 +1,6 @@
 module DayX where
 
+import Data.List (nub)
 import Util
 
 part1 :: IO ()
