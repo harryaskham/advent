@@ -1,7 +1,7 @@
-module Day1 where
+module Day20 where
 
 inputPath :: String
-inputPath = "input/1.txt"
+inputPath = "input/20.txt"
 
 part1 :: IO ()
 part1 = do

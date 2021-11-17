@@ -5,3 +5,84 @@ cradle:
 
     - path: "app/Day1.hs"
       component: "x2021:exe:x2021"
+
+    - path: "app/Day2.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day3.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day4.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day5.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day6.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day7.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day8.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day9.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day10.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day11.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day12.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day13.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day14.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day15.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day16.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day17.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day18.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day19.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day20.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day21.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day22.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day23.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day24.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day25.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Coord.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Grid.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Util.hs"
+      component: "x2021:exe:x2021"
