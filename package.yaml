@@ -3,7 +3,7 @@ version:             0.1.0.0
 github:              "harryaskham/advent"
 license:             BSD3
 author:              "Harry Askham"
-maintainer:          "harry@askham.ai"
+maintainer:          "harryaskham@gmail.com"
 copyright:           "2019 Harry Askham"
 
 extra-source-files:
