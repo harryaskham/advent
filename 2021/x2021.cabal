@@ -50,21 +50,30 @@ executable x2021
                       Day23,
                       Day24,
                       Day25,
-                      Coord,
-                      Grid,
-                      Tracers,
-                      Util
+                      Day666,
+                      Helper.Coord,
+                      Helper.Grid,
+                      Helper.Tracers,
+                      Helper.Util
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    base ^>=4.14.3.0,
-                      containers,
+                      relude,
+                      --containers,
                       pqueue,
                       parsec,
                       vector,
                       array,
-                      text,
+                      --text,
                       extra,
-                      mtl
+                      --mtl
     hs-source-dirs:   app
     default-language: Haskell2010
+    mixins:           base hiding (Prelude),
+                      relude (Relude as Prelude),
+                      relude
+    default-extensions: OverloadedStrings,
+                        TupleSections,
+                        LambdaCase,
+                        MultiWayIf

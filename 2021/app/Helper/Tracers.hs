@@ -1,6 +1,5 @@
-module Tracers where
+module Helper.Tracers where
 
-import Debug.Trace (traceShow, traceShowId)
 import System.IO.Unsafe (unsafePerformIO)
 
 pauseId :: a -> a

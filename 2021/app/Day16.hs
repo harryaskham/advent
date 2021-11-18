@@ -1,8 +1,24 @@
 module Day16 where
 
-import Util
+import qualified Data.Map.Strict as M
+import qualified Data.PQueue.Prio.Min as PQ
+import qualified Data.Sequence as SQ
+import qualified Data.Set as S
+import Data.Text.Read
+import Helper.Coord
+import Helper.Grid
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
+
+parser :: GenParser Char () [Int]
+parser = many1 (number <* eol) <* eof
 
 part1 :: IO ()
 part1 = do
-  xs <- fmap read . lines <$> input 16
+  xs <- readInput (signed decimal) (input 16)
+  ys <- parseInput parser (input 16)
+  zs <- lines <$> readFileText (input 16)
   print (xs :: [Int])
+  print (ys :: [Int])
+  print zs

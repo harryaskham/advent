@@ -9,3 +9,6 @@
 
 * Profiling
 Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
+
+* Adding New Modules
+- For every new module added, ~x2021.cabal~ needs updating then we also need to run ~~/.cabal/bin/gen-hie . > hie.yaml~ for HLS to pick the file up.

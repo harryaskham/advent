@@ -78,14 +78,17 @@ cradle:
     - path: "app/Day25.hs"
       component: "x2021:exe:x2021"
 
-    - path: "app/Coord.hs"
+    - path: "app/Day666.hs"
       component: "x2021:exe:x2021"
 
-    - path: "app/Grid.hs"
+    - path: "app/Helper/Coord.hs"
       component: "x2021:exe:x2021"
 
-    - path: "app/Tracers.hs"
+    - path: "app/Helper/Grid.hs"
       component: "x2021:exe:x2021"
 
-    - path: "app/Util.hs"
+    - path: "app/Helper/Tracers.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/Util.hs"
       component: "x2021:exe:x2021"

@@ -1,6 +1,6 @@
-module Grid where
+module Helper.Grid where
 
-import Data.List (intercalate, nub)
+import Data.List (intercalate, maximum, minimum, nub)
 import qualified Data.Map.Strict as M
 
 type Grid a = M.Map (Int, Int) a

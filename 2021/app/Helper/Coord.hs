@@ -1,4 +1,4 @@
-module Coord where
+module Helper.Coord where
 
 data Dir2 = DirUp | DirDown | DirLeft | DirRight deriving (Show, Eq, Ord)
 

@@ -1,4 +1,4 @@
-module Day15 where
+module Day666 where
 
 import qualified Data.Map.Strict as M
 import qualified Data.PQueue.Prio.Min as PQ
@@ -16,9 +16,9 @@ parser = many1 (number <* eol) <* eof
 
 part1 :: IO ()
 part1 = do
-  xs <- readInput (signed decimal) (input 15)
-  ys <- parseInput parser (input 15)
-  zs <- lines <$> readFileText (input 15)
+  xs <- readInput (signed decimal) (input 666)
+  ys <- parseInput parser (input 666)
+  zs <- lines <$> readFileText (input 666)
   print (xs :: [Int])
   print (ys :: [Int])
   print zs
