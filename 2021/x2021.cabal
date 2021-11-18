@@ -1,78 +1,54 @@
 cabal-version:      2.4
 name:               x2021
 version:            0.1.0.0
-
--- A short (one-line) description of the package.
--- synopsis: Solutions to AOC 2021
-
--- A longer description of the package.
--- description: Solutions to AOC 2021
-
--- A URL where users can report bugs.
--- bug-reports:
-
--- The license under which the package is released.
--- license:
 author:             Harry Askham
 maintainer:         harryaskham@gmail.com
-
--- A copyright notice.
--- copyright:
--- category:
 extra-source-files: CHANGELOG.md
 
 executable x2021
-    main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
-    other-modules:    Day1,
-                      Day2,
-                      Day3,
-                      Day4,
-                      Day5,
-                      Day6,
-                      Day7,
-                      Day8,
-                      Day9,
-                      Day10,
-                      Day11,
-                      Day12,
-                      Day13,
-                      Day14,
-                      Day15,
-                      Day16,
-                      Day17,
-                      Day18,
-                      Day19,
-                      Day20,
-                      Day21,
-                      Day22,
-                      Day23,
-                      Day24,
-                      Day25,
-                      Day666,
-                      Helper.Coord,
-                      Helper.Grid,
-                      Helper.Tracers,
-                      Helper.Util
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    base ^>=4.14.3.0,
-                      relude,
-                      --containers,
-                      pqueue,
-                      parsec,
-                      vector,
-                      array,
-                      --text,
-                      extra,
-                      --mtl
-    hs-source-dirs:   app
-    default-language: Haskell2010
-    mixins:           base hiding (Prelude),
-                      relude (Relude as Prelude),
-                      relude
+    main-is:            Main.hs
+    other-modules:      Day1,
+                        Day2,
+                        Day3,
+                        Day4,
+                        Day5,
+                        Day6,
+                        Day7,
+                        Day8,
+                        Day9,
+                        Day10,
+                        Day11,
+                        Day12,
+                        Day13,
+                        Day14,
+                        Day15,
+                        Day16,
+                        Day17,
+                        Day18,
+                        Day19,
+                        Day20,
+                        Day21,
+                        Day22,
+                        Day23,
+                        Day24,
+                        Day25,
+                        Day666,
+                        Helper.Coord,
+                        Helper.Grid,
+                        Helper.Tracers,
+                        Helper.Util
+    build-depends:      base ^>=4.14.3.0,
+                        relude,
+                        pqueue,
+                        parsec,
+                        vector,
+                        array,
+                        extra,
+    hs-source-dirs:     app
+    default-language:   Haskell2010
+    mixins:             base hiding (Prelude),
+                        relude (Relude as Prelude),
+                        relude
     default-extensions: OverloadedStrings,
                         TupleSections,
                         LambdaCase,

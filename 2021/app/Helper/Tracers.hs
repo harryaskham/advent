@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-deprecations #-}
+
 module Helper.Tracers where
 
 import System.IO.Unsafe (unsafePerformIO)
