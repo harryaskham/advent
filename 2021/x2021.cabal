@@ -53,3 +53,19 @@ executable x2021
                         TupleSections,
                         LambdaCase,
                         MultiWayIf
+                        ImportQualifiedPost
+    ghc-options:        -Weverything
+                        -Wno-implicit-prelude
+                        -Wno-unused-imports
+                        -Wno-unused-packages
+                        -Wno-missing-export-lists
+                        -Wno-missing-deriving-strategies
+                        -Wno-missing-safe-haskell-mode
+                        -Wno-missing-exported-signatures
+                        -Wno-missing-import-lists
+                        -Wno-missed-specialisations
+                        -Wno-all-missed-specialisations
+                        -Wno-unsafe
+                        -Wno-safe
+                        -Wno-missing-local-signatures
+                        -Wno-monomorphism-restriction

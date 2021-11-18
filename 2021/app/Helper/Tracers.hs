@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-deprecations #-}
+{-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
 module Helper.Tracers where
 
@@ -6,7 +7,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 pauseId :: a -> a
 pauseId a = unsafePerformIO $ do
-  getLine
+  _ <- getLine
   return a
 
 traceStrLn :: String -> a -> a

@@ -1,12 +1,12 @@
 module Day4 where
 
-import qualified Data.Array as A
-import qualified Data.Map.Strict as M
-import qualified Data.PQueue.Prio.Min as PQ
-import qualified Data.Sequence as SQ
-import qualified Data.Set as S
+import Data.Array qualified as A
+import Data.Map.Strict qualified as M
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
 import Data.Text.Read
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import Helper.Coord
 import Helper.Grid
 import Helper.Tracers

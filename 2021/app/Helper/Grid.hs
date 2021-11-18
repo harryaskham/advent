@@ -1,7 +1,7 @@
 module Helper.Grid where
 
 import Data.List (intercalate, maximum, minimum, nub)
-import qualified Data.Map.Strict as M
+import Data.Map.Strict qualified as M
 
 type Grid a = M.Map (Int, Int) a
 
@@ -32,10 +32,10 @@ variants :: Eq a => Grid a -> [Grid a]
 variants grid = nub $ modifyCoords <$> mods <*> pure grid
   where
     (maxX, _) = maxXY grid
-    even = (maxX + 1) `mod` 2 == 0
-    flipH (x, y) = (if even then negate x - 1 else negate x, y)
-    flipV (x, y) = (x, if even then negate y - 1 else negate y)
-    rot90 (x, y) = (y, if even then negate x - 1 else negate x)
+    isEven = even (maxX + 1)
+    flipH (x, y) = (if isEven then negate x - 1 else negate x, y)
+    flipV (x, y) = (x, if isEven then negate y - 1 else negate y)
+    rot90 (x, y) = (y, if isEven then negate x - 1 else negate x)
     rot180 = rot90 . rot90
     rot270 = rot90 . rot90 . rot90
     mods = (.) <$> [id, flipH, flipV] <*> [id, rot90, rot180, rot270]
