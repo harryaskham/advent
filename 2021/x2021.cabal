@@ -3,7 +3,6 @@ name:               x2021
 version:            0.1.0.0
 author:             Harry Askham
 maintainer:         harryaskham@gmail.com
-extra-source-files: CHANGELOG.md
 
 common common-settings
     build-depends:      base ^>=4.14.3.0,
