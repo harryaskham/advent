@@ -1,4 +1,4 @@
-module Day12 where
+module Day21 where
 
 import Data.Array qualified as A
 import Data.Map.Strict qualified as M
@@ -16,11 +16,15 @@ import Text.ParserCombinators.Parsec
 parser :: GenParser Char () [Int]
 parser = many1 (number <* eol) <* eof
 
-part1 :: IO ()
+part1 :: IO Text
 part1 = do
-  xs <- readInput (signed decimal) (input 12)
-  ys <- parseInput parser (input 12)
-  zs <- lines <$> readFileText (input 12)
+  xs <- readInput (signed decimal) (input 21)
+  ys <- parseInput parser (input 21)
+  zs <- lines <$> readFileText (input 21)
   print (xs :: [Int])
   print (ys :: [Int])
   print zs
+  return "Part 1"
+
+part2 :: IO Text
+part2 = return "Part 2"

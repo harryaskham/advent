@@ -1,11 +1,19 @@
 #+TITLE: Advent of Code 2021 Solutions
 
 * Running
-- To run with Nix, ~nix-build release.nix && result/bin/x2021~
-- To run with Cabal, just ~cabal run~
-- To keep these in sync, ~cabal2nix . > default.nix~
-  -  For a one-liner, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2021~
-- For GHCi, ~cabal v2-repl~
+- To run with Cabal, ~cabal run x2021~
+- To run with Nix manually, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2021~
+- To run with Nix automatically, ~cabal --enable-nix run x2021~
+- For GHCi, ~cabal v2-repl~ or ~cabal --enable-nix v2-repl~
+
+* Testing
+- Tests are set up to validate the results of each day against example input and true input.
+- ~cabal test~ will run the contents of ~test/TestSuite.hs~
+- Running with nix manually above will run both the tests and the project, by default
+
+* Adding New Modules
+- For every new module added, ~x2021.cabal~ needs updating.
+- We also need to run ~gen-hie . > hie.yaml~ for HLS to pick the new modules up.
 
 * Profiling
 Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
@@ -14,4 +22,4 @@ Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
 - For every new module added, ~x2021.cabal~ needs updating then we also need to run ~gen-hie . > hie.yaml~ for HLS to pick the file up.
 
 * Templating
-~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run e.g. ~for i in {1..25}; do sed "s/666/$i/g" app/Day666.hs > app/Day$i.hs; done; cabal v2-run~.
+~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run e.g. ~for i in {1..25}; do sed "s/666/$i/g" src/Day666.hs > src/Day$i.hs; done; cabal v2-run x2021~.

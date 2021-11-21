@@ -16,7 +16,7 @@ import Text.ParserCombinators.Parsec
 parser :: GenParser Char () [Int]
 parser = many1 (number <* eol) <* eof
 
-part1 :: IO ()
+part1 :: IO Text
 part1 = do
   xs <- readInput (signed decimal) (input 8)
   ys <- parseInput parser (input 8)
@@ -24,3 +24,7 @@ part1 = do
   print (xs :: [Int])
   print (ys :: [Int])
   print zs
+  return "Part 1"
+
+part2 :: IO Text
+part2 = return "Part 2"
