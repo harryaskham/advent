@@ -25,7 +25,7 @@ import Day6 qualified
 import Day7 qualified
 import Day8 qualified
 import Day9 qualified
-import Test.HUnit
+import Test.HUnit (assertEqual)
 
 main :: IO ()
 main = do
