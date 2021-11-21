@@ -1,4 +1,4 @@
-module Day4 where
+module Day4 (part1, part2) where
 
 import Data.Array qualified as A
 import Data.Map.Strict qualified as M
@@ -13,8 +13,8 @@ import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
 
-parser :: GenParser Char () [Int]
-parser = many1 (number <* eol) <* eof
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
 part1 :: IO Text
 part1 = do
