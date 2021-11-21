@@ -1,14 +1,21 @@
-{ mkDerivation, array, base, containers, lib, parsec, pqueue, text
-, vector
+{ mkDerivation, array, base, containers, extra, HUnit, lib, mtl
+, parsec, pqueue, QuickCheck, relude, text, vector
 }:
 mkDerivation {
   pname = "x2021";
   version = "0.1.0.0";
   src = ./.;
-  isLibrary = false;
+  isLibrary = true;
   isExecutable = true;
+  libraryHaskellDepends = [
+    array base containers extra mtl parsec pqueue relude text vector
+  ];
   executableHaskellDepends = [
-    array base containers parsec pqueue text vector
+    array base containers extra mtl parsec pqueue relude text vector
+  ];
+  testHaskellDepends = [
+    array base containers extra HUnit mtl parsec pqueue QuickCheck
+    relude text vector
   ];
   license = "unknown";
   hydraPlatforms = lib.platforms.none;
