@@ -18,12 +18,9 @@ parser = many1 (number <* eol) <* eof
 
 part1 :: IO Text
 part1 = do
-  xs <- readInput (signed decimal) (input 6)
-  ys <- parseInput parser (input 6)
-  zs <- lines <$> readFileText (input 6)
-  print (xs :: [Int])
-  print (ys :: [Int])
-  print zs
+  -- xs <- readInput (signed decimal) (input 6)
+  -- xs <- parseInput parser (input 6)
+  -- xs <- lines <$> readFileText (input 6)
   return "Part 1"
 
 part2 :: IO Text
