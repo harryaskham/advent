@@ -5,7 +5,7 @@ author:             Harry Askham
 maintainer:         harryaskham@gmail.com
 
 common common-settings
-    build-depends:      base ^>=4.14.3.0,
+    build-depends:      base ^>=4.14.1.0,
                         relude,
                         pqueue,
                         parsec,
