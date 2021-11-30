@@ -14,7 +14,6 @@ import Helper.Coord
 import Helper.Grid
 import Helper.Tracers
 import Helper.Util
-import Numeric (readSigned)
 import Text.ParserCombinators.Parsec
 
 -- parser :: GenParser Char () [Int]
