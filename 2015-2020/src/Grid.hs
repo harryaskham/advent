@@ -16,6 +16,8 @@ toGrid fromChar rows =
         (x, c) <- zip [0 ..] row
     ]
 
+-- Helper for reading a Grid from an input file
+
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
 maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
 

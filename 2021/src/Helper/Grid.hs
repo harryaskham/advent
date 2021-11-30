@@ -1,16 +1,32 @@
 module Helper.Grid where
 
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
 import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
+import Data.Text qualified as T
+
+-- To create a Cell, just supply a Bimap between char and cell
+-- Or, one can override toChar and fromChar where there is some special logic
+class Ord a => GridCell a where
+  charMap :: Bimap a Char
+  fromChar :: Char -> a
+  fromChar c = charMap BM.!> c
+  toChar :: a -> Char
+  toChar a = charMap BM.! a
 
 type Grid a = M.Map (Int, Int) a
 
-toGrid :: (Char -> a) -> [String] -> Grid a
-toGrid fromChar rows =
+-- Helper for reading a Grid from an input file
+readGrid :: GridCell a => FilePath -> IO (Grid a)
+readGrid path = toGrid . lines <$> readFileText path
+
+toGrid :: GridCell a => [Text] -> Grid a
+toGrid rows =
   M.fromList
     [ ((x, y), fromChar c)
       | (y, row) <- zip [0 ..] rows,
-        (x, c) <- zip [0 ..] row
+        (x, c) <- zip [0 ..] (T.unpack row)
     ]
 
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
@@ -71,7 +87,14 @@ joinGrids grids =
     (maxGX, maxGY) = maxXY grids
     (maxX, maxY) = maxXY $ grids M.! (0, 0)
 
-pretty :: Show a => Grid a -> String
-pretty grid = intercalate "\n" [concat [show $ grid M.! (x, y) | x <- [0 .. maxX]] | y <- [0 .. maxY]]
+pretty :: GridCell a => Grid a -> Text
+pretty grid =
+  T.pack $
+    intercalate
+      "\n"
+      [[toChar $ grid M.! (x, y) | x <- [0 .. maxX]] | y <- [0 .. maxY]]
   where
     (maxX, maxY) = maxXY grid
+
+prettyPrint :: GridCell a => Grid a -> IO ()
+prettyPrint = putTextLn . pretty
