@@ -1,44 +1,15 @@
 module Day1 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Data.Text.Read (decimal)
+import Helper.Util (input, readInput, toList3)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
-
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+numIncreasing :: [Int] -> Int
+numIncreasing xs = length . filter ((>) <$> fst <*> snd) . zip (drop 1 xs) $ xs
 
 part1 :: IO Int
-part1 = do
-  xs <- readInput decimal (input 1)
-  return . length . filter ((>) <$> fst <*> snd) . zip (drop 1 xs) $ xs
+part1 = numIncreasing <$> readInput decimal (input 1)
 
 part2 :: IO Int
 part2 = do
-  xs <- readInput decimal (input 1)
-  let toList3 (a, b, c) = [a, b, c]
-  let ys = sum . toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
-  return . length . filter ((>) <$> fst <*> snd) . zip (drop 1 ys) $ ys
+  let batch3 xs = sum . toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
+  numIncreasing . batch3 <$> readInput decimal (input 1)

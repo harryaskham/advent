@@ -60,6 +60,9 @@ toTuple3 :: [a] -> Maybe (a, a, a)
 toTuple3 [a, b, c] = Just (a, b, c)
 toTuple3 _ = Nothing
 
+toList3 :: (a, a, a) -> [a]
+toList3 (a, b, c) = [a, b, c]
+
 uncurry4 :: (a -> b -> c -> d -> e) -> ((a, b, c, d) -> e)
 uncurry4 f = let f' (a, b, c, d) = f a b c d in f'
 
