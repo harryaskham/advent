@@ -31,13 +31,14 @@ import Text.ParserCombinators.Parsec
 --         (Wall, '#')
 --       ]
 
-part1 :: IO Text
+part1 :: IO Int
 part1 = do
-  -- xs <- readInput (signed decimal) (input 1)
-  -- xs <- parseInput parser (input 1)
-  -- xs <- lines <$> readFileText (input 1)
-  -- grid <- readGrid (input 1) :: (IO (Grid Cell))
-  return "Part 1"
+  xs <- readInput decimal (input 1)
+  return . length . filter ((>) <$> fst <*> snd) . zip (drop 1 xs) $ xs
 
-part2 :: IO Text
-part2 = return "Part 2"
+part2 :: IO Int
+part2 = do
+  xs <- readInput decimal (input 1)
+  let toList3 (a, b, c) = [a, b, c]
+  let ys = sum . toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
+  return . length . filter ((>) <$> fst <*> snd) . zip (drop 1 ys) $ ys

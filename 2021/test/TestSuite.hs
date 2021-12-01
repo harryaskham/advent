@@ -29,8 +29,8 @@ import Test.HUnit (assertEqual)
 
 main :: IO ()
 main = do
-  assertEqual "Day 1 (Part 1)" "Part 1" =<< Day1.part1
-  assertEqual "Day 1 (Part 2)" "Part 2" =<< Day1.part2
+  assertEqual "Day 1 (Part 1)" 1316 =<< Day1.part1
+  assertEqual "Day 1 (Part 2)" 1344 =<< Day1.part2
 
   assertEqual "Day 2 (Part 1)" "Part 1" =<< Day2.part1
   assertEqual "Day 2 (Part 2)" "Part 2" =<< Day2.part2
