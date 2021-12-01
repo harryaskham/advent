@@ -106,3 +106,6 @@ swapMap = M.fromList . fmap swap . M.toList
 
 powerset :: [a] -> [[a]]
 powerset = filterM (const [True, False])
+
+batch3 :: [a] -> [[a]]
+batch3 xs = toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
