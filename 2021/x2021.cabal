@@ -15,7 +15,8 @@ common common-settings
                         text,
                         containers,
                         mtl,
-                        bimap
+                        bimap,
+                        mod
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
@@ -48,7 +49,8 @@ common common-settings
                         PatternSynonyms,
                         ExistentialQuantification,
                         FunctionalDependencies,
-                        GADTs
+                        GADTs,
+                        DataKinds
     ghc-options:        -Weverything
                         -Wno-implicit-prelude
                         -Wno-unused-imports

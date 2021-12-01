@@ -4,6 +4,7 @@ import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
+import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
