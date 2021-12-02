@@ -16,7 +16,7 @@ parser = many1 (line <* eol) <* eof
     down = MDown <$> (string "down " >> number)
     up = MUp <$> (string "up " >> number)
 
-data Submarine = Submarine Integer Integer Integer deriving (Show)
+data Submarine = Submarine Integer Integer Integer
 
 instance Solution Submarine Integer where
   toSolution (Submarine x h _) = x * h
