@@ -109,3 +109,8 @@ powerset = filterM (const [True, False])
 
 batch3 :: [a] -> [[a]]
 batch3 xs = toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
+
+-- A Solution typeclass for objects that end up representing the solution in some way
+
+class Solution a b where
+  toSolution :: a -> b

@@ -1,44 +1,44 @@
 module Day2 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Util (Solution (..), eol, input, number, parseInput)
+import Text.ParserCombinators.Parsec (GenParser, eof, many1, string)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+data Movement
+  = MForward Integer
+  | MDown Integer
+  | MUp Integer
+  deriving (Eq, Show)
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+parser :: GenParser Char () [Movement]
+parser = many1 (line <* eol) <* eof
+  where
+    line = forward <|> down <|> up
+    forward = MForward <$> (string "forward " >> number)
+    down = MDown <$> (string "down " >> number)
+    up = MUp <$> (string "up " >> number)
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+data Submarine = Submarine Integer Integer Integer deriving (Show)
 
-part1 :: IO Text
-part1 = do
-  -- xs <- readInput (signed decimal) (input 2)
-  -- xs <- parseInput parser (input 2)
-  -- xs <- lines <$> readFileText (input 2)
-  -- grid <- readGrid (input 2) :: (IO (Grid Cell))
-  return "Part 1"
+instance Solution Submarine Integer where
+  toSolution (Submarine x h _) = x * h
 
-part2 :: IO Text
-part2 = return "Part 2"
+moveSubmarine1 :: Submarine -> Movement -> Submarine
+moveSubmarine1 (Submarine x h a) (MForward v) = Submarine (x + v) h a
+moveSubmarine1 (Submarine x h a) (MDown v) = Submarine x (h + v) a
+moveSubmarine1 (Submarine x h a) (MUp v) = Submarine x (h - v) a
+
+moveSubmarine2 :: Submarine -> Movement -> Submarine
+moveSubmarine2 (Submarine x h a) (MForward v) = Submarine (x + v) (h + a * v) a
+moveSubmarine2 (Submarine x h a) (MDown v) = Submarine x h (a + v)
+moveSubmarine2 (Submarine x h a) (MUp v) = Submarine x h (a - v)
+
+solve :: (Submarine -> Movement -> Submarine) -> IO Integer
+solve moveSubmarine =
+  toSolution . foldl' moveSubmarine (Submarine 0 0 0)
+    <$> parseInput parser (input 2)
+
+part1 :: IO Integer
+part1 = solve moveSubmarine1
+
+part2 :: IO Integer
+part2 = solve moveSubmarine2
