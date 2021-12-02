@@ -9,9 +9,8 @@ data Movement
   | MUp Integer
 
 parser :: GenParser Char () [Movement]
-parser = many1 (line <* eol) <* eof
+parser = many1 ((forward <|> down <|> up) <* eol) <* eof
   where
-    line = forward <|> down <|> up
     forward = MForward <$> (string "forward " >> number)
     down = MDown <$> (string "down " >> number)
     up = MUp <$> (string "up " >> number)
