@@ -7,7 +7,6 @@ data Movement
   = MForward Integer
   | MDown Integer
   | MUp Integer
-  deriving (Eq, Show)
 
 parser :: GenParser Char () [Movement]
 parser = many1 (line <* eol) <* eof
