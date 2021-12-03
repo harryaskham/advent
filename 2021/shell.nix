@@ -5,7 +5,8 @@ let
   inherit (nixpkgs) pkgs;
 
   f = { mkDerivation, array, base, bimap, containers, extra, HUnit
-      , lib, mod, mtl, parsec, pqueue, QuickCheck, relude, text, vector
+      , lib, mod, mtl, parsec, pqueue, QuickCheck, relude, semirings
+      , text, vector
       }:
       mkDerivation {
         pname = "x2021";
@@ -14,16 +15,16 @@ let
         isLibrary = true;
         isExecutable = true;
         libraryHaskellDepends = [
-          array base bimap containers extra mod mtl parsec pqueue relude text
-          vector
+          array base bimap containers extra mod mtl parsec pqueue relude
+          semirings text vector
         ];
         executableHaskellDepends = [
-          array base bimap containers extra mod mtl parsec pqueue relude text
-          vector
+          array base bimap containers extra mod mtl parsec pqueue relude
+          semirings text vector
         ];
         testHaskellDepends = [
           array base bimap containers extra HUnit mod mtl parsec pqueue
-          QuickCheck relude text vector
+          QuickCheck relude semirings text vector
         ];
         license = "unknown";
         hydraPlatforms = lib.platforms.none;
