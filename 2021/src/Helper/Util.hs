@@ -50,6 +50,9 @@ infixl 5 <$$>
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 (<$$>) = fmap . fmap
 
+both :: Bifunctor f => (a -> b) -> f a a -> f b b
+both f = bimap f f
+
 -- Specific currying / conversions
 
 toTuple2 :: [a] -> Maybe (a, a)
