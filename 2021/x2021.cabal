@@ -16,7 +16,8 @@ common common-settings
                         containers,
                         mtl,
                         bimap,
-                        mod
+                        mod,
+                        semirings
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
