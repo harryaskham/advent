@@ -89,6 +89,9 @@ eol = char '\n'
 number :: Read a => GenParser Char () a
 number = read <$> many1 (oneOf "-0123456789")
 
+bitChar :: GenParser Char () Bool
+bitChar = (char '1' >> return True) <|> (char '0' >> return False)
+
 -- Map helpers
 
 countMap :: Ord a => [a] -> M.Map a Int

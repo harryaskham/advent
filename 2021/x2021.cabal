@@ -101,7 +101,8 @@ library
                         Helper.Coord,
                         Helper.Grid,
                         Helper.Tracers,
-                        Helper.Util
+                        Helper.Util,
+                        Helper.Bits
 
 executable x2021
     import:             common-settings
