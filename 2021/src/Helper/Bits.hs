@@ -22,6 +22,8 @@ import Data.Bits
 import Data.Semiring (Semiring, one, zero)
 import Prelude hiding (one)
 
+-- Inefficient but working interpretation of any list of zero/nonzero things as a bit list
+-- zero interpreted as 0, one (or anything else) as 1
 instance (Semiring a, Bits a) => Bits [a] where
   (a : as) .&. (b : bs) = (a .&. b) : (as .&. bs)
   _ .&. _ = []
@@ -34,11 +36,15 @@ instance (Semiring a, Bits a) => Bits [a] where
 
   complement = fmap complement
 
-  -- TODO: Implement
-  shift = undefined
+  shift xs i
+    | i > 0 = xs <> replicate i zero
+    | i < 0 = take (bitSize xs - abs i) xs
+    | otherwise = xs
 
-  -- TODO: Implement
-  rotate = undefined
+  rotate xs i
+    | i > 0 = drop (i `mod` bitSize xs) xs <> take (i `mod` bitSize xs) xs
+    | i < 0 = drop (bitSize xs - (abs i `mod` bitSize xs)) xs <> take (bitSize xs - (abs i `mod` bitSize xs)) xs
+    | otherwise = xs
 
   bitSize = length
 
