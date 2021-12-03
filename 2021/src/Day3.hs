@@ -17,17 +17,17 @@ part1 =
     . transpose
     <$> parseInput parser (input 3)
 
-step :: Int -> ([Bool] -> Bool) -> [[Bool]] -> [Bool]
-step _ _ [bs] = bs
-step i getCommonBit bss =
-  step
-    (i + 1)
-    getCommonBit
-    (filter (\bs -> (bs !!? i) == (getCommonBit <$> (transpose bss !!? i))) bss)
+filterBits :: ([Bool] -> Bool) -> [[Bool]] -> [Bool]
+filterBits getCommonBit = go 0
+  where
+    go _ [bs] = bs
+    go i bss =
+      let cb = getCommonBit <$> (transpose bss !!? i)
+       in go (i + 1) [bs | bs <- bss, (bs !!? i) == cb]
 
 part2 :: IO Integer
 part2 =
   uncurry (*)
     . both bitsToInt
-    . (step 0 mostCommonBit &&& step 0 leastCommonBit)
+    . (filterBits mostCommonBit &&& filterBits leastCommonBit)
     <$> parseInput parser (input 3)
