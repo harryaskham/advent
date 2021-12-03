@@ -55,11 +55,13 @@ bitsToInt bs =
 zeroCount :: Bits a => a -> Int
 zeroCount bs = bitSize bs - popCount bs
 
+-- True if true is the most common bit, False otherwise
 mostCommonBit :: Bits a => a -> Bool
 mostCommonBit bs
   | popCount bs == zeroCount bs = True
   | otherwise = popCount bs > zeroCount bs
 
+-- False if false is the most common bit, True otherwise
 leastCommonBit :: Bits a => a -> Bool
 leastCommonBit bs
   | popCount bs == zeroCount bs = False
