@@ -19,13 +19,11 @@ part1 =
 
 step :: Int -> ([Bool] -> Bool) -> [[Bool]] -> [Bool]
 step _ _ [bs] = bs
-step i getBit bss =
+step i getCommonBit bss =
   step
     (i + 1)
-    getBit
-    (filter (\bs -> (bs !!? i) == m) bss)
-  where
-    m = getBit <$> (transpose bss !!? i)
+    getCommonBit
+    (filter (\bs -> (bs !!? i) == (getCommonBit <$> (transpose bss !!? i))) bss)
 
 part2 :: IO Integer
 part2 =
