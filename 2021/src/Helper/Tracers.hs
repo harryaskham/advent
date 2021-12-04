@@ -15,6 +15,11 @@ traceStrLn s a = unsafePerformIO $ do
   putStrLn s
   return a
 
+traceTextLn :: Text -> a -> a
+traceTextLn s a = unsafePerformIO $ do
+  putTextLn s
+  return a
+
 traceWhen :: Bool -> (a -> a) -> a -> a
 traceWhen True traceFn a = traceFn a
 traceWhen False _ a = a

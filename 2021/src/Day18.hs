@@ -13,6 +13,7 @@ import Data.Text.Read
 import Data.Vector qualified as V
 import Helper.Coord
 import Helper.Grid
+import Helper.TH
 import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
@@ -32,13 +33,20 @@ import Text.ParserCombinators.Parsec
 --         (Wall, '#')
 --       ]
 
-part1 :: IO Text
-part1 = do
-  -- xs <- readInput (signed decimal) (input 18)
-  -- xs <- parseInput parser (input 18)
-  -- xs <- lines <$> readFileText (input 18)
-  -- grid <- readGrid (input 18) :: (IO (Grid Cell))
-  return "Part 1"
+part1 :: Text
+part1 =
+  -- Dynamic Input:
+  -- do
+  --   xs <- readInput (signed decimal) (input 18)
+  --   xs <- parseInput parser (input 18)
+  --   xs <- lines <$> readFileText (input 18)
+  --   grid <- readGrid (input 18) :: (IO (Grid Cell))
+  -- Compiled Input:
+  -- let xs = readInputL (signed decimal) $(inputL 18)
+  -- let xs = parseInputL parser $(inputL 18)
+  -- let xs = lines $(inputL 18)
+  -- let grid = readGridL $(inputL 18) :: (Grid Cell)
+  "Part 1"
 
-part2 :: IO Text
-part2 = return "Part 2"
+part2 :: Text
+part2 = "Part 2"

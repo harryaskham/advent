@@ -19,7 +19,10 @@ type Grid a = M.Map (Int, Int) a
 
 -- Helper for reading a Grid from an input file
 readGrid :: GridCell a => FilePath -> IO (Grid a)
-readGrid path = toGrid . lines <$> readFileText path
+readGrid path = readGridL <$> readFileText path
+
+readGridL :: GridCell a => Text -> Grid a
+readGridL = toGrid . lines
 
 toGrid :: GridCell a => [Text] -> Grid a
 toGrid rows =

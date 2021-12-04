@@ -1,6 +1,7 @@
 module Day2 (part1, part2) where
 
-import Helper.Util (Solution (..), eol, input, number, parseInput)
+import Helper.TH (inputL)
+import Helper.Util (Solution (..), eol, number, parseInputL)
 import Text.ParserCombinators.Parsec (GenParser, eof, many1, string)
 
 data Movement
@@ -30,13 +31,14 @@ moveSubmarine2 (Submarine x h a) (MForward v) = Submarine (x + v) (h + a * v) a
 moveSubmarine2 (Submarine x h a) (MDown v) = Submarine x h (a + v)
 moveSubmarine2 (Submarine x h a) (MUp v) = Submarine x h (a - v)
 
-solve :: (Submarine -> Movement -> Submarine) -> IO Integer
+solve :: (Submarine -> Movement -> Submarine) -> Integer
 solve moveSubmarine =
-  toSolution . foldl' moveSubmarine (Submarine 0 0 0)
-    <$> parseInput parser (input 2)
+  parseInputL parser $(inputL 2)
+    & foldl' moveSubmarine (Submarine 0 0 0)
+    & toSolution
 
-part1 :: IO Integer
+part1 :: Integer
 part1 = solve moveSubmarine1
 
-part2 :: IO Integer
+part2 :: Integer
 part2 = solve moveSubmarine2
