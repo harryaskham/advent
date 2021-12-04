@@ -29,3 +29,13 @@ input :: Int -> Q Exp
 input day = do
   f <- embedFile (inputPath day)
   return $ AppE (VarE 'decodeUtf8) f
+
+exampleInput :: Int -> Q Exp
+exampleInput day = do
+  f <- embedFile (exampleInputPath day)
+  return $ AppE (VarE 'decodeUtf8) f
+
+exampleInputN :: Int -> Int -> Q Exp
+exampleInputN day n = do
+  f <- embedFile (exampleInputNPath day n)
+  return $ AppE (VarE 'decodeUtf8) f
