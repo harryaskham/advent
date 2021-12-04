@@ -26,19 +26,22 @@ exampleInputN day n = "input/" <> show day <> "_example_" <> show n <> ".txt"
 -- Parse input lines with the given Reader.
 -- If any error occurs, fail.
 readInput :: TR.Reader a -> FilePath -> IO [a]
-readInput r path = do
-  xs <- fmap r . lines <$> readFileText path
+readInput r path = readInputL r <$> readFileText path
+
+readInputL :: TR.Reader a -> Text -> [a]
+readInputL r text = do
+  let xs = fmap r . lines $ text
   let (ls, rs) = partitionEithers xs
   case ls of
-    [] -> return (fst <$> rs)
+    [] -> fst <$> rs
     es -> error (show es)
 
 -- Helper utility for running a parser on a Text path
 parseInput :: GenParser Char () a -> FilePath -> IO a
-parseInput parser path = readWithParser parser <$> readFile (toString path)
+parseInput parser path = parseInputL parser <$> readFile (toString path)
 
-readWithParser :: GenParser Char () a -> String -> a
-readWithParser parser body =
+parseInputL :: GenParser Char () a -> String -> a
+parseInputL parser body =
   case parse parser "[input]" body of
     Right x -> x
     Left e -> error (show e)

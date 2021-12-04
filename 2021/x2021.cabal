@@ -18,7 +18,8 @@ common common-settings
                         bimap,
                         mod,
                         semirings,
-                        template-haskell
+                        template-haskell,
+                        file-embed
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
@@ -53,7 +54,8 @@ common common-settings
                         FunctionalDependencies,
                         GADTs,
                         DataKinds,
-                        StrictData
+                        StrictData,
+                        TemplateHaskell
     ghc-options:        -Weverything
                         -Wno-implicit-prelude
                         -Wno-unused-imports
