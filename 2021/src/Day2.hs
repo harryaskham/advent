@@ -33,7 +33,8 @@ moveSubmarine2 (Submarine x h a) (MUp v) = Submarine x h (a - v)
 
 solve :: (Submarine -> Movement -> Submarine) -> Integer
 solve moveSubmarine =
-  parseInputL parser $(inputL 2)
+  $(inputL 2)
+    & parseInputL parser
     & foldl' moveSubmarine (Submarine 0 0 0)
     & toSolution
 
