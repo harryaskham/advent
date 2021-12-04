@@ -4,7 +4,7 @@ import Data.IntMap qualified as IM
 import Data.Set qualified as S
 import Helper.TH (input)
 import Helper.Util (eol, number, parseInput, (<$$>))
-import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, sepBy)
+import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, sepBy, sepBy1)
 
 data Board = Board (IntMap (Int, Int)) (Set (Int, Int))
 
@@ -21,10 +21,9 @@ toBoard ass =
 
 parser :: GenParser Char () ([Int], [Board])
 parser = do
-  calls <- number `sepBy` char ',' <* (eol >> eol)
-  let boardLine = many (char ' ') >> many1 (number <* many (char ' '))
-      board = many1 (boardLine <* eol)
-  boards <- (toBoard <$$> board `sepBy` eol) <* eof
+  calls <- number `sepBy` char ',' <* count 2 eol
+  let line = optional (char ' ') >> (number `sepBy1` many1 (char ' ')) <* eol
+  boards <- (toBoard <$$> many1 line `sepBy` eol) <* eof
   return (calls, boards)
 
 mark :: Int -> Board -> Board
