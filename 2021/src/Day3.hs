@@ -2,8 +2,8 @@ module Day3 (part1, part2) where
 
 import Data.Bits (Bits (complement))
 import Helper.Bits (bitsToInt, leastCommonBit, mostCommonBit)
-import Helper.TH (inputL)
-import Helper.Util (bitChar, both, eol, parseInputL)
+import Helper.TH (input)
+import Helper.Util (bitChar, both, eol, parseInput)
 import Text.ParserCombinators.Parsec (GenParser, char, eof, many1)
 
 parser :: GenParser Char () [[Bool]]
@@ -19,8 +19,8 @@ filterBits getCommonBit = go 0
 
 part1 :: Integer
 part1 =
-  $(inputL 3)
-    & parseInputL parser
+  $(input 3)
+    & parseInput parser
     & transpose
     & fmap mostCommonBit
     & (id &&& complement)
@@ -29,8 +29,8 @@ part1 =
 
 part2 :: Integer
 part2 =
-  $(inputL 3)
-    & parseInputL parser
+  $(input 3)
+    & parseInput parser
     & (filterBits mostCommonBit &&& filterBits leastCommonBit)
     & both bitsToInt
     & uncurry (*)

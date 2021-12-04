@@ -1,8 +1,8 @@
 module Day1 (part1, part2) where
 
 import Data.Text.Read (decimal)
-import Helper.TH (inputL)
-import Helper.Util (batch3, readInputL)
+import Helper.TH (input)
+import Helper.Util (batch3, readAs)
 
 numIncreasing :: [Int] -> Int
 numIncreasing xs =
@@ -13,14 +13,14 @@ numIncreasing xs =
 
 part1 :: Int
 part1 =
-  $(inputL 1)
-    & readInputL decimal
+  $(input 1)
+    & readAs decimal
     & numIncreasing
 
 part2 :: Int
 part2 =
-  $(inputL 1)
-    & readInputL decimal
+  $(input 1)
+    & readAs decimal
     & batch3
     & fmap sum
     & numIncreasing

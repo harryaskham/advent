@@ -37,15 +37,15 @@ part1 :: Text
 part1 =
   -- Dynamic Input:
   -- do
-  --   xs <- readInput (signed decimal) (input 19)
-  --   xs <- parseInput parser (input 19)
-  --   xs <- lines <$> readFileText (input 19)
-  --   grid <- readGrid (input 19) :: (IO (Grid Cell))
+  --   xs <- readInputIO (signed decimal) (inputPath 19)
+  --   xs <- parseInputIO parser (inputPath 19)
+  --   xs <- lines <$> readFileText (inputPath 19)
+  --   grid <- readGridIO (inputPath 19) :: (IO (Grid Cell))
   -- Compiled Input:
-  -- let xs = readInputL (signed decimal) $(inputL 19)
-  -- let xs = parseInputL parser $(inputL 19)
-  -- let xs = lines $(inputL 19)
-  -- let grid = readGridL $(inputL 19) :: (Grid Cell)
+  -- let xs = readAs (signed decimal) $(input 19)
+  -- let xs = parseInput parser $(input 19)
+  -- let xs = lines $(input 19)
+  -- let grid = readGrid $(input 19) :: (Grid Cell)
   "Part 1"
 
 part2 :: Text

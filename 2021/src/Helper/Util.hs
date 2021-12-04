@@ -14,22 +14,22 @@ import Text.ParserCombinators.Parsec (GenParser, char, many1, oneOf, parse)
 
 -- Input parsing
 
-input :: Int -> FilePath
-input day = "input/" <> show day <> ".txt"
+inputPath :: Int -> FilePath
+inputPath day = "input/" <> show day <> ".txt"
 
-exampleInput :: Int -> FilePath
-exampleInput day = "input/" <> show day <> "_example.txt"
+exampleInputPath :: Int -> FilePath
+exampleInputPath day = "input/" <> show day <> "_example.txt"
 
-exampleInputN :: Int -> Int -> FilePath
-exampleInputN day n = "input/" <> show day <> "_example_" <> show n <> ".txt"
+exampleInputNPath :: Int -> Int -> FilePath
+exampleInputNPath day n = "input/" <> show day <> "_example_" <> show n <> ".txt"
 
 -- Parse input lines with the given Reader.
 -- If any error occurs, fail.
-readInput :: TR.Reader a -> FilePath -> IO [a]
-readInput r path = readInputL r <$> readFileText path
+readAsIO :: TR.Reader a -> FilePath -> IO [a]
+readAsIO r path = readAs r <$> readFileText path
 
-readInputL :: TR.Reader a -> Text -> [a]
-readInputL r text = do
+readAs :: TR.Reader a -> Text -> [a]
+readAs r text = do
   let xs = fmap r . lines $ text
   let (ls, rs) = partitionEithers xs
   case ls of
@@ -37,11 +37,11 @@ readInputL r text = do
     es -> error (show es)
 
 -- Helper utility for running a parser on a Text path
-parseInput :: GenParser Char () a -> FilePath -> IO a
-parseInput parser path = parseInputL parser <$> readFile (toString path)
+parseInputIO :: GenParser Char () a -> FilePath -> IO a
+parseInputIO parser path = parseInput parser <$> readFile (toString path)
 
-parseInputL :: GenParser Char () a -> String -> a
-parseInputL parser body =
+parseInput :: GenParser Char () a -> String -> a
+parseInput parser body =
   case parse parser "[input]" body of
     Right x -> x
     Left e -> error (show e)

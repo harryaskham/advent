@@ -5,31 +5,27 @@ import Helper.Util
 import Language.Haskell.TH
 
 -- Build a function that runs all days, converts results to Text,
--- and returns IO [(day, part, result)]
+-- and returns [(day, part, result)]
 runAllDays :: Q Exp
 runAllDays =
-  return . AppE (VarE 'sequence) . ListE $
+  return . ListE $
     ( \(d, p) ->
-        AppE
-          ( AppE
-              (VarE 'fmap)
-              ( TupE
-                  [ Just (LitE $ IntegerL d),
-                    Just (LitE $ IntegerL p),
-                    Nothing
-                  ]
-              )
-          )
-          ( AppE
-              (AppE (VarE 'fmap) (VarE 'show))
-              (VarE (mkName $ concat ["Day", show d, ".part", show p]))
-          )
+        ( TupE
+            [ Just (LitE $ IntegerL d),
+              Just (LitE $ IntegerL p),
+              Just
+                ( AppE
+                    (VarE 'show)
+                    (VarE (mkName $ concat ["Day", show d, ".part", show p]))
+                )
+            ]
+        )
     )
       <$> [(d, p) | d <- [1 .. 25], p <- [1, 2]]
 
 -- Literal inputs; use TH to embed the input at compile time
 
-inputL :: Int -> Q Exp
-inputL day = do
-  f <- embedFile (input day)
+input :: Int -> Q Exp
+input day = do
+  f <- embedFile (inputPath day)
   return $ AppE (VarE 'decodeUtf8) f

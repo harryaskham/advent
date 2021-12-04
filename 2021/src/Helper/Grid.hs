@@ -18,11 +18,11 @@ class Ord a => GridCell a where
 type Grid a = M.Map (Int, Int) a
 
 -- Helper for reading a Grid from an input file
-readGrid :: GridCell a => FilePath -> IO (Grid a)
-readGrid path = readGridL <$> readFileText path
+readGridIO :: GridCell a => FilePath -> IO (Grid a)
+readGridIO path = readGrid <$> readFileText path
 
-readGridL :: GridCell a => Text -> Grid a
-readGridL = toGrid . lines
+readGrid :: GridCell a => Text -> Grid a
+readGrid = toGrid . lines
 
 toGrid :: GridCell a => [Text] -> Grid a
 toGrid rows =

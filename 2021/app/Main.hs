@@ -41,4 +41,4 @@ main =
             <> ": "
             <> r
     )
-    =<< $runAllDays
+    $runAllDays
