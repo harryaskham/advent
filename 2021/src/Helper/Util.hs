@@ -37,11 +37,11 @@ readAs r text = do
     es -> error (show es)
 
 -- Helper utility for running a parser on a Text path
-parseInputIO :: GenParser Char () a -> FilePath -> IO a
-parseInputIO parser path = parseInput parser <$> readFile (toString path)
+parseWithIO :: GenParser Char () a -> FilePath -> IO a
+parseWithIO parser path = parseWith parser <$> readFile (toString path)
 
-parseInput :: GenParser Char () a -> String -> a
-parseInput parser body =
+parseWith :: GenParser Char () a -> String -> a
+parseWith parser body =
   case parse parser "[input]" body of
     Right x -> x
     Left e -> error (show e)

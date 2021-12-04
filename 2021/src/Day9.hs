@@ -38,12 +38,12 @@ part1 =
   -- Dynamic Input:
   -- do
   --   xs <- readInputIO (signed decimal) (inputPath 9)
-  --   xs <- parseInputIO parser (inputPath 9)
+  --   xs <- parseWithIO parser (inputPath 9)
   --   xs <- lines <$> readFileText (inputPath 9)
   --   grid <- readGridIO (inputPath 9) :: (IO (Grid Cell))
   -- Compiled Input:
   -- let xs = readAs (signed decimal) $(input 9)
-  -- let xs = parseInput parser $(input 9)
+  -- let xs = parseWith parser $(input 9)
   -- let xs = lines $(input 9)
   -- let grid = readGrid $(input 9) :: (Grid Cell)
   "Part 1"

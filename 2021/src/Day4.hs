@@ -3,7 +3,7 @@ module Day4 (part1, part2) where
 import Data.IntMap qualified as IM
 import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (eol, number, parseInput, (<$$>))
+import Helper.Util (eol, number, parseWith, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, sepBy, sepBy1)
 
 data Board = Board (IntMap (Int, Int)) (Set (Int, Int))
@@ -63,7 +63,7 @@ lastWinningBoard lastWon (c : calls) boards =
 scoreBoard :: ([Int] -> [Board] -> Maybe (Board, Int)) -> Maybe Int
 scoreBoard f =
   $(input 4)
-    & parseInput parser
+    & parseWith parser
     & uncurry f
     & fmap (uncurry (*) . first score)
 
