@@ -23,3 +23,6 @@ Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
 
 * Templating
 ~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run e.g. ~for i in {1..25}; do sed "s/666/$i/g" src/Day666.hs > src/Day$i.hs; done; cabal v2-run x2021~.
+
+* Inputs
+Inputs are stored in ~inputs~ and we use ~TemplateHaskell~ to embed them at compile time, to avoid unneccessary ~IO~ in the solutions.
