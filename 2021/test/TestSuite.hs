@@ -38,8 +38,8 @@ main = do
   assertEqual "Day 3 (Part 1)" 3320834 =<< Day3.part1
   assertEqual "Day 3 (Part 2)" 4481199 =<< Day3.part2
 
-  assertEqual "Day 4 (Part 1)" "Part 1" =<< Day4.part1
-  assertEqual "Day 4 (Part 2)" "Part 2" =<< Day4.part2
+  assertEqual "Day 4 (Part 1)" (Just 35670) =<< Day4.part1
+  assertEqual "Day 4 (Part 2)" (Just 22704) =<< Day4.part2
 
   assertEqual "Day 5 (Part 1)" "Part 1" =<< Day5.part1
   assertEqual "Day 5 (Part 2)" "Part 2" =<< Day5.part2

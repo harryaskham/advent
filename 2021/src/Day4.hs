@@ -16,29 +16,62 @@ import Helper.Grid
 import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
+import Prelude hiding (many)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+type Call = Int
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+data Board = Board (Map Int (Int, Int)) (Set (Int, Int))
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+toBoard :: [[Int]] -> Board
+toBoard ass =
+  Board (M.fromList [(a, (x, y)) | (y, as) <- zip [0 ..] ass, (x, a) <- zip [0 ..] as]) S.empty
 
-part1 :: IO Text
-part1 = do
-  -- xs <- readInput (signed decimal) (input 4)
-  -- xs <- parseInput parser (input 4)
-  -- xs <- lines <$> readFileText (input 4)
-  -- grid <- readGrid (input 4) :: (IO (Grid Cell))
-  return "Part 1"
+parser :: GenParser Char () ([Call], [Board])
+parser = do
+  calls <- number `sepBy` char ',' <* (eol >> eol)
+  let boardLine = many (char ' ') >> many1 (number <* many (char ' '))
+      board = many1 (boardLine <* eol)
+  boards <- (toBoard <$$> board `sepBy` eol) <* eof
+  return (calls, boards)
 
-part2 :: IO Text
-part2 = return "Part 2"
+mark :: Int -> Board -> Board
+mark x b@(Board m marked) =
+  case M.lookup x m of
+    Nothing -> b
+    Just p -> Board m (S.insert p marked)
+
+isWon :: Board -> Bool
+isWon (Board _ marked) = any isRowComplete rows
+  where
+    rows = uncurry (++) . (id &&& transpose) $ [[(x, y) | y <- [0 .. 4]] | x <- [0 .. 4]]
+    isRowComplete = all (`S.member` marked)
+
+firstWinningBoard :: [Int] -> [Board] -> Maybe (Board, Int)
+firstWinningBoard (c : calls) boards =
+  let boards' = mark c <$> boards
+   in case filter isWon boards' of
+        [] -> firstWinningBoard calls boards'
+        b : _ -> Just (b, c)
+firstWinningBoard _ _ = Nothing
+
+score :: Board -> Int
+score (Board m marked) = sum [a | (a, p) <- M.toList m, not (p `S.member` marked)]
+
+solve :: ([Call] -> [Board] -> Maybe (Board, Int)) -> IO (Maybe Int)
+solve f = do
+  (calls, boards) <- parseInput parser (input 4)
+  return $ uncurry (*) . first score <$> f calls boards
+
+part1 :: IO (Maybe Int)
+part1 = solve firstWinningBoard
+
+lastWinningBoard :: Maybe (Board, Int) -> [Int] -> [Board] -> Maybe (Board, Int)
+lastWinningBoard lastWon [] _ = lastWon
+lastWinningBoard lastWon (c : calls) boards =
+  let boards' = mark c <$> boards
+   in case filter isWon boards' of
+        b : _ -> lastWinningBoard (Just (b, c)) calls (filter (not . isWon) boards')
+        _ -> lastWinningBoard lastWon calls (filter (not . isWon) boards')
+
+part2 :: IO (Maybe Int)
+part2 = solve (lastWinningBoard Nothing)
