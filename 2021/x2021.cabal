@@ -17,7 +17,8 @@ common common-settings
                         mtl,
                         bimap,
                         mod,
-                        semirings
+                        semirings,
+                        template-haskell
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
@@ -69,7 +70,6 @@ common common-settings
                         -Wno-missing-local-signatures
                         -Wno-monomorphism-restriction
                         -Wno-missing-home-modules
-
 library
     import:             common-settings
     hs-source-dirs:     src
@@ -103,8 +103,8 @@ library
                         Helper.Grid,
                         Helper.Tracers,
                         Helper.Util,
-                        Helper.Bits
-
+                        Helper.Bits,
+                        Helper.TH
 executable x2021
     import:             common-settings
     main-is:            Main.hs
