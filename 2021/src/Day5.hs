@@ -18,7 +18,7 @@ solve f =
     & M.size
 
 part1 :: Int
-part1 = solve $ uncurry (||) . both (uncurry (==)) . uncurry zipPair
+part1 = solve $ uncurry zipPair >>> both (uncurry (==)) >>> or
 
 part2 :: Int
 part2 = solve (const True)
