@@ -1,5 +1,6 @@
 module Helper.Util where
 
+import Control.Arrow (Arrow ((***)))
 import Control.Monad (filterM)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as M
@@ -58,6 +59,9 @@ infixl 5 <$$>
 
 both :: Bifunctor f => (a -> b) -> f a a -> f b b
 both f = bimap f f
+
+same :: Eq a => (a, a) -> Bool
+same = uncurry (==)
 
 -- Specific currying / conversions
 
@@ -132,3 +136,13 @@ pair a b = [a, b]
 
 class Solution a b where
   toSolution :: a -> b
+
+-- Arrow helpers
+
+-- A symmetrical split
+split :: Arrow a => a b c -> a (b, b) (c, c)
+split f = f *** f
+
+-- A symmetrical fanout
+fanout :: Arrow a => a b c -> a b (c, c)
+fanout f = f &&& f
