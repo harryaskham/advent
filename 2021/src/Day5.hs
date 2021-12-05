@@ -1,7 +1,6 @@
 module Day5 (part1, part2) where
 
 import Data.Map.Strict qualified as M
-import Data.Tuple.Strict (zipPair)
 import Helper.Coord (Coord2, linePoints)
 import Helper.TH (input)
 import Helper.Util (both, coord2, countMap, parseLinesWith, same, split, toTuple2)
