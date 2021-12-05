@@ -1,7 +1,7 @@
 module Day5 (part1, part2, points) where
 
 import Data.Map.Strict qualified as M
-import Data.Tuple.Strict
+import Data.Tuple.Strict (zipPair)
 import Helper.Coord (Coord2)
 import Helper.TH (input)
 import Helper.Util (both, countMap, eol, number, parseWith, toTuple2)
