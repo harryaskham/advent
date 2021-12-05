@@ -101,6 +101,9 @@ number = read <$> many1 (oneOf "-0123456789")
 bitChar :: GenParser Char () Bool
 bitChar = (char '1' >> return True) <|> (char '0' >> return False)
 
+coord2 :: GenParser Char () (Int, Int)
+coord2 = (,) <$> (number <* char ',') <*> number
+
 -- Map helpers
 
 countMap :: Ord a => [a] -> M.Map a Int

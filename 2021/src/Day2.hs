@@ -1,20 +1,21 @@
 module Day2 (part1, part2) where
 
 import Helper.TH (input)
-import Helper.Util (Solution (..), eol, number, parseWith)
-import Text.ParserCombinators.Parsec (GenParser, eof, many1, string)
+import Helper.Util (Solution (..), number, parseLinesWith)
+import Text.ParserCombinators.Parsec (GenParser, choice, string)
 
 data Movement
   = MForward Integer
   | MDown Integer
   | MUp Integer
 
-parser :: GenParser Char () [Movement]
-parser = many1 ((forward <|> down <|> up) <* eol) <* eof
-  where
-    forward = MForward <$> (string "forward " >> number)
-    down = MDown <$> (string "down " >> number)
-    up = MUp <$> (string "up " >> number)
+line :: GenParser Char () Movement
+line =
+  choice
+    [ MForward <$> (string "forward " >> number),
+      MDown <$> (string "down " >> number),
+      MUp <$> (string "up " >> number)
+    ]
 
 data Submarine = Submarine Integer Integer Integer
 
@@ -34,7 +35,7 @@ moveSubmarine2 (Submarine x h a) (MUp v) = Submarine x h (a - v)
 solve :: (Submarine -> Movement -> Submarine) -> Integer
 solve moveSubmarine =
   $(input 2)
-    & parseWith parser
+    & parseLinesWith line
     & foldl' moveSubmarine (Submarine 0 0 0)
     & toSolution
 
