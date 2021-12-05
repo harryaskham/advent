@@ -21,6 +21,9 @@ import Text.ParserCombinators.Parsec
 -- parser :: GenParser Char () [Int]
 -- parser = many1 (number <* eol) <* eof
 
+-- line :: GenParser Char () Int
+-- line = number
+
 -- data Cell
 --   = Empty
 --   | Wall
@@ -35,17 +38,11 @@ import Text.ParserCombinators.Parsec
 
 part1 :: Text
 part1 =
-  -- Dynamic Input:
-  -- do
-  --   xs <- readInputIO (signed decimal) (inputPath 23)
-  --   xs <- parseWithIO parser (inputPath 23)
-  --   xs <- lines <$> readFileText (inputPath 23)
-  --   grid <- readGridIO (inputPath 23) :: (IO (Grid Cell))
-  -- Compiled Input:
-  -- let xs = readAs (signed decimal) $(input 23)
-  -- let xs = parseWith parser $(input 23)
-  -- let xs = lines $(input 23)
-  -- let grid = readGrid $(input 23) :: (Grid Cell)
+  -- readAs (signed decimal) $(input 23)
+  -- parseWith parser $(input 23)
+  -- parseLinesWith line $(input 23)
+  -- lines $(input 23)
+  -- readGrid $(input 23) :: (Grid Cell)
   "Part 1"
 
 part2 :: Text
