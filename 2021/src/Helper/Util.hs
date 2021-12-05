@@ -132,6 +132,10 @@ batch3 xs = toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
 pair :: a -> a -> [a]
 pair a b = [a, b]
 
+-- How many xs match predicate p
+count :: (a -> Bool) -> [a] -> Int
+count p xs = length (filter p xs)
+
 -- A Solution typeclass for objects that end up representing the solution in some way
 
 class Solution a b where
