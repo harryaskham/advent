@@ -10,16 +10,15 @@ runAllDays :: Q Exp
 runAllDays =
   return . ListE $
     ( \(d, p) ->
-        ( TupE
-            [ Just (LitE $ IntegerL d),
-              Just (LitE $ IntegerL p),
-              Just
-                ( AppE
-                    (VarE 'show)
-                    (VarE (mkName $ concat ["Day", show d, ".part", show p]))
-                )
-            ]
-        )
+        TupE
+          [ Just (LitE $ IntegerL d),
+            Just (LitE $ IntegerL p),
+            Just
+              ( AppE
+                  (VarE 'show)
+                  (VarE (mkName $ concat ["Day", show d, ".part", show p]))
+              )
+          ]
     )
       <$> [(d, p) | d <- [1 .. 25], p <- [1, 2]]
 

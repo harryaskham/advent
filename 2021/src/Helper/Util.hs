@@ -58,9 +58,9 @@ both f = bimap f f
 
 -- Specific currying / conversions
 
-toTuple2 :: [a] -> Maybe (a, a)
-toTuple2 [a, b] = Just (a, b)
-toTuple2 _ = Nothing
+toTuple2 :: [a] -> (a, a)
+toTuple2 [a, b] = (a, b)
+toTuple2 xs = error $ show (length xs) <> "elements in toTuple2"
 
 toTuple3 :: [a] -> Maybe (a, a, a)
 toTuple3 [a, b, c] = Just (a, b, c)

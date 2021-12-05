@@ -19,7 +19,9 @@ common common-settings
                         mod,
                         semirings,
                         template-haskell,
-                        file-embed
+                        file-embed,
+                        hs-functors,
+                        utility-ht
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),

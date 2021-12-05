@@ -41,8 +41,8 @@ main = do
   assertEqual "Day 4 (Part 1)" (Just 35670) Day4.part1
   assertEqual "Day 4 (Part 2)" (Just 22704) Day4.part2
 
-  assertEqual "Day 5 (Part 1)" "Part 1" Day5.part1
-  assertEqual "Day 5 (Part 2)" "Part 2" Day5.part2
+  assertEqual "Day 5 (Part 1)" 6225 Day5.part1
+  assertEqual "Day 5 (Part 2)" 22116 Day5.part2
 
   assertEqual "Day 6 (Part 1)" "Part 1" Day6.part1
   assertEqual "Day 6 (Part 2)" "Part 2" Day6.part2
