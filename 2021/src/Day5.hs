@@ -1,6 +1,5 @@
 module Day5 (part1, part2) where
 
-import Control.Arrow
 import Data.Map.Strict qualified as M
 import Data.Tuple.Strict (zipPair)
 import Helper.Coord (Coord2, linePoints)
