@@ -107,3 +107,9 @@ partitionSpace (lx, ly, lz) (ux, uy, uz) =
     hx = (lx + ux) `div` 2
     hy = (ly + uy) `div` 2
     hz = (lz + uz) `div` 2
+
+-- Gets the point-set between two lines. Assumes lines are provided in sorted order.
+linePoints :: (Coord2, Coord2) -> [Coord2]
+linePoints ((x1, y1), (x2, y2))
+  | x1 == x2 || y1 == y2 = [(x, y) | x <- [x1 .. x2], y <- [y1 .. y2]]
+  | otherwise = [(x, y) | x <- [x1 .. x2], let y = y1 + (x - x1) * signum (y2 - y1)]
