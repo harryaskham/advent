@@ -38,12 +38,13 @@ import Text.ParserCombinators.Parsec
 
 part1 :: Text
 part1 =
-  -- readAs (signed decimal) $(input 21)
-  -- parseWith parser $(input 21)
-  -- parseLinesWith line $(input 21)
-  -- lines $(input 21)
-  -- readGrid $(input 21) :: (Grid Cell)
-  "Part 1"
+  $(input 21)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
 part2 :: Text
 part2 = "Part 2"
