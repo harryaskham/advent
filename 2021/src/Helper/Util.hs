@@ -10,7 +10,7 @@ import Data.Text qualified as T
 import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
 import Relude.Unsafe (read)
-import Text.ParserCombinators.Parsec (GenParser, char, many1, oneOf, parse)
+import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, oneOf, parse)
 
 -- Input parsing
 
@@ -45,6 +45,9 @@ parseWith parser body =
   case parse parser "[input]" body of
     Right x -> x
     Left e -> error (show e)
+
+parseLinesWith :: GenParser Char () a -> String -> [a]
+parseLinesWith line = parseWith $ many1 (line <* eol) <* eof
 
 -- Typeclass helpers
 
