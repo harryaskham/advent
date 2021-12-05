@@ -136,6 +136,10 @@ pair a b = [a, b]
 count :: (a -> Bool) -> [a] -> Int
 count p xs = length (filter p xs)
 
+-- Returns unique members of a list that appear more than once
+duplicates :: Ord a => [a] -> [a]
+duplicates xs = M.keys $ M.filter (> 1) (countMap xs)
+
 -- A Solution typeclass for objects that end up representing the solution in some way
 
 class Solution a b where
