@@ -139,7 +139,14 @@ executable x2021
                         Day22,
                         Day23,
                         Day24,
-                        Day25
+                        Day25,
+                        Day666,
+                        Helper.Coord,
+                        Helper.Grid,
+                        Helper.Tracers,
+                        Helper.Util,
+                        Helper.Bits,
+                        Helper.TH
 
 Test-Suite projectname-testsuite
     import:             common-settings
