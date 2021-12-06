@@ -1,26 +1,12 @@
 module Day6 (part1, part2, progeny) where
 
-import Control.Monad.Memo
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Control.Monad.Memo (MonadMemo (memo), startEvalMemo)
+import Helper.TH (input)
+import Helper.Util (eol, number, parseWith)
+import Text.ParserCombinators.Parsec (char, eof, sepBy)
 
 fish :: [Int]
-fish = $(input 6) & T.strip & T.splitOn "," & fmap (fst . fromRight (0, "") . decimal)
+fish = $(input 6) & parseWith (number `sepBy` char ',' <* (eol >> eof))
 
 progeny :: Int -> Int -> Int
 progeny d' f' = startEvalMemo $ go (d', f')
