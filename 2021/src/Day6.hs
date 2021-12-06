@@ -9,7 +9,7 @@ fish :: [Int]
 fish = $(input 6) & parseWith (number `sepBy` char ',' <* (eol >> eof))
 
 progeny :: Int -> Int
-progeny d' = startEvalMemo $ sum <$> mapM (\f' -> memo go (d', f')) fish
+progeny d' = startEvalMemo (sum <$> mapM (memo go . (d',)) fish)
   where
     go (0, _) = return 1
     go (d, 0) = (+) <$> memo go (d - 1, 6) <*> memo go (d - 1, 8)
