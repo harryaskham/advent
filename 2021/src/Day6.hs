@@ -1,5 +1,6 @@
-module Day6 (part1, part2) where
+module Day6 (part1, part2, progeny) where
 
+import Control.Monad.Memo
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
@@ -18,33 +19,21 @@ import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+fish :: [Int]
+fish = $(input 6) & T.strip & T.splitOn "," & fmap (fst . fromRight (0, "") . decimal)
 
--- line :: GenParser Char () Int
--- line = number
+progeny :: Int -> Int -> Int
+progeny d' f' = startEvalMemo $ go (d', f')
+  where
+    go (0, _) = return 1
+    go (d, 0) = do
+      p1 <- memo go (d - 1, 6)
+      p2 <- memo go (d - 1, 8)
+      return $ p1 + p2
+    go (d, f) = memo go (d - 1, f - 1)
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+part1 :: Int
+part1 = sum (progeny 80 <$> fish)
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
-part1 =
-  $(input 6)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 = sum (progeny 256 <$> fish)
