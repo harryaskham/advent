@@ -6,7 +6,7 @@ import Helper.Util (eol, number, parseWith)
 import Text.ParserCombinators.Parsec (char, eof, sepBy)
 
 fish :: [Int]
-fish = $(input 6) & parseWith (number `sepBy` char ',' <* (eol >> eof))
+fish = parseWith (number `sepBy` char ',' <* (eol >> eof)) $(input 6)
 
 progeny :: Int -> Int
 progeny d' = startEvalMemo (sum <$> mapM (memo go . (d',)) fish)
