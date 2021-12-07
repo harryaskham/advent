@@ -30,16 +30,24 @@ import Helper.TH (runAllDays)
 import Test.BenchPress (benchMany)
 
 main :: IO ()
-main = benchAllDays
+--main = benchAllDays
+--main = benchOne (Day5.part1, Day5.part2)
+main = benchEachPart
+
+benchOne :: Show a => a -> IO ()
+benchOne a = benchMany 1 [("One Thing", putTextLn (show a))]
 
 benchEachPart :: IO ()
 benchEachPart =
-  mapM_
-    ( \(d, p, r) ->
-        let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
-         in benchMany 1 [(T.unpack t, putTextLn (t <> ": " <> r))]
+  benchMany
+    1
+    ( fmap
+        ( \(d, p, r) ->
+            let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
+             in (T.unpack t, putTextLn (t <> ": " <> r))
+        )
+        $runAllDays
     )
-    $runAllDays
 
 benchAllDays :: IO ()
 benchAllDays =
