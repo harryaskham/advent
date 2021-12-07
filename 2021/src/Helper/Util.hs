@@ -137,7 +137,7 @@ pair :: a -> a -> [a]
 pair a b = [a, b]
 
 about :: Integral a => a -> a -> [a]
-about x n = [x - n .. x + n]
+about n x = [x - n .. x + n]
 
 -- How many xs match predicate p
 count :: (a -> Bool) -> [a] -> Int
