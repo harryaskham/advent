@@ -1,5 +1,6 @@
 module Main where
 
+import Data.Text qualified as T
 import Day1 qualified
 import Day10 qualified
 import Day11 qualified
@@ -26,6 +27,7 @@ import Day7 qualified
 import Day8 qualified
 import Day9 qualified
 import Helper.TH (runAllDays)
+import Test.BenchPress
 
 main :: IO ()
 main = printAllDays
@@ -34,12 +36,7 @@ printAllDays :: IO ()
 printAllDays =
   mapM_
     ( \(d, p, r) ->
-        putTextLn $
-          "Day "
-            <> show (d :: Integer)
-            <> " - Part "
-            <> show (p :: Integer)
-            <> ": "
-            <> r
+        let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
+         in benchMany 1 [(T.unpack t, putTextLn (t <> " = " <> r))]
     )
     $runAllDays
