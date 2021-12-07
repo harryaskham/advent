@@ -32,11 +32,25 @@ import Test.BenchPress (benchMany)
 main :: IO ()
 main = benchAllDays
 
-benchAllDays :: IO ()
-benchAllDays =
+benchEachPart :: IO ()
+benchEachPart =
   mapM_
     ( \(d, p, r) ->
         let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
-         in benchMany 1 [(T.unpack t, return (t <> ": " <> r))]
+         in benchMany 1 [(T.unpack t, putTextLn (t <> ": " <> r))]
     )
     $runAllDays
+
+benchAllDays :: IO ()
+benchAllDays =
+  benchMany
+    1
+    [ ( "All Days",
+        mapM_
+          ( \(d, p, r) ->
+              let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
+               in putTextLn (t <> ": " <> r)
+          )
+          $runAllDays
+      )
+    ]
