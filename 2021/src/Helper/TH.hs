@@ -1,8 +1,18 @@
 module Helper.TH where
 
-import Data.FileEmbed
+import Data.FileEmbed (embedFile, makeRelativeToProject)
+import Helper.Tracers
 import Helper.Util
+  ( exampleInputNPath,
+    exampleInputPath,
+    inputPath,
+  )
 import Language.Haskell.TH
+  ( Exp (AppE, ListE, LitE, TupE, VarE),
+    Lit (IntegerL),
+    Q,
+    mkName,
+  )
 
 -- Build a function that runs all days, converts results to Text,
 -- and returns [(day, part, result)]
@@ -26,15 +36,15 @@ runAllDays =
 
 input :: Int -> Q Exp
 input day = do
-  f <- embedFile (inputPath day)
-  return $ AppE (VarE 'decodeUtf8) f
+  path <- makeRelativeToProject (inputPath day)
+  AppE (VarE 'decodeUtf8) <$> embedFile path
 
 exampleInput :: Int -> Q Exp
 exampleInput day = do
-  f <- embedFile (exampleInputPath day)
-  return $ AppE (VarE 'decodeUtf8) f
+  path <- makeRelativeToProject (exampleInputPath day)
+  AppE (VarE 'decodeUtf8) <$> embedFile path
 
 exampleInputN :: Int -> Int -> Q Exp
 exampleInputN day n = do
-  f <- embedFile (exampleInputNPath day n)
-  return $ AppE (VarE 'decodeUtf8) f
+  path <- makeRelativeToProject (exampleInputNPath day n)
+  AppE (VarE 'decodeUtf8) <$> embedFile path
