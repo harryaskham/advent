@@ -2,11 +2,10 @@ module Day6 (part1, part2) where
 
 import Control.Monad.Memo (MonadMemo (memo), startEvalMemo)
 import Helper.TH (input)
-import Helper.Util (eol, number, parseWith)
-import Text.ParserCombinators.Parsec (char, eof, sepBy)
+import Helper.Util (csvLine, eol, number, parseWith)
 
 fish :: [Integer]
-fish = parseWith (number `sepBy` char ',' <* (eol >> eof)) $(input 6)
+fish = parseWith (csvLine number) $(input 6)
 
 progeny :: Integer -> Integer
 progeny d' = startEvalMemo (sum <$> mapM (memo go . (d',)) fish)
