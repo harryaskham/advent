@@ -11,7 +11,7 @@ import Data.Text qualified as T
 import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
 import Relude.Unsafe (read)
-import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, oneOf, parse)
+import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, oneOf, parse, sepBy)
 
 -- Input parsing
 
@@ -108,6 +108,9 @@ bitChar = (char '1' >> return True) <|> (char '0' >> return False)
 coord2 :: GenParser Char () (Int, Int)
 coord2 = (,) <$> (number <* char ',') <*> number
 
+csvLine :: GenParser Char () a -> GenParser Char () [a]
+csvLine a = a `sepBy` char ',' <* (eol >> eof)
+
 -- Map helpers
 
 countMap :: Ord a => [a] -> M.Map a Int
@@ -154,3 +157,9 @@ split f = f *** f
 -- A symmetrical fanout
 fanout :: Arrow a => a b c -> a b (c, c)
 fanout f = f &&& f
+
+-- Mathy utils
+
+-- nth triangular number
+triangular :: Integral a => a -> a
+triangular n = n * (n + 1) `div` 2
