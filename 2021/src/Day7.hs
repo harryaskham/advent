@@ -8,10 +8,10 @@ xs :: [Integer]
 xs = parseWith (csvLine number) $(input 7)
 
 solve :: (Integer -> Integer) -> Integer
-solve f = minimum [sum [f (x - c) | x <- xs] | c <- xs]
+solve f = minimum [sum [f . abs $ x - c | x <- xs] | c <- xs]
 
 part1 :: Integer
-part1 = solve abs
+part1 = solve id
 
 part2 :: Integer
-part2 = solve (triangular . abs)
+part2 = solve triangular
