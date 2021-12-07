@@ -64,6 +64,14 @@ both f = bimap f f
 same :: Eq a => (a, a) -> Bool
 same = uncurry (==)
 
+-- A symmetrical split
+split :: Arrow a => a b c -> a (b, b) (c, c)
+split f = f *** f
+
+-- A symmetrical fanout
+fanout :: Arrow a => a b c -> a b (c, c)
+fanout f = f &&& f
+
 -- Specific currying / conversions
 
 toTuple2 :: [a] -> (a, a)
@@ -151,16 +159,6 @@ duplicates xs = M.keys $ M.filter (> 1) (countMap xs)
 
 class Solution a b where
   toSolution :: a -> b
-
--- Arrow helpers
-
--- A symmetrical split
-split :: Arrow a => a b c -> a (b, b) (c, c)
-split f = f *** f
-
--- A symmetrical fanout
-fanout :: Arrow a => a b c -> a b (c, c)
-fanout f = f &&& f
 
 -- Mathy utils
 
