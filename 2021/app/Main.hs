@@ -27,13 +27,13 @@ import Day7 qualified
 import Day8 qualified
 import Day9 qualified
 import Helper.TH (runAllDays)
-import Test.BenchPress
+import Test.BenchPress (benchMany)
 
 main :: IO ()
-main = printAllDays
+main = benchAllDays
 
-printAllDays :: IO ()
-printAllDays =
+benchAllDays :: IO ()
+benchAllDays =
   mapM_
     ( \(d, p, r) ->
         let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
