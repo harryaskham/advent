@@ -24,7 +24,8 @@ common common-settings
                         file-embed,
                         hs-functors,
                         utility-ht,
-                        monad-memo
+                        monad-memo,
+                        criterion
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),

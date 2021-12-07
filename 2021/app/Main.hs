@@ -1,5 +1,6 @@
 module Main where
 
+import Criterion.Main
 import Day1 qualified
 import Day10 qualified
 import Day11 qualified
@@ -29,14 +30,18 @@ import Helper.TH (runAllDays)
 
 main :: IO ()
 main =
-  mapM_
-    ( \(d, p, r) ->
-        putTextLn $
-          "Day "
-            <> show (d :: Integer)
-            <> " - Part "
-            <> show (p :: Integer)
-            <> ": "
-            <> r
-    )
-    $runAllDays
+  defaultMain
+    [bgroup "All Days" [bench "All days" $ whnfIO runAll]]
+  where
+    runAll =
+      mapM_
+        ( \(d, p, r) ->
+            putTextLn $
+              "Day "
+                <> show (d :: Integer)
+                <> " - Part "
+                <> show (p :: Integer)
+                <> ": "
+                <> r
+        )
+        $runAllDays
