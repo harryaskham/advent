@@ -2,6 +2,7 @@ module Helper.Util where
 
 import Control.Arrow (Arrow ((***)))
 import Control.Monad (filterM)
+import Data.List ((!!))
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as M
 import Data.Monoid (Sum (Sum, getSum))
@@ -135,6 +136,9 @@ batch3 xs = toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
 pair :: a -> a -> [a]
 pair a b = [a, b]
 
+about :: Integral a => a -> a -> [a]
+about x n = [x - n .. x + n]
+
 -- How many xs match predicate p
 count :: (a -> Bool) -> [a] -> Int
 count p xs = length (filter p xs)
@@ -163,3 +167,9 @@ fanout f = f &&& f
 -- nth triangular number
 triangular :: Integral a => a -> a
 triangular n = n * (n + 1) `div` 2
+
+median :: Ord a => [a] -> a
+median xs = sort xs !! (length xs `div` 2)
+
+mean :: Integral a => [a] -> a
+mean xs = sum xs `div` fromIntegral (length xs)
