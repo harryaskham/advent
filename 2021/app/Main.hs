@@ -37,6 +37,6 @@ benchAllDays =
   mapM_
     ( \(d, p, r) ->
         let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
-         in benchMany 1 [(T.unpack t, putTextLn (t <> " = " <> r))]
+         in benchMany 1 [(T.unpack t, return (t <> ": " <> r))]
     )
     $runAllDays
