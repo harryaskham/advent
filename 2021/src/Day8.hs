@@ -44,13 +44,7 @@ line = do
   (digits BM.!>) . applyPermutationMap p <$$> segments
 
 part1 :: Int
-part1 =
-  parseLinesWith line $(input 8)
-    & fmap (count (`elem` [1, 4, 7, 8]))
-    & sum
+part1 = parseLinesWith line $(input 8) & fmap (count (`elem` [1, 4, 7, 8])) & sum
 
 part2 :: Int
-part2 =
-  parseLinesWith line $(input 8)
-    & fmap listAsInt
-    & sum
+part2 = parseLinesWith line $(input 8) & fmap listAsInt & sum
