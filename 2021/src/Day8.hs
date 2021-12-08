@@ -1,6 +1,7 @@
 module Day8 (part1, part2) where
 
 import Data.Map.Strict qualified as M
+import Data.Maybe (maybeToList)
 import Data.Set qualified as S
 import Helper.TH (input)
 import Helper.Util (count, listAsInt, parseLinesWith, permutationMaps, permuteSet, toTuple2, unlist, (<$$>))
@@ -26,18 +27,18 @@ digits =
       [A, B, C, D, F, G]
     ]
 
-validPermutation :: [Set Segment] -> Map Segment Segment
+validPermutation :: [Set Segment] -> Maybe (Map Segment Segment)
 validPermutation ss =
-  unlist $ do
-    p <- permutationMaps
-    guard $ all (`M.member` digits) (permuteSet p <$> ss)
-    return p
+  listToMaybe
+    =<< traverse
+      (\p -> p <$ sequence (M.lookup <$> (permuteSet p <$> ss) <*> pure digits))
+      permutationMaps
 
 line :: GenParser Char () [Int]
 line = do
   let segment = S.fromList <$> (fromChar <$$> many1 letter)
       segments = many1 (segment <* optional (char ' '))
-  p <- validPermutation <$> (segments <* string "| ")
+  Just p <- validPermutation <$> (segments <* string "| ")
   (digits M.!) . permuteSet p <$$> segments
 
 part1 :: Int
