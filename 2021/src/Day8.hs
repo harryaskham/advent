@@ -29,8 +29,8 @@ digits =
 
 validPermutation :: [Set Segment] -> Maybe (Map Segment Segment)
 validPermutation ss =
-  listToMaybe
-    =<< traverse
+  listToMaybe $
+    mapMaybe
       (\p -> p <$ sequence (M.lookup <$> (permuteSet p <$> ss) <*> pure digits))
       permutationMaps
 
