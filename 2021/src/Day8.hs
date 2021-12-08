@@ -27,10 +27,9 @@ digits =
     ]
 
 validPermutations :: [Set Segment] -> [Map Segment Segment]
-validPermutations ss = do
-  p <- permutationMaps
-  guard $ all (`M.member` digits) (permuteSet p <$> ss)
-  return p
+validPermutations ss =
+  let valid p = all (`M.member` digits) (permuteSet p <$> ss)
+   in filter valid permutationMaps
 
 line :: GenParser Char () [Int]
 line = do
