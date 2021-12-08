@@ -27,10 +27,10 @@ digits =
     ]
 
 validPermutations :: [Set Segment] -> [Map Segment Segment]
-validPermutations ss =
-  mapMaybe
-    (\p -> p <$ sequence (M.lookup <$> (permuteSet p <$> ss) <*> pure digits))
-    permutationMaps
+validPermutations ss = do
+  p <- permutationMaps
+  guard $ all (`M.member` digits) (permuteSet p <$> ss)
+  return p
 
 line :: GenParser Char () [Int]
 line = do
