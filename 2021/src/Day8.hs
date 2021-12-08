@@ -3,7 +3,7 @@ module Day8 (part1, part2) where
 import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (applyPermutationMap, count, listAsInt, parseLinesWith, permutationMaps, toTuple2, unlist, (<$$>))
+import Helper.Util (count, listAsInt, parseLinesWith, permutationMaps, permuteSet, toTuple2, unlist, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
 data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
@@ -31,7 +31,7 @@ validPermutation ss =
   unlist
     [ p
       | p <- permutationMaps,
-        all (\s -> applyPermutationMap p s `M.member` digits) ss
+        all (\s -> permuteSet p s `M.member` digits) ss
     ]
 
 line :: GenParser Char () [Int]
@@ -39,7 +39,7 @@ line = do
   let segment = S.fromList <$> (fromChar <$$> many1 letter)
       segments = many1 (segment <* optional (char ' '))
   p <- validPermutation <$> (segments <* string "| ")
-  (digits M.!) . applyPermutationMap p <$$> segments
+  (digits M.!) . permuteSet p <$$> segments
 
 part1 :: Int
 part1 = parseLinesWith line $(input 8) & fmap (count (`elem` [1, 4, 7, 8])) & sum

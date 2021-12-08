@@ -148,8 +148,8 @@ pair a b = [a, b]
 about :: Integral a => a -> a -> [a]
 about n x = [x - n .. x + n]
 
-listAsInt :: [Int] -> Int
-listAsInt xs = sum $ uncurry (*) <$> zip (reverse xs) [10 ^ i | i <- [0 ..]]
+listAsInt :: Integral a => [a] -> a
+listAsInt xs = sum $ uncurry (*) <$> zip (reverse xs) [10 ^ i | i <- [0 :: Integer ..]]
 
 unlist :: [a] -> a
 unlist [a] = a
@@ -169,8 +169,8 @@ enumerate = enumFrom (toEnum 0)
 permutationMaps :: (Enum a, Ord a) => [Map a a]
 permutationMaps = M.fromList . zip enumerate <$> permutations enumerate
 
-applyPermutationMap :: Ord a => Map a a -> Set a -> Set a
-applyPermutationMap = S.map . (M.!)
+permuteSet :: Ord a => Map a a -> Set a -> Set a
+permuteSet = S.map . (M.!)
 
 -- A Solution typeclass for objects that end up representing the solution in some way
 
