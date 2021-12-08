@@ -27,18 +27,17 @@ digits =
       [A, B, C, D, F, G]
     ]
 
-validPermutation :: [Set Segment] -> Maybe (Map Segment Segment)
-validPermutation ss =
-  listToMaybe $
-    mapMaybe
-      (\p -> p <$ sequence (M.lookup <$> (permuteSet p <$> ss) <*> pure digits))
-      permutationMaps
+validPermutations :: [Set Segment] -> [Map Segment Segment]
+validPermutations ss =
+  mapMaybe
+    (\p -> p <$ sequence (M.lookup <$> (permuteSet p <$> ss) <*> pure digits))
+    permutationMaps
 
 line :: GenParser Char () [Int]
 line = do
   let segment = S.fromList <$> (fromChar <$$> many1 letter)
       segments = many1 (segment <* optional (char ' '))
-  Just p <- validPermutation <$> (segments <* string "| ")
+  (p : _) <- validPermutations <$> (segments <* string "| ")
   (digits M.!) . permuteSet p <$$> segments
 
 part1 :: Int
