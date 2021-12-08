@@ -2,23 +2,16 @@ module Day8 (part1, part2) where
 
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
-import Data.List ((!!))
+import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (applyPermutationMap, listAsInt, parseLinesWith, permutationMaps, toTuple2, unlist, (<$$>))
+import Helper.Util (applyPermutationMap, count, listAsInt, parseLinesWith, permutationMaps, toTuple2, unlist, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
 data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
 
 fromChar :: Char -> Segment
-fromChar 'a' = A
-fromChar 'b' = B
-fromChar 'c' = C
-fromChar 'd' = D
-fromChar 'e' = E
-fromChar 'f' = F
-fromChar 'g' = G
-fromChar _ = error "Invalid char"
+fromChar = (M.fromList (zip ['a' .. 'g'] [A .. G]) M.!)
 
 digits :: Bimap Int (Set Segment)
 digits =
@@ -35,12 +28,6 @@ digits =
       (9, [A, B, C, D, F, G])
     ]
 
-line :: GenParser Char () ([Set Segment], [Set Segment])
-line =
-  let segment = S.fromList <$> (fromChar <$$> many1 letter)
-      segments = many1 (segment <* optional (char ' '))
-   in toTuple2 <$> (segments `sepBy1` string "| ")
-
 validPermutation :: [Set Segment] -> Map Segment Segment
 validPermutation ss =
   unlist
@@ -49,17 +36,21 @@ validPermutation ss =
         all (\s -> applyPermutationMap p s `BM.memberR` digits) ss
     ]
 
+line :: GenParser Char () [Int]
+line = do
+  let segment = S.fromList <$> (fromChar <$$> many1 letter)
+      segments = many1 (segment <* optional (char ' '))
+  p <- validPermutation <$> (segments <* string "| ")
+  (digits BM.!>) . applyPermutationMap p <$$> segments
+
 part1 :: Int
 part1 =
-  $(input 8)
-    & parseLinesWith line
-    & fmap (length . filter ((`elem` [2, 3, 6, 7]) . S.size) . snd)
+  parseLinesWith line $(input 8)
+    & fmap (count (`elem` [1, 4, 7, 8]))
     & sum
 
 part2 :: Int
 part2 =
-  sum
-    [ listAsInt [digits BM.!> applyPermutationMap p b | b <- bs]
-      | let (as, bss) = unzip (parseLinesWith line $(input 8)),
-        (p, bs) <- zip (validPermutation <$> as) bss
-    ]
+  parseLinesWith line $(input 8)
+    & fmap listAsInt
+    & sum
