@@ -1,10 +1,9 @@
 module Day8 (part1, part2) where
 
 import Data.Map.Strict qualified as M
-import Data.Maybe (maybeToList)
 import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (count, listAsInt, parseLinesWith, permutationMaps, permuteSet, toTuple2, unlist, (<$$>))
+import Helper.Util (count, listAsInt, parseLinesWith, permutationMaps, permuteSet, toTuple2, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
 data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
