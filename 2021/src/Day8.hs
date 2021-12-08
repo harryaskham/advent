@@ -1,50 +1,68 @@
 module Day8 (part1, part2) where
 
-import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
+import Data.List ((!!))
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
+import Helper.TH (input)
 import Helper.Util
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
 
--- line :: GenParser Char () Int
--- line = number
+fromChar :: Char -> Segment
+fromChar 'a' = A
+fromChar 'b' = B
+fromChar 'c' = C
+fromChar 'd' = D
+fromChar 'e' = E
+fromChar 'f' = F
+fromChar 'g' = G
+fromChar _ = error "Invalid char"
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+digits :: Bimap Int (Set Segment)
+digits =
+  BM.mapR S.fromList . BM.fromList $
+    [ (0, [A, B, C, E, F, G]),
+      (1, [C, F]),
+      (2, [A, C, D, E, G]),
+      (3, [A, C, D, F, G]),
+      (4, [B, C, D, F]),
+      (5, [A, B, D, F, G]),
+      (6, [A, B, D, E, F, G]),
+      (7, [A, C, F]),
+      (8, [A, B, C, D, E, F, G]),
+      (9, [A, B, C, D, F, G])
+    ]
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+line :: GenParser Char () ([Set Segment], [Set Segment])
+line =
+  let segment = S.fromList <$> (fromChar <$$> many1 letter)
+      segments = many1 (segment <* optional (char ' '))
+   in toTuple2 <$> (segments `sepBy1` string "| ")
 
-part1 :: Text
+validPermutation :: [Set Segment] -> Map Segment Segment
+validPermutation ss =
+  (!! 0)
+    [ p
+      | p <- permutationMaps,
+        all (\s -> applyPermutationMap p s `BM.memberR` digits) ss
+    ]
+
+part1 :: Int
 part1 =
   $(input 8)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & parseLinesWith line
+    & fmap (length . filter ((`elem` [2, 3, 6, 7]) . S.size) . snd)
+    & sum
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  $(input 8)
+    & parseLinesWith line
+    & fmap (\(as, bs) -> applyPermutationMap (validPermutation as) <$> bs)
+    & ((digits BM.!>) <$$>)
+    & fmap listAsInt
+    & sum

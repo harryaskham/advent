@@ -7,6 +7,7 @@ import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as M
 import Data.Monoid (Sum (Sum, getSum))
 import Data.Ord (Down (Down))
+import Data.Set qualified as S
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TR
@@ -147,6 +148,9 @@ pair a b = [a, b]
 about :: Integral a => a -> a -> [a]
 about n x = [x - n .. x + n]
 
+listAsInt :: [Int] -> Int
+listAsInt xs = sum $ uncurry (*) <$> zip (reverse xs) [10 ^ i | i <- [0 ..]]
+
 -- How many xs match predicate p
 count :: (a -> Bool) -> [a] -> Int
 count p xs = length (filter p xs)
@@ -154,6 +158,15 @@ count p xs = length (filter p xs)
 -- Returns unique members of a list that appear more than once
 duplicates :: Ord a => [a] -> [a]
 duplicates xs = M.keys $ M.filter (> 1) (countMap xs)
+
+enumerate :: Enum a => [a]
+enumerate = enumFrom (toEnum 0)
+
+permutationMaps :: (Enum a, Ord a) => [Map a a]
+permutationMaps = M.fromList . zip enumerate <$> permutations enumerate
+
+applyPermutationMap :: Ord a => Map a a -> Set a -> Set a
+applyPermutationMap = S.map . (M.!)
 
 -- A Solution typeclass for objects that end up representing the solution in some way
 
