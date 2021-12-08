@@ -5,7 +5,7 @@ import Data.Bimap qualified as BM
 import Data.List ((!!))
 import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (applyPermutationMap, listAsInt, parseLinesWith, permutationMaps, toTuple2, (<$$>))
+import Helper.Util (applyPermutationMap, listAsInt, parseLinesWith, permutationMaps, toTuple2, unlist, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
 data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
@@ -41,13 +41,12 @@ line =
       segments = many1 (segment <* optional (char ' '))
    in toTuple2 <$> (segments `sepBy1` string "| ")
 
-validPermutation :: [Set Segment] -> Map Segment Segment
-validPermutation ss =
-  (!! 0)
-    [ p
-      | p <- permutationMaps,
-        all (\s -> applyPermutationMap p s `BM.memberR` digits) ss
-    ]
+validPermutations :: [Set Segment] -> [Map Segment Segment]
+validPermutations ss =
+  [ p
+    | p <- permutationMaps,
+      all (\s -> applyPermutationMap p s `BM.memberR` digits) ss
+  ]
 
 part1 :: Int
 part1 =
@@ -60,7 +59,7 @@ part2 :: Int
 part2 =
   $(input 8)
     & parseLinesWith line
-    & fmap (\(as, bs) -> applyPermutationMap (validPermutation as) <$> bs)
+    & fmap (\(as, bs) -> applyPermutationMap (unlist . validPermutations $ as) <$> bs)
     & ((digits BM.!>) <$$>)
     & fmap listAsInt
     & sum

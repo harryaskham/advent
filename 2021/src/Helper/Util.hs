@@ -151,6 +151,10 @@ about n x = [x - n .. x + n]
 listAsInt :: [Int] -> Int
 listAsInt xs = sum $ uncurry (*) <$> zip (reverse xs) [10 ^ i | i <- [0 ..]]
 
+unlist :: [a] -> a
+unlist [a] = a
+unlist as = error ("Unlist called on list of length " <> show (length as))
+
 -- How many xs match predicate p
 count :: (a -> Bool) -> [a] -> Int
 count p xs = length (filter p xs)
