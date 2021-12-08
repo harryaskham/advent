@@ -28,11 +28,10 @@ digits =
 
 validPermutation :: [Set Segment] -> Map Segment Segment
 validPermutation ss =
-  unlist
-    [ p
-      | p <- permutationMaps,
-        all (\s -> permuteSet p s `M.member` digits) ss
-    ]
+  unlist $ do
+    p <- permutationMaps
+    guard $ all (`M.member` digits) (permuteSet p <$> ss)
+    return p
 
 line :: GenParser Char () [Int]
 line = do

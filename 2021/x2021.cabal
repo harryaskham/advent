@@ -34,6 +34,7 @@ common common-settings
                         TupleSections,
                         LambdaCase,
                         MultiWayIf,
+                        BlockArguments,
                         ImportQualifiedPost,
                         EmptyCase,
                         FlexibleContexts,
