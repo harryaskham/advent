@@ -3,7 +3,7 @@ module Day8 (part1, part2) where
 import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (applyPermutationMap, count, listAsInt, parseLinesWith, permutationMaps, swapMap, toTuple2, unlist, (<$$>))
+import Helper.Util (applyPermutationMap, count, listAsInt, parseLinesWith, permutationMaps, toTuple2, unlist, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
 data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
@@ -13,7 +13,7 @@ fromChar = (M.fromList (zip ['a' .. 'g'] [A .. G]) M.!)
 
 digits :: Map (Set Segment) Int
 digits =
-  swapMap . M.fromList . zip [0 ..] . fmap S.fromList $
+  M.fromList . flip zip [0 ..] . fmap S.fromList $
     [ [A, B, C, E, F, G],
       [C, F],
       [A, C, D, E, G],
