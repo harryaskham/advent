@@ -3,11 +3,9 @@ module Day8 (part1, part2) where
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.List ((!!))
-import Data.Map.Strict qualified as M
 import Data.Set qualified as S
-import Data.Text qualified as T
 import Helper.TH (input)
-import Helper.Util
+import Helper.Util (applyPermutationMap, listAsInt, parseLinesWith, permutationMaps, toTuple2, (<$$>))
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy1, string)
 
 data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
