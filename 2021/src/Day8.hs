@@ -41,12 +41,13 @@ line =
       segments = many1 (segment <* optional (char ' '))
    in toTuple2 <$> (segments `sepBy1` string "| ")
 
-validPermutations :: [Set Segment] -> [Map Segment Segment]
-validPermutations ss =
-  [ p
-    | p <- permutationMaps,
-      all (\s -> applyPermutationMap p s `BM.memberR` digits) ss
-  ]
+validPermutation :: [Set Segment] -> Map Segment Segment
+validPermutation ss =
+  unlist
+    [ p
+      | p <- permutationMaps,
+        all (\s -> applyPermutationMap p s `BM.memberR` digits) ss
+    ]
 
 part1 :: Int
 part1 =
@@ -57,9 +58,8 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(input 8)
-    & parseLinesWith line
-    & fmap (\(as, bs) -> applyPermutationMap (unlist . validPermutations $ as) <$> bs)
-    & ((digits BM.!>) <$$>)
-    & fmap listAsInt
-    & sum
+  sum
+    [ listAsInt [digits BM.!> applyPermutationMap p b | b <- bs]
+      | let (as, bss) = unzip (parseLinesWith line $(input 8)),
+        (p, bs) <- zip (validPermutation <$> as) bss
+    ]
