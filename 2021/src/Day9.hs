@@ -3,12 +3,12 @@ module Day9 (part1, part2) where
 import Control.Arrow (app)
 import Data.Bimap qualified as BM
 import Data.Char (intToDigit)
-import Data.Fin
+import Data.Fin (Fin)
 import Data.Map.Strict qualified as M
 import Data.Sequence (Seq (Empty, (:<|)), singleton, (><))
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.Type.Nat
+import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Coord (Coord2, neighborsNoDiags)
 import Helper.Grid (Grid, GridCell (charMap), points, readGrid)
 import Helper.TH (input)
