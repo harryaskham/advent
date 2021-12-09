@@ -30,22 +30,21 @@ part1 =
     & fmap risk
     & sum
 
-basin :: Grid Cell -> Coord2 -> Set Coord2
-basin g p' = go (singleton p') S.empty
+basins :: Grid Cell -> [Set Coord2]
+basins g = go S.empty . singleton <$> minima g
   where
-    go Empty b = b
-    go (p :<| q) b
-      | p `S.member` b || g M.! p == Cell 9 = go q b
+    go b Empty = b
+    go b (p :<| q)
+      | p `S.member` b || g M.! p == Cell 9 = go b q
       | otherwise =
         go
-          (q >< SQ.fromList [n | n <- neighborsNoDiags p, M.lookup n g >= M.lookup p g])
           (S.insert p b)
+          (q >< SQ.fromList [n | n <- neighborsNoDiags p, M.lookup n g >= M.lookup p g])
 
 part2 :: Int
 part2 =
   readGrid $(input 9)
-    & (fmap . basin &&& minima)
-    & app
+    & basins
     & fmap S.size
     & sortOn Down
     & take 3
