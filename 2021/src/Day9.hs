@@ -1,5 +1,6 @@
 module Day9 (part1, part2) where
 
+import Control.Arrow (app)
 import Data.Bimap qualified as BM
 import Data.Char (intToDigit)
 import Data.Map.Strict qualified as M
@@ -23,8 +24,11 @@ minima g = [p | (p, c) <- M.toList g, all (c <) (points (neighborsNoDiags p) g)]
 
 part1 :: Int
 part1 =
-  let g = readGrid $(input 9)
-   in sum (risk <$> points (minima g) g)
+  readGrid $(input 9)
+    & (flip points &&& minima)
+    & app
+    & fmap risk
+    & sum
 
 basin :: Grid Cell -> Coord2 -> Set Coord2
 basin g p' = go (singleton p') S.empty
@@ -39,5 +43,10 @@ basin g p' = go (singleton p') S.empty
 
 part2 :: Int
 part2 =
-  let g = readGrid $(input 9)
-   in product . take 3 . sortOn Down $ S.size . basin g <$> minima g
+  readGrid $(input 9)
+    & (fmap . basin &&& minima)
+    & app
+    & fmap S.size
+    & sortOn Down
+    & take 3
+    & product
