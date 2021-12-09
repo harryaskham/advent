@@ -32,6 +32,9 @@ toGrid rows =
         (x, c) <- zip [0 ..] (T.unpack row)
     ]
 
+points :: [(Int, Int)] -> Grid a -> [a]
+points ps g = catMaybes $ M.lookup <$> ps <*> pure g
+
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
 maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
 

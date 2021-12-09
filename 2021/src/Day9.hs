@@ -1,50 +1,43 @@
 module Day9 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
+import Data.Char (intToDigit)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence (Seq (Empty, (:<|)), singleton, (><))
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Coord (Coord2, neighborsNoDiags)
+import Helper.Grid (Grid, GridCell (charMap), points, readGrid)
+import Helper.TH (input)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+newtype Cell = Cell Int deriving (Eq, Ord)
 
--- line :: GenParser Char () Int
--- line = number
+instance GridCell Cell where
+  charMap = BM.fromList [(Cell i, intToDigit i) | i <- [0 .. 9]]
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+risk :: Cell -> Int
+risk (Cell h) = h + 1
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+minima :: Grid Cell -> [Coord2]
+minima g = [p | (p, c) <- M.toList g, all (c <) (points (neighborsNoDiags p) g)]
 
-part1 :: Text
+part1 :: Int
 part1 =
-  $(input 9)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+  let g = readGrid $(input 9)
+   in sum (risk <$> points (minima g) g)
 
-part2 :: Text
-part2 = "Part 2"
+basin :: Grid Cell -> Coord2 -> Set Coord2
+basin g p' = go (singleton p') S.empty
+  where
+    go Empty b = b
+    go (p :<| q) b
+      | p `S.member` b || g M.! p == Cell 9 = go q b
+      | otherwise =
+        go
+          (q >< SQ.fromList [n | n <- neighborsNoDiags p, M.lookup n g >= M.lookup p g])
+          (S.insert p b)
+
+part2 :: Int
+part2 =
+  let g = readGrid $(input 9)
+   in product . take 3 . sortOn Down $ S.size . basin g <$> minima g
