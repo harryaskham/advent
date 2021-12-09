@@ -23,12 +23,7 @@ minima :: Grid Cell -> [Coord2]
 minima g = [p | (p, c) <- M.toList g, all (c <) (points (neighborsNoDiags p) g)]
 
 part1 :: Int
-part1 =
-  readGrid $(input 9)
-    & (flip points &&& minima)
-    & app
-    & fmap risk
-    & sum
+part1 = readGrid $(input 9) & (flip points &&& minima) & app & fmap risk & sum
 
 basins :: Grid Cell -> [Set Coord2]
 basins g = go S.empty . singleton <$> minima g
@@ -42,10 +37,4 @@ basins g = go S.empty . singleton <$> minima g
           (q >< SQ.fromList [n | n <- neighborsNoDiags p, M.lookup n g >= M.lookup p g])
 
 part2 :: Int
-part2 =
-  readGrid $(input 9)
-    & basins
-    & fmap S.size
-    & sortOn Down
-    & take 3
-    & product
+part2 = readGrid $(input 9) & basins & fmap S.size & sortOn Down & take 3 & product
