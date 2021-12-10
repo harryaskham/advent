@@ -1,50 +1,39 @@
 module Day10 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Data.Tuple.Extra (fst3, snd3, thd3)
+import Helper.TH (input)
+import Helper.Util (median)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+ltr :: Map Char Char
+ltr = M.fromList [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')]
 
--- line :: GenParser Char () Int
--- line = number
+score :: Char -> Maybe (Int, Int)
+score ')' = Just (3, 1)
+score ']' = Just (57, 2)
+score '}' = Just (1197, 3)
+score '>' = Just (25137, 4)
+score _ = Nothing
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+parseLine :: String -> Either Char String
+parseLine cs' = go cs' []
+  where
+    go [] s = Right s
+    go (c : cs) s
+      | c `M.member` ltr = go cs (ltr M.! c : s)
+      | otherwise = case s of
+        [] -> Left c
+        (c' : s') -> if c == c' then go cs s' else Left c
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+parsedInput :: ([Char], [String])
+parsedInput = partitionEithers (parseLine . T.unpack <$> lines $(input 10))
 
-part1 :: Text
-part1 =
-  $(input 10)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+scoreLine :: String -> Maybe Int
+scoreLine = foldl' (\s c -> (+) <$> (snd <$> score c) <*> ((* 5) <$> s)) (Just 0)
 
-part2 :: Text
-part2 = "Part 2"
+part1 :: Int
+part1 = sum (fst <$> mapMaybe score (fst parsedInput))
+
+part2 :: Int
+part2 = median (mapMaybe scoreLine (snd parsedInput))
