@@ -2,7 +2,6 @@ module Day10 (part1, part2) where
 
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
-import Data.Tuple.Extra (fst3, snd3, thd3)
 import Helper.TH (input)
 import Helper.Util (median)
 
