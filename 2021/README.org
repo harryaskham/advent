@@ -18,9 +18,6 @@
 * Profiling
 Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
 
-* Adding New Modules
-- For every new module added, ~x2021.cabal~ needs updating then we also need to run ~gen-hie . > hie.yaml~ for HLS to pick the file up.
-
 * Templating
 ~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run e.g. ~for i in {1..25}; do sed "s/666/$i/g" src/Day666.hs > src/Day$i.hs; done; cabal v2-run x2021~.
 
