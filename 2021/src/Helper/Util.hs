@@ -131,8 +131,16 @@ adjustWithDefault def f k m = case M.lookup k m of
   Nothing -> M.insert k (f def) m
   Just a -> M.insert k (f a) m
 
+adjustMany :: Ord k => (a -> a) -> [k] -> M.Map k a -> M.Map k a
+adjustMany f ks m = foldl' (flip (M.adjust f)) m ks
+
 swapMap :: Ord b => M.Map a b -> M.Map b a
 swapMap = M.fromList . fmap swap . M.toList
+
+-- Set helpers
+
+insertMany :: Ord a => [a] -> Set a -> Set a
+insertMany as s = foldl' (flip S.insert) s as
 
 -- List helpers
 

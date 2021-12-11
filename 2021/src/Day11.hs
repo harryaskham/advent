@@ -8,20 +8,19 @@ import Data.Set qualified as S
 import Helper.Coord (neighbors)
 import Helper.Grid (DigitCell (DigitCell), Grid, GridCell, readGrid)
 import Helper.TH (input)
+import Helper.Util (adjustMany, insertMany)
 
 step :: (Bounded a, Num a, GridCell a) => Grid a -> (Grid a, Int)
 step g = second S.size (go ((+ 1) <$> g) S.empty)
   where
     flashIncrement x = if x == minBound then x else x + 1
-    go g flashed
-      | null toFlash = (g, flashed)
-      | otherwise = uncurry go (foldl' flash (g, flashed) toFlash)
-      where
-        toFlash = [p | p <- flippedLookupM minBound g, not (p `S.member` flashed)]
-        flash (g, flashed) p =
-          ( foldl' (flip (M.adjust flashIncrement)) g (neighbors p),
-            S.insert p flashed
-          )
+    go g flashed =
+      case [p | p <- flippedLookupM minBound g, not (p `S.member` flashed)] of
+        [] -> (g, flashed)
+        toFlash ->
+          go
+            (adjustMany flashIncrement (neighbors =<< toFlash) g)
+            (insertMany toFlash flashed)
 
 flashes :: [Int]
 flashes =
