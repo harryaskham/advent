@@ -2,7 +2,6 @@ module Day11 (part1, part2) where
 
 import Control.Arrow (app)
 import Data.List ((!!))
-import Data.Map.Strict qualified as M
 import Data.Map.Utils (flippedLookupM)
 import Data.Set qualified as S
 import Helper.Coord (neighbors)
