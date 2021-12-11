@@ -6,11 +6,11 @@ import Data.Map.Strict qualified as M
 import Data.Map.Utils (flippedLookupM)
 import Data.Set qualified as S
 import Helper.Coord (neighbors)
-import Helper.Grid (DigitCell, Grid, GridCell, readGrid)
+import Helper.Grid (DigitCell (DigitCell), Grid, GridCell, readGrid)
 import Helper.TH (input)
 
-step :: (Bounded a, Num a, GridCell a) => (Grid a, Int) -> (Grid a, Int)
-step (g, flashes) = second ((+ flashes) . S.size) (go ((+ 1) <$> g) S.empty)
+step :: (Bounded a, Num a, GridCell a) => Grid a -> (Grid a, Int)
+step g = second S.size (go ((+ 1) <$> g) S.empty)
   where
     flashIncrement x = if x == minBound then x else x + 1
     go g flashed
@@ -23,14 +23,13 @@ step (g, flashes) = second ((+ flashes) . S.size) (go ((+ 1) <$> g) S.empty)
             S.insert p flashed
           )
 
-steps :: [(Grid DigitCell, Int)]
-steps = iterate step (readGrid $(input 11), 0)
+flashes :: [Int]
+flashes =
+  let g = readGrid $(input 11) :: Grid DigitCell
+   in snd <$> drop 1 (iterate (step . fst) (g, 0))
 
 part1 :: Int
-part1 = snd (steps !! 100)
+part1 = sum (take 100 flashes)
 
 part2 :: Int
-part2 =
-  let flashes = snd <$> steps
-      diffs = uncurry (-) <$> zip (drop 1 flashes) flashes
-   in fst . (!! 0) . dropWhile ((/= 100) . snd) $ zip [1 ..] diffs
+part2 = fst . (!! 0) . dropWhile ((/= 100) . snd) $ zip [1 ..] flashes
