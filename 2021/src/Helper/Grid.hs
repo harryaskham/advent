@@ -2,9 +2,12 @@ module Helper.Grid where
 
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
+import Data.Char (intToDigit)
+import Data.Fin (Fin)
 import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
+import Data.Type.Nat (Nat (S), Nat9)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
@@ -14,6 +17,11 @@ class Ord a => GridCell a where
   fromChar c = charMap BM.!> c
   toChar :: a -> Char
   toChar a = charMap BM.! a
+
+newtype DigitCell = DigitCell (Fin ('S Nat9)) deriving (Eq, Ord, Bounded, Num, Show)
+
+instance GridCell DigitCell where
+  charMap = BM.fromList [(DigitCell (fromInteger i), intToDigit (fromIntegral i)) | i <- [0 .. 9]]
 
 type Grid a = M.Map (Int, Int) a
 

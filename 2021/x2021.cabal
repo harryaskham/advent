@@ -26,7 +26,8 @@ common common-settings
                         utility-ht,
                         monad-memo,
                         benchpress,
-                        fin
+                        fin,
+                        MissingH
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
@@ -81,6 +82,7 @@ common common-settings
                         -Wno-missing-local-signatures
                         -Wno-monomorphism-restriction
                         -Wno-missing-home-modules
+                        -Wno-name-shadowing
 library
     import:             common-settings
     hs-source-dirs:     src

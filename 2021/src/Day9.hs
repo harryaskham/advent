@@ -10,16 +10,11 @@ import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Coord (Coord2, neighborsNoDiags)
-import Helper.Grid (Grid, GridCell (charMap), points, readGrid)
+import Helper.Grid (DigitCell (DigitCell), Grid, GridCell (charMap), points, readGrid)
 import Helper.TH (input)
 
-newtype Cell = Cell (Fin ('S Nat9)) deriving (Eq, Ord, Bounded)
-
-instance GridCell Cell where
-  charMap = BM.fromList [(Cell (fromInteger i), intToDigit (fromIntegral i)) | i <- [0 .. 9]]
-
-risk :: Cell -> Integer
-risk (Cell h) = toInteger h + 1
+risk :: DigitCell -> Integer
+risk (DigitCell h) = toInteger h + 1
 
 localMinima :: Ord a => Grid a -> [Coord2]
 localMinima g = [p | (p, c) <- M.toList g, all (c <) (points (neighborsNoDiags p) g)]
@@ -39,4 +34,4 @@ basins g = go S.empty . singleton <$> localMinima g
           (q >< SQ.fromList [n | n <- neighborsNoDiags p, M.lookup n g >= M.lookup p g])
 
 part2 :: Int
-part2 = (readGrid $(input 9) :: Grid Cell) & basins & fmap S.size & sortOn Down & take 3 & product
+part2 = (readGrid $(input 9) :: Grid DigitCell) & basins & fmap S.size & sortOn Down & take 3 & product
