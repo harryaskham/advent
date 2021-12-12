@@ -2,18 +2,14 @@ module Day12 (part1, part2) where
 
 import Data.Char (isLower, isUpper)
 import Data.Map.Strict qualified as M
+import Data.Sequence (Seq (Empty, (:<|)), singleton, (><))
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Helper.TH (input)
 import Helper.Util (adjustWithDefault, count, parseLinesWith, toTuple2)
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy)
 
-data Node
-  = Start
-  | End
-  | Big String
-  | Small String
-  deriving (Eq, Ord, Show)
+data Node = Start | End | Big String | Small String deriving (Eq, Ord, Show)
 
 toNode :: String -> Maybe Node
 toNode "start" = Just Start
@@ -35,41 +31,37 @@ graph =
     & M.fromListWith (++)
 
 allPaths :: (Map Node Int -> Bool) -> Map Node [Node] -> [[Node]]
-allPaths validCounts g = go (SQ.singleton (Start, [], M.empty)) S.empty []
+allPaths validCounts g = go (singleton (Start, [], M.empty)) S.empty []
   where
-    go SQ.Empty _ paths = paths
-    go (st@(current, path, counts) SQ.:<| queue) seen paths
+    go Empty _ paths = paths
+    go ((current, path, counts) :<| queue) seen paths
       | current == End = go queue seen' (path' : paths)
-      | st `S.member` seen = go queue seen paths
+      | (current, path) `S.member` seen = go queue seen paths
       | current == Start && not (null path) = go queue seen paths
       | validCounts counts' = go queue' seen' paths
       | otherwise = go queue seen paths
       where
         path' = current : path
-        seen' = S.insert st seen
+        seen' = S.insert (current, path) seen
         counts' = adjustWithDefault 0 (+ 1) current counts
-        next = case M.lookup current g of
-          Nothing -> SQ.Empty
-          Just ns -> SQ.fromList (ns <&> (,path',counts'))
-        queue' = queue SQ.>< next
+        queue' = queue >< SQ.fromList ((,path',counts') <$> catMaybes (sequence (M.lookup current g)))
+
+solve :: (Map Node Int -> Bool) -> Int
+solve f = graph & allPaths f & length
 
 part1 :: Int
 part1 =
-  graph
-    & allPaths
-      ( (== 0)
-          . M.size
-          . (M.filterWithKey (\k v -> isSmall k && v > 1))
-      )
-    & length
+  solve
+    ( M.filterWithKey (\k v -> isSmall k && v > 1)
+        >>> M.size
+        >>> (== 0)
+    )
 
 part2 :: Int
 part2 =
-  graph
-    & allPaths
-      ( (== (True, True))
-          . (((<= 1) . count (== 2)) &&& (all (== 1) . filter (/= 2)))
-          . M.elems
-          . M.filterWithKey (\k v -> isSmall k)
-      )
-    & length
+  solve
+    ( M.filterWithKey (\k _ -> isSmall k)
+        >>> M.elems
+        >>> (((<= 1) . count (== 2)) &&& (all (== 1) . filter (/= 2)))
+        >>> (== (True, True))
+    )
