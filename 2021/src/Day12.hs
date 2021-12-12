@@ -33,7 +33,7 @@ graph =
 allPaths :: (Map Node Int -> Bool) -> Map Node [Node] -> [[Node]]
 allPaths validCounts g = go (singleton (Start, [], initCounts)) []
   where
-    initCounts = 0 <$ M.filterWithKey (\k _ -> isSmall k) g
+    initCounts = 0 <$ M.filterWithKey (const . isSmall) g
     go Empty paths = paths
     go ((current, path, counts) :<| queue) paths
       | current == End = go queue (path' : paths)
@@ -45,11 +45,11 @@ allPaths validCounts g = go (singleton (Start, [], initCounts)) []
         counts' = if isSmall current then M.adjust (+ 1) current counts else counts
         queue' = queue >< SQ.fromList ((,path',counts') <$> catMaybes (sequence (M.lookup current g)))
 
-solve :: (Map Node Int -> Bool) -> Int
-solve validCounts = graph & allPaths validCounts & length
+solve :: ([Int] -> Bool) -> Int
+solve validCounts = graph & allPaths (validCounts . M.elems) & length
 
 part1 :: Int
-part1 = solve (M.elems >>> all (<= 1))
+part1 = solve (all (<= 1))
 
 part2 :: Int
-part2 = solve (M.elems >>> ((&&) <$> ((<= 1) . count (== 2)) <*> all (<= 2)))
+part2 = solve ((&&) <$> all (<= 2) <*> ((<= 1) . count (== 2)))
