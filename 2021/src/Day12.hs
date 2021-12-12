@@ -9,7 +9,7 @@ import Helper.TH (input)
 import Helper.Util (adjustWithDefault, count, parseLinesWith, toTuple2)
 import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, sepBy)
 
-data Node = Start | End | Big String | Small String deriving (Eq, Ord, Show)
+data Node = Start | End | Big String | Small String deriving (Eq, Ord)
 
 toNode :: String -> Maybe Node
 toNode "start" = Just Start
