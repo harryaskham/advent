@@ -31,8 +31,9 @@ graph =
     & M.fromListWith (++)
 
 allPaths :: (Map Node Int -> Bool) -> Map Node [Node] -> [[Node]]
-allPaths validCounts g = go (singleton (Start, [], M.empty)) []
+allPaths validCounts g = go (singleton (Start, [], initCounts)) []
   where
+    initCounts = 0 <$ M.filterWithKey (\k _ -> isSmall k) g
     go Empty paths = paths
     go ((current, path, counts) :<| queue) paths
       | current == End = go queue (path' : paths)
@@ -41,7 +42,7 @@ allPaths validCounts g = go (singleton (Start, [], M.empty)) []
       | otherwise = go queue paths
       where
         path' = current : path
-        counts' = if isSmall current then adjustWithDefault 0 (+ 1) current counts else counts
+        counts' = if isSmall current then M.adjust (+ 1) current counts else counts
         queue' = queue >< SQ.fromList ((,path',counts') <$> catMaybes (sequence (M.lookup current g)))
 
 solve :: (Map Node Int -> Bool) -> Int
@@ -51,9 +52,4 @@ part1 :: Int
 part1 = solve (M.elems >>> all (<= 1))
 
 part2 :: Int
-part2 =
-  solve
-    ( M.elems
-        >>> (((<= 1) . count (== 2)) &&& (all (== 1) . filter (/= 2)))
-        >>> (== (True, True))
-    )
+part2 = solve (M.elems >>> ((&&) <$> ((<= 1) . count (== 2)) <*> all (<= 2)))
