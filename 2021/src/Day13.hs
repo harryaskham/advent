@@ -10,8 +10,9 @@ import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, sepBy1, strin
 
 parser :: GenParser Char () ([Set (Int, Int) -> Set (Int, Int)], Set (Int, Int))
 parser = do
-  let fX = string "x=" *> ((\c -> S.map (\(x, y) -> if x > c then (c * 2 - x, y) else (x, y))) <$> number)
-      fY = string "y=" *> ((\c -> S.map (\(x, y) -> if y > c then (x, c * 2 - y) else (x, y))) <$> number)
+  let f e m c = S.map (\p -> if e p > c then m ((+ c * 2) . negate) p else p)
+      fX = string "x=" *> (f fst first <$> number)
+      fY = string "y=" *> (f snd second <$> number)
   dots <- many1 (toTuple2 <$> number `sepBy1` char ',' <* eol) <* eol
   folds <- many1 ((string "fold along " >> (fX <|> fY)) <* eol) <* eof
   return (folds, S.fromList dots)
