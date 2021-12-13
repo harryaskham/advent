@@ -3,6 +3,7 @@ module Day13 (part1, part2) where
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
+import Data.List ((!!))
 import Data.Map.Strict qualified as M
 import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
@@ -17,9 +18,20 @@ import Helper.TH
 import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
+import Prelude hiding ((<|>))
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+data Fold = FoldX Int | FoldY Int deriving (Eq, Ord, Show)
+
+parser :: GenParser Char () (Set (Int, Int), [Fold])
+parser = do
+  dots <- many1 (number `sepBy1` char ',' <* eol) <* eol
+  folds <- many1 do
+    string "fold along "
+    f <- (string "x=" *> (FoldX <$> number)) <|> (string "y=" *> (FoldY <$> number))
+    eol
+    return f
+  eof
+  return (S.fromList (toTuple2 <$> dots), folds)
 
 -- line :: GenParser Char () Int
 -- line = number
@@ -36,15 +48,12 @@ import Text.ParserCombinators.Parsec
 --         (Wall, '#')
 --       ]
 
-part1 :: Text
-part1 =
-  $(input 13)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+doFold :: Set (Int, Int) -> Fold -> Set (Int, Int)
+doFold ps (FoldX c) = S.map (\(x, y) -> if x > c then (c * 2 - x, y) else (x, y)) ps
+doFold ps (FoldY c) = S.map (\(x, y) -> if y > c then (x, c * 2 - y) else (x, y)) ps
+
+part1 :: Int
+part1 = $(input 13) & parseWith parser & second (!! 0) & uncurry doFold & S.size
 
 part2 :: Text
-part2 = "Part 2"
+part2 = $(input 13) & parseWith parser & uncurry (foldl' doFold) & fromCoords Wall & pretty

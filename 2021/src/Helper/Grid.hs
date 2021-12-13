@@ -18,6 +18,11 @@ class Ord a => GridCell a where
   toChar :: a -> Char
   toChar a = charMap BM.! a
 
+data SimpleWall = Empty | Wall deriving (Eq, Ord, Bounded, Show)
+
+instance GridCell SimpleWall where
+  charMap = BM.fromList [(Empty, ' '), (Wall, '#')]
+
 newtype DigitCell = DigitCell (Fin ('S Nat9)) deriving (Eq, Ord, Bounded, Num, Show)
 
 instance GridCell DigitCell where
@@ -31,6 +36,14 @@ readGridIO path = readGrid <$> readFileText path
 
 readGrid :: GridCell a => Text -> Grid a
 readGrid = toGrid . lines
+
+fromCoords :: (Foldable f, Bounded a) => a -> f (Int, Int) -> Grid a
+fromCoords def = fillEmpty . foldl' (\g c -> M.insert c def g) M.empty
+
+fillEmpty :: (Bounded a) => Grid a -> Grid a
+fillEmpty g =
+  let (w, h) = maxXY g
+   in M.fromList [((x, y), v) | x <- [0 .. w], y <- [0 .. h], let v = fromMaybe minBound (M.lookup (x, y) g)]
 
 toGrid :: GridCell a => [Text] -> Grid a
 toGrid rows =
