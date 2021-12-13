@@ -1,8 +1,6 @@
 module Day13 (part1, part2) where
 
-import Control.Arrow (app)
 import Data.Foldable (foldl1)
-import Data.List ((!!))
 import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as S
 import Helper.Grid (SimpleWall (Wall), fromCoords, pretty)
