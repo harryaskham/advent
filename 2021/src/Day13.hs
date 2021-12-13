@@ -1,16 +1,15 @@
 module Day13 (part1, part2) where
 
-import Data.Foldable (foldl1)
 import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as S
 import Helper.Grid (SimpleWall (Wall), fromCoords, pretty)
 import Helper.TH (input)
-import Helper.Util (eol, number, parseWith, toTuple2)
+import Helper.Util (appWhen, eol, number, parseWith, toTuple2)
 import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, sepBy1, string)
 
 parser :: GenParser Char () (NonEmpty (Set (Int, Int)))
 parser = do
-  let f' e m c = S.map (\p -> if e p > c then m ((+ c * 2) . negate) p else p)
+  let f' e m c = S.map (appWhen ((> c) . e) (m ((+ c * 2) . negate)))
       f ch e m = string (ch : "=") *> (f' e m <$> number)
   dots <- S.fromList <$> (many1 (toTuple2 <$> number `sepBy1` char ',' <* eol) <* eol)
   folds <- many1 ((string "fold along " >> (f 'x' fst first <|> f 'y' snd second)) <* eol) <* eof

@@ -73,6 +73,12 @@ split f = f *** f
 fanout :: Arrow a => a b c -> a b (c, c)
 fanout f = f &&& f
 
+-- Apply the given function only if the predicate holds on the input
+appWhen :: (a -> Bool) -> (a -> a) -> a -> a
+appWhen p f x
+  | p x = f x
+  | otherwise = x
+
 -- Specific currying / conversions
 
 toTuple2 :: [a] -> (a, a)
