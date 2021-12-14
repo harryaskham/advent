@@ -169,6 +169,11 @@ unlist :: [a] -> a
 unlist [a] = a
 unlist as = error ("Unlist called on list of length " <> show (length as))
 
+pairs :: [a] -> [(a, a)]
+pairs [] = []
+pairs [_] = []
+pairs (a : b : cs) = (a, b) : pairs (b : cs)
+
 -- How many xs match predicate p
 count :: (a -> Bool) -> [a] -> Int
 count p xs = length (filter p xs)
