@@ -12,7 +12,7 @@ parser = do
   template <- many1 letter <* (eol >> eol)
   rules <- many1 (toTuple2 <$> (many1 letter `sepBy` string " -> ") <* eol) <* eof
   return
-    ( M.fromList (second (!! 0) <$> rules),
+    ( M.fromList (second L.head <$> rules),
       (L.head template, L.last template, countMap . pairs $ template)
     )
 
