@@ -1,10 +1,7 @@
 module Day14 (part1, part2) where
 
-import Control.Arrow (app)
-import Data.Foldable (foldl1)
 import Data.List (maximum, minimum, (!!))
 import Data.List qualified as L
-import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as M
 import Helper.TH (input)
 import Helper.Util (countMap, eol, pairs, parseWith, toTuple2)
