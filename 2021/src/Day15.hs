@@ -5,9 +5,8 @@ import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
 import Data.Set qualified as S
 import Helper.Coord (manhattan, neighborsNoDiags)
-import Helper.Grid (DigitCell, Grid, cellToInt, incrementMod9, intToCell, joinGrids, maxXY, pretty, readGrid)
+import Helper.Grid (DigitCell, Grid, cellToInt, incrementMod9, intToCell, joinGrids, maxXY, readGrid)
 import Helper.TH (input)
-import Helper.Tracers (traceShowF)
 
 lowestRisk :: Grid DigitCell -> Maybe Int
 lowestRisk g = go (PQ.singleton 0 ((0, 0), S.empty, 0)) M.empty
