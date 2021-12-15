@@ -25,6 +25,12 @@ instance GridCell SimpleWall where
 
 newtype DigitCell = DigitCell (Fin ('S Nat9)) deriving (Eq, Ord, Bounded, Num, Show)
 
+cellToInt :: DigitCell -> Integer
+cellToInt (DigitCell d) = toInteger d
+
+intToCell :: Int -> DigitCell
+intToCell d = DigitCell (fromInteger $ toInteger d)
+
 instance GridCell DigitCell where
   charMap = BM.fromList [(DigitCell (fromInteger i), intToDigit (fromIntegral i)) | i <- [0 .. 9]]
 
@@ -125,3 +131,9 @@ pretty grid =
 
 prettyPrint :: GridCell a => Grid a -> IO ()
 prettyPrint = putTextLn . pretty
+
+-- Increments a cell that cannot be zero
+incrementMod9 :: Int -> DigitCell -> DigitCell
+incrementMod9 i c
+  | fromIntegral (cellToInt c) + i <= 9 = c + intToCell i
+  | otherwise = c + intToCell i + 1
