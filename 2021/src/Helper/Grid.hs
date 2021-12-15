@@ -8,6 +8,7 @@ import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Type.Nat (Nat (S), Nat9)
+import Helper.Util (both)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
@@ -33,6 +34,11 @@ intToCell d = DigitCell (fromInteger $ toInteger d)
 
 instance GridCell DigitCell where
   charMap = BM.fromList [(DigitCell (fromInteger i), intToDigit (fromIntegral i)) | i <- [0 .. 9]]
+
+newtype IntCell = IntCell Int deriving (Eq, Ord, Num, Show)
+
+instance GridCell IntCell where
+  charMap = BM.fromList [(IntCell i, intToDigit i) | i <- [0 .. 9]]
 
 type Grid a = M.Map (Int, Int) a
 
@@ -132,8 +138,18 @@ pretty grid =
 prettyPrint :: GridCell a => Grid a -> IO ()
 prettyPrint = putTextLn . pretty
 
--- Increments a cell that cannot be zero
-incrementMod9 :: Int -> DigitCell -> DigitCell
-incrementMod9 i c
-  | fromIntegral (cellToInt c) + i <= 9 = c + intToCell i
-  | otherwise = c + intToCell i + 1
+-- Extends the grid logically n times in each direction.
+-- Takes a function used to determine the value given by lookup, which has access to the
+-- meta coordinates of the grid extension (e.g. x=15, y=15 in an extended 10x10 grid would
+-- have (1,1) as its extension guide coords.
+-- Returns the interface to the type, its membership, lookup and bottom-right.
+extendGrid :: Int -> (a -> (Int, Int) -> b) -> Grid a -> ((Int, Int) -> Bool, (Int, Int) -> b, (Int, Int))
+extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
+  where
+    (w, h) = both (+ 1) (maxXY g)
+    lookup (x, y) =
+      let (xi, x') = x `divMod` w
+          (yi, y') = y `divMod` h
+          c = g M.! (x', y')
+       in f c (xi, yi)
+    member (x, y) = x >= 0 && y >= 0 && x < w * n && y < h * n

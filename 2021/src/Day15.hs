@@ -4,14 +4,16 @@ import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
 import Data.Set qualified as S
 import Helper.Coord (neighborsNoDiags)
-import Helper.Grid (DigitCell, Grid, cellToInt, incrementMod9, maxXY, readGrid)
+import Helper.Grid (Grid, IntCell (IntCell), extendGrid, readGrid)
 import Helper.TH (input)
-import Helper.Util (both)
 
-lowestRisk :: Grid DigitCell -> Int -> Maybe Int
-lowestRisk g n = go (PQ.singleton 0 (0, 0)) M.empty
+lowestRisk :: Int -> Grid IntCell -> Maybe Int
+lowestRisk n g = go (PQ.singleton 0 (0, 0)) M.empty
   where
-    (member, lookup, end) = extendGrid g n
+    extension (IntCell c) (xOff, yOff) =
+      let v = c + xOff + yOff
+       in if v > 9 then v - 9 else v
+    (member, lookup, end) = extendGrid n extension g
     go queue lowestRiskAt
       | null queue = Nothing
       | pos == end = Just risk'
@@ -30,22 +32,8 @@ lowestRisk g n = go (PQ.singleton 0 (0, 0)) M.empty
         queue' = foldl' (flip (PQ.insert risk')) rest next
         lowestRiskAt' = M.insertWith min pos risk lowestRiskAt
 
-extendGrid :: Grid DigitCell -> Int -> ((Int, Int) -> Bool, (Int, Int) -> Int, (Int, Int))
-extendGrid g n = (member, lookup, (w * n - 1, h * n - 1))
-  where
-    (w, h) = both (+ 1) (maxXY g)
-    lookup (x, y) =
-      let (xi, x') = x `divMod` w
-          (yi, y') = y `divMod` h
-       in fromInteger $ cellToInt (incrementMod9 (xi + yi) (g M.! (x', y')))
-    member (x, y) = x >= 0 && y >= 0 && x < w * n && y < h * n
-
 part1 :: Maybe Int
-part1 =
-  let g = readGrid $(input 15)
-   in lowestRisk g 1
+part1 = lowestRisk 1 (readGrid $(input 15))
 
 part2 :: Maybe Int
-part2 =
-  let g = readGrid $(input 15)
-   in lowestRisk g 5
+part2 = lowestRisk 5 (readGrid $(input 15))
