@@ -9,14 +9,12 @@ import Helper.Grid (DigitCell, Grid, cellToInt, incrementMod9, intToCell, joinGr
 import Helper.TH (input)
 
 lowestRisk :: Grid DigitCell -> Maybe Int
-lowestRisk g = go (PQ.singleton 0 ((0, 0), S.empty, 0)) M.empty
+lowestRisk g = go (PQ.singleton 0 (0, 0)) M.empty
   where
     end = maxXY g
-    cost ((x, y), _, risk) = risk + manhattan (x, y) end
     go queue lowestRiskAt
       | null queue = Nothing
       | pos == end = Just risk'
-      | pos `S.member` visited = go rest lowestRiskAt
       | otherwise =
         case M.lookup pos lowestRiskAt of
           Nothing -> go queue' lowestRiskAt'
@@ -25,10 +23,10 @@ lowestRisk g = go (PQ.singleton 0 ((0, 0), S.empty, 0)) M.empty
               then go rest lowestRiskAt
               else go queue' lowestRiskAt'
       where
-        ((_, (pos, visited, risk)), rest) = PQ.deleteFindMin queue
+        ((risk, pos), rest) = PQ.deleteFindMin queue
         risk' = if pos == (0, 0) then 0 else risk + fromIntegral (cellToInt (g M.! pos))
-        next = [(n, S.insert pos visited, risk') | n <- neighborsNoDiags pos, n `M.member` g]
-        queue' = foldl' (\q n -> PQ.insert (cost n) n q) rest next
+        next = [n | n <- neighborsNoDiags pos, n `M.member` g]
+        queue' = foldl' (flip (PQ.insert risk')) rest next
         lowestRiskAt' = M.insertWith min pos risk lowestRiskAt
 
 part1 :: Maybe Int
