@@ -32,7 +32,8 @@ import Test.BenchPress (benchMany)
 main :: IO ()
 --main = benchAllDays
 --main = benchOne (Day5.part1, Day5.part2)
-main = benchEachPart
+---main = benchEachPart
+main = print Day15.part2
 
 --main = print Day12.part2
 

@@ -1,11 +1,13 @@
 module Day15 (part1, part2) where
 
+import Data.List ((!!))
 import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
 import Data.Set qualified as S
 import Helper.Coord (manhattan, neighborsNoDiags)
-import Helper.Grid (DigitCell, Grid, cellToInt, incrementMod9, intToCell, joinGrids, maxXY, readGrid)
+import Helper.Grid (DigitCell, Grid, cellToInt, incrementMod9, intToCell, joinGrids, maxXY, pretty, readGrid)
 import Helper.TH (input)
+import Helper.Tracers (traceShowF)
 
 lowestRisk :: Grid DigitCell -> Maybe Int
 lowestRisk g = go (PQ.singleton 0 ((0, 0), S.empty, 0)) M.empty
@@ -36,8 +38,9 @@ part1 = lowestRisk (readGrid $(input 15))
 part2 :: Maybe Int
 part2 =
   let g = readGrid $(input 15)
+      gPlus = [incrementMod9 i <$> g | i <- [0 .. 8]]
    in lowestRisk . joinGrids . M.fromList $
-        [ ((x, y), incrementMod9 (x + y) <$> g)
+        [ ((x, y), gPlus !! (x + y))
           | x <- [0 .. 4],
             y <- [0 .. 4]
         ]
