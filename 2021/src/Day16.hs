@@ -7,7 +7,7 @@ import Helper.TH (input)
 import Helper.Util (bitChar, nBitInt, parseWith, toTuple2)
 import Text.ParserCombinators.Parsec (GenParser, count, oneOf)
 
-newtype Version = Version Integer deriving (Eq)
+newtype Version = Version Integer
 
 data OpType
   = OpSum
@@ -17,14 +17,12 @@ data OpType
   | OpGT
   | OpLT
   | OpEq
-  deriving (Eq)
 
 data Body
   = Literal Integer
   | Operator OpType [Packet]
-  deriving (Eq)
 
-data Packet = Packet Version Body deriving (Eq)
+data Packet = Packet Version Body
 
 opFromInt :: Integer -> OpType
 opFromInt 0 = OpSum
