@@ -4,14 +4,25 @@ import Data.List (maximum, minimum, (!!))
 import Data.Text qualified as T
 import Helper.Bits (bitsToInt, hexToBinChars)
 import Helper.TH (input)
-import Helper.Util (bitChar, parseWith)
+import Helper.Util (bitChar, parseWith, toTuple2)
 import Text.ParserCombinators.Parsec (GenParser, count, oneOf)
 
 newtype Version = Version Integer deriving (Eq)
 
-data OpType = OpSum | OpProduct | OpMin | OpMax | OpGT | OpLT | OpEq deriving (Eq)
+data OpType
+  = OpSum
+  | OpProduct
+  | OpMin
+  | OpMax
+  | OpGT
+  | OpLT
+  | OpEq
+  deriving (Eq)
 
-data Body = Literal Integer | Operator OpType [Packet] deriving (Eq)
+data Body
+  = Literal Integer
+  | Operator OpType [Packet]
+  deriving (Eq)
 
 data Packet = Packet Version Body deriving (Eq)
 
@@ -23,6 +34,7 @@ opFromInt 3 = OpMax
 opFromInt 5 = OpGT
 opFromInt 6 = OpLT
 opFromInt 7 = OpEq
+opFromInt i = error ("Invalid op: " <> show i)
 
 packet :: GenParser Char () Packet
 packet = do
@@ -62,14 +74,15 @@ eval :: Packet -> Integer
 eval (Packet _ (Literal v)) = v
 eval (Packet _ (Operator ot ps)) =
   let vs = eval <$> ps
+      binOp f = fromIntegral . fromEnum . (f <$> fst <*> snd) . toTuple2 $ vs
    in case ot of
         OpSum -> sum vs
         OpProduct -> product vs
         OpMin -> minimum vs
         OpMax -> maximum vs
-        OpGT -> if (vs !! 0) > (vs !! 1) then 1 else 0
-        OpLT -> if (vs !! 0) < (vs !! 1) then 1 else 0
-        OpEq -> if (vs !! 0) == (vs !! 1) then 1 else 0
+        OpGT -> binOp (>)
+        OpLT -> binOp (<)
+        OpEq -> binOp (==)
 
 solve :: (Packet -> Integer) -> Integer
 solve f =
