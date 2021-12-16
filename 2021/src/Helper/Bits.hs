@@ -81,3 +81,21 @@ leastCommonBit :: Bits a => a -> Bool
 leastCommonBit bs
   | popCount bs == zeroCount bs = False
   | otherwise = popCount bs < zeroCount bs
+
+hexToBinChars :: Char -> String
+hexToBinChars '0' = "0000"
+hexToBinChars '1' = "0001"
+hexToBinChars '2' = "0010"
+hexToBinChars '3' = "0011"
+hexToBinChars '4' = "0100"
+hexToBinChars '5' = "0101"
+hexToBinChars '6' = "0110"
+hexToBinChars '7' = "0111"
+hexToBinChars '8' = "1000"
+hexToBinChars '9' = "1001"
+hexToBinChars 'A' = "1010"
+hexToBinChars 'B' = "1011"
+hexToBinChars 'C' = "1100"
+hexToBinChars 'D' = "1101"
+hexToBinChars 'E' = "1110"
+hexToBinChars 'F' = "1111"

@@ -1,50 +1,87 @@
 module Day16 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
+import Data.List (maximum, minimum, (!!))
 import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Bits (bitsToInt, hexToBinChars)
+import Helper.TH (input)
+import Helper.Util (bitChar, parseWith)
+import Text.ParserCombinators.Parsec (GenParser, count, oneOf)
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+newtype Version = Version Integer deriving (Eq, Ord, Show)
 
--- line :: GenParser Char () Int
--- line = number
+data OpType = OpSum | OpProduct | OpMin | OpMax | OpGT | OpLT | OpEq deriving (Eq, Ord, Show)
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+data Body = Literal Integer | Operator OpType [Packet] deriving (Eq, Ord, Show)
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+data Packet = Packet Version Body deriving (Eq, Ord, Show)
 
-part1 :: Text
-part1 =
+opFromInt :: Integer -> OpType
+opFromInt 0 = OpSum
+opFromInt 1 = OpProduct
+opFromInt 2 = OpMin
+opFromInt 3 = OpMax
+opFromInt 5 = OpGT
+opFromInt 6 = OpLT
+opFromInt 7 = OpEq
+
+packet :: GenParser Char () Packet
+packet = do
+  version <- Version . bitsToInt <$> count 3 bitChar
+  typeId <- bitsToInt <$> count 3 bitChar
+  p <- case typeId of
+    4 -> Packet version <$> literal
+    opId -> Packet version <$> operator opId
+  return p
+
+literal :: GenParser Char () Body
+literal = Literal . bitsToInt <$> groupedBin
+  where
+    groupedBin = do
+      b : bs <- count 5 bitChar
+      if b then (bs ++) <$> groupedBin else return bs
+
+operator :: Integer -> GenParser Char () Body
+operator opId =
+  Operator (opFromInt opId) <$> do
+    ltID <- bitChar
+    if ltID then packetBody else lengthBody
+  where
+    lengthBody = do
+      bitLength <- bitsToInt <$> count 15 bitChar
+      packetBits <- count (fromIntegral bitLength) (oneOf "01")
+      return $ parseWith (many packet) packetBits
+    packetBody = do
+      numPackets <- bitsToInt <$> count 11 bitChar
+      count (fromIntegral numPackets) packet
+
+versionSum :: Packet -> Integer
+versionSum (Packet (Version v) (Literal _)) = v
+versionSum (Packet (Version v) (Operator _ ps)) = v + sum (versionSum <$> ps)
+
+eval :: Packet -> Integer
+eval (Packet _ (Literal v)) = v
+eval (Packet _ (Operator ot ps)) =
+  let vs = eval <$> ps
+   in case ot of
+        OpSum -> sum vs
+        OpProduct -> product vs
+        OpMin -> minimum vs
+        OpMax -> maximum vs
+        OpGT -> if (vs !! 0) > (vs !! 1) then 1 else 0
+        OpLT -> if (vs !! 0) < (vs !! 1) then 1 else 0
+        OpEq -> if (vs !! 0) == (vs !! 1) then 1 else 0
+
+solve :: (Packet -> Integer) -> Integer
+solve f =
   $(input 16)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & ((!! 0) . T.lines)
+    & T.unpack
+    & (hexToBinChars =<<)
+    & parseWith packet
+    & f
 
-part2 :: Text
-part2 = "Part 2"
+part1 :: Integer
+part1 = solve versionSum
+
+part2 :: Integer
+part2 = solve eval
