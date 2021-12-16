@@ -40,10 +40,9 @@ packet :: GenParser Char () Packet
 packet = do
   version <- Version <$> nBitInt 3
   typeId <- nBitInt 3
-  p <- case typeId of
+  case typeId of
     4 -> Packet version <$> literal
     opId -> Packet version <$> operator opId
-  return p
 
 literal :: GenParser Char () Body
 literal = Literal . bitsToInt <$> groupedBin
