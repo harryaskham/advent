@@ -12,8 +12,9 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
+import Helper.Bits (bitsToInt)
 import Relude.Unsafe (read)
-import Text.ParserCombinators.Parsec (GenParser, char, eof, many1, oneOf, parse, sepBy)
+import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, oneOf, parse, sepBy)
 
 -- Input parsing
 
@@ -120,6 +121,9 @@ number = read <$> many1 (oneOf "-0123456789")
 
 bitChar :: GenParser Char () Bool
 bitChar = (char '1' >> return True) <|> (char '0' >> return False)
+
+nBitInt :: Int -> GenParser Char () Integer
+nBitInt n = bitsToInt <$> Text.ParserCombinators.Parsec.count n bitChar
 
 coord2 :: GenParser Char () (Int, Int)
 coord2 = (,) <$> (number <* char ',') <*> number

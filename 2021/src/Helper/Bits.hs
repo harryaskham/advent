@@ -82,20 +82,21 @@ leastCommonBit bs
   | popCount bs == zeroCount bs = False
   | otherwise = popCount bs < zeroCount bs
 
-hexToBinChars :: Char -> String
-hexToBinChars '0' = "0000"
-hexToBinChars '1' = "0001"
-hexToBinChars '2' = "0010"
-hexToBinChars '3' = "0011"
-hexToBinChars '4' = "0100"
-hexToBinChars '5' = "0101"
-hexToBinChars '6' = "0110"
-hexToBinChars '7' = "0111"
-hexToBinChars '8' = "1000"
-hexToBinChars '9' = "1001"
-hexToBinChars 'A' = "1010"
-hexToBinChars 'B' = "1011"
-hexToBinChars 'C' = "1100"
-hexToBinChars 'D' = "1101"
-hexToBinChars 'E' = "1110"
-hexToBinChars 'F' = "1111"
+hexToBin :: Char -> String
+hexToBin '0' = "0000"
+hexToBin '1' = "0001"
+hexToBin '2' = "0010"
+hexToBin '3' = "0011"
+hexToBin '4' = "0100"
+hexToBin '5' = "0101"
+hexToBin '6' = "0110"
+hexToBin '7' = "0111"
+hexToBin '8' = "1000"
+hexToBin '9' = "1001"
+hexToBin 'A' = "1010"
+hexToBin 'B' = "1011"
+hexToBin 'C' = "1100"
+hexToBin 'D' = "1101"
+hexToBin 'E' = "1110"
+hexToBin 'F' = "1111"
+hexToBin x = error ("Invalid hex: " <> show x)

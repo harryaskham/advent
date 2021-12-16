@@ -2,9 +2,9 @@ module Day16 (part1, part2) where
 
 import Data.List (maximum, minimum, (!!))
 import Data.Text qualified as T
-import Helper.Bits (bitsToInt, hexToBinChars)
+import Helper.Bits (bitsToInt, hexToBin)
 import Helper.TH (input)
-import Helper.Util (bitChar, parseWith, toTuple2)
+import Helper.Util (bitChar, nBitInt, parseWith, toTuple2)
 import Text.ParserCombinators.Parsec (GenParser, count, oneOf)
 
 newtype Version = Version Integer deriving (Eq)
@@ -38,8 +38,8 @@ opFromInt i = error ("Invalid op: " <> show i)
 
 packet :: GenParser Char () Packet
 packet = do
-  version <- Version . bitsToInt <$> count 3 bitChar
-  typeId <- bitsToInt <$> count 3 bitChar
+  version <- Version <$> nBitInt 3
+  typeId <- nBitInt 3
   p <- case typeId of
     4 -> Packet version <$> literal
     opId -> Packet version <$> operator opId
@@ -59,10 +59,10 @@ operator opId =
     if ltID then packetBody else lengthBody
   where
     packetBody = do
-      numPackets <- bitsToInt <$> count 11 bitChar
+      numPackets <- nBitInt 11
       count (fromIntegral numPackets) packet
     lengthBody = do
-      bitLength <- bitsToInt <$> count 15 bitChar
+      bitLength <- nBitInt 15
       packetBits <- count (fromIntegral bitLength) (oneOf "01")
       return $ parseWith (many packet) packetBits
 
@@ -89,7 +89,7 @@ solve f =
   $(input 16)
     & ((!! 0) . T.lines)
     & T.unpack
-    & (hexToBinChars =<<)
+    & (hexToBin =<<)
     & parseWith packet
     & f
 
