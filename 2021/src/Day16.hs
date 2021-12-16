@@ -1,6 +1,6 @@
 module Day16 (part1, part2) where
 
-import Data.List (maximum, minimum, (!!))
+import Data.List qualified as L
 import Data.Text qualified as T
 import Helper.Bits (bitsToInt, hexToBin)
 import Helper.TH (input)
@@ -78,8 +78,8 @@ eval (Packet _ (Operator ot ps)) =
    in case ot of
         OpSum -> sum vs
         OpProduct -> product vs
-        OpMin -> minimum vs
-        OpMax -> maximum vs
+        OpMin -> L.minimum vs
+        OpMax -> L.maximum vs
         OpGT -> binOp (>)
         OpLT -> binOp (<)
         OpEq -> binOp (==)
@@ -87,8 +87,7 @@ eval (Packet _ (Operator ot ps)) =
 solve :: (Packet -> Integer) -> Integer
 solve f =
   $(input 16)
-    & ((!! 0) . T.lines)
-    & T.unpack
+    & (T.unpack . L.head . T.lines)
     & (hexToBin =<<)
     & parseWith packet
     & f
