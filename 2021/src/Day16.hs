@@ -7,13 +7,13 @@ import Helper.TH (input)
 import Helper.Util (bitChar, parseWith)
 import Text.ParserCombinators.Parsec (GenParser, count, oneOf)
 
-newtype Version = Version Integer deriving (Eq, Ord, Show)
+newtype Version = Version Integer deriving (Eq)
 
-data OpType = OpSum | OpProduct | OpMin | OpMax | OpGT | OpLT | OpEq deriving (Eq, Ord, Show)
+data OpType = OpSum | OpProduct | OpMin | OpMax | OpGT | OpLT | OpEq deriving (Eq)
 
-data Body = Literal Integer | Operator OpType [Packet] deriving (Eq, Ord, Show)
+data Body = Literal Integer | Operator OpType [Packet] deriving (Eq)
 
-data Packet = Packet Version Body deriving (Eq, Ord, Show)
+data Packet = Packet Version Body deriving (Eq)
 
 opFromInt :: Integer -> OpType
 opFromInt 0 = OpSum
@@ -46,13 +46,13 @@ operator opId =
     ltID <- bitChar
     if ltID then packetBody else lengthBody
   where
+    packetBody = do
+      numPackets <- bitsToInt <$> count 11 bitChar
+      count (fromIntegral numPackets) packet
     lengthBody = do
       bitLength <- bitsToInt <$> count 15 bitChar
       packetBits <- count (fromIntegral bitLength) (oneOf "01")
       return $ parseWith (many packet) packetBits
-    packetBody = do
-      numPackets <- bitsToInt <$> count 11 bitChar
-      count (fromIntegral numPackets) packet
 
 versionSum :: Packet -> Integer
 versionSum (Packet (Version v) (Literal _)) = v
