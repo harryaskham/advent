@@ -1,50 +1,44 @@
 module Day17 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Data.List qualified as L
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+data Target = Target
+  { minX :: Int,
+    maxX :: Int,
+    minY :: Int,
+    maxY :: Int
+  }
 
--- line :: GenParser Char () Int
--- line = number
+target :: Target
+target = Target 34 67 (-215) (-186)
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+step :: (Int, Int) -> Maybe Int -> (Int, Int) -> Maybe Int
+step (x, y) peak (vx, vy)
+  | x > maxX target = Nothing
+  | vx == 0 && y < minY target = Nothing
+  | y < minY target = Nothing
+  | x >= minX target
+      && x <= maxX target
+      && y >= minY target
+      && y <= maxY target =
+    peak
+  | otherwise =
+    step
+      (x + vx, y + vy)
+      (if Just y > peak then Just y else peak)
+      (if vx > 0 then vx - 1 else if vx < 0 then vx + 1 else 0, vy - 1)
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+peaks :: [Int]
+peaks =
+  mapMaybe
+    (step (0, 0) Nothing)
+    [ (vx, vy)
+      | vx <- [1 .. maxX target + 1],
+        vy <- [minY target .. 400]
+    ]
 
-part1 :: Text
-part1 =
-  $(input 17)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+part1 :: Int
+part1 = L.maximum peaks
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 = length peaks
