@@ -83,6 +83,7 @@ common common-settings
                         -Wno-monomorphism-restriction
                         -Wno-missing-home-modules
                         -Wno-name-shadowing
+                        -Wno-type-defaults
 library
     import:             common-settings
     hs-source-dirs:     src

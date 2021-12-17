@@ -30,12 +30,13 @@ step (x, y) peak (vx, vy)
 
 peaks :: [Int]
 peaks =
-  mapMaybe
-    (step (0, 0) Nothing)
-    [ (vx, vy)
-      | vx <- [1 .. maxX target + 1],
-        vy <- [minY target .. abs (minY target)]
-    ]
+  let minBound = floor ((1 / 4) + (1 / 2) * sqrt (fromIntegral (1 + 8 * minX target)))
+   in mapMaybe
+        (step (0, 0) Nothing)
+        [ (vx, vy)
+          | vx <- [minBound .. maxX target],
+            vy <- [minY target .. abs (minY target)]
+        ]
 
 part1 :: Int
 part1 = L.maximum peaks
