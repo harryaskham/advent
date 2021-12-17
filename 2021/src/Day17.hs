@@ -34,7 +34,7 @@ peaks =
     (step (0, 0) Nothing)
     [ (vx, vy)
       | vx <- [1 .. maxX target + 1],
-        vy <- [minY target .. 400]
+        vy <- [minY target .. abs (minY target)]
     ]
 
 part1 :: Int
