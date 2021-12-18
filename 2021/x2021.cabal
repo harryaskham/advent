@@ -28,7 +28,7 @@ common common-settings
                         benchpress,
                         fin,
                         MissingH,
-                        uuid
+                        safe
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),

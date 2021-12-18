@@ -4,8 +4,10 @@ import Data.Foldable (foldl1, maximum)
 import Data.List (elemIndex, (!!))
 import Data.List qualified as L
 import Data.List.Extra (foldl1')
+import GHC.Float (fromRat'')
 import Helper.TH (input)
 import Helper.Util (number, parseLinesWith, toTuple2)
+import Safe (headMay)
 import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 
 type FishID = Integer
@@ -47,33 +49,37 @@ setIDs (Two a b) fishIDs =
    in (nextIDs'', Two a' b')
 setIDs f [] = ([], f)
 
-fixExplode :: Fish -> Fish
-fixExplode f =
-  let f' = explodeFish f
-   in if f == f' then f else fixExplode f'
-
 reduce :: Fish -> Fish
-reduce f =
-  let f' = splitFish (fixExplode f)
-   in if f == f' then f else reduce f'
+reduce f
+  | f /= f' = reduce f'
+  | f /= f'' = reduce f''
+  | otherwise = f
+  where
+    f' = explodeFish f
+    f'' = splitFish f
+
+mapID :: (Fish -> Fish) -> FishID -> Fish -> Fish
+mapID f fishID = go
+  where
+    go :: Fish -> Fish
+    go fish@(One (fishID', _))
+      | fishID == fishID' = f fish
+      | otherwise = fish
+    go (Two a b) = Two (go a) (go b)
 
 splitFish :: Fish -> Fish
-splitFish f' = case getSplitIds f' of
-  [] -> f'
-  (fishID : _) -> go fishID f'
+splitFish f' =
+  case headMay [fishID | (fishID, a) <- toList f', a >= 10] of
+    Nothing -> f'
+    Just fishID -> mapID spl fishID f'
   where
     nextID = maximum (fst <$> f') + 1
-    go fishID f@(One (fishID', a))
-      | fishID == fishID' =
-        Two
-          (One (nextID, floor (fromIntegral a / 2.0)))
-          (One (nextID + 1, ceiling (fromIntegral a / 2.0)))
-      | otherwise = f
-    go fishID (Two a b) = Two (go fishID a) (go fishID b)
-    getSplitIds (One (fishID, a))
-      | a >= 10 = [fishID]
-      | otherwise = []
-    getSplitIds (Two a b) = getSplitIds a ++ getSplitIds b
+    spl :: Fish -> Fish
+    spl (One (_, a)) =
+      Two
+        (One (nextID, floor (fromIntegral a / 2.0)))
+        (One (nextID + 1, ceiling (fromIntegral a / 2.0)))
+    spl fish@(Two _ _) = fish
 
 ixMod :: (Int -> Int) -> FishID -> [FishID] -> Maybe FishID
 ixMod ixF fishID fishIDs =

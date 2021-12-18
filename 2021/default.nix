@@ -1,7 +1,7 @@
 { mkDerivation, array, base, benchpress, bimap, containers, extra
 , file-embed, fin, hs-functors, HUnit, lib, MissingH, mod
-, monad-memo, mtl, parsec, pqueue, QuickCheck, relude, semirings
-, template-haskell, text, utility-ht, uuid, vector
+, monad-memo, mtl, parsec, pqueue, QuickCheck, relude, safe
+, semirings, template-haskell, text, utility-ht, vector
 }:
 mkDerivation {
   pname = "x2021";
@@ -11,18 +11,18 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     array base benchpress bimap containers extra file-embed fin
-    hs-functors MissingH mod monad-memo mtl parsec pqueue relude
-    semirings template-haskell text utility-ht uuid vector
+    hs-functors MissingH mod monad-memo mtl parsec pqueue relude safe
+    semirings template-haskell text utility-ht vector
   ];
   executableHaskellDepends = [
     array base benchpress bimap containers extra file-embed fin
-    hs-functors MissingH mod monad-memo mtl parsec pqueue relude
-    semirings template-haskell text utility-ht uuid vector
+    hs-functors MissingH mod monad-memo mtl parsec pqueue relude safe
+    semirings template-haskell text utility-ht vector
   ];
   testHaskellDepends = [
     array base benchpress bimap containers extra file-embed fin
     hs-functors HUnit MissingH mod monad-memo mtl parsec pqueue
-    QuickCheck relude semirings template-haskell text utility-ht uuid
+    QuickCheck relude safe semirings template-haskell text utility-ht
     vector
   ];
   license = "unknown";
