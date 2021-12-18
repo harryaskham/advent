@@ -10,17 +10,17 @@ import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 
 type FishID = Integer
 
-data Tree a
+data Fish' a
   = One a
-  | Two (Tree a) (Tree a)
+  | Two (Fish' a) (Fish' a)
   deriving (Eq, Ord, Show, Functor, Foldable)
 
-instance Traversable Tree where
+instance Traversable Fish' where
   traverse f t = case t of
     One x -> One <$> f x
     Two a b -> Two <$> traverse f a <*> traverse f b
 
-type Fish = Tree (FishID, Int)
+type Fish = Fish' (FishID, Int)
 
 mkFish :: Int -> Fish
 mkFish = One . (0,)
