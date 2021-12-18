@@ -1,7 +1,7 @@
 { mkDerivation, array, base, benchpress, bimap, containers, extra
 , file-embed, fin, hs-functors, HUnit, lib, MissingH, mod
 , monad-memo, mtl, parsec, pqueue, QuickCheck, relude, semirings
-, template-haskell, text, utility-ht, vector
+, template-haskell, text, utility-ht, uuid, vector
 }:
 mkDerivation {
   pname = "x2021";
@@ -12,17 +12,18 @@ mkDerivation {
   libraryHaskellDepends = [
     array base benchpress bimap containers extra file-embed fin
     hs-functors MissingH mod monad-memo mtl parsec pqueue relude
-    semirings template-haskell text utility-ht vector
+    semirings template-haskell text utility-ht uuid vector
   ];
   executableHaskellDepends = [
     array base benchpress bimap containers extra file-embed fin
     hs-functors MissingH mod monad-memo mtl parsec pqueue relude
-    semirings template-haskell text utility-ht vector
+    semirings template-haskell text utility-ht uuid vector
   ];
   testHaskellDepends = [
     array base benchpress bimap containers extra file-embed fin
     hs-functors HUnit MissingH mod monad-memo mtl parsec pqueue
-    QuickCheck relude semirings template-haskell text utility-ht vector
+    QuickCheck relude semirings template-haskell text utility-ht uuid
+    vector
   ];
   license = "unknown";
   hydraPlatforms = lib.platforms.none;
