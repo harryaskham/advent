@@ -4,12 +4,9 @@ import Data.Foldable (foldl1)
 import Data.List (elemIndex, (!!))
 import Data.List qualified as L
 import Data.List.Extra (foldl1')
-import Data.Unique (Unique, hashUnique, newUnique)
 import Helper.TH (input)
 import Helper.Util (number, parseLinesWith, toTuple2)
-import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
-import Text.Show (showsPrec)
 
 type FishID = Integer
 
@@ -17,9 +14,6 @@ data Fish
   = One FishID Int
   | Two Fish Fish
   deriving (Eq, Ord, Show)
-
-mkFish :: Int -> Fish
-mkFish = One 0
 
 instance Semigroup Fish where
   a <> b = reduce (Two a b)
@@ -59,16 +53,22 @@ getSplitIds = go
       | otherwise = []
     go (Two a b) = getSplitIds a ++ getSplitIds b
 
+maxID :: Fish -> FishID
+maxID (One fishID _) = fishID
+maxID (Two a b) = max (maxID a) (maxID b)
+
 splitFish :: Fish -> Fish
 splitFish f' = case getSplitIds f' of
   [] -> f'
   (fishID : _) -> go fishID f'
   where
+    id1 = maxID f' + 1
+    id2 = id1 + 1
     go fishID f@(One fishID' a)
       | fishID == fishID' =
         Two
-          (mkFish (floor (fromIntegral a / 2.0)))
-          (mkFish (ceiling (fromIntegral a / 2.0)))
+          (One id1 (floor (fromIntegral a / 2.0)))
+          (One id2 (ceiling (fromIntegral a / 2.0)))
       | otherwise = f
     go fishID (Two a b) = Two (go fishID a) (go fishID b)
 
@@ -87,14 +87,15 @@ rightOf fishID fishIDs =
    in fishIDs !!? ix
 
 runExplode :: FishID -> FishID -> Maybe FishID -> Maybe FishID -> Int -> Int -> Fish -> Fish
-runExplode idA idB leftID rightID a b = go
+runExplode idA idB leftID rightID a b f' = go f'
   where
+    nextID = maxID f' + 1
     go f@(One fishID x)
       | Just fishID == leftID = One fishID (x + a)
       | Just fishID == rightID = One fishID (x + b)
       | otherwise = f
     go (Two fa@(One idA' _) fb@(One idB' _))
-      | idA == idA' && idB == idB' = mkFish 0
+      | idA == idA' && idB == idB' = One nextID 0
       | otherwise = Two (go fa) (go fb)
     go (Two a b) = Two (go a) (go b)
 
@@ -126,13 +127,13 @@ magnitude (One _ a) = a
 magnitude (Two a b) = 3 * magnitude a + 2 * magnitude b
 
 two :: GenParser Char () Fish
-two = uncurry Two . toTuple2 <$> (char '[' *> (mkFish <$> number <|> two) `sepBy` char ',' <* char ']')
+two = uncurry Two . toTuple2 <$> (char '[' *> (One 0 <$> number <|> two) `sepBy` char ',' <* char ']')
 
 fish :: [Fish]
 fish =
   snd $
-    foldl'
-      (\(nextIDs, fs) f -> let (f', nextIDs') = setIDs nextIDs f in (nextIDs', f' : fs))
+    foldr
+      (\f (nextIDs, fs) -> let (f', nextIDs') = setIDs nextIDs f in (nextIDs', f' : fs))
       ([0 ..], [])
       (parseLinesWith two $(input 18))
 
