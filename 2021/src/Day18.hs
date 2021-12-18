@@ -1,8 +1,6 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Day18 where
 
-import Data.Foldable (foldl1)
+import Data.Foldable (foldl1, maximum)
 import Data.List (elemIndex, (!!))
 import Data.List qualified as L
 import Data.List.Extra (foldl1')
@@ -12,18 +10,21 @@ import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 
 type FishID = Integer
 
-data Tree a = One a | Two (Tree a) (Tree a) deriving (Eq, Ord, Show, Functor)
+data Tree a
+  = One a
+  | Two (Tree a) (Tree a)
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 
 type Fish = Tree (FishID, Int)
 
 mkFish :: Int -> Fish
-mkFish a = One (0, a)
+mkFish = One . (0,)
 
 instance Semigroup Fish where
   a <> b = reduce (Two a b)
 
 two :: GenParser Char () Fish
-two = uncurry Two . toTuple2 <$> (char '[' *> ((mkFish <$> number) <|> two) `sepBy` char ',' <* char ']')
+two = uncurry Two . toTuple2 <$> (char '[' *> (mkFish <$> number <|> two) `sepBy` char ',' <* char ']')
 
 fish :: [Fish]
 fish =
@@ -51,21 +52,17 @@ reduce f =
   let f' = splitFish (fixExplode f)
    in if f == f' then f else reduce f'
 
-maxID :: Fish -> FishID
-maxID (One (fishID, _)) = fishID
-maxID (Two a b) = max (maxID a) (maxID b)
-
 splitFish :: Fish -> Fish
 splitFish f' = case getSplitIds f' of
   [] -> f'
   (fishID : _) -> go fishID f'
   where
-    nextID = maxID f' + 1
+    nextID = maximum (fst <$> f') + 1
     go fishID f@(One (fishID', a))
       | fishID == fishID' =
         Two
-          (One (nextID, (floor (fromIntegral a / 2.0))))
-          (One ((nextID + 1), (ceiling (fromIntegral a / 2.0))))
+          (One (nextID, floor (fromIntegral a / 2.0)))
+          (One (nextID + 1, ceiling (fromIntegral a / 2.0)))
       | otherwise = f
     go fishID (Two a b) = Two (go fishID a) (go fishID b)
     getSplitIds (One (fishID, a))
@@ -87,8 +84,8 @@ runExplode :: FishID -> FishID -> Maybe FishID -> Maybe FishID -> Int -> Int -> 
 runExplode idA idB leftID rightID a b = go
   where
     go f@(One (fishID, x))
-      | Just fishID == leftID = One (fishID, (x + a))
-      | Just fishID == rightID = One (fishID, (x + b))
+      | Just fishID == leftID = One (fishID, x + a)
+      | Just fishID == rightID = One (fishID, x + b)
       | otherwise = f
     go (Two fa@(One (idA', _)) fb@(One (idB', _)))
       | idA == idA' && idB == idB' = One (idA', 0)
