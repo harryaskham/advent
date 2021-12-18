@@ -13,7 +13,12 @@ type FishID = Integer
 data Tree a
   = One a
   | Two (Tree a) (Tree a)
-  deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Functor, Foldable)
+
+instance Traversable Tree where
+  traverse f t = case t of
+    One x -> One <$> f x
+    Two a b -> Two <$> traverse f a <*> traverse f b
 
 type Fish = Tree (FishID, Int)
 
@@ -70,10 +75,6 @@ splitFish f' = case getSplitIds f' of
       | otherwise = []
     getSplitIds (Two a b) = getSplitIds a ++ getSplitIds b
 
-inorderIDs :: Fish -> [FishID]
-inorderIDs (One (fishID, _)) = [fishID]
-inorderIDs (Two a b) = inorderIDs a ++ inorderIDs b
-
 ixMod :: (Int -> Int) -> FishID -> [FishID] -> Maybe FishID
 ixMod ixF fishID fishIDs =
   case ixF <$> elemIndex fishID fishIDs of
@@ -101,7 +102,7 @@ explodeFish f' =
           rightID = ixMod (+ 1) idB fishIDs
        in runExplode idA idB leftID rightID a b f'
   where
-    fishIDs = inorderIDs f'
+    fishIDs = foldr (\(id, _) ids -> id : ids) [] f'
     go _ (One _) = Nothing
     go 4 (Two (One (idA, a)) (One (idB, b))) = Just (idA, idB, a, b)
     go depth (Two a b) = go (depth + 1) a <|> go (depth + 1) b
