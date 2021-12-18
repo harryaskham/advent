@@ -69,17 +69,6 @@ inorder :: Fish -> [UUID]
 inorder (One uuid _) = [uuid]
 inorder (Two a b) = inorder a ++ inorder b
 
-addById :: Maybe UUID -> Int -> Fish -> Fish
-addById uuidM x f' =
-  case uuidM of
-    Nothing -> f'
-    Just uuid -> go uuid f'
-  where
-    go uuid f@(One uuid' a)
-      | uuid == uuid' = One uuid' (a + x)
-      | otherwise = f
-    go uuid (Two a b) = Two (go uuid a) (go uuid b)
-
 leftOf :: UUID -> [UUID] -> Maybe UUID
 leftOf uuid uuids =
   let (Just ix) = subtract 1 <$> elemIndex uuid uuids
@@ -109,9 +98,9 @@ explodeFish f' =
   let e = go 0 f'
       uuids = inorder f'
    in case e of
-        Nothing -> traceShow "nothing exploded" f'
+        Nothing -> pauseId $ traceShow ("nothing exploded", prettyFish f') f'
         Just (idA, idB, a, b) ->
-          traceShow ("something exploded:", idA, idB, a, b) $
+          traceShow ("something exploded:", a, b) $
             let leftID = leftOf idA uuids
                 rightID = rightOf idB uuids
              in runExplode idA idB leftID rightID a b f'
