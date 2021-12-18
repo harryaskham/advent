@@ -12,22 +12,18 @@ import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 
 type FishID = Integer
 
-data Fish' a b
-  = One a b
-  | Two Fish Fish
-  deriving (Eq, Ord, Show, Bifunctor, Bifoldable)
+data Tree a = One a | Two (Tree a) (Tree a) deriving (Eq, Ord, Show, Functor)
 
-type Fish = Fish' FishID Int
+type Fish = Tree (FishID, Int)
+
+mkFish :: Int -> Fish
+mkFish a = One (0, a)
 
 instance Semigroup Fish where
   a <> b = reduce (Two a b)
 
-getID :: Fish -> Maybe FishID
-getID (One fishID _) = Just fishID
-getID (Two _ _) = Nothing
-
 two :: GenParser Char () Fish
-two = uncurry Two . toTuple2 <$> (char '[' *> (One 0 <$> number <|> two) `sepBy` char ',' <* char ']')
+two = uncurry Two . toTuple2 <$> (char '[' *> ((mkFish <$> number) <|> two) `sepBy` char ',' <* char ']')
 
 fish :: [Fish]
 fish =
@@ -38,7 +34,7 @@ fish =
       (parseLinesWith two $(input 18))
 
 setIDs :: Fish -> [FishID] -> ([FishID], Fish)
-setIDs (One _ a) (nextID : nextIDs) = (nextIDs, One nextID a)
+setIDs (One (_, a)) (nextID : nextIDs) = (nextIDs, One (nextID, a))
 setIDs (Two a b) fishIDs =
   let (nextIDs', a') = setIDs a fishIDs
       (nextIDs'', b') = setIDs b nextIDs'
@@ -56,7 +52,7 @@ reduce f =
    in if f == f' then f else reduce f'
 
 maxID :: Fish -> FishID
-maxID (One fishID _) = fishID
+maxID (One (fishID, _)) = fishID
 maxID (Two a b) = max (maxID a) (maxID b)
 
 splitFish :: Fish -> Fish
@@ -65,20 +61,20 @@ splitFish f' = case getSplitIds f' of
   (fishID : _) -> go fishID f'
   where
     nextID = maxID f' + 1
-    go fishID f@(One fishID' a)
+    go fishID f@(One (fishID', a))
       | fishID == fishID' =
         Two
-          (One nextID (floor (fromIntegral a / 2.0)))
-          (One (nextID + 1) (ceiling (fromIntegral a / 2.0)))
+          (One (nextID, (floor (fromIntegral a / 2.0))))
+          (One ((nextID + 1), (ceiling (fromIntegral a / 2.0))))
       | otherwise = f
     go fishID (Two a b) = Two (go fishID a) (go fishID b)
-    getSplitIds (One fishID a)
+    getSplitIds (One (fishID, a))
       | a >= 10 = [fishID]
       | otherwise = []
     getSplitIds (Two a b) = getSplitIds a ++ getSplitIds b
 
 inorderIDs :: Fish -> [FishID]
-inorderIDs (One fishID _) = [fishID]
+inorderIDs (One (fishID, _)) = [fishID]
 inorderIDs (Two a b) = inorderIDs a ++ inorderIDs b
 
 ixMod :: (Int -> Int) -> FishID -> [FishID] -> Maybe FishID
@@ -90,12 +86,12 @@ ixMod ixF fishID fishIDs =
 runExplode :: FishID -> FishID -> Maybe FishID -> Maybe FishID -> Int -> Int -> Fish -> Fish
 runExplode idA idB leftID rightID a b = go
   where
-    go f@(One fishID x)
-      | Just fishID == leftID = One fishID (x + a)
-      | Just fishID == rightID = One fishID (x + b)
+    go f@(One (fishID, x))
+      | Just fishID == leftID = One (fishID, (x + a))
+      | Just fishID == rightID = One (fishID, (x + b))
       | otherwise = f
-    go (Two fa@(One idA' _) fb@(One idB' _))
-      | idA == idA' && idB == idB' = One idA' 0
+    go (Two fa@(One (idA', _)) fb@(One (idB', _)))
+      | idA == idA' && idB == idB' = One (idA', 0)
       | otherwise = Two (go fa) (go fb)
     go (Two a b) = Two (go a) (go b)
 
@@ -109,12 +105,12 @@ explodeFish f' =
        in runExplode idA idB leftID rightID a b f'
   where
     fishIDs = inorderIDs f'
-    go _ (One _ _) = Nothing
-    go 4 (Two (One idA a) (One idB b)) = Just (idA, idB, a, b)
+    go _ (One _) = Nothing
+    go 4 (Two (One (idA, a)) (One (idB, b))) = Just (idA, idB, a, b)
     go depth (Two a b) = go (depth + 1) a <|> go (depth + 1) b
 
 magnitude :: Fish -> Int
-magnitude (One _ a) = a
+magnitude (One (_, a)) = a
 magnitude (Two a b) = 3 * magnitude a + 2 * magnitude b
 
 part1 :: Int
