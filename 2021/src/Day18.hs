@@ -21,7 +21,6 @@ import GHC.Stats (RTSStats (cumulative_par_balanced_copied_bytes))
 import Helper.Coord
 import Helper.Grid
 import Helper.TH
-import Helper.Tracers
 import Helper.Util
 import System.IO.Unsafe
 import Text.ParserCombinators.Parsec hiding ((<|>))
@@ -81,10 +80,9 @@ splitFish f' = case getSplitIds f' of
   where
     go uuid f@(One uuid' a)
       | uuid == uuid' =
-        traceShow ("splitting", f) $
-          Two
-            (mkFish (floor (fromIntegral a / 2.0)))
-            (mkFish (ceiling (fromIntegral a / 2.0)))
+        Two
+          (mkFish (floor (fromIntegral a / 2.0)))
+          (mkFish (ceiling (fromIntegral a / 2.0)))
       | otherwise = f
     go uuid (Two a b) = Two (go uuid a) (go uuid b)
 
@@ -119,12 +117,11 @@ explodeFish f' =
   let e = go 0 f'
       uuids = inorder f'
    in case e of
-        Nothing -> traceShow "nothing exploded" f'
+        Nothing -> f'
         Just (idA, idB, a, b) ->
-          traceShow ("something exploded:", a, b) $
-            let leftID = leftOf idA uuids
-                rightID = rightOf idB uuids
-             in runExplode idA idB leftID rightID a b f'
+          let leftID = leftOf idA uuids
+              rightID = rightOf idB uuids
+           in runExplode idA idB leftID rightID a b f'
   where
     go :: Int -> Fish -> Maybe (UUID, UUID, Int, Int)
     go _ (One _ _) = Nothing
@@ -151,12 +148,7 @@ two = uncurry Two . toTuple2 <$> (char '[' *> (mkFish <$> number <|> two) `sepBy
 part1 :: Int
 part1 = magnitude $ foldl1' (<>) (parseLinesWith two $(input 18))
 
---part1 = prettyFish $ foldl1' (<>) (parseLinesWith two $(exampleInputN 18 2))
-
---part1 = parseLinesWith two $(input 18)
---part1 = parseLinesWith two $(exampleInput 18)
-
 part2 :: Int
 part2 =
-  let xs = (parseLinesWith two $(input 18))
+  let xs = parseLinesWith two $(input 18)
    in L.maximum [magnitude (a <> b) | a <- xs, b <- xs, a /= b]
