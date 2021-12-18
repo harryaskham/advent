@@ -1,10 +1,8 @@
 module Day18 where
 
-import Data.Foldable (foldl1, maximum)
-import Data.List (elemIndex, (!!))
-import Data.List qualified as L
+import Data.Foldable (maximum)
+import Data.List (elemIndex)
 import Data.List.Extra (foldl1')
-import GHC.Float (fromRat'')
 import Helper.TH (input)
 import Helper.Util (number, parseLinesWith, toTuple2)
 import Safe (headMay)
@@ -71,15 +69,14 @@ splitFish :: Fish -> Fish
 splitFish f' =
   case headMay [fishID | (fishID, a) <- toList f', a >= 10] of
     Nothing -> f'
-    Just fishID -> mapID spl fishID f'
+    Just fishID -> mapID splitOne fishID f'
   where
     nextID = maximum (fst <$> f') + 1
-    spl :: Fish -> Fish
-    spl (One (_, a)) =
+    splitOne (One (_, a)) =
       Two
         (One (nextID, floor (fromIntegral a / 2.0)))
         (One (nextID + 1, ceiling (fromIntegral a / 2.0)))
-    spl fish@(Two _ _) = fish
+    splitOne fish@(Two _ _) = fish
 
 ixMod :: (Int -> Int) -> FishID -> [FishID] -> Maybe FishID
 ixMod ixF fishID fishIDs =
@@ -108,7 +105,7 @@ explodeFish f' =
           rightID = ixMod (+ 1) idB fishIDs
        in runExplode idA idB leftID rightID a b f'
   where
-    fishIDs = foldr (\(id, _) ids -> id : ids) [] f'
+    fishIDs = foldr (:) [] (fst <$> f')
     go _ (One _) = Nothing
     go 4 (Two (One (idA, a)) (One (idB, b))) = Just (idA, idB, a, b)
     go depth (Two a b) = go (depth + 1) a <|> go (depth + 1) b
@@ -121,4 +118,4 @@ part1 :: Int
 part1 = magnitude $ foldl1' (<>) fish
 
 part2 :: Int
-part2 = L.maximum [magnitude (a <> b) | a <- fish, b <- fish, a /= b]
+part2 = maximum [magnitude (a <> b) | a <- fish, b <- fish, a /= b]
