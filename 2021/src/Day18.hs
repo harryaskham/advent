@@ -26,7 +26,7 @@ nextFishId :: () -> UUID
 nextFishId () = UUID $ unsafePerformIO newUnique
 
 mkFish :: Int -> Fish
-mkFish a = One (nextFishId ()) a
+mkFish = One (nextFishId ())
 
 instance Semigroup Fish where
   a <> b = reduce (Two a b)
