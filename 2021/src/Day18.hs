@@ -11,25 +11,26 @@ import System.IO.Unsafe (unsafePerformIO)
 import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 import Text.Show (showsPrec)
 
-newtype UUID = UUID Unique deriving (Eq, Ord)
-
-instance Show UUID where
-  showsPrec p (UUID a) = showsPrec p (hashUnique a)
+type FishID = Integer
 
 data Fish
-  = One UUID Int
+  = One FishID Int
   | Two Fish Fish
   deriving (Eq, Ord, Show)
 
-nextFishId :: () -> UUID
-{-# NOINLINE nextFishId #-}
-nextFishId () = UUID $ unsafePerformIO newUnique
-
 mkFish :: Int -> Fish
-mkFish = One (nextFishId ())
+mkFish = One 0
 
 instance Semigroup Fish where
   a <> b = reduce (Two a b)
+
+setIDs :: [FishID] -> Fish -> (Fish, [FishID])
+setIDs (nextID : nextIDs) (One _ a) = (One nextID a, nextIDs)
+setIDs nextIDs (Two a b) =
+  let (a', nextIDs') = setIDs nextIDs a
+      (b', nextIDs'') = setIDs nextIDs' b
+   in (Two a' b', nextIDs'')
+setIDs [] _ = error "Not enough IDs provided"
 
 prettyFish :: Fish -> Text
 prettyFish (One _ a) = show a
@@ -50,47 +51,47 @@ reduce f =
   let f' = splitFish (fixExplode f)
    in if f == f' then f else reduce f'
 
-getSplitIds :: Fish -> [UUID]
+getSplitIds :: Fish -> [FishID]
 getSplitIds = go
   where
-    go (One uuid a)
-      | a >= 10 = [uuid]
+    go (One fishID a)
+      | a >= 10 = [fishID]
       | otherwise = []
     go (Two a b) = getSplitIds a ++ getSplitIds b
 
 splitFish :: Fish -> Fish
 splitFish f' = case getSplitIds f' of
   [] -> f'
-  (uuid : _) -> go uuid f'
+  (fishID : _) -> go fishID f'
   where
-    go uuid f@(One uuid' a)
-      | uuid == uuid' =
+    go fishID f@(One fishID' a)
+      | fishID == fishID' =
         Two
           (mkFish (floor (fromIntegral a / 2.0)))
           (mkFish (ceiling (fromIntegral a / 2.0)))
       | otherwise = f
-    go uuid (Two a b) = Two (go uuid a) (go uuid b)
+    go fishID (Two a b) = Two (go fishID a) (go fishID b)
 
-inorder :: Fish -> [UUID]
-inorder (One uuid _) = [uuid]
+inorder :: Fish -> [FishID]
+inorder (One fishID _) = [fishID]
 inorder (Two a b) = inorder a ++ inorder b
 
-leftOf :: UUID -> [UUID] -> Maybe UUID
-leftOf uuid uuids =
-  let (Just ix) = subtract 1 <$> elemIndex uuid uuids
-   in uuids !!? ix
+leftOf :: FishID -> [FishID] -> Maybe FishID
+leftOf fishID fishIDs =
+  let (Just ix) = subtract 1 <$> elemIndex fishID fishIDs
+   in fishIDs !!? ix
 
-rightOf :: UUID -> [UUID] -> Maybe UUID
-rightOf uuid uuids =
-  let (Just ix) = (+ 1) <$> elemIndex uuid uuids
-   in uuids !!? ix
+rightOf :: FishID -> [FishID] -> Maybe FishID
+rightOf fishID fishIDs =
+  let (Just ix) = (+ 1) <$> elemIndex fishID fishIDs
+   in fishIDs !!? ix
 
-runExplode :: UUID -> UUID -> Maybe UUID -> Maybe UUID -> Int -> Int -> Fish -> Fish
+runExplode :: FishID -> FishID -> Maybe FishID -> Maybe FishID -> Int -> Int -> Fish -> Fish
 runExplode idA idB leftID rightID a b = go
   where
-    go f@(One uuid x)
-      | Just uuid == leftID = One uuid (x + a)
-      | Just uuid == rightID = One uuid (x + b)
+    go f@(One fishID x)
+      | Just fishID == leftID = One fishID (x + a)
+      | Just fishID == rightID = One fishID (x + b)
       | otherwise = f
     go (Two fa@(One idA' _) fb@(One idB' _))
       | idA == idA' && idB == idB' = mkFish 0
@@ -100,15 +101,15 @@ runExplode idA idB leftID rightID a b = go
 explodeFish :: Fish -> Fish
 explodeFish f' =
   let e = go 0 f'
-      uuids = inorder f'
+      fishIDs = inorder f'
    in case e of
         Nothing -> f'
         Just (idA, idB, a, b) ->
-          let leftID = leftOf idA uuids
-              rightID = rightOf idB uuids
+          let leftID = leftOf idA fishIDs
+              rightID = rightOf idB fishIDs
            in runExplode idA idB leftID rightID a b f'
   where
-    go :: Int -> Fish -> Maybe (UUID, UUID, Int, Int)
+    go :: Int -> Fish -> Maybe (FishID, FishID, Int, Int)
     go _ (One _ _) = Nothing
     go 4 (Two (One idA a) (One idB b)) = Just (idA, idB, a, b)
     go depth (Two a b) =
@@ -127,10 +128,16 @@ magnitude (Two a b) = 3 * magnitude a + 2 * magnitude b
 two :: GenParser Char () Fish
 two = uncurry Two . toTuple2 <$> (char '[' *> (mkFish <$> number <|> two) `sepBy` char ',' <* char ']')
 
+fish :: [Fish]
+fish =
+  snd $
+    foldl'
+      (\(nextIDs, fs) f -> let (f', nextIDs') = setIDs nextIDs f in (nextIDs', f' : fs))
+      ([0 ..], [])
+      (parseLinesWith two $(input 18))
+
 part1 :: Int
-part1 = magnitude $ foldl1' (<>) (parseLinesWith two $(input 18))
+part1 = magnitude $ foldl1' (<>) fish
 
 part2 :: Int
-part2 =
-  let xs = parseLinesWith two $(input 18)
-   in L.maximum [magnitude (a <> b) | a <- xs, b <- xs, a /= b]
+part2 = L.maximum [magnitude (a <> b) | a <- fish, b <- fish, a /= b]
