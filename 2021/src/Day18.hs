@@ -1,29 +1,14 @@
 module Day18 where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
 import Data.List (elemIndex, (!!))
 import Data.List qualified as L
 import Data.List.Extra (foldl1')
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Semiring.Generic (gone)
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Unique
-import Data.Vector qualified as V
-import GHC.Stats (RTSStats (cumulative_par_balanced_copied_bytes))
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Util
-import System.IO.Unsafe
-import Text.ParserCombinators.Parsec hiding ((<|>))
+import Data.Unique (Unique, hashUnique, newUnique)
+import Helper.TH (input)
+import Helper.Util (number, parseLinesWith, toTuple2)
+import System.IO.Unsafe (unsafePerformIO)
+import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 import Text.Show (showsPrec)
 
 newtype UUID = UUID Unique deriving (Eq, Ord)
@@ -134,9 +119,6 @@ explodeFish f' =
             Nothing -> case e2 of
               Just _ -> e2
               Nothing -> Nothing
-
-getDepth (One _ _) = 0
-getDepth (Two a b) = 1 + max (getDepth a) (getDepth b)
 
 magnitude :: Fish -> Int
 magnitude (One _ a) = a
