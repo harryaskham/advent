@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Day18 where
 
 import Data.Foldable (foldl1)
@@ -10,13 +12,19 @@ import Text.ParserCombinators.Parsec (GenParser, char, sepBy)
 
 type FishID = Integer
 
-data Fish
-  = One FishID Int
+data Fish' a b
+  = One a b
   | Two Fish Fish
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Bifunctor, Bifoldable)
+
+type Fish = Fish' FishID Int
 
 instance Semigroup Fish where
   a <> b = reduce (Two a b)
+
+getID :: Fish -> Maybe FishID
+getID (One fishID _) = Just fishID
+getID (Two _ _) = Nothing
 
 two :: GenParser Char () Fish
 two = uncurry Two . toTuple2 <$> (char '[' *> (One 0 <$> number <|> two) `sepBy` char ',' <* char ']')
@@ -25,21 +33,17 @@ fish :: [Fish]
 fish =
   snd $
     foldr
-      (\f (nextIDs, fs) -> let (f', nextIDs') = setIDs nextIDs f in (nextIDs', f' : fs))
+      (\f (nextIDs, fs) -> second (: fs) (setIDs f nextIDs))
       ([0 ..], [])
       (parseLinesWith two $(input 18))
 
-setIDs :: [FishID] -> Fish -> (Fish, [FishID])
-setIDs (nextID : nextIDs) (One _ a) = (One nextID a, nextIDs)
-setIDs nextIDs (Two a b) =
-  let (a', nextIDs') = setIDs nextIDs a
-      (b', nextIDs'') = setIDs nextIDs' b
-   in (Two a' b', nextIDs'')
-setIDs [] _ = error "Not enough IDs provided"
-
-prettyFish :: Fish -> Text
-prettyFish (One _ a) = show a
-prettyFish (Two a b) = "[" <> prettyFish a <> "," <> prettyFish b <> "]"
+setIDs :: Fish -> [FishID] -> ([FishID], Fish)
+setIDs (One _ a) (nextID : nextIDs) = (nextIDs, One nextID a)
+setIDs (Two a b) fishIDs =
+  let (nextIDs', a') = setIDs a fishIDs
+      (nextIDs'', b') = setIDs b nextIDs'
+   in (nextIDs'', Two a' b')
+setIDs f [] = ([], f)
 
 fixExplode :: Fish -> Fish
 fixExplode f =
