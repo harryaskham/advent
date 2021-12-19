@@ -23,9 +23,6 @@ scanner =
     <$> (between (string "--- scanner ") (string " ---") number <* eol)
     <*> (many1 ((toTuple3 <$> number `sepBy1` char ',') <* eol) <* optional eol)
 
-parser :: GenParser Char () [Scanner]
-parser = many1 scanner <* eof
-
 reorient :: Scanner -> [Scanner]
 reorient (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- perms3]
   where
@@ -61,7 +58,7 @@ allPoints = L.nub . concatMap beacons
 
 normalizedScanners :: [(Scanner, (Int, Int, Int))]
 normalizedScanners =
-  let scanners = $(input 19) & parseWith parser
+  let scanners = $(input 19) & parseWith (many1 scanner <* eof)
    in addAll [(L.head scanners, (0, 0, 0))] (L.tail scanners)
 
 part1 :: Int
