@@ -87,7 +87,6 @@ common common-settings
                         -Wno-missing-home-modules
                         -Wno-name-shadowing
                         -Wno-type-defaults
-                        -Wno-incomplete-uni-patterns
 library
     import:             common-settings
     hs-source-dirs:     src

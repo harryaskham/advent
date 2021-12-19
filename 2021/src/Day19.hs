@@ -24,8 +24,8 @@ scanner =
     <$> (between (string "--- scanner ") (string " ---") number <* eol)
     <*> (many1 ((toV3 . toTuple3 <$> number `sepBy1` char ',') <* eol) <* optional eol)
 
-reorient :: Scanner -> [Scanner]
-reorient (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- permsV3]
+orientations :: Scanner -> [Scanner]
+orientations (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- permsV3]
   where
     transforms =
       foldl1 (.)
@@ -33,15 +33,15 @@ reorient (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms,
           (not . null)
           (powerset [id, over _x negate, over _y negate, over _z negate])
 
-overlap :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
-overlap (Scanner i bs) (Scanner _ bs0)
+reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
+reorient (Scanner i bs) (Scanner _ bs0)
   | diffCount >= 12 = Just (Scanner i ((-) <$> bs <*> pure maxDiff), maxDiff)
   | otherwise = Nothing
   where
     (maxDiff, diffCount) = maximumOn snd . M.toList $ countMap $ (-) <$> bs <*> bs0
 
-addOne :: ([(Scanner, V3 Int)], [Scanner]) -> ([(Scanner, V3 Int)], [Scanner])
-addOne (ss0, ss) =
+matchOne :: ([(Scanner, V3 Int)], [Scanner]) -> ([(Scanner, V3 Int)], [Scanner])
+matchOne (ss0, ss) =
   case firstMatch ss of
     Nothing -> (ss0, ss)
     Just (s, pos) -> ((s, pos) : ss0, filter ((/= scannerID s) . scannerID) ss)
@@ -49,16 +49,13 @@ addOne (ss0, ss) =
     firstMatch [] = Nothing
     firstMatch (s : ss) =
       headMay
-        (catMaybes [overlap s' s0 | s' <- reorient s, (s0, _) <- ss0])
+        (catMaybes [reorient s' s0 | s' <- orientations s, (s0, _) <- ss0])
         <|> firstMatch ss
-
-addAll :: [(Scanner, V3 Int)] -> [Scanner] -> [(Scanner, V3 Int)]
-addAll ss0 ss = fst . L.head $ dropWhile (not . null . snd) (iterate addOne (ss0, ss))
 
 normalizedScanners :: [(Scanner, V3 Int)]
 normalizedScanners =
-  let (s : ss) = $(input 19) & parseWith (many1 scanner <* eof)
-   in iterate addOne ([(s, V3 0 0 0)], ss)
+  let ss = $(input 19) & parseWith (many1 scanner <* eof)
+   in iterate matchOne ([(L.head ss, V3 0 0 0)], L.tail ss)
         & dropWhile (not . null . snd)
         & L.head
         & fst
