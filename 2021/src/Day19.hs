@@ -8,7 +8,7 @@ import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Helper.Coord (manhattan3)
 import Helper.TH (input)
-import Helper.Util (adjustWithDefault, countMap, eol, fromV3, nSameIn, number, parseWith, permsV3, powerset, toTuple3, toV3)
+import Helper.Util (eol, fromV3, nSameIn, number, parseWith, permsV3, powerset, toTuple3, toV3)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Safe (headMay)
 import Text.ParserCombinators.Parsec (GenParser, between, char, eof, many1, sepBy1, string)
