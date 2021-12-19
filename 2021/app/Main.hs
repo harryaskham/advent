@@ -32,8 +32,7 @@ import Test.BenchPress (benchMany)
 main :: IO ()
 --main = benchAllDays
 --main = benchOne (Day5.part1, Day5.part2)
---main = benchEachPart
-main = print Day19.part2
+main = benchEachPart
 
 benchOne :: Show a => a -> IO ()
 benchOne a = benchMany 1 [("One Thing", putTextLn (show a))]

@@ -108,6 +108,16 @@ thd4 (_, _, a, _) = a
 fth4 :: (a, b, c, d) -> d
 fth4 (_, _, _, a) = a
 
+perms3 :: [(Int, Int, Int) -> (Int, Int, Int)]
+perms3 =
+  [ \(x, y, z) -> (x, y, z),
+    \(x, y, z) -> (x, z, y),
+    \(x, y, z) -> (y, x, z),
+    \(x, y, z) -> (y, z, x),
+    \(x, y, z) -> (z, x, y),
+    \(x, y, z) -> (z, y, x)
+  ]
+
 -- Parser Combinator Utils
 
 eol :: GenParser Char () Char
