@@ -15,11 +15,6 @@ data Fish' a
   | Two (Fish' a) (Fish' a)
   deriving (Eq, Ord, Show, Functor, Foldable)
 
-instance Traversable Fish' where
-  traverse f t = case t of
-    One x -> One <$> f x
-    Two a b -> Two <$> traverse f a <*> traverse f b
-
 type Fish = Fish' (FishID, Int)
 
 mkFish :: Int -> Fish
@@ -105,7 +100,7 @@ explodeFish f' =
           rightID = ixMod (+ 1) idB fishIDs
        in runExplode idA idB leftID rightID a b f'
   where
-    fishIDs = foldr (:) [] (fst <$> f')
+    fishIDs = toList (fst <$> f')
     go _ (One _) = Nothing
     go 4 (Two (One (idA, a)) (One (idB, b))) = Just (idA, idB, a, b)
     go depth (Two a b) = go (depth + 1) a <|> go (depth + 1) b
