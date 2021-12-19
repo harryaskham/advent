@@ -35,10 +35,10 @@ orientations (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transfo
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
 reorient (Scanner i bs) (Scanner _ bs0)
-  | diffCount >= 12 = Just (Scanner i ((-) <$> bs <*> pure maxDiff), maxDiff)
+  | diffCount >= 12 = Just (Scanner i (subtract maxDiff <$> bs), maxDiff)
   | otherwise = Nothing
   where
-    (maxDiff, diffCount) = maximumOn snd . M.toList $ countMap $ (-) <$> bs <*> bs0
+    (maxDiff, diffCount) = maximumOn snd . M.toList . countMap $ (-) <$> bs <*> bs0
 
 matchOne :: ([(Scanner, V3 Int)], [Scanner]) -> ([(Scanner, V3 Int)], [Scanner])
 matchOne (ss0, ss) =
