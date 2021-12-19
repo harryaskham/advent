@@ -40,8 +40,8 @@ overlap (Scanner i bs) (Scanner _ bs0)
   where
     (maxDiff, diffCount) = maximumOn snd . M.toList $ countMap $ (-) <$> bs <*> bs0
 
-addOne :: [(Scanner, V3 Int)] -> [Scanner] -> ([(Scanner, V3 Int)], [Scanner])
-addOne ss0 ss =
+addOne :: ([(Scanner, V3 Int)], [Scanner]) -> ([(Scanner, V3 Int)], [Scanner])
+addOne (ss0, ss) =
   case firstMatch ss of
     Nothing -> (ss0, ss)
     Just (s, pos) -> ((s, pos) : ss0, filter ((/= scannerID s) . scannerID) ss)
@@ -53,13 +53,15 @@ addOne ss0 ss =
         <|> firstMatch ss
 
 addAll :: [(Scanner, V3 Int)] -> [Scanner] -> [(Scanner, V3 Int)]
-addAll scanners0 [] = scanners0
-addAll scanners0 scanners = uncurry addAll (addOne scanners0 scanners)
+addAll ss0 ss = fst . L.head $ dropWhile (not . null . snd) (iterate addOne (ss0, ss))
 
 normalizedScanners :: [(Scanner, V3 Int)]
 normalizedScanners =
-  let scanners = $(input 19) & parseWith (many1 scanner <* eof)
-   in addAll [(L.head scanners, V3 0 0 0)] (L.tail scanners)
+  let (s : ss) = $(input 19) & parseWith (many1 scanner <* eof)
+   in iterate addOne ([(s, V3 0 0 0)], ss)
+        & dropWhile (not . null . snd)
+        & L.head
+        & fst
 
 part1 :: Int
 part1 = length (L.nub . concatMap beacons $ (fst <$> normalizedScanners))
