@@ -25,7 +25,8 @@ orientations :: Scanner -> Set Scanner
 orientations (Scanner i bs) =
   S.fromList $ Scanner i <$> [t <$> bs | t <- transforms]
   where
-    negations = foldl1 (.) <$> filter (not . null) (powerset [id, over _x negate, over _y negate, over _z negate])
+    negations' = filter (not . null) (powerset [id, over _x negate, over _y negate, over _z negate])
+    negations = foldl1 (.) <$> negations'
     transforms = (.) <$> negations <*> permsV3
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
