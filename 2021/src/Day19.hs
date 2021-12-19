@@ -38,14 +38,13 @@ reorient (Scanner i bs) (Scanner _ bs0)
   where
     (maxDiff, diffCount) = maximumOn snd . M.toList . countMap $ (-) <$> bs <*> bs0
 
-merge (Scanner i bs) (Scanner _ bs') = Scanner i (L.nub $ bs ++ bs')
-
 matchOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
 matchOne ((s0, ps), ss) =
   case firstMatch ss of
     Nothing -> ((s0, ps), ss)
     Just (s, p) -> ((merge s0 s, p : ps), filter ((/= scannerID s) . scannerID) ss)
   where
+    merge (Scanner i bs) (Scanner _ bs') = Scanner i (L.nub $ bs ++ bs')
     firstMatch [] = Nothing
     firstMatch (s : ss) =
       headMay
