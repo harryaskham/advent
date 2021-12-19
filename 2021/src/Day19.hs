@@ -56,16 +56,13 @@ addAll :: [(Scanner, V3 Int)] -> [Scanner] -> [(Scanner, V3 Int)]
 addAll scanners0 [] = scanners0
 addAll scanners0 scanners = uncurry addAll (addOne scanners0 scanners)
 
-allPoints :: [Scanner] -> [V3 Int]
-allPoints = L.nub . concatMap beacons
-
 normalizedScanners :: [(Scanner, V3 Int)]
 normalizedScanners =
   let scanners = $(input 19) & parseWith (many1 scanner <* eof)
    in addAll [(L.head scanners, V3 0 0 0)] (L.tail scanners)
 
 part1 :: Int
-part1 = length (allPoints (fst <$> normalizedScanners))
+part1 = length (L.nub . concatMap beacons $ (fst <$> normalizedScanners))
 
 part2 :: Int
 part2 =
