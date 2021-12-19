@@ -206,14 +206,14 @@ pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
 -- Early terminating search for n items in a thing
 nSameIn :: Ord a => Int -> [a] -> Maybe a
-nSameIn n as = go M.empty as
+nSameIn n as = go (M.fromList [(c, 0) | c <- as]) as
   where
     go _ [] = Nothing
     go counts (a : as)
       | counts' M.! a == n = Just a
       | otherwise = go counts' as
       where
-        counts' = adjustWithDefault 0 (+ 1) a counts
+        counts' = M.alter (fmap (+ 1)) a counts
 
 -- How many xs match predicate p
 count :: (a -> Bool) -> [a] -> Int
