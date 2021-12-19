@@ -22,8 +22,7 @@ scanner =
     <*> (many1 (toV3 . toTuple3 <$> number `sepBy1` char ',' <* eol) <* optional eol)
 
 orientations :: Scanner -> Set Scanner
-orientations (Scanner i bs) =
-  S.fromList $ Scanner i <$> [t <$> bs | t <- transforms]
+orientations (Scanner i bs) = S.fromList $ Scanner i <$> [t <$> bs | t <- transforms]
   where
     negations' = filter (not . null) (powerset [id, over _x negate, over _y negate, over _z negate])
     negations = foldl1 (.) <$> negations'
@@ -31,20 +30,18 @@ orientations (Scanner i bs) =
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
 reorient (Scanner _ bs0) (Scanner i bs) =
-  case nSameIn 12 ((-) <$> bs <*> bs0) of
-    Just diff -> Just (Scanner i (subtract diff <$> bs), diff)
-    Nothing -> Nothing
+  (Scanner i . flip fmap bs . subtract &&& id)
+    <$> nSameIn 12 [a - b | a <- bs, b <- bs0]
 
 mergeOne :: ((Scanner, [V3 Int]), Map Int Scanner) -> ((Scanner, [V3 Int]), Map Int Scanner)
-mergeOne ((s0, ps), ss) =
-  let (s, p) = firstMatch (M.elems ss)
-   in ((merge s0 s, p : ps), M.delete (scannerID s) ss)
+mergeOne ((s0, ps), ss) = ((merge s0 s, p : ps), M.delete (scannerID s) ss)
   where
     merge (Scanner i bs) (Scanner _ bs') = Scanner i (L.nub $ bs ++ bs')
     firstMatch (s : ss) =
       case mapMaybe (reorient s0) (S.toList (orientations s)) of
         (m : _) -> m
         [] -> firstMatch ss
+    (s, p) = firstMatch (M.elems ss)
 
 normalizedScanners :: (Scanner, [V3 Int])
 normalizedScanners =
