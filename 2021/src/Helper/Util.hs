@@ -56,7 +56,7 @@ parseWith parser body =
 parseLinesWith :: GenParser Char () a -> String -> [a]
 parseLinesWith line = parseWith $ many1 (line <* eol) <* eof
 
--- Typeclass helpers
+-- Typeclass helpers / functional helpers
 
 infixl 5 <$$>
 
@@ -68,6 +68,13 @@ both f = bimap f f
 
 same :: Eq a => (a, a) -> Bool
 same = uncurry (==)
+
+iterateFix :: Eq a => (a -> a) -> a -> a
+iterateFix f a
+  | a == a' = a
+  | otherwise = iterateFix f a'
+  where
+    a' = f a
 
 -- A symmetrical split
 split :: Arrow a => a b c -> a (b, b) (c, c)
