@@ -1,4 +1,4 @@
-module Day19 where
+module Day19 (part1, part2) where
 
 import Control.Lens (over)
 import Data.Foldable (foldl1)
@@ -38,8 +38,8 @@ reorient (Scanner i bs) (Scanner _ bs0)
   where
     (maxDiff, diffCount) = maximumOn snd . M.toList . countMap $ (-) <$> bs <*> bs0
 
-matchOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
-matchOne ((s0, ps), ss) =
+mergeOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
+mergeOne ((s0, ps), ss) =
   case firstMatch ss of
     Nothing -> ((s0, ps), ss)
     Just (s, p) -> ((merge s0 s, p : ps), filter ((/= scannerID s) . scannerID) ss)
@@ -54,7 +54,7 @@ matchOne ((s0, ps), ss) =
 normalizedScanners :: (Scanner, [V3 Int])
 normalizedScanners =
   let ss = $(input 19) & parseWith (many1 scanner <* eof)
-   in iterate matchOne ((L.head ss, [V3 0 0 0]), L.tail ss)
+   in iterate mergeOne ((L.head ss, [V3 0 0 0]), L.tail ss)
         & dropWhile (not . null . snd)
         & L.head
         & fst
