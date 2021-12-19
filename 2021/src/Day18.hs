@@ -1,4 +1,4 @@
-module Day18 where
+module Day18 (part1, part2) where
 
 import Data.Foldable (maximum)
 import Data.List (elemIndex)

@@ -86,9 +86,9 @@ toTuple2 :: [a] -> (a, a)
 toTuple2 [a, b] = (a, b)
 toTuple2 xs = error $ show (length xs) <> "elements in toTuple2"
 
-toTuple3 :: [a] -> Maybe (a, a, a)
-toTuple3 [a, b, c] = Just (a, b, c)
-toTuple3 _ = Nothing
+toTuple3 :: [a] -> (a, a, a)
+toTuple3 [a, b, c] = (a, b, c)
+toTuple3 xs = error $ show (length xs) <> "elements in toTuple3"
 
 toList3 :: (a, a, a) -> [a]
 toList3 (a, b, c) = [a, b, c]
@@ -107,9 +107,6 @@ thd4 (_, _, a, _) = a
 
 fth4 :: (a, b, c, d) -> d
 fth4 (_, _, _, a) = a
-
-first3 :: (a -> d) -> (a, b, c) -> (d, b, c)
-first3 f (a, b, c) = (f a, b, c)
 
 -- Parser Combinator Utils
 
