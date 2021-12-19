@@ -8,7 +8,7 @@ import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Helper.Coord (manhattan3)
 import Helper.TH (input)
-import Helper.Util (countMap, eol, fromV3, number, parseWith, permsV3, powerset, toTuple3, toV3)
+import Helper.Util (adjustWithDefault, countMap, eol, fromV3, nSameIn, number, parseWith, permsV3, powerset, toTuple3, toV3)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Safe (headMay)
 import Text.ParserCombinators.Parsec (GenParser, between, char, eof, many1, sepBy1, string)
@@ -32,11 +32,10 @@ orientations (Scanner i bs) =
           (powerset [id, over _x negate, over _y negate, over _z negate])
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
-reorient (Scanner _ bs0) (Scanner i bs)
-  | diffCount >= 12 = Just (Scanner i (subtract maxDiff <$> bs), maxDiff)
-  | otherwise = Nothing
-  where
-    (maxDiff, diffCount) = maximumOn snd . M.toList . countMap $ (-) <$> bs <*> bs0
+reorient (Scanner _ bs0) (Scanner i bs) =
+  case nSameIn 12 ((-) <$> bs <*> bs0) of
+    Just diff -> Just (Scanner i (subtract diff <$> bs), diff)
+    Nothing -> Nothing
 
 mergeOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
 mergeOne ((s0, ps), ss) =
