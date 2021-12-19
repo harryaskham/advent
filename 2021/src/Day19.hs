@@ -40,12 +40,13 @@ reorient (Scanner _ bs0) (Scanner i bs) =
 mergeOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
 mergeOne ((s0, ps), ss) =
   let (s, p) = firstMatch ss
-   in traceShow (length ss) $ ((merge s0 s, p : ps), filter ((/= scannerID s) . scannerID) ss)
+   in ((merge s0 s, p : ps), filter ((/= scannerID s) . scannerID) ss)
   where
     merge (Scanner i bs) (Scanner _ bs') = Scanner i (L.nub $ bs ++ bs')
-    firstMatch (s : ss) = case (mapMaybe (reorient s0) (S.toList (orientations s))) of
-      (m : _) -> m
-      [] -> firstMatch ss
+    firstMatch (s : ss) =
+      case (mapMaybe (reorient s0) (S.toList (orientations s))) of
+        (m : _) -> m
+        [] -> firstMatch ss
 
 normalizedScanners :: (Scanner, [V3 Int])
 normalizedScanners =
