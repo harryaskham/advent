@@ -163,9 +163,10 @@ countMap :: Ord a => [a] -> M.Map a Int
 countMap xs = M.fromListWith (+) (zip xs (repeat 1))
 
 adjustWithDefault :: Ord k => a -> (a -> a) -> k -> M.Map k a -> M.Map k a
-adjustWithDefault def f k m = case M.lookup k m of
-  Nothing -> M.insert k (f def) m
-  Just a -> M.insert k (f a) m
+adjustWithDefault def f = M.alter f'
+  where
+    f' Nothing = Just def
+    f' (Just a) = Just (f a)
 
 adjustMany :: Ord k => (a -> a) -> [k] -> M.Map k a -> M.Map k a
 adjustMany f ks m = foldl' (flip (M.adjust f)) m ks

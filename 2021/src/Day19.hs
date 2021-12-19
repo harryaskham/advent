@@ -3,12 +3,11 @@ module Day19 (part1, part2) where
 import Control.Lens (over)
 import Data.Foldable (foldl1)
 import Data.List qualified as L
-import Data.List.Extra (maximumOn)
 import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Helper.Coord (manhattan3)
 import Helper.TH (input)
-import Helper.Util (adjustWithDefault, countMap, eol, fromV3, nSameIn, number, parseWith, permsV3, powerset, toTuple3, toV3)
+import Helper.Util (eol, fromV3, nSameIn, number, parseWith, permsV3, powerset, toTuple3, toV3)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Safe (headMay)
 import Text.ParserCombinators.Parsec (GenParser, between, char, eof, many1, sepBy1, string)
@@ -33,9 +32,8 @@ orientations (Scanner i bs) =
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
 reorient (Scanner _ bs0) (Scanner i bs) =
-  case nSameIn 12 ((-) <$> bs <*> bs0) of
-    Just diff -> Just (Scanner i (subtract diff <$> bs), diff)
-    Nothing -> Nothing
+  (\diff -> (Scanner i (subtract diff <$> bs), diff))
+    <$> nSameIn 12 [a - b | a <- bs, b <- bs0]
 
 mergeOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
 mergeOne ((s0, ps), ss) =
@@ -46,13 +44,11 @@ mergeOne ((s0, ps), ss) =
     merge (Scanner i bs) (Scanner _ bs') = Scanner i (L.nub $ bs ++ bs')
     firstMatch [] = Nothing
     firstMatch (s : ss) =
-      headMay
-        (mapMaybe (reorient s0) (S.toList (orientations s)))
-        <|> firstMatch ss
+      headMay (mapMaybe (reorient s0) (S.toList (orientations s))) <|> firstMatch ss
 
 normalizedScanners :: (Scanner, [V3 Int])
 normalizedScanners =
-  let ss = $(input 19) & parseWith (many1 scanner <* eof)
+  let ss = parseWith (many1 scanner <* eof) $(input 19)
    in iterate mergeOne ((L.head ss, [V3 0 0 0]), L.tail ss)
         & dropWhile (not . null . snd)
         & L.head
