@@ -1,5 +1,6 @@
 module Day19 (part1, part2) where
 
+import Control.Arrow ((***))
 import Control.Lens (over)
 import Data.Foldable (foldl1, foldr)
 import Data.List qualified as L
@@ -38,7 +39,7 @@ reorient (Scanner _ bs0) (Scanner i bs) =
 mergeMany :: ((Scanner, [V3 Int]), Map Int Scanner) -> ((Scanner, [V3 Int]), Map Int Scanner)
 mergeMany ((s0, ps), ss) =
   foldr
-    (\(s, p) -> bimap (bimap (<> s) (p:)) (M.delete (scannerID s)))
+    (\(s, p) -> ((<> s) *** (p :)) *** M.delete (scannerID s))
     ((s0, ps), ss)
     (matches (M.elems ss))
   where
@@ -50,12 +51,12 @@ mergeMany ((s0, ps), ss) =
 
 normalizedScanners :: (Scanner, [V3 Int])
 normalizedScanners =
-  let (s0 : ss) = parseWith (many1 scanner <* eof) $(input 19)
+  let ss = parseWith (many1 scanner <* eof) $(input 19)
    in fst . iterateFix mergeMany $
-        ((s0, [V3 0 0 0]), M.fromList [(scannerID s, s) | s <- ss])
+        ((L.head ss, [V3 0 0 0]), M.fromList [(scannerID s, s) | s <- L.tail ss])
 
 part1 :: Int
-part1 = S.size (beacons $ fst normalizedScanners)
+part1 = S.size . beacons . fst $ normalizedScanners
 
 part2 :: Int
 part2 =
