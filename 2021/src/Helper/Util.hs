@@ -130,7 +130,7 @@ perms3 =
 
 permsV3 :: [V3 a -> V3 a]
 permsV3 =
-  [ \p -> uncurry3 V3 (p ^. _x, p ^. _y, p ^. _z),
+  [ id,
     \p -> uncurry3 V3 (p ^. _x, p ^. _z, p ^. _y),
     \p -> uncurry3 V3 (p ^. _y, p ^. _x, p ^. _z),
     \p -> uncurry3 V3 (p ^. _y, p ^. _z, p ^. _x),
