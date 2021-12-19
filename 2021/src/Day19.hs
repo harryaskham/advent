@@ -32,7 +32,7 @@ orientations (Scanner i bs) =
           (powerset [id, over _x negate, over _y negate, over _z negate])
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
-reorient (Scanner i bs) (Scanner _ bs0)
+reorient (Scanner _ bs0) (Scanner i bs)
   | diffCount >= 12 = Just (Scanner i (subtract maxDiff <$> bs), maxDiff)
   | otherwise = Nothing
   where
@@ -48,7 +48,7 @@ mergeOne ((s0, ps), ss) =
     firstMatch [] = Nothing
     firstMatch (s : ss) =
       headMay
-        (catMaybes [reorient s' s0 | s' <- S.toList (orientations s)])
+        (mapMaybe (reorient s0) (S.toList (orientations s)))
         <|> firstMatch ss
 
 normalizedScanners :: (Scanner, [V3 Int])
