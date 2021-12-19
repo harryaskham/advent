@@ -46,21 +46,15 @@ mergeMany ((s0, ps), ss) = foldr mergeMatch ((s0, ps), ss) (matches (M.elems ss)
         (m : _) -> m : matches ss
         [] -> matches ss
 
-normalizedScanners :: (Scanner, [V3 Int])
-normalizedScanners =
+reducedScanner :: Scanner
+positions :: [V3 Int]
+(reducedScanner, positions) =
   let ss = parseWith (many1 scanner <* eof) $(input 19)
    in fst . iterateFix mergeMany $
         ((L.head ss, [V3 0 0 0]), M.fromList [(scannerID s, s) | s <- L.tail ss])
 
 part1 :: Int
-part1 = S.size . beacons . fst $ normalizedScanners
+part1 = S.size . beacons  $ reducedScanner
 
 part2 :: Int
-part2 =
-  L.maximum
-    [ manhattan3 (fromV3 a) (fromV3 b)
-      | let ps = snd normalizedScanners,
-        a <- ps,
-        b <- ps,
-        a /= b
-    ]
+part2 = L.maximum [ manhattan3 (fromV3 a) (fromV3 b) | a <- positions, b <- positions, a /= b]
