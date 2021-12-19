@@ -38,11 +38,9 @@ reorient (Scanner _ bs0) (Scanner i bs) =
 
 mergeMany :: ((Scanner, [V3 Int]), Map Int Scanner) -> ((Scanner, [V3 Int]), Map Int Scanner)
 mergeMany ((s0, ps), ss) =
-  foldr
-    (\(s, p) -> ((<> s) *** (p :)) *** M.delete (scannerID s))
-    ((s0, ps), ss)
-    (matches (M.elems ss))
+  foldr (uncurry mergeMatch) ((s0, ps), ss) (matches (M.elems ss))
   where
+    mergeMatch s p = ((<> s) *** (p :)) *** M.delete (scannerID s)
     matches [] = []
     matches (s : ss) =
       case mapMaybe (reorient s0) (S.toList (orientations s)) of
