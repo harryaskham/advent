@@ -1,8 +1,7 @@
 module Day19 (part1, part2) where
 
 import Control.Lens (over)
-import Data.Foldable (foldr)
-import Data.Foldable (foldl1)
+import Data.Foldable (foldl1, foldr)
 import Data.List qualified as L
 import Data.List.Extra (maximumOn)
 import Data.Map.Strict qualified as M
@@ -43,6 +42,7 @@ mergeMany ((s0, ps), ss) =
     ((s0, ps), ss)
     (matches (M.elems ss))
   where
+    matches [] = []
     matches (s : ss) =
       case mapMaybe (reorient s0) (S.toList (orientations s)) of
         (m : _) -> m : matches ss
