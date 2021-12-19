@@ -8,7 +8,7 @@ import Data.Map.Strict qualified as M
 import Data.Tuple.Extra (first3, second3, third3)
 import Helper.Coord (manhattan3)
 import Helper.TH (input)
-import Helper.Util (countMap, eol, number, parseWith, perms3, powerset, toList3, toTuple3)
+import Helper.Util (countMap, eol, number, parseWith, perms3, powerset, toTuple3)
 import Safe (headMay)
 import Text.ParserCombinators.Parsec (GenParser, between, char, eof, many1, sepBy1, string)
 
@@ -19,54 +19,46 @@ data Scanner = Scanner
   deriving (Eq, Ord, Show)
 
 scanner :: GenParser Char () Scanner
-scanner = do
-  sID <- between (string "--- scanner ") (string " ---") number
-  eol
-  beacons <- many1 ((toTuple3 <$> number `sepBy1` char ',') <* eol)
-  optional eol
-  return $ Scanner sID beacons
+scanner =
+  Scanner
+    <$> (between (string "--- scanner ") (string " ---") number <* eol)
+    <*> (many1 ((toTuple3 <$> number `sepBy1` char ',') <* eol) <* optional eol)
 
 parser :: GenParser Char () [Scanner]
 parser = many1 scanner <* eof
 
-vary :: Scanner -> [Scanner]
-vary (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- perms3]
+reorient :: Scanner -> [Scanner]
+reorient (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- perms3]
   where
     transforms =
       foldl1 (.)
-        <$> filter
-          (not . null)
-          (powerset [id, first3 negate, second3 negate, third3 negate])
+        <$> filter (not . null) (powerset [id, first3 negate, second3 negate, third3 negate])
 
 overlap :: Scanner -> Scanner -> Maybe (Scanner, (Int, Int, Int))
 overlap (Scanner i bs) (Scanner _ bs0)
-  | diffCount >= 12 =
-    Just (Scanner i (sub3 <$> bs <*> pure maxDiff), maxDiff)
+  | diffCount >= 12 = Just (Scanner i (sub3 <$> bs <*> pure maxDiff), maxDiff)
   | otherwise = Nothing
   where
     sub3 (x, y, z) (x', y', z') = (x - x', y - y', z - z')
     (maxDiff, diffCount) = maximumOn snd . M.toList $ countMap $ sub3 <$> bs <*> bs0
 
 addOne :: [(Scanner, (Int, Int, Int))] -> [Scanner] -> ([(Scanner, (Int, Int, Int))], [Scanner])
-addOne zeroScanners scanners =
+addOne scanners0 scanners =
   case go scanners of
-    Nothing -> (zeroScanners, scanners)
-    Just (s@(Scanner i _), pos) ->
-      ((s, pos) : zeroScanners, filter ((/= i) . scannerID) scanners)
+    Nothing -> (scanners0, scanners)
+    Just (s, pos) -> ((s, pos) : scanners0, filter ((/= scannerID s) . scannerID) scanners)
   where
     go [] = Nothing
-    go (scanner : scanners)
-      | null overlaps = go scanners
-      | otherwise = headMay overlaps
-      where
-        overlaps = catMaybes [overlap s s0 | s <- vary scanner, (s0, _) <- zeroScanners]
+    go (scanner : scanners) =
+      headMay (catMaybes [overlap s s0 | s <- reorient scanner, (s0, _) <- scanners0])
+        <|> go scanners
 
 addAll :: [(Scanner, (Int, Int, Int))] -> [Scanner] -> [(Scanner, (Int, Int, Int))]
-addAll zeroScanners [] = zeroScanners
-addAll zeroScanners scanners = uncurry addAll (addOne zeroScanners scanners)
+addAll scanners0 [] = scanners0
+addAll scanners0 scanners = uncurry addAll (addOne scanners0 scanners)
 
 allPoints :: [Scanner] -> [(Int, Int, Int)]
-allPoints scanners = L.nub $ foldl' (\bss (Scanner _ bs) -> bss ++ bs) [] scanners
+allPoints = L.nub . concatMap beacons
 
 normalizedScanners :: [(Scanner, (Int, Int, Int))]
 normalizedScanners =
