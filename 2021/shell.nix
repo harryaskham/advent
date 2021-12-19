@@ -5,8 +5,8 @@ let
   inherit (nixpkgs) pkgs;
 
   f = { mkDerivation, array, base, benchpress, bimap, containers
-      , extra, file-embed, fin, hs-functors, HUnit, lib, MissingH, mod
-      , monad-memo, mtl, parsec, pqueue, QuickCheck, relude, safe
+      , extra, file-embed, fin, hs-functors, HUnit, lib, linear, MissingH
+      , mod, monad-memo, mtl, parsec, pqueue, QuickCheck, relude, safe
       , semirings, template-haskell, text, utility-ht, vector
       }:
       mkDerivation {
@@ -17,17 +17,17 @@ let
         isExecutable = true;
         libraryHaskellDepends = [
           array base benchpress bimap containers extra file-embed fin
-          hs-functors MissingH mod monad-memo mtl parsec pqueue relude safe
-          semirings template-haskell text utility-ht vector
+          hs-functors linear MissingH mod monad-memo mtl parsec pqueue relude
+          safe semirings template-haskell text utility-ht vector
         ];
         executableHaskellDepends = [
           array base benchpress bimap containers extra file-embed fin
-          hs-functors MissingH mod monad-memo mtl parsec pqueue relude safe
-          semirings template-haskell text utility-ht vector
+          hs-functors linear MissingH mod monad-memo mtl parsec pqueue relude
+          safe semirings template-haskell text utility-ht vector
         ];
         testHaskellDepends = [
           array base benchpress bimap containers extra file-embed fin
-          hs-functors HUnit MissingH mod monad-memo mtl parsec pqueue
+          hs-functors HUnit linear MissingH mod monad-memo mtl parsec pqueue
           QuickCheck relude safe semirings template-haskell text utility-ht
           vector
         ];
