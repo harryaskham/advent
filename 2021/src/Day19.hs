@@ -19,17 +19,14 @@ scanner :: GenParser Char () Scanner
 scanner =
   Scanner
     <$> (between (string "--- scanner ") (string " ---") number <* eol)
-    <*> (many1 ((toV3 . toTuple3 <$> number `sepBy1` char ',') <* eol) <* optional eol)
+    <*> (many1 (toV3 . toTuple3 <$> number `sepBy1` char ',' <* eol) <* optional eol)
 
 orientations :: Scanner -> Set Scanner
 orientations (Scanner i bs) =
-  S.fromList $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- permsV3]
+  S.fromList $ Scanner i <$> [t <$> bs | t <- transforms]
   where
-    transforms =
-      foldl1 (.)
-        <$> filter
-          (not . null)
-          (powerset [id, over _x negate, over _y negate, over _z negate])
+    negations = foldl1 (.) <$> filter (not . null) (powerset [id, over _x negate, over _y negate, over _z negate])
+    transforms = (.) <$> negations <*> permsV3
 
 reorient :: Scanner -> Scanner -> Maybe (Scanner, V3 Int)
 reorient (Scanner _ bs0) (Scanner i bs) =
@@ -37,21 +34,21 @@ reorient (Scanner _ bs0) (Scanner i bs) =
     Just diff -> Just (Scanner i (subtract diff <$> bs), diff)
     Nothing -> Nothing
 
-mergeOne :: ((Scanner, [V3 Int]), [Scanner]) -> ((Scanner, [V3 Int]), [Scanner])
+mergeOne :: ((Scanner, [V3 Int]), Map Int Scanner) -> ((Scanner, [V3 Int]), Map Int Scanner)
 mergeOne ((s0, ps), ss) =
-  let (s, p) = firstMatch ss
-   in ((merge s0 s, p : ps), filter ((/= scannerID s) . scannerID) ss)
+  let (s, p) = firstMatch (M.elems ss)
+   in ((merge s0 s, p : ps), M.delete (scannerID s) ss)
   where
     merge (Scanner i bs) (Scanner _ bs') = Scanner i (L.nub $ bs ++ bs')
     firstMatch (s : ss) =
-      case (mapMaybe (reorient s0) (S.toList (orientations s))) of
+      case mapMaybe (reorient s0) (S.toList (orientations s)) of
         (m : _) -> m
         [] -> firstMatch ss
 
 normalizedScanners :: (Scanner, [V3 Int])
 normalizedScanners =
   let ss = $(input 19) & parseWith (many1 scanner <* eof)
-   in iterate mergeOne ((L.head ss, [V3 0 0 0]), L.tail ss)
+   in iterate mergeOne ((L.head ss, [V3 0 0 0]), M.fromList [(scannerID s, s) | s <- L.tail ss])
         & dropWhile (not . null . snd)
         & L.head
         & fst
