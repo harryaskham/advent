@@ -38,7 +38,7 @@ reorient (Scanner _ bs0) (Scanner i bs) =
 mergeMany :: ((Scanner, [V3 Int]), Map Int Scanner) -> ((Scanner, [V3 Int]), Map Int Scanner)
 mergeMany ((s0, ps), ss) =
   foldl'
-    (\((s0, ps), ss) (s, p) -> ((s0 <> s, p : ps), M.delete (scannerID s) ss))
+    (flip \(s, p) -> bimap (bimap (<> s) (p:)) (M.delete (scannerID s)))
     ((s0, ps), ss)
     (matches (M.elems ss))
   where
