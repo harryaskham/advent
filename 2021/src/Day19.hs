@@ -1,6 +1,7 @@
 module Day19 (part1, part2) where
 
 import Control.Lens (over)
+import Data.Foldable (foldr)
 import Data.Foldable (foldl1)
 import Data.List qualified as L
 import Data.List.Extra (maximumOn)
@@ -37,12 +38,11 @@ reorient (Scanner _ bs0) (Scanner i bs) =
 
 mergeMany :: ((Scanner, [V3 Int]), Map Int Scanner) -> ((Scanner, [V3 Int]), Map Int Scanner)
 mergeMany ((s0, ps), ss) =
-  foldl'
-    (flip \(s, p) -> bimap (bimap (<> s) (p:)) (M.delete (scannerID s)))
+  foldr
+    (\(s, p) -> bimap (bimap (<> s) (p:)) (M.delete (scannerID s)))
     ((s0, ps), ss)
     (matches (M.elems ss))
   where
-    matches [] = []
     matches (s : ss) =
       case mapMaybe (reorient s0) (S.toList (orientations s)) of
         (m : _) -> m : matches ss
