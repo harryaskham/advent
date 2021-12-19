@@ -1,6 +1,7 @@
 module Helper.Util where
 
 import Control.Arrow (Arrow ((***)))
+import Control.Lens
 import Control.Monad (filterM)
 import Data.List ((!!))
 import Data.Map.Strict (Map)
@@ -12,7 +13,9 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
+import Data.Tuple.HT (uncurry3)
 import Helper.Bits (bitsToInt)
+import Linear.V3
 import Relude.Unsafe (read)
 import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, oneOf, parse, sepBy)
 
@@ -117,6 +120,22 @@ perms3 =
     \(x, y, z) -> (z, x, y),
     \(x, y, z) -> (z, y, x)
   ]
+
+permsV3 :: [V3 a -> V3 a]
+permsV3 =
+  [ \p -> uncurry3 V3 (p ^. _x, p ^. _y, p ^. _z),
+    \p -> uncurry3 V3 (p ^. _x, p ^. _z, p ^. _y),
+    \p -> uncurry3 V3 (p ^. _y, p ^. _x, p ^. _z),
+    \p -> uncurry3 V3 (p ^. _y, p ^. _z, p ^. _x),
+    \p -> uncurry3 V3 (p ^. _z, p ^. _x, p ^. _y),
+    \p -> uncurry3 V3 (p ^. _z, p ^. _y, p ^. _x)
+  ]
+
+fromV3 :: V3 a -> (a, a, a)
+fromV3 p = (p ^. _x, p ^. _y, p ^. _z)
+
+toV3 :: (a, a, a) -> V3 a
+toV3 = uncurry3 V3
 
 -- Parser Combinator Utils
 

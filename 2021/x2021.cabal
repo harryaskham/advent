@@ -29,7 +29,8 @@ common common-settings
                         fin,
                         MissingH,
                         safe,
-                        linear
+                        linear,
+                        lens
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
