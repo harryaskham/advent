@@ -1,7 +1,7 @@
 module Helper.Util where
 
 import Control.Arrow (Arrow ((***)))
-import Control.Lens
+import Control.Lens ((^.))
 import Control.Monad (filterM)
 import Data.List ((!!))
 import Data.Map.Strict (Map)
@@ -15,7 +15,7 @@ import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
 import Data.Tuple.HT (uncurry3)
 import Helper.Bits (bitsToInt)
-import Linear.V3
+import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe (read)
 import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, oneOf, parse, sepBy)
 
