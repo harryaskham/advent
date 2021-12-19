@@ -1,7 +1,6 @@
 module Day19 where
 
 import Data.Foldable (foldl1)
-import Data.List ((!!))
 import Data.List qualified as L
 import Data.List.Extra (maximumOn)
 import Data.Map.Strict qualified as M
