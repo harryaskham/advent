@@ -9,9 +9,14 @@ import Data.Tuple.Extra (first3, second3, third3)
 import Helper.Coord (manhattan3)
 import Helper.TH (input)
 import Helper.Util (countMap, eol, number, parseWith, perms3, powerset, toList3, toTuple3)
+import Safe (headMay)
 import Text.ParserCombinators.Parsec (GenParser, between, char, eof, many1, sepBy1, string)
 
-data Scanner = Scanner Int [(Int, Int, Int)] deriving (Eq, Ord, Show)
+data Scanner = Scanner
+  { scannerID :: Int,
+    beacons :: [(Int, Int, Int)]
+  }
+  deriving (Eq, Ord, Show)
 
 scanner :: GenParser Char () Scanner
 scanner = do
@@ -34,7 +39,7 @@ vary (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <
           (powerset [id, first3 negate, second3 negate, third3 negate])
 
 overlap :: Scanner -> Scanner -> Maybe (Scanner, (Int, Int, Int))
-overlap s@(Scanner i bs) s0@(Scanner _ bs0)
+overlap (Scanner i bs) (Scanner _ bs0)
   | diffCount >= 12 =
     Just (Scanner i (sub3 <$> bs <*> pure maxDiff), maxDiff)
   | otherwise = Nothing
@@ -42,17 +47,17 @@ overlap s@(Scanner i bs) s0@(Scanner _ bs0)
     sub3 (x, y, z) (x', y', z') = (x - x', y - y', z - z')
     (maxDiff, diffCount) = maximumOn snd . M.toList $ countMap $ sub3 <$> bs <*> bs0
 
-getID :: Scanner -> Int
-getID (Scanner i _) = i
-
 addOne :: [(Scanner, (Int, Int, Int))] -> [Scanner] -> ([(Scanner, (Int, Int, Int))], [Scanner])
 addOne zeroScanners scanners =
-  let (s@(Scanner i _), pos) = go scanners
-   in ((s, pos) : zeroScanners, filter ((/= i) . getID) scanners)
+  case go scanners of
+    Nothing -> (zeroScanners, scanners)
+    Just (s@(Scanner i _), pos) ->
+      ((s, pos) : zeroScanners, filter ((/= i) . scannerID) scanners)
   where
+    go [] = Nothing
     go (scanner : scanners)
       | null overlaps = go scanners
-      | otherwise = L.head overlaps
+      | otherwise = headMay overlaps
       where
         overlaps = catMaybes [overlap s s0 | s <- vary scanner, (s0, _) <- zeroScanners]
 
@@ -65,8 +70,8 @@ allPoints scanners = L.nub $ foldl' (\bss (Scanner _ bs) -> bss ++ bs) [] scanne
 
 normalizedScanners :: [(Scanner, (Int, Int, Int))]
 normalizedScanners =
-  let (s0 : scanners) = $(input 19) & parseWith parser
-   in addAll [(s0, (0, 0, 0))] scanners
+  let scanners = $(input 19) & parseWith parser
+   in addAll [(L.head scanners, (0, 0, 0))] (L.tail scanners)
 
 part1 :: Int
 part1 = length (allPoints (fst <$> normalizedScanners))
