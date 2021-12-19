@@ -213,7 +213,7 @@ pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
 -- Early terminating search for n items in a thing
 nSameIn :: Ord a => Int -> [a] -> Maybe a
-nSameIn n as = go M.empty as
+nSameIn n = go M.empty
   where
     go _ [] = Nothing
     go counts (a : as)
