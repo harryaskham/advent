@@ -5,50 +5,24 @@ import Data.List ((!!))
 import Data.List qualified as L
 import Data.List.Extra (maximumOn)
 import Data.Map.Strict qualified as M
-import Data.Mod ()
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read ()
 import Data.Tuple.Extra (first3, second3, third3)
-import Data.Vector qualified as V
 import Helper.Coord (manhattan3)
-import Helper.Grid ()
 import Helper.TH (input)
-import Helper.Tracers (traceShowF)
-import Helper.Util
-  ( countMap,
-    eol,
-    number,
-    parseWith,
-    perms3,
-    powerset,
-    toList3,
-    toTuple3,
-  )
-import Text.ParserCombinators.Parsec
-  ( GenParser,
-    char,
-    eof,
-    many1,
-    sepBy1,
-    string,
-  )
+import Helper.Util (countMap, eol, number, parseWith, perms3, powerset, toList3, toTuple3)
+import Text.ParserCombinators.Parsec (GenParser, between, char, eof, many1, sepBy1, string)
 
 data Scanner = Scanner Int [(Int, Int, Int)] deriving (Eq, Ord, Show)
 
+scanner :: GenParser Char () Scanner
+scanner = do
+  sID <- between (string "--- scanner ") (string " ---") number
+  eol
+  beacons <- many1 ((toTuple3 <$> number `sepBy1` char ',') <* eol)
+  optional eol
+  return $ Scanner sID beacons
+
 parser :: GenParser Char () [Scanner]
 parser = many1 scanner <* eof
-  where
-    scanner = do
-      string "--- scanner "
-      sID <- number
-      string " ---"
-      eol
-      beacons <- many1 ((toTuple3 <$> number `sepBy1` char ',') <* eol)
-      optional eol
-      return $ Scanner sID beacons
 
 vary :: Scanner -> [Scanner]
 vary (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <- perms3]
@@ -59,19 +33,14 @@ vary (Scanner i bs) = L.nub $ Scanner i <$> [t . p <$> bs | t <- transforms, p <
           (not . null)
           (powerset [id, first3 negate, second3 negate, third3 negate])
 
--- If this scanner overlaps with a zero oriented scanner, then keep its orientation, and shift its reference frame to zero
 overlap :: Scanner -> Scanner -> Maybe (Scanner, (Int, Int, Int))
 overlap s@(Scanner i bs) s0@(Scanner _ bs0)
   | diffCount >= 12 =
-    traceShow ("found overlap", maxDiff) $
-      Just (Scanner i (sub3 <$> bs <*> pure maxDiff), maxDiff)
+    Just (Scanner i (sub3 <$> bs <*> pure maxDiff), maxDiff)
   | otherwise = Nothing
   where
     sub3 (x, y, z) (x', y', z') = (x - x', y - y', z - z')
     (maxDiff, diffCount) = maximumOn snd . M.toList $ countMap $ sub3 <$> bs <*> bs0
-
--- start with zero
--- find one that overlaps and call s0 (0,0)
 
 getID :: Scanner -> Int
 getID (Scanner i _) = i
@@ -83,7 +52,7 @@ addOne zeroScanners scanners =
   where
     go (scanner : scanners)
       | null overlaps = go scanners
-      | otherwise = overlaps !! 0
+      | otherwise = L.head overlaps
       where
         overlaps = catMaybes [overlap s s0 | s <- vary scanner, (s0, _) <- zeroScanners]
 
