@@ -35,8 +35,8 @@ enhance def alg grid =
 solve :: Int -> Int
 solve n =
   let (alg, grid) = parseWith parser $(input 20)
-      enhances = [enhance def alg | def <- cycle [Cell False, Cell True]]
-   in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n enhances)
+      cyc = if alg V.! 0 == Cell False then repeat (Cell False) else cycle [Cell False, Cell True]
+   in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n [enhance def alg | def <- cyc])
 
 part1 :: Int
 part1 = solve 2
