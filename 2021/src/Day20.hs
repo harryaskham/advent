@@ -66,8 +66,7 @@ part1 :: Int
 part1 =
   let (alg, grid) = parseWith parser $(input 20)
       enhances = [enhance def alg | def <- cycle [False, True]]
-   in --let (alg, grid) = parseWith parser $(exampleInput 20)
-      traceTextLn (pretty grid) $ M.size . M.filter (== True) . traceTextF pretty $ foldl' (&) grid (take 50 enhances)
+   in traceTextLn (pretty grid) $ M.size . M.filter (== True) . traceTextF pretty $ foldl' (&) grid (take 50 enhances)
 
 part2 :: Text
 part2 = "Part 2"
