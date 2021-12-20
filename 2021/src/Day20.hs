@@ -24,7 +24,7 @@ parser =
 
 enhance :: Cell -> Vector Cell -> Grid Cell -> Grid Cell
 enhance def alg grid =
-  M.fromList [((x, y), algChar x y) | x <- [x0 - 2 .. x1 + 2], y <- [y0 - 2 .. y1 + 2]]
+  M.fromList [((x, y), algChar x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
   where
     ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
     algChar x y =
