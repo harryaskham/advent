@@ -1,7 +1,6 @@
 module Day20 (part1, part2) where
 
 import Data.Bimap qualified as BM
-import Data.List ((!!))
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Vector (Vector)
