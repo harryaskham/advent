@@ -22,14 +22,15 @@ parser =
     <$> (V.fromList <$> many1 (fromChar <$> oneOf ".#") <* (eol >> eol))
     <*> (readGrid . unlines <$> many1 (T.pack <$> (many1 (oneOf ".#") <* eol)) <* eof)
 
+nextCell :: Vector Cell -> Cell -> Grid Cell -> Int -> Int -> Cell
+nextCell alg def grid x y =
+  (alg V.!) . fromIntegral . bitsToInt . concat $
+    [[uncell $ M.findWithDefault def (x', y') grid | x' <- [x - 1 .. x + 1]] | y' <- [y - 1 .. y + 1]]
+
 enhance :: Vector Cell -> Cell -> Grid Cell -> Grid Cell
 enhance alg def grid =
-  M.fromList [((x, y), algChar x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
-  where
-    ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
-    algChar x y =
-      (alg V.!) . fromIntegral . bitsToInt . fmap uncell . concat $
-        [[M.findWithDefault def (x', y') grid | x' <- [x -1 .. x + 1]] | y' <- [y -1 .. y + 1]]
+  let ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
+   in M.fromList [((x, y), nextCell alg def grid x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
 
 solve :: Int -> Int
 solve n =
