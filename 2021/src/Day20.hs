@@ -2,7 +2,6 @@ module Day20 (part1, part2) where
 
 import Data.Bimap qualified as BM
 import Data.Bits.Bitwise (fromListBE)
-import Data.Foldable (foldl1, foldr1)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Vector (Vector)
