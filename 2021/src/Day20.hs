@@ -27,8 +27,7 @@ enhance :: Cell -> Vector Cell -> Grid Cell -> Grid Cell
 enhance def alg grid =
   M.fromList [((x, y), algChar x y) | x <- [x0 - 2 .. x1 + 2], y <- [y0 - 2 .. y1 + 2]]
   where
-    (x0, y0) = minXY grid
-    (x1, y1) = maxXY grid
+    ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
     algChar x y =
       (alg V.!) . fromIntegral . bitsToInt . fmap uncell . concat $
         [[M.findWithDefault def (x', y') grid | x' <- [x -1 .. x + 1]] | y' <- [y -1 .. y + 1]]
