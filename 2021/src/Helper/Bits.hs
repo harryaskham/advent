@@ -3,6 +3,8 @@
 
 module Helper.Bits where
 
+import Data.Array.BitArray (BitArray)
+import Data.Array.BitArray qualified as BA
 import Data.Bits
   ( Bits
       ( bit,
@@ -100,3 +102,8 @@ hexToBin 'D' = "1101"
 hexToBin 'E' = "1110"
 hexToBin 'F' = "1111"
 hexToBin x = error ("Invalid hex: " <> show x)
+
+bitArrayToInt :: BitArray Int -> Int
+bitArrayToInt ba =
+  let (_, l) = BA.bounds ba
+   in sum [2 ^ (l - i) | (i, b) <- BA.assocs ba, b]

@@ -2,18 +2,21 @@
 
 * Running
 - To run with Cabal, ~cabal run x2021~
-- To run with Nix manually, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2021~
-- To run with Nix automatically, ~cabal --enable-nix run x2021~
-- For GHCi, ~cabal v2-repl~ or ~cabal --enable-nix v2-repl~
+- REPL with ~cabal v2-repl~
+- Or, inside a ~nix-shell~:
+  - Run with e.g. ~cabal --enable-nix run x2021~
+  - REPL with ~cabal --enable-nix v2-repl~
+- To build and run with Nix manually, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2021~
 
 * Testing
 - Tests are set up to validate the results of each day against example input and true input.
 - ~cabal test~ will run the contents of ~test/TestSuite.hs~
-- Running with nix manually above will run both the tests and the project, by default
 
 * Adding New Modules
 - For every new module added, ~x2021.cabal~ needs updating.
 - We also need to run ~gen-hie . > hie.yaml~ for HLS to pick the new modules up.
+- Finally, to have Nix pick up new modules, we need:
+  - ~cabal2nix . > default.nix && ~cabal2nix --shell ./. >shell.nix~
 
 * Profiling
 Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~

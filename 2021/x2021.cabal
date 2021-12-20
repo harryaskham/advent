@@ -30,7 +30,8 @@ common common-settings
                         MissingH,
                         safe,
                         linear,
-                        lens
+                        lens,
+                        bitwise
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),

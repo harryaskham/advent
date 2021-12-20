@@ -1,11 +1,11 @@
 module Day20 (part1, part2) where
 
 import Data.Bimap qualified as BM
+import Data.Bits.Bitwise (fromListBE)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Vector (Vector)
 import Data.Vector qualified as V
-import Helper.Bits (bitsToInt)
 import Helper.Grid (Grid, GridCell (charMap, fromChar), maxXY, minXY, readGrid)
 import Helper.TH (input)
 import Helper.Util (eol, parseWith)
@@ -24,7 +24,7 @@ parser =
 
 nextCell :: Vector Cell -> Cell -> Grid Cell -> Int -> Int -> Cell
 nextCell alg def grid x y =
-  (alg V.!) . fromIntegral . bitsToInt . concat $
+  (alg V.!) . fromListBE . concat $
     [[uncell $ M.findWithDefault def (x', y') grid | x' <- [x - 1 .. x + 1]] | y' <- [y - 1 .. y + 1]]
 
 enhance :: Vector Cell -> Cell -> Grid Cell -> Grid Cell
