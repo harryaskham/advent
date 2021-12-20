@@ -22,8 +22,8 @@ parser =
     <$> (V.fromList <$> many1 (fromChar <$> oneOf ".#") <* (eol >> eol))
     <*> (readGrid . unlines <$> many1 (T.pack <$> (many1 (oneOf ".#") <* eol)) <* eof)
 
-enhance :: Cell -> Vector Cell -> Grid Cell -> Grid Cell
-enhance def alg grid =
+enhance :: Vector Cell -> Cell -> Grid Cell -> Grid Cell
+enhance alg def grid =
   M.fromList [((x, y), algChar x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
   where
     ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
@@ -34,11 +34,12 @@ enhance def alg grid =
 solve :: Int -> Int
 solve n =
   let (alg, grid) = parseWith parser $(input 20)
-      cyc = case (V.head alg, V.last alg) of
-        (Cell False, _) -> repeat (Cell False)
-        (Cell True, Cell True) -> repeat (Cell True)
-        (Cell True, Cell False) -> cycle [Cell False, Cell True]
-   in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n [enhance def alg | def <- cyc])
+      enhances =
+        enhance alg <$> case (V.head alg, V.last alg) of
+          (Cell False, _) -> repeat (Cell False)
+          (Cell True, Cell True) -> repeat (Cell True)
+          (Cell True, Cell False) -> cycle [Cell False, Cell True]
+   in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n enhances)
 
 part1 :: Int
 part1 = solve 2
