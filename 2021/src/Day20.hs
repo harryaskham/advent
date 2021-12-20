@@ -36,8 +36,8 @@ solve n =
   let (alg, grid) = parseWith parser $(input 20)
       cyc = case (V.head alg, V.last alg) of
         (Cell False, _) -> repeat (Cell False)
-        (Cell True, Cell False) -> cycle [Cell False, Cell True]
         (Cell True, Cell True) -> repeat (Cell True)
+        (Cell True, Cell False) -> cycle [Cell False, Cell True]
    in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n [enhance def alg | def <- cyc])
 
 part1 :: Int
