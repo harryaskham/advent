@@ -7,7 +7,7 @@ import Data.Text qualified as T
 import Data.Vector (Vector)
 import Data.Vector qualified as V
 import Helper.Bits (bitsToInt)
-import Helper.Grid (Grid, GridCell (charMap, fromChar), maxXY, minXY, pretty, readGrid)
+import Helper.Grid (Grid, GridCell (charMap, fromChar), maxXY, minXY, readGrid)
 import Helper.TH (input)
 import Helper.Util (eol, parseWith)
 import Text.ParserCombinators.Parsec (GenParser, eof, many1, oneOf)
