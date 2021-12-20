@@ -54,7 +54,7 @@ positions :: [V3 Int]
         ((L.head ss, [V3 0 0 0]), M.fromList [(scannerID s, s) | s <- L.tail ss])
 
 part1 :: Int
-part1 = S.size . beacons  $ reducedScanner
+part1 = S.size . beacons $ reducedScanner
 
 part2 :: Int
-part2 = L.maximum [ manhattan3 (fromV3 a) (fromV3 b) | a <- positions, b <- positions, a /= b]
+part2 = L.maximum [manhattan3 (fromV3 a) (fromV3 b) | a <- positions, b <- positions, a /= b]
