@@ -54,14 +54,6 @@ enhance def alg grid =
           | y' <- [y -1 .. y + 1]
         ]
 
-removeBorder n grid = M.fromList [((x, y), c) | ((x, y), c) <- M.toList grid, x > x0 + n, x < x1 - n, y > y0 + n, y < y1 + n]
-  where
-    (x0, y0) = minXY grid
-    (x1, y1) = maxXY grid
-
--- 6428 too high
--- 6681 too high
-
 part1 :: Int
 part1 =
   let (alg, grid) = parseWith parser $(input 20)
