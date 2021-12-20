@@ -86,8 +86,8 @@ main = do
   assertEqual "Day 19 (Part 1)" Day19.part1 436
   assertEqual "Day 19 (Part 2)" Day19.part2 10918
 
-  assertEqual "Day 20 (Part 1)" Day20.part1 "Part 1"
-  assertEqual "Day 20 (Part 2)" Day20.part2 "Part 2"
+  assertEqual "Day 20 (Part 1)" Day20.part1 5619
+  assertEqual "Day 20 (Part 2)" Day20.part2 20122
 
   assertEqual "Day 21 (Part 1)" Day21.part1 "Part 1"
   assertEqual "Day 21 (Part 2)" Day21.part2 "Part 2"

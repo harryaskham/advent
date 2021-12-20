@@ -1,25 +1,16 @@
 module Day20 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.List ((!!))
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Text.Read
 import Data.Vector (Vector)
 import Data.Vector qualified as V
 import Helper.Bits (bitsToInt)
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Grid (Grid, GridCell (charMap, fromChar), maxXY, minXY, pretty, readGrid)
+import Helper.TH (input)
+import Helper.Util (eol, parseWith)
+import Text.ParserCombinators.Parsec (GenParser, eof, many1, oneOf)
 
 type Cell = Bool
 
@@ -37,12 +28,11 @@ parser = do
 
 enhance :: Cell -> Vector Cell -> Grid Cell -> Grid Cell
 enhance def alg grid =
-  traceTextF pretty $
-    M.fromList
-      [ ((x, y), algChar x y)
-        | x <- [x0 - 2 .. x1 + 2],
-          y <- [y0 - 2 .. y1 + 2]
-      ]
+  M.fromList
+    [ ((x, y), algChar x y)
+      | x <- [x0 - 2 .. x1 + 2],
+        y <- [y0 - 2 .. y1 + 2]
+    ]
   where
     (x0, y0) = minXY grid
     (x1, y1) = maxXY grid
@@ -54,11 +44,14 @@ enhance def alg grid =
           | y' <- [y -1 .. y + 1]
         ]
 
-part1 :: Int
-part1 =
+solve :: Int -> Int
+solve n =
   let (alg, grid) = parseWith parser $(input 20)
       enhances = [enhance def alg | def <- cycle [False, True]]
-   in traceTextLn (pretty grid) $ M.size . M.filter (== True) . traceTextF pretty $ foldl' (&) grid (take 50 enhances)
+   in M.size . M.filter (== True) $ foldl' (&) grid (take n enhances)
 
-part2 :: Text
-part2 = "Part 2"
+part1 :: Int
+part1 = solve 2
+
+part2 :: Int
+part2 = solve 50
