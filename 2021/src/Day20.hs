@@ -12,43 +12,32 @@ import Helper.TH (input)
 import Helper.Util (eol, parseWith)
 import Text.ParserCombinators.Parsec (GenParser, eof, many1, oneOf)
 
-type Cell = Bool
+newtype Cell = Cell {uncell :: Bool} deriving (Eq, Ord)
 
-instance GridCell Bool where
-  charMap = BM.fromList [(False, '.'), (True, '#')]
+instance GridCell Cell where
+  charMap = BM.fromList [(Cell False, '.'), (Cell True, '#')]
 
 parser :: GenParser Char () (Vector Cell, Grid Cell)
-parser = do
-  a <- V.fromList <$> many1 (fromChar <$> oneOf ".#") <* eol
-  eol
-  let line = T.pack <$> (many1 (oneOf ".#") <* eol)
-  gls <- many1 line
-  eof
-  return (a, readGrid (unlines gls))
+parser =
+  (,)
+    <$> (V.fromList <$> many1 (fromChar <$> oneOf ".#") <* (eol >> eol))
+    <*> (readGrid . unlines <$> many1 (T.pack <$> (many1 (oneOf ".#") <* eol)) <* eof)
 
 enhance :: Cell -> Vector Cell -> Grid Cell -> Grid Cell
 enhance def alg grid =
-  M.fromList
-    [ ((x, y), algChar x y)
-      | x <- [x0 - 2 .. x1 + 2],
-        y <- [y0 - 2 .. y1 + 2]
-    ]
+  M.fromList [((x, y), algChar x y) | x <- [x0 - 2 .. x1 + 2], y <- [y0 - 2 .. y1 + 2]]
   where
     (x0, y0) = minXY grid
     (x1, y1) = maxXY grid
     algChar x y =
-      (alg V.!) . fromIntegral . bitsToInt . concat $
-        [ [ M.findWithDefault def (x', y') grid
-            | x' <- [x -1 .. x + 1]
-          ]
-          | y' <- [y -1 .. y + 1]
-        ]
+      (alg V.!) . fromIntegral . bitsToInt . fmap uncell . concat $
+        [[M.findWithDefault def (x', y') grid | x' <- [x -1 .. x + 1]] | y' <- [y -1 .. y + 1]]
 
 solve :: Int -> Int
 solve n =
   let (alg, grid) = parseWith parser $(input 20)
-      enhances = [enhance def alg | def <- cycle [False, True]]
-   in M.size . M.filter (== True) $ foldl' (&) grid (take n enhances)
+      enhances = [enhance def alg | def <- cycle [Cell False, Cell True]]
+   in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n enhances)
 
 part1 :: Int
 part1 = solve 2
