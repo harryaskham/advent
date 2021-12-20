@@ -131,8 +131,9 @@ pretty grid =
   T.pack $
     intercalate
       "\n"
-      [[toChar $ grid M.! (x, y) | x <- [0 .. maxX]] | y <- [0 .. maxY]]
+      [[toChar $ grid M.! (x, y) | x <- [minX .. maxX]] | y <- [minY .. maxY]]
   where
+    (minX, minY) = minXY grid
     (maxX, maxY) = maxXY grid
 
 prettyPrint :: GridCell a => Grid a -> IO ()

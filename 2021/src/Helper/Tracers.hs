@@ -35,3 +35,6 @@ traceUnless False traceFn a = traceFn a
 
 traceShowF :: Show b => (a -> b) -> a -> a
 traceShowF f a = traceShow (f a) a
+
+traceTextF :: (a -> Text) -> a -> a
+traceTextF f a = traceTextLn (f a) a
