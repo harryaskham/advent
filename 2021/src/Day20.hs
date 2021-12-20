@@ -2,6 +2,7 @@ module Day20 (part1, part2) where
 
 import Data.Bimap qualified as BM
 import Data.Bits.Bitwise (fromListBE)
+import Data.Foldable (foldl1, foldr1)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Vector (Vector)
@@ -22,15 +23,17 @@ parser =
     <$> (V.fromList <$> many1 (fromChar <$> oneOf ".#") <* (eol >> eol))
     <*> (readGrid . unlines <$> many1 (T.pack <$> (many1 (oneOf ".#") <* eol)) <* eof)
 
-nextCell :: Vector Cell -> Cell -> Grid Cell -> Int -> Int -> Cell
-nextCell alg def grid x y =
-  (alg V.!) . fromListBE . concat $
-    [[uncell $ M.findWithDefault def (x', y') grid | x' <- [x - 1 .. x + 1]] | y' <- [y - 1 .. y + 1]]
+algIx :: Cell -> Grid Cell -> Int -> Int -> Int
+algIx def grid x y =
+  fromListBE
+    [ uncell $ M.findWithDefault def (x', y') grid
+      | (x', y') <- flip (,) <$> [y - 1 .. y + 1] <*> [x - 1 .. x + 1]
+    ]
 
 enhance :: Vector Cell -> Cell -> Grid Cell -> Grid Cell
 enhance alg def grid =
   let ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
-   in M.fromList [((x, y), nextCell alg def grid x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
+   in M.fromList [((x, y), alg V.! algIx def grid x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
 
 solve :: Int -> Int
 solve n =
@@ -38,7 +41,8 @@ solve n =
       defs = case V.head alg of
         Cell False -> repeat (Cell False)
         Cell True -> cycle [V.last alg, Cell True]
-   in M.size . M.filter (== Cell True) $ foldl' (&) grid (take n (enhance alg <$> defs))
+      enhances = take n $ enhance alg <$> defs
+   in M.size . M.filter (== Cell True) $ foldl' (&) grid enhances
 
 part1 :: Int
 part1 = solve 2
