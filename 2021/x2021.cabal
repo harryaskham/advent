@@ -69,7 +69,8 @@ common common-settings
                         DataKinds,
                         KindSignatures,
                         StrictData,
-                        TemplateHaskell
+                        TemplateHaskell,
+                        RecordWildCards
     ghc-options:        -Weverything
                         -Wno-implicit-prelude
                         -Wno-unused-imports

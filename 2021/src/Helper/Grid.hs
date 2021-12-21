@@ -7,8 +7,7 @@ import Data.Fin (Fin)
 import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
-import Data.Type.Nat (Nat (S), Nat9)
-import Helper.Util (both)
+import Helper.Util (Nat10, both)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
@@ -24,7 +23,7 @@ data SimpleWall = Empty | Wall deriving (Eq, Ord, Bounded, Show)
 instance GridCell SimpleWall where
   charMap = BM.fromList [(Empty, ' '), (Wall, '#')]
 
-newtype DigitCell = DigitCell (Fin ('S Nat9)) deriving (Eq, Ord, Bounded, Num, Show)
+newtype DigitCell = DigitCell (Fin Nat10) deriving (Eq, Ord, Bounded, Num, Show)
 
 cellToInt :: DigitCell -> Integer
 cellToInt (DigitCell d) = toInteger d

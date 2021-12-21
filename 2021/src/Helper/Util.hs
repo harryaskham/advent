@@ -14,6 +14,7 @@ import Data.Text qualified as T
 import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
 import Data.Tuple.HT (uncurry3)
+import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Bits (bitsToInt)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe (read)
@@ -99,6 +100,10 @@ toTuple2 xs = error $ show (length xs) <> "elements in toTuple2"
 toTuple3 :: [a] -> (a, a, a)
 toTuple3 [a, b, c] = (a, b, c)
 toTuple3 xs = error $ show (length xs) <> "elements in toTuple3"
+
+toTuple4 :: [a] -> (a, a, a, a)
+toTuple4 [a, b, c, d] = (a, b, c, d)
+toTuple4 xs = error $ show (length xs) <> "elements in toTuple4"
 
 toList3 :: (a, a, a) -> [a]
 toList3 (a, b, c) = [a, b, c]
@@ -255,3 +260,5 @@ median xs = sort xs !! (length xs `div` 2)
 
 mean :: Integral a => [a] -> a
 mean xs = sum xs `div` fromIntegral (length xs)
+
+type Nat10 = 'S Nat9
