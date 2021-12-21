@@ -37,10 +37,7 @@ enhance alg def grid =
 solve :: Int -> Int
 solve n =
   let (alg, grid) = parseWith parser $(input 20)
-      defs = case V.head alg of
-        Cell False -> repeat (Cell False)
-        Cell True -> cycle [V.last alg, Cell True]
-      enhances = take n $ enhance alg <$> defs
+      enhances = take n $ enhance alg <$> cycle [Cell False, Cell True]
    in M.size . M.filter (== Cell True) $ foldl' (&) grid enhances
 
 part1 :: Int
