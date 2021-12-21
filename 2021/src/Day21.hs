@@ -64,14 +64,9 @@ runQuantum game@Game {..}
   | p1Score >= 21 = return (Sum 1, Sum 0)
   | p2Score >= 21 = return (Sum 0, Sum 1)
   | otherwise =
-    traceShow game $ do
-      o1 <- memo runQuantum (roll 1)
-      o2 <- memo runQuantum (roll 2)
-      o3 <- memo runQuantum (roll 3)
-      return $ o1 <> o2 <> o3
+    mconcat <$> traverse (memo runQuantum) (roll <$> rolls)
   where
-    --mconcat <$> traverse (memo runQuantum) (roll <$> [1, 2, 3])
-
+    rolls = [r1 + r2 + r3 | r1 <- [1 .. 3], r2 <- [1 .. 3], r3 <- [1 .. 3]]
     p1Turn' = not p1Turn
     roll n
       | p1Turn = game {p1Pos = p1Pos', p1Score = p1Score', p1Turn = p1Turn'}
@@ -82,6 +77,5 @@ runQuantum game@Game {..}
         p1Score' = p1Score + p1Pos' + 1
         p2Score' = p2Score + p2Pos' + 1
 
-part2 :: Sum Int
---part2 = uncurry max . startEvalMemo . runQuantum $ mkGame 9 3
-part2 = uncurry max . startEvalMemo . runQuantum $ mkGame 4 8
+part2 :: Int
+part2 = getSum . uncurry max . startEvalMemo . runQuantum $ mkGame 9 3
