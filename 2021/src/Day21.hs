@@ -52,10 +52,7 @@ runQuantum game@Game {..}
         p2Score' = p2Score + p2Pos' + 1
 
 part1 :: Int
-part1 = run (iterate inc100 1) 0 (mkGame 9 3)
-  where
-    inc100 100 = 1
-    inc100 x = x + 1
+part1 = run (cycle [1 .. 100]) 0 (mkGame 9 3)
 
 part2 :: Int
 part2 = getSum . uncurry max . startEvalMemo . runQuantum $ mkGame 9 3
