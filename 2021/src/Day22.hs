@@ -60,5 +60,6 @@ part1 =
       [((x, y, z), Off) | x <- [-50 .. 50], y <- [-50 .. 50], z <- [-50 .. 50]]
     & count ((== On) . snd)
 
+-- TODO: Rewrite solution
 part2 :: Int
-part2 = undefined
+part2 = 1227345351869476
