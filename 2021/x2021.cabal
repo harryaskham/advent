@@ -31,7 +31,12 @@ common common-settings
                         safe,
                         linear,
                         lens,
-                        bitwise
+                        bitwise,
+                        hgeometry,
+                        fixed-vector,
+                        IntervalMap,
+                        csg,
+                        random
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
