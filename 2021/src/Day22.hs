@@ -1,29 +1,13 @@
 module Day22 where
 
-import Control.Lens
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.CSG qualified as CSG
-import Data.List.Extra hiding (intersect, sum)
+import Control.Monad (foldM)
+import Data.Foldable (foldl1)
+import Data.List.Extra (groupOn)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Tuple.Extra (fst3, snd3)
-import Data.Vector qualified as V
-import Extra (thd3)
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Linear
-import System.Random
-import Text.ParserCombinators.Parsec hiding (count, (<|>))
+import Helper.TH (input)
+import Helper.Util (count, number, parseLinesWith, powerset)
+import Text.ParserCombinators.Parsec (GenParser, char, string, try)
 
 type Range2 = (Int, Int)
 
@@ -76,13 +60,39 @@ part1 =
       [((x, y, z), Off) | x <- [-50 .. 50], y <- [-50 .. 50], z <- [-50 .. 50]]
     & count ((== On) . snd)
 
-volume' :: Instruction -> [Instruction] -> Int
-volume' (Instruction On c) done = 0
-volume' (Instruction Off c) done = 0
+overlap :: Cuboid -> Cuboid -> Maybe Cuboid
+overlap (ax, ay, az) (bx, by, bz) =
+  (,,) <$> overlapR ax bx <*> overlapR ay by <*> overlapR az bz
+  where
+    overlapR (a0, a1) (b0, b1)
+      | a0 > b1 || b0 > a1 = Nothing
+      | a0 < b0 = Just (b0, a1)
+      | otherwise = Just (a0, b1)
+
+overlapN :: [Cuboid] -> Maybe Cuboid
+overlapN [a] = Just a
+overlapN (a : b : cs) =
+  case overlap a b of
+    Nothing -> Nothing
+    Just c -> overlapN c cs
+
+volume' :: Int -> Instruction -> [Cuboid] -> (Int, [Cuboid])
+volume' s (Instruction t c) done =
+  let overlaps = case t of
+        Off -> done
+        On -> c : done
+      v = case t of
+        Off -> 0
+        On -> volume c
+      segments = fmap overlapN . groupOn length . sortOn length $ powerset overlaps
+      signs = cycle [-1, 1]
+   in case segments of
+        Nothing -> (s + v)
+        Just ss -> (s + v + uncurry (*) (zip signs ss), overlaps)
 
 part2 :: Int
 part2 =
-  $(exampleInput 22)
+  $(input 22)
     & parseLinesWith instruction
-    & foldl' (\(s, done) i -> (s + volume' i done, i : done)) (0, [])
+    & foldl' (\(s, done) i -> volume' s i done) (0, [])
     & fst
