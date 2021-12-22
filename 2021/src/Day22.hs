@@ -60,39 +60,5 @@ part1 =
       [((x, y, z), Off) | x <- [-50 .. 50], y <- [-50 .. 50], z <- [-50 .. 50]]
     & count ((== On) . snd)
 
-overlap :: Cuboid -> Cuboid -> Maybe Cuboid
-overlap (ax, ay, az) (bx, by, bz) =
-  (,,) <$> overlapR ax bx <*> overlapR ay by <*> overlapR az bz
-  where
-    overlapR (a0, a1) (b0, b1)
-      | a0 > b1 || b0 > a1 = Nothing
-      | a0 < b0 = Just (b0, a1)
-      | otherwise = Just (a0, b1)
-
-overlapN :: [Cuboid] -> Maybe Cuboid
-overlapN [a] = Just a
-overlapN (a : b : cs) =
-  case overlap a b of
-    Nothing -> Nothing
-    Just c -> overlapN (c : cs)
-
-volume' :: Int -> Instruction -> [Cuboid] -> (Int, [Cuboid])
-volume' s (Instruction t c) done =
-  let overlaps = case t of
-        Off -> done
-        On -> c : done
-      v = case t of
-        Off -> 0
-        On -> volume c
-      segments = mapM (mapM overlapN) . groupOn length . sortOn length $ powerset overlaps
-      signs = cycle [-1, 1]
-   in case segments of
-        Nothing -> (s + v, overlaps)
-        Just ss -> (s + v + (uncurry (*) (zip signs (volume <$> ss))), overlaps)
-
 part2 :: Int
-part2 =
-  $(input 22)
-    & parseLinesWith instruction
-    & foldl' (\(s, done) i -> volume' s i done) (0, [])
-    & fst
+part2 = undefined
