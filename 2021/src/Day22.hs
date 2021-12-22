@@ -76,6 +76,13 @@ part1 =
       [((x, y, z), Off) | x <- [-50 .. 50], y <- [-50 .. 50], z <- [-50 .. 50]]
     & count ((== On) . snd)
 
+volume' :: Instruction -> [Instruction] -> Int
+volume' (Instruction On c) done = 0
+volume' (Instruction Off c) done = 0
+
+part2 :: Int
 part2 =
   $(exampleInput 22)
     & parseLinesWith instruction
+    & foldl' (\(s, done) i -> (s + volume' i done, i : done)) (0, [])
+    & fst
