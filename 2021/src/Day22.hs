@@ -15,9 +15,6 @@ data CuboidState = On | Off deriving (Eq, Ord, Show)
 
 type Cuboid = (Range2, Range2, Range2)
 
-volume :: Cuboid -> Int
-volume ((x0, x1), (y0, y1), (z0, z1)) = (abs (x1 - x0)) * (abs (y1 - y0)) * (abs (z1 - z0))
-
 data Instruction = Instruction
   { instructionType :: CuboidState,
     instructionCuboid :: Cuboid
