@@ -74,7 +74,7 @@ overlapN [a] = Just a
 overlapN (a : b : cs) =
   case overlap a b of
     Nothing -> Nothing
-    Just c -> overlapN c cs
+    Just c -> overlapN (c : cs)
 
 volume' :: Int -> Instruction -> [Cuboid] -> (Int, [Cuboid])
 volume' s (Instruction t c) done =
@@ -84,11 +84,11 @@ volume' s (Instruction t c) done =
       v = case t of
         Off -> 0
         On -> volume c
-      segments = fmap overlapN . groupOn length . sortOn length $ powerset overlaps
+      segments = mapM (mapM overlapN) . groupOn length . sortOn length $ powerset overlaps
       signs = cycle [-1, 1]
    in case segments of
-        Nothing -> (s + v)
-        Just ss -> (s + v + uncurry (*) (zip signs ss), overlaps)
+        Nothing -> (s + v, overlaps)
+        Just ss -> (s + v + (uncurry (*) (zip signs (volume <$> ss))), overlaps)
 
 part2 :: Int
 part2 =
