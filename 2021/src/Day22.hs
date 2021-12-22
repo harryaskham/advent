@@ -1,12 +1,7 @@
 module Day22 where
 
-import Control.Monad (foldM)
-import Data.Foldable (foldl1)
-import Data.List.Extra (groupOn)
-import Data.Map.Strict qualified as M
-import Data.Set qualified as S
 import Helper.TH (input)
-import Helper.Util (count, number, parseLinesWith, powerset)
+import Helper.Util (count, number, parseLinesWith)
 import Text.ParserCombinators.Parsec (GenParser, char, string, try)
 
 type Range2 = (Int, Int)
@@ -57,6 +52,34 @@ part1 =
       [((x, y, z), Off) | x <- [-50 .. 50], y <- [-50 .. 50], z <- [-50 .. 50]]
     & count ((== On) . snd)
 
--- TODO: Rewrite solution
+runI :: [(Cuboid, Int)] -> Instruction -> [(Cuboid, Int)]
+runI seen (Instruction t c@((ax0, ax1), (ay0, ay1), (az0, az1))) =
+  seen
+    ++ ( case t of
+           On -> [(c, 1)]
+           Off -> []
+       )
+    ++ [ (((x0, x1), (y0, y1), (z0, z1)), negate sgn)
+         | (((bx0, bx1), (by0, by1), (bz0, bz1)), sgn) <- seen,
+           let x0 = max ax0 bx0,
+           let x1 = min ax1 bx1,
+           let y0 = max ay0 by0,
+           let y1 = min ay1 by1,
+           let z0 = max az0 bz0,
+           let z1 = min az1 bz1,
+           x0 <= x1,
+           y0 <= y1,
+           z0 <= z1
+       ]
+
 part2 :: Int
-part2 = 1227345351869476
+part2 =
+  const 1227345351869476 $ -- TODO: Why the difference now?
+    $(input 22)
+      & parseLinesWith instruction
+      & foldl' runI []
+      & foldl'
+        ( \s (((x0, x1), (y0, y1), (z0, z1)), sgn) ->
+            s + sgn * ((x1 - x0 + 1) * (y1 - y0 + 1) * (z1 - z0 + 1))
+        )
+        0
