@@ -94,13 +94,8 @@ organized g aPos =
 illegalStops :: [Coord2]
 illegalStops = [(3, 1), (5, 1), (7, 1), (9, 1)]
 
-getRoom :: Coord2 -> Maybe (Amphipod, [Coord2])
-getRoom c
-  | c `elem` destinations Amber = Just (Amber, destinations Amber)
-  | c `elem` destinations Bronze = Just (Bronze, destinations Bronze)
-  | c `elem` destinations Copper = Just (Copper, destinations Copper)
-  | c `elem` destinations Desert = Just (Desert, destinations Desert)
-  | otherwise = Nothing
+rooms :: Map Coord2 (Amphipod, [Coord2])
+rooms = M.fromList[(d, (a, ds)) | a <- enumerate, let ds = destinations a, d <- ds]
 
 -- Can this amphipod move to this position?
 -- Not the hallway condition, only the room one
@@ -108,7 +103,7 @@ validMove :: Grid Cell -> Cell -> Coord2 -> Coord2 -> Bool
 validMove g a p n
   | (g M.! n) /= Empty = False
   | otherwise =
-    case getRoom n of
+    case M.lookup n rooms of
       Nothing -> True
       Just (a', ps) ->
         p `elem` ps -- if we're already in the room, doesn't matter if it's ours, we can move
@@ -119,39 +114,48 @@ validMove g a p n
 makeMove :: (Coord2, Coord2) -> Grid Cell -> Grid Cell
 makeMove (a, b) g = M.insert a Empty . M.insert b (g M.! a) $ g
 
+--organizeDfs :: Grid Cell -> Int -> Int
+--organizeDfs g cost aPos = L.minimum [organizeDfs (g', cost', aPos') <- next)]
+
 -- If an apod just moved, then we're still "in its move" and it can stop in the hallway
 -- We should store whether apod is in its move and whetehr it started from a hallway
 organize :: Grid Cell -> Maybe Int
-organize g' = go (PQ.singleton 0 (g', (positions g'), 0, Nothing)) S.empty
+organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
   where
     go queue seen
       | PQ.null queue = Nothing
       | organized g aPos = Just pathCost
-      | g `S.member` seen = go rest seen
+      | aPos `S.member` seen = go rest seen
       | otherwise =
         traceShow (pathCost, cost) $
-          traceWhen
-            debug
+          traceWhen debug 
             ( pauseId $
-                traceWhen (g M.! (9, 3) == Empty) (traceShow "EMPTY") $
-                  traceShow (state, pathCost, h g, cost) $
-                    traceTextLn (pretty g)
+                traceShow (state, pathCost, h g, cost) $
+                  traceTextLn (pretty g)
             )
-            $ go queue' seen'
+          $ go queue' seen'
       where
-        ((cost, (g, aPos, pathCost, state)), rest) = PQ.deleteFindMin queue
-        seen' = S.insert g seen
-        -- can do better by using an actual distance map / just using topology
-        -- if we're in the destination then the cost is the number of empties below us
-        -- or just as before, but put penalties on empty spaces
-        roomCost g = sum [energy (Full a) * (dy - 2) | a <- enumerate, let ds = destinations a, d@(dx, dy) <- ds, g M.! d /= Full a]
+        (((cost,_), (g, aPos, pathCost, state)), rest) = PQ.deleteFindMin queue
+        seen' = S.insert aPos seen
+        -- Because we don't penalise being above an empty, at the very least every empty below the first is going to need an unaccounted for move
+        roomCost g = sum [energy (Full a) * (dy - 2) | a <- enumerate, let ds = destinations a, d@(dx, dy) <- ds, g M.! d /= Full a, dy > 2]
+        -- heuristic:
+        -- ignore those already in their places
+        -- if you are not in your place:
+        -- minimum distance to an empty space
         minDistanceToDest p@(x, y) a
-          | x == dx = y - 1
-          | otherwise = (y - 1) + L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+        -- if we're in the hole, fine
+          | x == dx && y > 1 = 0
+          -- if we're above our hole, shortest distance to an empty
+          | x == dx && y == 1 = L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+          -- if we're in another bucket, get to the top then distance to an empty. also works if we're at the top
+          | x /= dx = (y - 1) + L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+          | otherwise = error "wat"
           where
             ds@((dx, _) : _) = destinations a
-        minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
-        h g = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
+        -- TODO: Better heuristic might help a lot
+        -- minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
+        h g = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
           [p] -> [p]
@@ -174,27 +178,27 @@ organize g' = go (PQ.singleton 0 (g', (positions g'), 0, Nothing)) S.empty
           if not (null illegallyOccupied)
             then -- always move illegals first
 
-              traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
+              -- traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
                 movingOne (L.head illegallyOccupied)
             else -- TODO: if we're moving an apod that started in the hallway, wemust keep moving that apod
             case state of
               Nothing ->
-                traceWhen debug (traceShow ("no state, so any move allowed")) $
+                -- traceWhen debug (traceShow ("no state, so any move allowed")) $
                   allMoves
               Just (lastPos, origin) ->
-                case getRoom origin of
+                case M.lookup origin rooms of
                   Just _ ->
-                    traceWhen debug (traceShow ("current mover started in a room, any move allowed")) $
+                    -- traceWhen debug (traceShow ("current mover started in a room, any move allowed")) $
                       allMoves -- we started in a room so free to stop anywhere
                   Nothing ->
-                    traceWhen debug (traceShow ("current mover started the hall")) $
+                    -- traceWhen debug (traceShow ("current mover started the hall")) $
                       -- we started in the hallway so we have to stop in a room
-                      case getRoom lastPos of
+                      case M.lookup lastPos rooms of
                         Just _ ->
-                          traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
+                          -- traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
                             allMoves -- our last-moved landed in a room so that's fine
                         Nothing ->
-                          traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
+                          -- traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
                             movingOne lastPos -- our last moved is going hallway to hallway and needs to move
         movingOne p =
           [ (makeMove (p, n) g, M.adjust (L.delete p . (n:)) a aPos, pathCost + energy (Full a), updateState state p n)
@@ -202,7 +206,7 @@ organize g' = go (PQ.singleton 0 (g', (positions g'), 0, Nothing)) S.empty
               n <- neighborsNoDiags p,
               validMove g (Full a) p n
           ]
-        queue' = foldl' (\q st@(g, _, pathCost, _) -> PQ.insert (pathCost + h g) st q) rest nextStates
+        queue' = foldl' (\q st@(g, _, pathCost, _) -> PQ.insert (pathCost + h g, pathCost) st q) rest nextStates
 
 -- okay so:
 -- hardcode win positions
@@ -295,6 +299,17 @@ exx5 =
   #########
 |]
 
+exx6 =
+  [s|
+#############
+#.........AD#
+###.#B#C#.###
+  #A#B#C#D#
+  #A#B#C#D#
+  #A#B#C#D#
+  ######### 
+|]
+
 part1 :: Maybe Int
 part1 =
   (readGrid maze1 :: Grid Cell)
@@ -303,7 +318,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid exx :: Grid Cell)
+  (readGrid exx6 :: Grid Cell)
     & fillDef None
     & organize
 
