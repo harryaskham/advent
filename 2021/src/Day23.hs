@@ -379,6 +379,6 @@ part1 =
 part2 =
   (readGrid maze2 :: Grid Cell)
     & fillDef None
-    & organize
+    & solve
 
 debug = False
