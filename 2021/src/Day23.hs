@@ -127,20 +127,19 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | PQ.null queue = Nothing
       | aPos `S.member` seen = go rest seen
       | otherwise =
-        --pauseId $
         traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue) $
           -- traceTextLn (prettyA aPos)
-
           go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
         move p d a aPos = M.adjust (L.delete p . (d :)) a aPos
         states =
-          [ (move p d a aPos, pathCost + dist)
+          [ (aPos', pathCost + dist)
             | (a, ps) <- M.toList aPos,
               p <- ps,
-              (d, dist) <- allowedDestinations g a p aPos
+              (d, dist) <- allowedDestinations g a p aPos,
+              let aPos' = move p d a aPos
           ]
         minDistanceToDest (x, y) a
           | x == dx && y > 1 = 0
