@@ -1,6 +1,6 @@
 -- TODO:
 -- reenable tests
--- changing to set broke pt1
+-- changing to APos set broke pt1
 
 module Day23 where
 
