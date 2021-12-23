@@ -1,6 +1,5 @@
 -- TODO:
 -- reenable tests
--- changing to APos set broke pt1
 
 module Day23 where
 
@@ -20,7 +19,7 @@ import Data.String.QQ
 import Data.Text qualified as T
 import Data.Text.Read
 import Data.Vector qualified as V
-import Helper.Coord
+import Helper.Coord (Coord2, neighborsNoDiags)
 import Helper.Grid hiding (Empty, Wall)
 import Helper.TH
 import Helper.Tracers
@@ -127,9 +126,11 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | aPos `S.member` seen =
         go rest seen
       | otherwise =
-        traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
-          -- traceTextLn (prettyA aPos)
-          go queue' seen'
+        pauseId
+          ( traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
+              traceTextLn (prettyA aPos)
+          )
+          (go queue' seen')
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
@@ -173,7 +174,7 @@ energy Copper = 100
 energy Desert = 1000
 
 organized :: APos -> Bool
-organized aPos = all (\a -> aPos M.! a == destinationMap M.! a) enumerate
+organized aPos = all (\a -> aPos M.! a `S.isSubsetOf` (destinationMap M.! a)) enumerate
 
 exx =
   [s|
@@ -255,7 +256,7 @@ exx7 =
 |]
 
 part1 =
-  (readGrid maze1 :: Grid Cell)
+  (readGrid maze1' :: Grid Cell)
     & fillDef None
     & solve
 
