@@ -80,8 +80,8 @@ validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> Map Amphipod [Coord2] -> [(Coord2, Int)]
 allowedDestinations g a origin@(ox, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
-    allAPos = S.fromList (concat (M.elems aPos))
-    otherAPos = S.fromList ([p | (a', ps) <- M.toList aPos, a /= a', p <- ps])
+    allAPos = S.fromList (concat (M.elems aPos)) -- faster
+    otherAPos = S.fromList ([p | (a', ps) <- M.toList aPos, a /= a', p <- ps]) -- faster
     hallWayOrigin = oy == 1
     validRoomDestinations = S.fromList $ let ds = destinations a in if any (`S.member` otherAPos) ds then [] else ds
     validDestinations = validHallwayDestinations `S.union` validRoomDestinations
