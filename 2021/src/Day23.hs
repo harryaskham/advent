@@ -227,7 +227,7 @@ nextStates g aPos pathCost state =
                     -- We should store whether apod is in its move and whetehr it started from a hallway
 
 organize :: Grid Cell -> Maybe Int
-organize g' = go (PS.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
+organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
   where
     go queue seen
       | PQ.null queue = Nothing
