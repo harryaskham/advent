@@ -3,6 +3,7 @@
 -- TODO:
 -- Remove grid from pqueue, only have walls and member positions
 -- bfs-moves; for each thing; bfs to find possible destinations, then each is a "movement" and gets added to the queue
+-- reenable tests
 
 module Day23 where
 
