@@ -123,7 +123,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | otherwise =
         ( --pauseId $
           traceShow ("pathCost", pathCost, "pq cost", cost) $
-            traceTextLn (prettyA aPos)
+          --traceTextLn (prettyA aPos)
         )
           $ go queue' seen'
       where
