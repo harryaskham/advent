@@ -25,6 +25,30 @@ import Helper.Util
 import Text.ParserCombinators.Parsec
 import Prelude hiding (find)
 
+maze1 :: Text
+maze1 =
+  [s|
+#############
+#...........#
+###B#B#D#D###
+  #C#C#A#A#
+  #########
+  #########
+  #########
+|]
+
+maze2 :: Text
+maze2 =
+  [s|
+#############
+#...........#
+###B#B#D#D###
+  #D#C#B#A#
+  #D#B#A#C#
+  #C#C#A#A#
+  #########
+|]
+
 data Amphipod = Amber | Bronze | Copper | Desert deriving (Eq, Ord, Show, Enum)
 
 data Cell
@@ -47,10 +71,10 @@ instance GridCell Cell where
       ]
 
 destinations :: Amphipod -> [Coord2]
-destinations Amber = [(3, 2), (3, 3)]
-destinations Bronze = [(5, 2), (5, 3)]
-destinations Copper = [(7, 2), (7, 3)]
-destinations Desert = [(9, 2), (9, 3)]
+destinations Amber = (3,) <$> [2 .. 5]
+destinations Bronze = (5,) <$> [2 .. 5]
+destinations Copper = (7,) <$> [2 .. 5]
+destinations Desert = (9,) <$> [2 .. 5]
 
 energy :: Cell -> Int
 energy (Full Amber) = 1
@@ -61,7 +85,7 @@ energy (Full Desert) = 1000
 organized :: Grid Cell -> Bool
 organized g =
   all
-    (\a -> length (find (Full a) g `L.intersect` destinations a) == 2)
+    (\a -> let aPos = find (Full a) g in aPos `L.intersect` destinations a == aPos)
     enumerate
 
 illegalStops :: [Coord2]
@@ -102,23 +126,35 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
       | organized g = Just pathCost
       | g `S.member` seen = go rest seen
       | otherwise =
-        -- pauseId $
-        traceWhen (g M.! (9, 3) == Empty) (traceShow "EMPTY") $
-          traceShow (state, pathCost, h g, cost) $
-            traceTextLn (pretty g) $
-              go queue' seen'
+        traceWhen
+          debug
+          ( pauseId $
+              traceWhen (g M.! (9, 3) == Empty) (traceShow "EMPTY") $
+                traceShow (state, pathCost, h g, cost) $
+                  traceTextLn (pretty g)
+          )
+          $ go queue' seen'
       where
         seen' = S.insert g seen
         -- can do better by using an actual distance map / just using topology
+        -- if we're in the destination then the cost is the number of empties below us
+        -- or just as before, but put penalties on empty spaces
+        roomCost g = 0
         h g =
-          sum
-            [ energy (Full a)
-                * sum
-                  [ L.minimum [manhattan p d | d <- destinations a]
-                    | p <- find (Full a) g
-                  ]
-              | a <- enumerate
-            ]
+          (roomCost g)
+            + sum
+              [ energy (Full a)
+                  * sum
+                    [ L.minimum
+                        [ if x == dx
+                            then abs (dy - y)
+                            else (y - 1) + manhattan (x, 1) d
+                          | d@(dx, dy) <- destinations a
+                        ]
+                      | p@(x, y) <- find (Full a) g
+                    ]
+                | a <- enumerate
+              ]
         ((cost, (g, pathCost, state)), rest) = PQ.deleteFindMin queue
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
@@ -143,27 +179,27 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
           if not (null illegallyOccupied)
             then -- always move illegals first
 
-              traceShow ("illegal occupation, must move:", illegallyOccupied, state) $
+              traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
                 movingOne (L.head illegallyOccupied)
             else -- TODO: if we're moving an apod that started in the hallway, wemust keep moving that apod
             case state of
               Nothing ->
-                traceShow ("no state, so any move allowed") $
+                traceWhen debug (traceShow ("no state, so any move allowed")) $
                   allMoves
               Just (lastPos, origin) ->
                 case getRoom origin of
                   Just _ ->
-                    traceShow ("current mover started in a room, any move allowed") $
+                    traceWhen debug (traceShow ("current mover started in a room, any move allowed")) $
                       allMoves -- we started in a room so free to stop anywhere
                   Nothing ->
-                    traceShow ("current mover started the hall") $
+                    traceWhen debug (traceShow ("current mover started the hall")) $
                       -- we started in the hallway so we have to stop in a room
                       case getRoom lastPos of
                         Just _ ->
-                          traceShow ("current hallway mover made it to a room so that's okay") $
+                          traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
                             allMoves -- our last-moved landed in a room so that's fine
                         Nothing ->
-                          traceShow ("current hallway mover still in hall so need to move him") $
+                          traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
                             movingOne lastPos -- our last moved is going hallway to hallway and needs to move
         movingOne p =
           [ (makeMove (p, n) g, pathCost + energy a, updateState state p n)
@@ -207,14 +243,38 @@ testInput3 =
   #########
 |]
 
+exx =
+  [s|
+#############
+#...........#
+###B#C#B#D###
+  #D#C#B#A#
+  #D#B#A#C#
+  #A#D#C#A#
+  #########
+|]
+
+exx2 =
+  [s|
+#############
+#.A...B.....#
+###.#.#C#D###
+  #A#B#C#D#
+  #A#B#C#D#
+  #A#B#C#D#
+  #########
+|]
+
 part1 :: Maybe Int
 part1 =
-  --(readGrid $(input 23) :: Grid Cell)
-  (readGrid $(input 23) :: Grid Cell)
-    --(readGrid $(exampleInputN 23 1) :: Grid Cell)
-    --(readGrid testInput3 :: Grid Cell)
+  (readGrid maze1 :: Grid Cell)
     & fillDef None
     & organize
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Maybe Int
+part2 =
+  (readGrid exx2 :: Grid Cell)
+    & fillDef None
+    & organize
+
+debug = False
