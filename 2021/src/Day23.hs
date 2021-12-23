@@ -75,6 +75,37 @@ instance GridCell Cell where
         (Full Desert, 'D')
       ]
 
+-- Where can an a go from p, using g only for walls checking
+-- This should be a bfs
+allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> Map Amphipod [Coord2] -> [(Coord2, Int)]
+allowedDestinations g a p aPos = undefined
+
+solve :: Grid Cell -> Maybe Int
+solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
+  where
+    go queue seen
+      | organized aPos = Just pathCost
+      | PQ.null queue = Nothing
+      | aPos `S.member` seen = go rest seen
+      | otherwise = go queue' seen'
+      where
+        ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
+        seen' = S.insert aPos seen
+        move p d a aPos = M.adjust (L.delete p . (d :)) a aPos
+        -- For each amphipod:
+        --   BFS to find its allowed destinations, using grid for the wallpos only
+        --   Add to the queue only those allowed destinations
+        --   simplest heuristic possible
+        states =
+          [ (move p d a aPos, pathCost + dist * energy' a)
+            | (a, ps) <- M.toList aPos,
+              p <- ps,
+              (d, dist) <- allowedDestinations g a p aPos
+          ]
+        minDistanceToDest p a = L.minimum (manhattan p <$> destinations a)
+        h aPos = sum [energy' a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
+        queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
+
 destinations :: Amphipod -> [Coord2]
 destinations Amber = (3,) <$> [2 .. 5]
 destinations Bronze = (5,) <$> [2 .. 5]
@@ -90,8 +121,14 @@ energy (Full Bronze) = 10
 energy (Full Copper) = 100
 energy (Full Desert) = 1000
 
-organized :: Grid Cell -> Map Amphipod [Coord2] -> Bool
-organized g aPos =
+energy' :: Amphipod -> Int
+energy' Amber = 1
+energy' Bronze = 10
+energy' Copper = 100
+energy' Desert = 1000
+
+organized :: Map Amphipod [Coord2] -> Bool
+organized aPos =
   all
     (\a -> (aPos M.! a) `L.intersect` destinations a == (aPos M.! a))
     enumerate
@@ -124,56 +161,6 @@ illegallyOccupied g =
     [] -> []
     [p] -> [p]
     _ -> error "multiple illegals"
-
-organizeDfs :: Grid Cell -> IO (Maybe Int)
-organizeDfs g = do
-  bestRef <- newIORef Nothing
-  aPosCostsRef <- newIORef M.empty
-  let go :: Grid Cell -> Map Amphipod [(Int, Int)] -> Int -> Maybe (Coord2, Coord2) -> Set (Map Amphipod [Coord2]) -> IO (Maybe Int)
-      go g aPos pathCost state seen
-        | organized g aPos = do
-          print "Found an organized version"
-          print pathCost
-          best <- readIORef bestRef
-          case best of
-            Nothing -> do
-              modifyIORef' bestRef (const $ Just pathCost)
-              return (Just pathCost)
-            Just b -> do
-              let newBest = min b pathCost
-              modifyIORef' bestRef (const $ Just newBest)
-              return (Just newBest)
-        | otherwise = do
-          best <- readIORef bestRef
-          print ("best", best)
-          print pathCost
-          aPosCosts <- readIORef aPosCostsRef
-          let runOn = do
-                case M.lookup aPos aPosCosts of
-                  Just cost -> do
-                    print "found in cache, terminating"
-                    return $ Just (pathCost + cost)
-                  Nothing -> do
-                    let next = nextStates g aPos pathCost state
-                        seen' = S.insert aPos seen
-                    aPosCosts <- sequence [(aPos,) <$> go g aPos pathCost state seen' | (g, aPos, pathCost, state) <- next, not (aPos `S.member` seen)]
-                    let costs = catMaybes $ snd <$> aPosCosts
-                        aPosCostMap = M.fromList (second (\(Just a) -> a) <$> (filter (isJust . snd) aPosCosts))
-                    case costs of
-                      [] -> return Nothing
-                      _ -> do
-                        modifyIORef' aPosCostsRef (M.unionWith min aPosCostMap)
-                        return $ Just $ L.minimum costs
-          case best of
-            Just b ->
-              if b < pathCost
-                then do
-                  print "early terminating, went past best"
-                  print pathCost
-                  return (Just b)
-                else runOn
-            Nothing -> runOn
-  go g (positions g) 0 Nothing S.empty
 
 -- keep track of whether we just moved the same one, or a new one
 updateState :: Maybe (Coord2, Coord2) -> Coord2 -> Coord2 -> Maybe (Coord2, Coord2)
@@ -236,7 +223,7 @@ organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
   where
     go queue seen
       | PQ.null queue = Nothing
-      | organized g aPos = Just pathCost
+      | organized aPos = Just pathCost
       | aPos `S.member` seen = go rest seen
       | otherwise =
         traceWhen (cost `mod` 1000 == 0) (traceShow (pathCost, cost)) $
@@ -389,17 +376,9 @@ part1 =
     & fillDef None
     & organize
 
--- & organizeDfs
-
 part2 =
   (readGrid maze2 :: Grid Cell)
     & fillDef None
     & organize
-
-part2' =
-  (readGrid exx2 :: Grid Cell)
-    & fillDef None
-    -- & organize
-    & organizeDfs
 
 debug = False
