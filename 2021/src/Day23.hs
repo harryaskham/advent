@@ -130,7 +130,7 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
         traceShow (pathCost, cost) $
           traceWhen debug 
             ( pauseId $
-                traceShow (state, pathCost, h g, cost) $
+                traceShow (state, "pathCost", pathCost, "heuristic", h g aPos, "pq cost", cost) $
                   traceTextLn (pretty g)
             )
           $ go queue' seen'
@@ -154,8 +154,8 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
           where
             ds@((dx, _) : _) = destinations a
         -- TODO: Better heuristic might help a lot
-        -- minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
-        h g = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
+        minDistanceToDest' p a =  L.minimum (manhattan p <$> destinations a)
+        h g aPos = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
           [p] -> [p]
@@ -206,7 +206,10 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
               n <- neighborsNoDiags p,
               validMove g (Full a) p n
           ]
-        queue' = foldl' (\q st@(g, _, pathCost, _) -> PQ.insert (pathCost + h g, pathCost) st q) rest nextStates
+        queue' = foldl' (\q st@(g, aPos, pathCost, _) ->
+                           --traceTextLn (pretty g) $
+                            -- traceShow ("new state",pathCost,h g aPos,pathCost + h g aPos) $
+                               PQ.insert (pathCost + h g aPos, pathCost) st q) rest nextStates
 
 -- okay so:
 -- hardcode win positions
