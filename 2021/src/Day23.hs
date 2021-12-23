@@ -110,7 +110,7 @@ validMove g a p n
       Just (a', ps) ->
         p `elem` ps -- if we're already in the room, doesn't matter if it's ours, we can move
           || ( a == Full a' -- then we're hallway, so if it's a room, it's the right room, and also it's got the right ones in it
-                 && length [a'' | a'' <- (g M.!) <$> ps, a'' `elem` [Empty, a]] == 2
+                 && length [a'' | a'' <- (g M.!) <$> ps, a'' `elem` [Empty, a]] == (length [p | p <- ps, g M.! p /= Wall])
              )
 
 makeMove :: (Coord2, Coord2) -> Grid Cell -> Grid Cell
@@ -126,20 +126,21 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
       | organized g = Just pathCost
       | g `S.member` seen = go rest seen
       | otherwise =
-        traceWhen
-          debug
-          ( pauseId $
-              traceWhen (g M.! (9, 3) == Empty) (traceShow "EMPTY") $
-                traceShow (state, pathCost, h g, cost) $
-                  traceTextLn (pretty g)
-          )
-          $ go queue' seen'
+        traceShow pathCost $
+          traceWhen
+            debug
+            ( pauseId $
+                traceWhen (g M.! (9, 3) == Empty) (traceShow "EMPTY") $
+                  traceShow (state, pathCost, h g, cost) $
+                    traceTextLn (pretty g)
+            )
+            $ go queue' seen'
       where
         seen' = S.insert g seen
         -- can do better by using an actual distance map / just using topology
         -- if we're in the destination then the cost is the number of empties below us
         -- or just as before, but put penalties on empty spaces
-        roomCost g = 0
+        roomCost g = sum [energy (Full a) * (dy - 2) | a <- enumerate, let ds = destinations a, d@(dx, dy) <- ds, g M.! d /= Full a]
         h g =
           (roomCost g)
             + sum
@@ -265,6 +266,29 @@ exx2 =
   #########
 |]
 
+-- completes
+exx3 =
+  [s|
+#############
+#A........BD#
+###B#C#.#.###
+  #D#C#B#.#
+  #D#B#A#C#
+  #A#D#C#A#
+  #########
+|]
+
+exx4 =
+  [s|
+#############
+#A.........D#
+###B#C#B#.###
+  #D#C#B#.#
+  #D#B#A#C#
+  #A#D#C#A#
+  #########
+|]
+
 part1 :: Maybe Int
 part1 =
   (readGrid maze1 :: Grid Cell)
@@ -273,7 +297,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid exx2 :: Grid Cell)
+  (readGrid exx4 :: Grid Cell)
     & fillDef None
     & organize
 
