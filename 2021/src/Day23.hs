@@ -142,16 +142,8 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
               p <- ps,
               (d, dist) <- allowedDestinations g a p aPos
           ]
-        minDistanceToDest p a = L.minimum (manhattan p <$> destinations a)
-        --h aPos = sum [energy' a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
+        minDistanceToDest (x, _l) a = let ((dx, _) : _) = destinations a in abs (x - dx)
         h aPos = sum [energy' a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
-        minDistanceToDest' p@(x, y) a
-          | x == dx && y > 1 = 0
-          | x == dx && y == 1 = 1 -- L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
-          | x /= dx = y - 1 + abs (x - dx)
-          | otherwise = error "wat"
-          where
-            ds@((dx, _) : _) = destinations a
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
 
 destinations :: Amphipod -> [Coord2]
