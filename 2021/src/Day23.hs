@@ -139,18 +139,13 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
               (d, dist) <- allowedDestinations g a p aPos,
               let aPos' = move p d a aPos
           ]
-        minDistanceToDest' (x, y) a = abs (dx - x)
-          where
-            ((dx, _) : _) = destinations a
         minDistanceToDest (x, y) a
           | x == dx && y > 1 = 0
           | x == dx && y == 1 = 1
-          | otherwise = (y - 1) + abs (x - dx)
+          | otherwise = (y - 1) + abs (x - dx) + 1
           where
             ((dx, _) : _) = destinations a
-        --h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
-        h aPos = sum [energy a * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
-        --h _ = 0
+        h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
 
 destinations :: Amphipod -> [Coord2]
