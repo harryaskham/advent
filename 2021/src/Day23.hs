@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module Day23 (part1, part2) where
+module Day23 where
 
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
@@ -107,7 +107,7 @@ validMove g a p n
       Just (a', ps) ->
         p `elem` ps -- if we're already in the room, doesn't matter if it's ours, we can move
           || a == Full a' -- then we're hallway, so if it's a room, it's the right room, and also it's got the right ones in it
-            && length [a'' | a'' <- (g M.!) <$> ps, a'' `elem` [Empty, a]] == (length [p | p <- ps, g M.! p /= Wall])
+            && length [a'' | a'' <- (g M.!) <$> ps, a'' `elem` [Empty, a]] == length [p | p <- ps, g M.! p /= Wall]
 
 makeMove :: (Coord2, Coord2) -> Grid Cell -> Grid Cell
 makeMove (a, b) g = M.insert a Empty . M.insert b (g M.! a) $ g
@@ -119,13 +119,55 @@ illegallyOccupied g =
     [p] -> [p]
     _ -> error "multiple illegals"
 
-organizeDfs :: Grid Cell -> IO ()
+organizeDfs :: Grid Cell -> IO (Maybe Int)
 organizeDfs g = do
-  bestRef <- newIORef 0
-  seenRef <- newIORef M.empty
-  let go g aPos cost state = do
-        return ()
-  go g (positions g) 0 Nothing
+  bestRef <- newIORef Nothing
+  aPosCostsRef <- newIORef M.empty
+  let go :: Grid Cell -> Map Amphipod [(Int, Int)] -> Int -> Maybe (Coord2, Coord2) -> Set (Map Amphipod [Coord2]) -> IO (Maybe Int)
+      go g aPos pathCost state seen
+        | organized g aPos = do
+          print "Found an organized version"
+          print pathCost
+          best <- readIORef bestRef
+          case best of
+            Nothing -> do
+              modifyIORef' bestRef (const $ Just pathCost)
+              return (Just pathCost)
+            Just b -> do
+              let newBest = min b pathCost
+              modifyIORef' bestRef (const $ Just newBest)
+              return (Just newBest)
+        | otherwise = do
+          best <- readIORef bestRef
+          print ("best", best)
+          print pathCost
+          aPosCosts <- readIORef aPosCostsRef
+          let runOn = do
+                case M.lookup aPos aPosCosts of
+                  Just cost -> do
+                    print "found in cache, terminating"
+                    return $ Just (pathCost + cost)
+                  Nothing -> do
+                    let next = nextStates g aPos pathCost state
+                        seen' = S.insert aPos seen
+                    aPosCosts <- sequence [(aPos,) <$> go g aPos pathCost state seen' | (g, aPos, pathCost, state) <- next, not (aPos `S.member` seen)]
+                    let costs = catMaybes $ snd <$> aPosCosts
+                        aPosCostMap = M.fromList (second (\(Just a) -> a) <$> (filter (isJust . snd) aPosCosts))
+                    case costs of
+                      [] -> return Nothing
+                      _ -> do
+                        modifyIORef' aPosCostsRef (M.unionWith min aPosCostMap)
+                        return $ Just $ L.minimum costs
+          case best of
+            Just b ->
+              if b < pathCost
+                then do
+                  print "early terminating, went past best"
+                  print pathCost
+                  return (Just b)
+                else runOn
+            Nothing -> runOn
+  go g (positions g) 0 Nothing S.empty
 
 -- keep track of whether we just moved the same one, or a new one
 updateState :: Maybe (Coord2, Coord2) -> Coord2 -> Coord2 -> Maybe (Coord2, Coord2)
@@ -144,8 +186,45 @@ allMoves g aPos pathCost state = movesFor =<< [Amber, Bronze, Copper, Desert]
           validMove g (Full a) p n
       ]
 
--- If an apod just moved, then we're still "in its move" and it can stop in the hallway
--- We should store whether apod is in its move and whetehr it started from a hallway
+movingOne :: Map (Int, Int) Cell -> Map Amphipod [Coord2] -> Int -> Maybe (Coord2, Coord2) -> (Int, Int) -> [(Grid Cell, Map Amphipod [(Int, Int)], Int, Maybe (Coord2, Coord2))]
+movingOne g aPos pathCost state p =
+  [ (makeMove (p, n) g, M.adjust (L.delete p . (n :)) a aPos, pathCost + energy (Full a), updateState state p n)
+    | let (Full a) = g M.! p,
+      n <- neighborsNoDiags p,
+      validMove g (Full a) p n
+  ]
+
+nextStates :: Grid Cell -> Map Amphipod [Coord2] -> Int -> Maybe (Coord2, Coord2) -> [(Grid Cell, Map Amphipod [(Int, Int)], Int, Maybe (Coord2, Coord2))]
+nextStates g aPos pathCost state =
+  let ios = illegallyOccupied g
+   in if not (null ios)
+        then -- always move illegals first
+
+        -- traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
+          movingOne g aPos pathCost state (L.head ios)
+        else -- TODO: if we're moving an apod that started in the hallway, wemust keep moving that apod
+        case state of
+          Nothing ->
+            -- traceWhen debug (traceShow ("no state, so any move allowed")) $
+            allMoves g aPos pathCost state
+          Just (lastPos, origin) ->
+            case M.lookup origin rooms of
+              Just _ ->
+                -- traceWhen debug (traceShow ("current mover started in a room, any move allowed")) $
+                allMoves g aPos pathCost state -- we started in a room so free to stop anywhere
+              Nothing ->
+                -- traceWhen debug (traceShow ("current mover started the hall")) $
+                -- we started in the hallway so we have to stop in a room
+                case M.lookup lastPos rooms of
+                  Just _ ->
+                    -- traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
+                    allMoves g aPos pathCost state -- our last-moved landed in a room so that's fine
+                  Nothing ->
+                    -- traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
+                    movingOne g aPos pathCost state lastPos -- our last moved is going hallway to hallway and needs to move
+                    -- If an apod just moved, then we're still "in its move" and it can stop in the hallway
+                    -- We should store whether apod is in its move and whetehr it started from a hallway
+
 organize :: Grid Cell -> Maybe Int
 organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
   where
@@ -201,40 +280,6 @@ organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
         h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest g p a | a <- enumerate, p <- aPos M.! a]
         --h g aPos = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
         --h g aPos = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
-        ios = illegallyOccupied g
-        nextStates :: [(Grid Cell, Map Amphipod [Coord2], Int, Maybe (Coord2, Coord2))]
-        nextStates =
-          if not (null ios)
-            then -- always move illegals first
-
-            -- traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
-              movingOne (L.head ios)
-            else -- TODO: if we're moving an apod that started in the hallway, wemust keep moving that apod
-            case state of
-              Nothing ->
-                -- traceWhen debug (traceShow ("no state, so any move allowed")) $
-                allMoves g aPos pathCost state
-              Just (lastPos, origin) ->
-                case M.lookup origin rooms of
-                  Just _ ->
-                    -- traceWhen debug (traceShow ("current mover started in a room, any move allowed")) $
-                    allMoves g aPos pathCost state -- we started in a room so free to stop anywhere
-                  Nothing ->
-                    -- traceWhen debug (traceShow ("current mover started the hall")) $
-                    -- we started in the hallway so we have to stop in a room
-                    case M.lookup lastPos rooms of
-                      Just _ ->
-                        -- traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
-                        allMoves g aPos pathCost state -- our last-moved landed in a room so that's fine
-                      Nothing ->
-                        -- traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
-                        movingOne lastPos -- our last moved is going hallway to hallway and needs to move
-        movingOne p =
-          [ (makeMove (p, n) g, M.adjust (L.delete p . (n :)) a aPos, pathCost + energy (Full a), updateState state p n)
-            | let (Full a) = g M.! p,
-              n <- neighborsNoDiags p,
-              validMove g (Full a) p n
-          ]
         queue' =
           foldl'
             ( \q st@(g, aPos, pathCost, _) ->
@@ -243,7 +288,7 @@ organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
                 PQ.insert (pathCost + h g aPos, pathCost) st q
             )
             rest
-            nextStates
+            (nextStates g aPos pathCost state)
 
 exx =
   [s|
@@ -332,16 +377,22 @@ exx9 =
   [s|
 |]
 
-part1 :: Maybe Int
 part1 =
   (readGrid maze1 :: Grid Cell)
     & fillDef None
     & organize
 
-part2 :: Maybe Int
+-- & organizeDfs
+
 part2 =
-  (readGrid exx7 :: Grid Cell)
+  (readGrid maze2 :: Grid Cell)
     & fillDef None
     & organize
+
+part2' =
+  (readGrid exx2 :: Grid Cell)
+    & fillDef None
+    -- & organize
+    & organizeDfs
 
 debug = False
