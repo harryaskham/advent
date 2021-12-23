@@ -76,16 +76,19 @@ destinations Bronze = (5,) <$> [2 .. 5]
 destinations Copper = (7,) <$> [2 .. 5]
 destinations Desert = (9,) <$> [2 .. 5]
 
+positions :: Grid Cell -> Map Amphipod [Coord2]
+positions g = M.fromList [(a, find (Full a) g) | a <- enumerate]
+  
 energy :: Cell -> Int
 energy (Full Amber) = 1
 energy (Full Bronze) = 10
 energy (Full Copper) = 100
 energy (Full Desert) = 1000
 
-organized :: Grid Cell -> Bool
-organized g =
+organized :: Grid Cell -> Map Amphipod [Coord2] -> Bool
+organized g aPos =
   all
-    (\a -> let aPos = find (Full a) g in aPos `L.intersect` destinations a == aPos)
+    (\a -> (aPos M.! a) `L.intersect` destinations a == (aPos M.! a))
     enumerate
 
 illegalStops :: [Coord2]
@@ -119,11 +122,11 @@ makeMove (a, b) g = M.insert a Empty . M.insert b (g M.! a) $ g
 -- If an apod just moved, then we're still "in its move" and it can stop in the hallway
 -- We should store whether apod is in its move and whetehr it started from a hallway
 organize :: Grid Cell -> Maybe Int
-organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
+organize g' = go (PQ.singleton 0 (g', (positions g'), 0, Nothing)) S.empty
   where
     go queue seen
       | PQ.null queue = Nothing
-      | organized g = Just pathCost
+      | organized g aPos = Just pathCost
       | g `S.member` seen = go rest seen
       | otherwise =
         traceShow (pathCost, cost) $
@@ -136,6 +139,7 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
             )
             $ go queue' seen'
       where
+        ((cost, (g, aPos, pathCost, state)), rest) = PQ.deleteFindMin queue
         seen' = S.insert g seen
         -- can do better by using an actual distance map / just using topology
         -- if we're in the destination then the cost is the number of empties below us
@@ -147,19 +151,17 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
           where
             ds@((dx, _) : _) = destinations a
         minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
-        h g = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- find (Full a) g]
-        ((cost, (g, pathCost, state)), rest) = PQ.deleteFindMin queue
+        h g = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
           [p] -> [p]
           _ -> error "multiple illegals"
         movesFor a =
-          [ (makeMove (p, n) g, pathCost + energy (Full a), updateState state p n)
-            | p <- find (Full a) g,
+          [ (makeMove (p, n) g, M.adjust (L.delete p . (n:)) a aPos, pathCost + energy (Full a), updateState state p n)
+            | p <- aPos M.! a,
               n <- neighborsNoDiags p,
               validMove g (Full a) p n
           ]
-        nullMove = (g, pathCost, Nothing)
         allMoves = movesFor =<< [Amber, Bronze, Copper, Desert]
         -- keep track of whether we just moved the same one, or a new one
         updateState :: (Maybe (Coord2, Coord2)) -> Coord2 -> Coord2 -> Maybe (Coord2, Coord2)
@@ -167,7 +169,7 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
         updateState (Just (lastPos, origin)) p n
           | p == lastPos = Just (n, origin)
           | otherwise = Just (n, p)
-        nextStates :: [(Grid Cell, Int, Maybe (Coord2, Coord2))]
+        nextStates :: [(Grid Cell, Map Amphipod [Coord2], Int, Maybe (Coord2, Coord2))]
         nextStates =
           if not (null illegallyOccupied)
             then -- always move illegals first
@@ -195,12 +197,12 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
                           traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
                             movingOne lastPos -- our last moved is going hallway to hallway and needs to move
         movingOne p =
-          [ (makeMove (p, n) g, pathCost + energy a, updateState state p n)
-            | let a = g M.! p,
+          [ (makeMove (p, n) g, M.adjust (L.delete p . (n:)) a aPos, pathCost + energy (Full a), updateState state p n)
+            | let (Full a) = g M.! p,
               n <- neighborsNoDiags p,
-              validMove g a p n
+              validMove g (Full a) p n
           ]
-        queue' = foldl' (\q st@(g, pathCost, _) -> PQ.insert (pathCost + h g) st q) rest nextStates
+        queue' = foldl' (\q st@(g, _, pathCost, _) -> PQ.insert (pathCost + h g) st q) rest nextStates
 
 -- okay so:
 -- hardcode win positions
