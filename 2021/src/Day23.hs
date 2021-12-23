@@ -301,7 +301,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid exx2 :: Grid Cell)
+  (readGrid exx :: Grid Cell)
     & fillDef None
     & organize
 
