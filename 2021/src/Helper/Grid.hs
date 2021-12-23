@@ -51,10 +51,13 @@ readGrid = toGrid . lines
 fromCoords :: (Foldable f, Bounded a) => a -> f (Int, Int) -> Grid a
 fromCoords def = fillEmpty . foldl' (\g c -> M.insert c def g) M.empty
 
-fillEmpty :: (Bounded a) => Grid a -> Grid a
-fillEmpty g =
+fillDef :: a -> Grid a -> Grid a
+fillDef def g =
   let (w, h) = maxXY g
-   in M.fromList [((x, y), v) | x <- [0 .. w], y <- [0 .. h], let v = fromMaybe minBound (M.lookup (x, y) g)]
+   in M.fromList [((x, y), v) | x <- [0 .. w], y <- [0 .. h], let v = fromMaybe def (M.lookup (x, y) g)]
+
+fillEmpty :: (Bounded a) => Grid a -> Grid a
+fillEmpty = fillDef minBound
 
 toGrid :: GridCell a => [Text] -> Grid a
 toGrid rows =
@@ -153,3 +156,6 @@ extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
           c = g M.! (x', y')
        in f c (xi, yi)
     member (x, y) = x >= 0 && y >= 0 && x < w * n && y < h * n
+
+find :: (Eq a) => a -> Grid a -> [(Int, Int)]
+find a g = [k | (k, v) <- M.toList g, v == a]
