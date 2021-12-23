@@ -146,7 +146,8 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
           | otherwise = (y - 1) + L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
           where
             ds@((dx, _) : _) = destinations a
-        h g = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- find (Full a) g]
+        minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
+        h g = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- find (Full a) g]
         ((cost, (g, pathCost, state)), rest) = PQ.deleteFindMin queue
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
@@ -159,7 +160,7 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
               validMove g (Full a) p n
           ]
         nullMove = (g, pathCost, Nothing)
-        allMoves = nullMove : (movesFor =<< [Amber, Bronze, Copper, Desert])
+        allMoves = movesFor =<< [Amber, Bronze, Copper, Desert]
         -- keep track of whether we just moved the same one, or a new one
         updateState :: (Maybe (Coord2, Coord2)) -> Coord2 -> Coord2 -> Maybe (Coord2, Coord2)
         updateState Nothing p n = Just (n, p)
@@ -280,6 +281,18 @@ exx4 =
   #########
 |]
 
+-- should complete fast
+exx5 =
+  [s|
+#############
+#AA.....B.BD#
+###B#.#.#.###
+  #D#C#.#.#
+  #D#B#C#C#
+  #A#D#C#A#
+  #########
+|]
+
 part1 :: Maybe Int
 part1 =
   (readGrid maze1 :: Grid Cell)
@@ -288,7 +301,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid exx3 :: Grid Cell)
+  (readGrid exx2 :: Grid Cell)
     & fillDef None
     & organize
 
