@@ -1,5 +1,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 
+-- TODO:
+-- Remove grid from pqueue, only have walls and member positions
+
 module Day23 where
 
 import Data.Array qualified as A
