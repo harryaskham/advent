@@ -33,7 +33,8 @@ common common-settings
                         lens,
                         bitwise,
                         random,
-                        string-qq
+                        string-qq,
+                        PSQueue
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),

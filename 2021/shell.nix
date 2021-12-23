@@ -6,7 +6,7 @@ let
 
   f = { mkDerivation, array, base, benchpress, bimap, bitwise
       , containers, extra, file-embed, fin, hs-functors, HUnit, lens, lib
-      , linear, MissingH, mod, monad-memo, mtl, parsec, pqueue
+      , linear, MissingH, mod, monad-memo, mtl, parsec, pqueue, PSQueue
       , QuickCheck, random, relude, safe, semirings, string-qq
       , template-haskell, text, utility-ht, vector
       }:
@@ -19,19 +19,19 @@ let
         libraryHaskellDepends = [
           array base benchpress bimap bitwise containers extra file-embed fin
           hs-functors lens linear MissingH mod monad-memo mtl parsec pqueue
-          random relude safe semirings string-qq template-haskell text
-          utility-ht vector
+          PSQueue random relude safe semirings string-qq template-haskell
+          text utility-ht vector
         ];
         executableHaskellDepends = [
           array base benchpress bimap bitwise containers extra file-embed fin
           hs-functors lens linear MissingH mod monad-memo mtl parsec pqueue
-          random relude safe semirings string-qq template-haskell text
-          utility-ht vector
+          PSQueue random relude safe semirings string-qq template-haskell
+          text utility-ht vector
         ];
         testHaskellDepends = [
           array base benchpress bimap bitwise containers extra file-embed fin
           hs-functors HUnit lens linear MissingH mod monad-memo mtl parsec
-          pqueue QuickCheck random relude safe semirings string-qq
+          pqueue PSQueue QuickCheck random relude safe semirings string-qq
           template-haskell text utility-ht vector
         ];
         license = "unknown";

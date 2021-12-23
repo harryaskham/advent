@@ -10,6 +10,7 @@ import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
+import Data.PSQueue qualified as PS
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.String.QQ
@@ -226,7 +227,7 @@ nextStates g aPos pathCost state =
                     -- We should store whether apod is in its move and whetehr it started from a hallway
 
 organize :: Grid Cell -> Maybe Int
-organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
+organize g' = go (PS.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
   where
     go queue seen
       | PQ.null queue = Nothing
