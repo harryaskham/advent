@@ -77,8 +77,26 @@ instance GridCell Cell where
 
 -- Where can an a go from p, using g only for walls checking
 -- This should be a bfs
+-- remember to remove stopping outside the rooms
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> Map Amphipod [Coord2] -> [(Coord2, Int)]
-allowedDestinations g a p aPos = undefined
+allowedDestinations g a origin@(ox, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
+  where
+    allAPos = S.fromList (concat (M.elems aPos))
+    otherAPos = S.fromList ([p | (a', ps) <- M.toList aPos, a /= a', p <- ps])
+    hallWayOrigin = oy == 1
+    validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
+    validRoomDestinations = S.fromList $ let ds = destinations a in if any (`S.member` otherAPos) ds then [] else ds
+    validDestinations = validHallwayDestinations `S.union` validRoomDestinations
+    go SQ.Empty _ destinations = destinations
+    go ((p, cost) SQ.:<| rest) seen destinations
+      | p `S.member` seen = go rest seen destinations
+      | hallWayOrigin && p `S.member` validRoomDestinations = go queue seen' ((p, cost) : destinations)
+      | (not hallWayOrigin) && p `S.member` validDestinations = go queue seen' ((p, cost) : destinations)
+      | otherwise = go queue seen' destinations
+      where
+        seen' = S.insert p seen
+        nextStates = [(n, cost + energy' a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `S.member` allAPos)]
+        queue = rest SQ.>< SQ.fromList nextStates
 
 solve :: Grid Cell -> Maybe Int
 solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
@@ -92,10 +110,6 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
         move p d a aPos = M.adjust (L.delete p . (d :)) a aPos
-        -- For each amphipod:
-        --   BFS to find its allowed destinations, using grid for the wallpos only
-        --   Add to the queue only those allowed destinations
-        --   simplest heuristic possible
         states =
           [ (move p d a aPos, pathCost + dist * energy' a)
             | (a, ps) <- M.toList aPos,
@@ -375,6 +389,11 @@ part1 =
   (readGrid maze1 :: Grid Cell)
     & fillDef None
     & organize
+
+part1' =
+  (readGrid maze1 :: Grid Cell)
+    & fillDef None
+    & solve
 
 part2 =
   (readGrid maze2 :: Grid Cell)
