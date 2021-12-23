@@ -126,7 +126,7 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
       | organized g = Just pathCost
       | g `S.member` seen = go rest seen
       | otherwise =
-        traceShow pathCost $
+        traceShow (pathCost, cost) $
           traceWhen
             debug
             ( pauseId $
@@ -141,21 +141,12 @@ organize g' = go (PQ.singleton 0 (g', 0, Nothing)) S.empty
         -- if we're in the destination then the cost is the number of empties below us
         -- or just as before, but put penalties on empty spaces
         roomCost g = sum [energy (Full a) * (dy - 2) | a <- enumerate, let ds = destinations a, d@(dx, dy) <- ds, g M.! d /= Full a]
-        h g =
-          (roomCost g)
-            + sum
-              [ energy (Full a)
-                  * sum
-                    [ L.minimum
-                        [ if x == dx
-                            then abs (dy - y)
-                            else (y - 1) + manhattan (x, 1) d
-                          | d@(dx, dy) <- destinations a
-                        ]
-                      | p@(x, y) <- find (Full a) g
-                    ]
-                | a <- enumerate
-              ]
+        minDistanceToDest p@(x, y) a
+          | x == dx = y - 1
+          | otherwise = (y - 1) + L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+          where
+            ds@((dx, _) : _) = destinations a
+        h g = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- find (Full a) g]
         ((cost, (g, pathCost, state)), rest) = PQ.deleteFindMin queue
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
@@ -297,7 +288,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid exx4 :: Grid Cell)
+  (readGrid exx3 :: Grid Cell)
     & fillDef None
     & organize
 
