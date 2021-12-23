@@ -95,7 +95,7 @@ illegalStops :: [Coord2]
 illegalStops = [(3, 1), (5, 1), (7, 1), (9, 1)]
 
 rooms :: Map Coord2 (Amphipod, [Coord2])
-rooms = M.fromList[(d, (a, ds)) | a <- enumerate, let ds = destinations a, d <- ds]
+rooms = M.fromList [(d, (a, ds)) | a <- enumerate, let ds = destinations a, d <- ds]
 
 -- Can this amphipod move to this position?
 -- Not the hallway condition, only the room one
@@ -137,17 +137,31 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
       where
         (((cost,_), (g, aPos, pathCost, state)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
-        -- Because we don't penalise being above an empty, at the very least every empty below the first is going to need an unaccounted for move
-        roomCost g = sum [energy (Full a) * (dy - 2) | a <- enumerate, let ds = destinations a, d@(dx, dy) <- ds, g M.! d /= Full a, dy > 2]
+        -- Because we don't penalise being above an empty, at the very least every empty below the first requires additional moves
+        -- EEE = 6, EEF = 3, EFE = 4, FEE = 5, EFF = 1, FEF = 2
+        binCosts g a ds =
+          let empties = (`elem` [Full a, Wall]) . (g M.!) <$> ds
+           in case empties of
+                [False, False, False] -> 6
+                [False, False, True] -> 3
+                [False, True, False] -> 4
+                [False, True, True] -> 1
+                [True, False, False] -> 5
+                [True, False, True] -> 2
+                [True, True, False] -> 3
+                [True, True, True] -> 0
+        --roomCost g = sum [energy (Full a) | a <- enumerate, let ds = destinations a, d@(dx, dy) <- ds, g M.! d /= Full a, dy > 2]
+        roomCost g = sum [energy (Full a) * binCosts g a (drop 1 ds) | a <- enumerate, let ds = destinations a]
         -- heuristic:
         -- ignore those already in their places
         -- if you are not in your place:
         -- minimum distance to an empty space
-        minDistanceToDest p@(x, y) a
+        -- TODO: in hole but there's space below
+        minDistanceToDest g p@(x, y) a
         -- if we're in the hole, fine
           | x == dx && y > 1 = 0
           -- if we're above our hole, shortest distance to an empty
-          | x == dx && y == 1 = L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+          | x == dx && y == 1 = 1 -- L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
           -- if we're in another bucket, get to the top then distance to an empty. also works if we're at the top
           | x /= dx = (y - 1) + L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
           | otherwise = error "wat"
@@ -155,7 +169,10 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
             ds@((dx, _) : _) = destinations a
         -- TODO: Better heuristic might help a lot
         minDistanceToDest' p a =  L.minimum (manhattan p <$> destinations a)
-        h g aPos = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
+        --h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
+        h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest g p a | a <- enumerate, p <- aPos M.! a]
+        --h g aPos = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
+        --h g aPos = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
         illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
           [] -> []
           [p] -> [p]
@@ -211,39 +228,6 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
                             -- traceShow ("new state",pathCost,h g aPos,pathCost + h g aPos) $
                                PQ.insert (pathCost + h g aPos, pathCost) st q) rest nextStates
 
--- okay so:
--- hardcode win positions
--- can leave an Apod in an invalid position but then there's only one legal move, to move it away
--- only move to room if room is dest && there are no others in it
--- precompute all-points all-apods paths?
--- a* search?
-
-testInput =
-  [s|
-#############
-#...........#
-###B#C#B#D###
-  #A#D#C#A#
-  #########
-|]
-
-testInput2 =
-  [s|
-#############
-#.....D.D.A.#
-###.#B#C#.###
-  #A#B#C#.#
-  #########
-|]
-
-testInput3 =
-  [s|
-#############
-#.....D.....#
-###.#B#C#D###
-  #A#B#C#A#
-  #########
-|]
 
 exx =
   [s|
@@ -312,6 +296,23 @@ exx6 =
   #A#B#C#D#
   ######### 
 |]
+    
+exx7 =
+  [s|
+#############
+#AA.......AD#
+###.#B#C#.###
+  #.#B#C#.#
+  #D#B#C#D#
+  #A#B#C#D#
+  ######### 
+|]
+exx8 =
+  [s|
+|]
+exx9 =
+  [s|
+|]
 
 part1 :: Maybe Int
 part1 =
@@ -321,7 +322,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid exx6 :: Grid Cell)
+  (readGrid maze2 :: Grid Cell)
     & fillDef None
     & organize
 
