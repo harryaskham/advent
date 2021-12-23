@@ -20,9 +20,8 @@ import Helper.Coord
 import Helper.Grid hiding (Empty, Wall)
 import Helper.TH
 import Helper.Tracers
-import Helper.Tracers (traceWhen)
 import Helper.Util
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding (updateState)
 import Prelude hiding (find)
 
 maze1 :: Text
@@ -78,7 +77,7 @@ destinations Desert = (9,) <$> [2 .. 5]
 
 positions :: Grid Cell -> Map Amphipod [Coord2]
 positions g = M.fromList [(a, find (Full a) g) | a <- enumerate]
-  
+
 energy :: Cell -> Int
 energy (Full Amber) = 1
 energy (Full Bronze) = 10
@@ -107,20 +106,48 @@ validMove g a p n
       Nothing -> True
       Just (a', ps) ->
         p `elem` ps -- if we're already in the room, doesn't matter if it's ours, we can move
-          || ( a == Full a' -- then we're hallway, so if it's a room, it's the right room, and also it's got the right ones in it
-                 && length [a'' | a'' <- (g M.!) <$> ps, a'' `elem` [Empty, a]] == (length [p | p <- ps, g M.! p /= Wall])
-             )
+          || a == Full a' -- then we're hallway, so if it's a room, it's the right room, and also it's got the right ones in it
+            && length [a'' | a'' <- (g M.!) <$> ps, a'' `elem` [Empty, a]] == (length [p | p <- ps, g M.! p /= Wall])
 
 makeMove :: (Coord2, Coord2) -> Grid Cell -> Grid Cell
 makeMove (a, b) g = M.insert a Empty . M.insert b (g M.! a) $ g
 
---organizeDfs :: Grid Cell -> Int -> Int
---organizeDfs g cost aPos = L.minimum [organizeDfs (g', cost', aPos') <- next)]
+illegallyOccupied :: Grid Cell -> [Coord2]
+illegallyOccupied g =
+  case [p | p <- illegalStops, (g M.! p) /= Empty] of
+    [] -> []
+    [p] -> [p]
+    _ -> error "multiple illegals"
+
+organizeDfs :: Grid Cell -> IO ()
+organizeDfs g = do
+  bestRef <- newIORef 0
+  seenRef <- newIORef M.empty
+  let go g aPos cost state = do
+        return ()
+  go g (positions g) 0 Nothing
+
+-- keep track of whether we just moved the same one, or a new one
+updateState :: Maybe (Coord2, Coord2) -> Coord2 -> Coord2 -> Maybe (Coord2, Coord2)
+updateState Nothing p n = Just (n, p)
+updateState (Just (lastPos, origin)) p n
+  | p == lastPos = Just (n, origin)
+  | otherwise = Just (n, p)
+
+allMoves :: Grid Cell -> Map Amphipod [Coord2] -> Int -> Maybe (Coord2, Coord2) -> [(Grid Cell, Map Amphipod [Coord2], Int, Maybe (Coord2, Coord2))]
+allMoves g aPos pathCost state = movesFor =<< [Amber, Bronze, Copper, Desert]
+  where
+    movesFor a =
+      [ (makeMove (p, n) g, M.adjust (L.delete p . (n :)) a aPos, pathCost + energy (Full a), updateState state p n)
+        | p <- aPos M.! a,
+          n <- neighborsNoDiags p,
+          validMove g (Full a) p n
+      ]
 
 -- If an apod just moved, then we're still "in its move" and it can stop in the hallway
 -- We should store whether apod is in its move and whetehr it started from a hallway
 organize :: Grid Cell -> Maybe Int
-organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
+organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
   where
     go queue seen
       | PQ.null queue = Nothing
@@ -128,14 +155,15 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
       | aPos `S.member` seen = go rest seen
       | otherwise =
         traceShow (pathCost, cost) $
-          traceWhen debug 
+          traceWhen
+            debug
             ( pauseId $
                 traceShow (state, "pathCost", pathCost, "heuristic", h g aPos, "pq cost", cost) $
                   traceTextLn (pretty g)
             )
-          $ go queue' seen'
+            $ go queue' seen'
       where
-        (((cost,_), (g, aPos, pathCost, state)), rest) = PQ.deleteFindMin queue
+        (((cost, _), (g, aPos, pathCost, state)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
         -- Because we don't penalise being above an empty, at the very least every empty below the first requires additional moves
         -- EEE = 6, EEF = 3, EFE = 4, FEE = 5, EFF = 1, FEF = 2
@@ -158,76 +186,64 @@ organize g' = go (PQ.singleton (0,0) (g', (positions g'), 0, Nothing)) S.empty
         -- minimum distance to an empty space
         -- TODO: in hole but there's space below
         minDistanceToDest g p@(x, y) a
-        -- if we're in the hole, fine
+          -- if we're in the hole, fine
           | x == dx && y > 1 = 0
           -- if we're above our hole, shortest distance to an empty
           | x == dx && y == 1 = 1 -- L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
           -- if we're in another bucket, get to the top then distance to an empty. also works if we're at the top
-          | x /= dx = (y - 1) + L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+          | x /= dx = y - 1 + L.minimum [manhattan p d | d <- ds, g M.! d /= Full a]
           | otherwise = error "wat"
           where
             ds@((dx, _) : _) = destinations a
         -- TODO: Better heuristic might help a lot
-        minDistanceToDest' p a =  L.minimum (manhattan p <$> destinations a)
+        minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
         --h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
         h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest g p a | a <- enumerate, p <- aPos M.! a]
         --h g aPos = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
         --h g aPos = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
-        illegallyOccupied = case [p | p <- illegalStops, (g M.! p) /= Empty] of
-          [] -> []
-          [p] -> [p]
-          _ -> error "multiple illegals"
-        movesFor a =
-          [ (makeMove (p, n) g, M.adjust (L.delete p . (n:)) a aPos, pathCost + energy (Full a), updateState state p n)
-            | p <- aPos M.! a,
-              n <- neighborsNoDiags p,
-              validMove g (Full a) p n
-          ]
-        allMoves = movesFor =<< [Amber, Bronze, Copper, Desert]
-        -- keep track of whether we just moved the same one, or a new one
-        updateState :: (Maybe (Coord2, Coord2)) -> Coord2 -> Coord2 -> Maybe (Coord2, Coord2)
-        updateState Nothing p n = Just (n, p)
-        updateState (Just (lastPos, origin)) p n
-          | p == lastPos = Just (n, origin)
-          | otherwise = Just (n, p)
+        ios = illegallyOccupied g
         nextStates :: [(Grid Cell, Map Amphipod [Coord2], Int, Maybe (Coord2, Coord2))]
         nextStates =
-          if not (null illegallyOccupied)
+          if not (null ios)
             then -- always move illegals first
 
-              -- traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
-                movingOne (L.head illegallyOccupied)
+            -- traceWhen debug (traceShow ("illegal occupation, must move:", illegallyOccupied, state)) $
+              movingOne (L.head ios)
             else -- TODO: if we're moving an apod that started in the hallway, wemust keep moving that apod
             case state of
               Nothing ->
                 -- traceWhen debug (traceShow ("no state, so any move allowed")) $
-                  allMoves
+                allMoves g aPos pathCost state
               Just (lastPos, origin) ->
                 case M.lookup origin rooms of
                   Just _ ->
                     -- traceWhen debug (traceShow ("current mover started in a room, any move allowed")) $
-                      allMoves -- we started in a room so free to stop anywhere
+                    allMoves g aPos pathCost state -- we started in a room so free to stop anywhere
                   Nothing ->
                     -- traceWhen debug (traceShow ("current mover started the hall")) $
-                      -- we started in the hallway so we have to stop in a room
-                      case M.lookup lastPos rooms of
-                        Just _ ->
-                          -- traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
-                            allMoves -- our last-moved landed in a room so that's fine
-                        Nothing ->
-                          -- traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
-                            movingOne lastPos -- our last moved is going hallway to hallway and needs to move
+                    -- we started in the hallway so we have to stop in a room
+                    case M.lookup lastPos rooms of
+                      Just _ ->
+                        -- traceWhen debug (traceShow ("current hallway mover made it to a room so that's okay")) $
+                        allMoves g aPos pathCost state -- our last-moved landed in a room so that's fine
+                      Nothing ->
+                        -- traceWhen debug (traceShow ("current hallway mover still in hall so need to move him")) $
+                        movingOne lastPos -- our last moved is going hallway to hallway and needs to move
         movingOne p =
-          [ (makeMove (p, n) g, M.adjust (L.delete p . (n:)) a aPos, pathCost + energy (Full a), updateState state p n)
+          [ (makeMove (p, n) g, M.adjust (L.delete p . (n :)) a aPos, pathCost + energy (Full a), updateState state p n)
             | let (Full a) = g M.! p,
               n <- neighborsNoDiags p,
               validMove g (Full a) p n
           ]
-        queue' = foldl' (\q st@(g, aPos, pathCost, _) ->
-                           --traceTextLn (pretty g) $
-                            -- traceShow ("new state",pathCost,h g aPos,pathCost + h g aPos) $
-                               PQ.insert (pathCost + h g aPos, pathCost) st q) rest nextStates
-
+        queue' =
+          foldl'
+            ( \q st@(g, aPos, pathCost, _) ->
+                --traceTextLn (pretty g) $
+                -- traceShow ("new state",pathCost,h g aPos,pathCost + h g aPos) $
+                PQ.insert (pathCost + h g aPos, pathCost) st q
+            )
+            rest
+            nextStates
 
 exx =
   [s|
@@ -296,7 +312,7 @@ exx6 =
   #A#B#C#D#
   ######### 
 |]
-    
+
 exx7 =
   [s|
 #############
@@ -307,9 +323,11 @@ exx7 =
   #A#B#C#D#
   ######### 
 |]
+
 exx8 =
   [s|
 |]
+
 exx9 =
   [s|
 |]
@@ -322,7 +340,7 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  (readGrid maze2 :: Grid Cell)
+  (readGrid exx7 :: Grid Cell)
     & fillDef None
     & organize
 
