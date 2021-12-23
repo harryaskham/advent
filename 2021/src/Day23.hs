@@ -98,6 +98,21 @@ allowedDestinations g a origin@(ox, oy) aPos = go (SQ.singleton (origin, 0)) S.e
         nextStates = [(n, cost + energy' a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `S.member` allAPos)]
         queue = rest SQ.>< SQ.fromList nextStates
 
+emptyG :: Text
+emptyG =
+  [s|
+#############
+#...........#
+###.#.#.#.###
+  #.#.#.#.#
+  #########
+  #########
+  #########
+|]
+
+prettyA aPos =
+  pretty $ foldl' (\g (a, ps) -> foldl' (\g p -> M.insert p (Full a) g) g ps) (fillDef None $ readGrid emptyG) (M.toList aPos)
+
 solve :: Grid Cell -> Maybe Int
 solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
   where
@@ -105,13 +120,18 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | organized aPos = Just pathCost
       | PQ.null queue = Nothing
       | aPos `S.member` seen = go rest seen
-      | otherwise = go queue' seen'
+      | otherwise =
+        ( --pauseId $
+          traceShow ("pathCost", pathCost, "pq cost", cost) $
+            traceTextLn (prettyA aPos)
+        )
+          $ go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
         move p d a aPos = M.adjust (L.delete p . (d :)) a aPos
         states =
-          [ (move p d a aPos, pathCost + dist * energy' a)
+          [ (move p d a aPos, pathCost + dist)
             | (a, ps) <- M.toList aPos,
               p <- ps,
               (d, dist) <- allowedDestinations g a p aPos
