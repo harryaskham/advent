@@ -126,10 +126,11 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | aPos `S.member` seen =
         go rest seen
       | otherwise =
-        pauseId
-          ( traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
-              traceTextLn (prettyA aPos)
-          )
+        --pauseId
+        --  ( traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
+        --      traceTextLn (prettyA aPos)
+        --  )
+        traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
           (go queue' seen')
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
@@ -256,7 +257,7 @@ exx7 =
 |]
 
 part1 =
-  (readGrid maze1' :: Grid Cell)
+  (readGrid maze1 :: Grid Cell)
     & fillDef None
     & solve
 
