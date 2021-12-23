@@ -1,8 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 -- TODO:
--- Remove grid from pqueue, only have walls and member positions
--- bfs-moves; for each thing; bfs to find possible destinations, then each is a "movement" and gets added to the queue
 -- reenable tests
 
 module Day23 where
@@ -75,6 +73,9 @@ instance GridCell Cell where
         (Full Desert, 'D')
       ]
 
+validHallwayDestinations :: Set Coord2
+validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
+
 -- Where can an a go from p, using g only for walls checking
 -- This should be a bfs
 -- remember to remove stopping outside the rooms
@@ -84,7 +85,6 @@ allowedDestinations g a origin@(ox, oy) aPos = go (SQ.singleton (origin, 0)) S.e
     allAPos = S.fromList (concat (M.elems aPos))
     otherAPos = S.fromList ([p | (a', ps) <- M.toList aPos, a /= a', p <- ps])
     hallWayOrigin = oy == 1
-    validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
     validRoomDestinations = S.fromList $ let ds = destinations a in if any (`S.member` otherAPos) ds then [] else ds
     validDestinations = validHallwayDestinations `S.union` validRoomDestinations
     go SQ.Empty _ destinations = destinations
@@ -111,7 +111,13 @@ emptyG =
 |]
 
 prettyA aPos =
-  pretty $ foldl' (\g (a, ps) -> foldl' (\g p -> M.insert p (Full a) g) g ps) (fillDef None $ readGrid emptyG) (M.toList aPos)
+  pretty $
+    foldl'
+      ( \g (a, ps) ->
+          foldl' (\g p -> M.insert p (Full a) g) g ps
+      )
+      (fillDef None $ readGrid emptyG)
+      (M.toList aPos)
 
 solve :: Grid Cell -> Maybe Int
 solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
@@ -121,11 +127,11 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | PQ.null queue = Nothing
       | aPos `S.member` seen = go rest seen
       | otherwise =
-        ( --pauseId $
-          traceShow ("pathCost", pathCost, "pq cost", cost) $
-          --traceTextLn (prettyA aPos)
-        )
-          $ go queue' seen'
+        --pauseId $
+        traceShow ("pathCost", pathCost, "pq cost", cost) $
+          -- traceTextLn (prettyA aPos)
+
+          go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
@@ -137,7 +143,15 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
               (d, dist) <- allowedDestinations g a p aPos
           ]
         minDistanceToDest p a = L.minimum (manhattan p <$> destinations a)
+        --h aPos = sum [energy' a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
         h aPos = sum [energy' a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
+        minDistanceToDest' p@(x, y) a
+          | x == dx && y > 1 = 0
+          | x == dx && y == 1 = 1 -- L.minimum [manhattan p d | d <- ds, g M.! d /= (Full a)]
+          | x /= dx = y - 1 + abs (x - dx)
+          | otherwise = error "wat"
+          where
+            ds@((dx, _) : _) = destinations a
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
 
 destinations :: Amphipod -> [Coord2]
@@ -397,26 +411,13 @@ exx7 =
   #########
 |]
 
-exx8 =
-  [s|
-|]
-
-exx9 =
-  [s|
-|]
-
 part1 =
-  (readGrid maze1 :: Grid Cell)
-    & fillDef None
-    & organize
-
-part1' =
   (readGrid maze1 :: Grid Cell)
     & fillDef None
     & solve
 
 part2 =
-  (readGrid maze2 :: Grid Cell)
+  (readGrid exx7 :: Grid Cell)
     & fillDef None
     & solve
 
