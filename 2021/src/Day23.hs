@@ -233,7 +233,7 @@ organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
       | organized g aPos = Just pathCost
       | aPos `S.member` seen = go rest seen
       | otherwise =
-        traceShow (pathCost, cost) $
+        traceWhen (cost `mod` 1000 == 0) (traceShow (pathCost, cost)) $
           traceWhen
             debug
             ( pauseId $
@@ -275,11 +275,12 @@ organize g' = go (PQ.singleton (0, 0) (g', positions g', 0, Nothing)) S.empty
           where
             ds@((dx, _) : _) = destinations a
         -- TODO: Better heuristic might help a lot
-        minDistanceToDest' p a = L.minimum (manhattan p <$> destinations a)
+        minDistanceToDest' _ p a = L.minimum (manhattan p <$> destinations a)
         --h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
-        h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest g p a | a <- enumerate, p <- aPos M.! a]
+        --h g aPos = roomCost g + sum [energy (Full a) * minDistanceToDest g p a | a <- enumerate, p <- aPos M.! a]
         --h g aPos = sum [energy (Full a) * minDistanceToDest' p a | a <- enumerate, p <- aPos M.! a]
         --h g aPos = sum [energy (Full a) * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
+        h g aPos = sum [energy (Full a) * minDistanceToDest' g p a | a <- enumerate, p <- aPos M.! a]
         queue' =
           foldl'
             ( \q st@(g, aPos, pathCost, _) ->
@@ -361,12 +362,12 @@ exx6 =
 exx7 =
   [s|
 #############
-#AA.......AD#
+#AA.D.....AD#
 ###.#B#C#.###
   #.#B#C#.#
-  #D#B#C#D#
+  #.#B#C#D#
   #A#B#C#D#
-  ######### 
+  #########
 |]
 
 exx8 =
