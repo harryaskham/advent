@@ -128,7 +128,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | aPos `S.member` seen = go rest seen
       | otherwise =
         --pauseId $
-        traceShow ("pathCost", pathCost, "pq cost", cost) $
+        traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue) $
           -- traceTextLn (prettyA aPos)
 
           go queue' seen'
