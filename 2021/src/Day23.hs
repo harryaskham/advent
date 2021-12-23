@@ -413,7 +413,7 @@ part1 =
     & solve
 
 part2 =
-  (readGrid exx7 :: Grid Cell)
+  (readGrid maze2 :: Grid Cell)
     & fillDef None
     & solve
 
