@@ -76,9 +76,7 @@ instance GridCell Cell where
 validHallwayDestinations :: Set Coord2
 validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
 
--- Where can an a go from p, using g only for walls checking
--- This should be a bfs
--- remember to remove stopping outside the rooms
+-- TODO: memo this
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> Map Amphipod [Coord2] -> [(Coord2, Int)]
 allowedDestinations g a origin@(ox, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
