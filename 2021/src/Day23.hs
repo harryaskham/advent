@@ -1,7 +1,6 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 -- TODO:
 -- reenable tests
+-- changing to set broke pt1
 
 module Day23 where
 
@@ -126,8 +125,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
       | aPos `S.member` seen =
-        traceShow ("cache hit") $
-          go rest seen
+        go rest seen
       | otherwise =
         traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
           -- traceTextLn (prettyA aPos)
@@ -262,6 +260,6 @@ part1 =
     & solve
 
 part2 =
-  (readGrid exx2 :: Grid Cell)
+  (readGrid maze2 :: Grid Cell)
     & fillDef None
     & solve

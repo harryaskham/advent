@@ -50,6 +50,7 @@ common common-settings
                         FlexibleInstances,
                         InstanceSigs,
                         MultiParamTypeClasses,
+                        QuasiQuotes,
                         NamedFieldPuns,
                         DeriveFoldable,
                         DeriveFunctor,
