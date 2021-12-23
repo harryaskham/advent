@@ -142,7 +142,12 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
               p <- ps,
               (d, dist) <- allowedDestinations g a p aPos
           ]
-        minDistanceToDest (x, _l) a = let ((dx, _) : _) = destinations a in abs (x - dx)
+        minDistanceToDest (x, y) a
+          | x == dx && y > 1 = 0
+          | x == dx && y == 1 = 1
+          | otherwise = (y - 1) + abs (x - dx)
+          where
+            ds@((dx, _) : _) = destinations a
         h aPos = sum [energy' a * minDistanceToDest p a | a <- enumerate, p <- aPos M.! a]
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
 
