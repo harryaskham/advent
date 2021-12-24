@@ -183,9 +183,6 @@ brutePar = runPar $ parFilterMap (/= 0) runBInt [(10 ^ 14 -1), (10 ^ 14 - 2) .. 
 -- where z can be quite big and gets bigger each block
 --part1 = bruteMap
 
-part1 :: Int
-part1 = 98998519596997 -- by hand
-
 part1'' =
   let ops = parseLinesWith line $(input 24)
    in findValid (V.fromList $ digitToInt <$> "99999999999999") ops
@@ -196,6 +193,9 @@ part1' =
 
 -- [ | (i, chunk) <- opChunks, s <- [1..9]]
 -- L.head [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], validMonad (traceShowId x) ops]
+
+part1 :: Int
+part1 = 98998519596997 -- by hand
 
 part2 :: Int
 part2 = 31521119151421 -- by hand
