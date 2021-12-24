@@ -142,7 +142,7 @@ runBlocks ws blocks = go ws blocks 0
     go _ [] z = z
     go (w : ws) ((d, a, b) : blocks) z =
       --traceShow (w, d, a, b, z, z `mod` 26, z `mod` 26 + a, z `div` d) $
-      traceShow (z `mod` 26 + a) $
+      traceShow (w, z `mod` 26 + a) $
         let z' = z `div` d
          in if (z `mod` 26) + a == w
               then go ws blocks z'
