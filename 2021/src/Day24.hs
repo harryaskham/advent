@@ -1,5 +1,6 @@
 module Day24 where
 
+import Control.Monad.Par
 import Control.Parallel.Strategies
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
@@ -13,15 +14,15 @@ import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Text.Read
-import Data.Vector hiding (dropWhile, notElem, take)
 import Data.Vector qualified as V hiding (notElem)
 import Extra (chunksOf)
-import Helper.Coord
 import Helper.Grid
 import Helper.TH
 import Helper.Tracers
 import Helper.Util hiding (count)
+import Text.ParserCombinators.Parsec ()
 import Text.ParserCombinators.Parsec hiding ((<|>))
+import Prelude hiding (get)
 
 newtype Var = Var Char deriving (Show, Eq, Ord)
 
@@ -48,13 +49,13 @@ line =
       eql = Eql <$> (string "eql " *> var) <*> (char ' ' *> arg)
    in try inp <|> try add <|> try mul <|> try div <|> try mod <|> try eql
 
-findValid :: Vector Int -> [Operation] -> Vector Int
+findValid :: V.Vector Int -> [Operation] -> V.Vector Int
 findValid s allOps = go 0 s initMem allOps
   where
     initMem = M.fromList $ [(Var 'x',), (Var 'y',), (Var 'z',), (Var 'w',)] <*> pure 0
     val mem (ArgVar v) = mem M.! v
     val _ (ArgLit v) = v
-    go :: Int -> V.Vector Int -> Map Var Int -> [Operation] -> Vector Int
+    go :: Int -> V.Vector Int -> Map Var Int -> [Operation] -> V.Vector Int
     go inpCount s mem [] =
       if mem M.! Var 'z' == 0
         then s
@@ -79,7 +80,7 @@ findValid s allOps = go 0 s initMem allOps
         Mod v a -> go inpCount s (M.adjust (`mod` val mem a) v mem) ops
         Eql v a -> go inpCount s (M.insert v (fromEnum $ (mem M.! v) == val mem a) mem) ops
 
-run :: Vector Int -> [Operation] -> Int
+run :: V.Vector Int -> [Operation] -> Int
 run s allOps = go 0 s initMem allOps
   where
     initMem = M.fromList $ [(Var 'x',), (Var 'y',), (Var 'z',), (Var 'w',)] <*> pure 0
@@ -123,7 +124,9 @@ blocks =
 -- equals the sum of the negative blocks
 
 runBInt :: Int -> Int
-runBInt x = runBlocks (digitToInt <$> show x) blocks
+runBInt x =
+  let s = digitToInt <$> show x
+   in if 0 `elem` s then 999999 else runBlocks s blocks
 
 -- z must always leave zero at the start
 -- becomes 10 + w
@@ -155,17 +158,57 @@ brute =
         v == 0
     ]
 
-bruteMap :: Int
+bruteMap :: [(Int, Int)]
 bruteMap =
-  let as = [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], let v = runBInt x, v == 0]
-      bs = as `using` (parBuffer 10 rdeepseq)
-   in L.head bs
+  let as = [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 13)]
+      --f x = x `mod` 1000000000
+      f = runBInt
+   in withStrategy
+        (parBuffer 10000000 rdeepseq)
+        (take 1 . filter ((== (0 :: Int)) . snd) . (fmap (\x -> (x, f x))) $ as)
 
-bruteMap' :: Int
-bruteMap' =
-  let as = [x | x <- [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 13)], let v = traceShow x $ x `mod` 10000, v == 0]
-      bs = as `using` (parBuffer 10 rdeepseq)
-   in L.head bs
+parFilterMap :: (Show a, NFData b) => (b -> Bool) -> (a -> b) -> [a] -> Par [b]
+parFilterMap p f as = do
+  ibs <- mapM (spawn . return . f) as
+  mapM get ibs
+
+data IList a
+  = Nil
+  | Cons a (IVar (IList a))
+
+type Stream a = IVar (IList a)
+
+streamFromList :: NFData a => [a] -> Par (Stream a)
+streamFromList xs = do
+  var <- new
+  fork $ loop xs var
+  return var
+  where
+    loop [] var = put var Nil
+    loop (x : xs) var = do
+      tail <- new
+      put var (Cons x tail)
+      loop xs tail
+
+streamMap :: NFData b => (a -> b) -> Stream a -> Par (Stream b)
+streamMap fn instrm = do
+  outstrm <- new
+  fork $ loop instrm outstrm
+  return outstrm
+  where
+    loop instrm outstrm = do
+      ilst <- get instrm
+      case ilst of
+        Nil -> put outstrm Nil
+        Cons h t -> do
+          newtl <- new
+          put outstrm (Cons (fn h) newtl)
+          loop t newtl
+
+-- brutePar = runPar $ parFilterMap (/= 0) runBInt [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 13)]
+brutePar = runPar $ parFilterMap (/= 0) runBInt [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 14 - 100)]
+
+-- ((fmap (\x -> (x, f x))) $ as)
 
 -- make a map for each block that tells you:
 -- input (w, z) -> output
