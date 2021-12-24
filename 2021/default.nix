@@ -1,8 +1,8 @@
 { mkDerivation, array, base, benchpress, bimap, bitwise, containers
 , extra, file-embed, fin, hs-functors, HUnit, lens, lib, linear
-, MissingH, mod, monad-memo, mtl, parallel, parsec, pqueue, PSQueue
-, QuickCheck, random, relude, safe, semirings, string-qq
-, template-haskell, text, utility-ht, vector
+, MissingH, mod, monad-memo, mtl, parsec, pqueue, QuickCheck
+, random, relude, safe, semirings, string-qq, template-haskell
+, text, utility-ht, vector
 }:
 mkDerivation {
   pname = "x2021";
@@ -12,21 +12,21 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     array base benchpress bimap bitwise containers extra file-embed fin
-    hs-functors lens linear MissingH mod monad-memo mtl parallel parsec
-    pqueue PSQueue random relude safe semirings string-qq
-    template-haskell text utility-ht vector
+    hs-functors lens linear MissingH mod monad-memo mtl parsec pqueue
+    random relude safe semirings string-qq template-haskell text
+    utility-ht vector
   ];
   executableHaskellDepends = [
     array base benchpress bimap bitwise containers extra file-embed fin
-    hs-functors lens linear MissingH mod monad-memo mtl parallel parsec
-    pqueue PSQueue random relude safe semirings string-qq
-    template-haskell text utility-ht vector
+    hs-functors lens linear MissingH mod monad-memo mtl parsec pqueue
+    random relude safe semirings string-qq template-haskell text
+    utility-ht vector
   ];
   testHaskellDepends = [
     array base benchpress bimap bitwise containers extra file-embed fin
-    hs-functors HUnit lens linear MissingH mod monad-memo mtl parallel
-    parsec pqueue PSQueue QuickCheck random relude safe semirings
-    string-qq template-haskell text utility-ht vector
+    hs-functors HUnit lens linear MissingH mod monad-memo mtl parsec
+    pqueue QuickCheck random relude safe semirings string-qq
+    template-haskell text utility-ht vector
   ];
   license = "unknown";
   hydraPlatforms = lib.platforms.none;
