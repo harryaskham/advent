@@ -95,7 +95,11 @@ allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.em
     allAPos = foldl1 S.union (M.elems aPos)
     otherAPos = foldl1 S.union [ps | (a', ps) <- M.toList aPos, a /= a']
     hallWayOrigin = oy == 1
-    validRoomDestinations = let others = otherAPos `S.intersection` (destinationMap M.! a) in if null others then destinationMap M.! a S.\\ allAPos else S.empty
+    validRoomDestinations =
+      let others = otherAPos `S.intersection` (destinationMap M.! a)
+       in if null others
+            then destinationMap M.! a S.\\ allAPos
+            else S.empty
     validDestinations = validHallwayDestinations `S.union` validRoomDestinations
     go SQ.Empty _ destinations = destinations
     go ((p, cost) SQ.:<| rest) seen destinations
