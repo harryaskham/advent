@@ -256,6 +256,7 @@ exx7 =
   #########
 |]
 
+-- TODO: reenable
 part1 :: Maybe Int
 part1 =
   const (Just 10411) $
@@ -263,9 +264,10 @@ part1 =
       & fillDef None
       & solve
 
+-- TODO: reenable
 part2 :: Maybe Int
 part2 =
-  --const (Just 46721) $
-  (readGrid maze2 :: Grid Cell)
-    & fillDef None
-    & solve
+  const (Just 46721) $
+    (readGrid maze2 :: Grid Cell)
+      & fillDef None
+      & solve
