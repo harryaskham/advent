@@ -3,7 +3,6 @@ module Day23 (part1, part2) where
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
-import Data.List ((!!))
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
@@ -13,21 +12,9 @@ import Data.String.QQ (s)
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import Helper.Coord (Coord2, neighborsNoDiags)
-import Helper.Grid (Grid, GridCell (charMap), fillDef, find, pretty, readGrid)
+import Helper.Grid (Grid, GridCell (charMap), fillDef, find, readGrid)
 import Helper.Util (enumerate)
 import Prelude hiding (find)
-
-emptyG :: Text
-emptyG =
-  [s|
-#############
-#...........#
-###.#.#.#.###
-  #.#.#.#.#
-  #########
-  #########
-  #########
-|]
 
 maze1 :: Text
 maze1 =
@@ -55,6 +42,8 @@ maze2 =
 
 data Amphipod = Amber | Bronze | Copper | Desert deriving (Eq, Ord, Show, Enum)
 
+type APos = Map Amphipod (Set Coord2)
+
 data Cell
   = None
   | Wall
@@ -74,20 +63,29 @@ instance GridCell Cell where
         (Full Desert, 'D')
       ]
 
+energy :: Amphipod -> Int
+energy Amber = 1
+energy Bronze = 10
+energy Copper = 100
+energy Desert = 1000
+
+positions :: Grid Cell -> APos
+positions g = M.fromList [(a, S.fromList $ find (Full a) g) | a <- enumerate]
+
+organized :: APos -> Bool
+organized aPos = all (\a -> aPos M.! a `S.isSubsetOf` (destinationMap M.! a)) enumerate
+
+destinationMap :: Map Amphipod (Set Coord2)
+destinationMap =
+  M.fromList
+    [ (Amber, S.fromList $ (3,) <$> [2 .. 5]),
+      (Bronze, S.fromList $ (5,) <$> [2 .. 5]),
+      (Copper, S.fromList $ (7,) <$> [2 .. 5]),
+      (Desert, S.fromList $ (9,) <$> [2 .. 5])
+    ]
+
 validHallwayDestinations :: Set Coord2
 validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
-
-type APos = Map Amphipod (Set Coord2)
-
-prettyA :: APos -> Text
-prettyA aPos =
-  pretty $
-    foldl'
-      ( \g (a, ps) ->
-          foldl' (\g p -> M.insert p (Full a) g) g ps
-      )
-      (fillDef None $ readGrid emptyG)
-      (M.toList aPos)
 
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
@@ -118,12 +116,8 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
     go queue seen
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
-      | aPos `S.member` seen =
-        go rest seen
-      | otherwise =
-        --traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
-        --      traceTextLn (prettyA aPos)
-        go queue' seen'
+      | aPos `S.member` seen = go rest seen
+      | otherwise = go queue' seen'
       where
         ((_, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
@@ -143,27 +137,6 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
             dx = fst . L.head . S.toList $ destinationMap M.! a
         h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
-
-destinationMap :: Map Amphipod (Set Coord2)
-destinationMap =
-  M.fromList
-    [ (Amber, S.fromList $ (3,) <$> [2 .. 5]),
-      (Bronze, S.fromList $ (5,) <$> [2 .. 5]),
-      (Copper, S.fromList $ (7,) <$> [2 .. 5]),
-      (Desert, S.fromList $ (9,) <$> [2 .. 5])
-    ]
-
-positions :: Grid Cell -> APos
-positions g = M.fromList [(a, S.fromList $ find (Full a) g) | a <- enumerate]
-
-energy :: Amphipod -> Int
-energy Amber = 1
-energy Bronze = 10
-energy Copper = 100
-energy Desert = 1000
-
-organized :: APos -> Bool
-organized aPos = all (\a -> aPos M.! a `S.isSubsetOf` (destinationMap M.! a)) enumerate
 
 part1 :: Maybe Int
 part1 =
