@@ -17,6 +17,18 @@ import Helper.Grid (Grid, GridCell (charMap), fillDef, find, pretty, readGrid)
 import Helper.Util (enumerate)
 import Prelude hiding (find)
 
+emptyG :: Text
+emptyG =
+  [s|
+#############
+#...........#
+###.#.#.#.###
+  #.#.#.#.#
+  #########
+  #########
+  #########
+|]
+
 maze1 :: Text
 maze1 =
   [s|
@@ -67,6 +79,16 @@ validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
 
 type APos = Map Amphipod (Set Coord2)
 
+prettyA :: APos -> Text
+prettyA aPos =
+  pretty $
+    foldl'
+      ( \g (a, ps) ->
+          foldl' (\g p -> M.insert p (Full a) g) g ps
+      )
+      (fillDef None $ readGrid emptyG)
+      (M.toList aPos)
+
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
@@ -85,28 +107,6 @@ allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.em
         seen' = S.insert p seen
         nextStates = [(n, cost + energy a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `S.member` allAPos)]
         queue = rest SQ.>< SQ.fromList nextStates
-
-emptyG :: Text
-emptyG =
-  [s|
-#############
-#...........#
-###.#.#.#.###
-  #.#.#.#.#
-  #########
-  #########
-  #########
-|]
-
-prettyA :: APos -> Text
-prettyA aPos =
-  pretty $
-    foldl'
-      ( \g (a, ps) ->
-          foldl' (\g p -> M.insert p (Full a) g) g ps
-      )
-      (fillDef None $ readGrid emptyG)
-      (M.toList aPos)
 
 solve :: Grid Cell -> Maybe Int
 solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
