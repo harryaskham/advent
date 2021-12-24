@@ -149,11 +149,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
           | otherwise = y - 1 + abs (x - dx) + 1
           where
             dx = fst . L.head . S.toList $ destinationMap M.! a
-        minDistanceToDest' (x, y) a = abs (dx - x)
-          where
-            dx = fst . L.head . S.toList $ destinationMap M.! a
-        --h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
-        h aPos = sum [energy a * minDistanceToDest' p a | a <- enumerate, p <- S.toList (aPos M.! a)]
+        h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
 
 destinationMap :: Map Amphipod (Set Coord2)
@@ -177,97 +173,16 @@ energy Desert = 1000
 organized :: APos -> Bool
 organized aPos = all (\a -> aPos M.! a `S.isSubsetOf` (destinationMap M.! a)) enumerate
 
-exx =
-  [s|
-#############
-#...........#
-###B#C#B#D###
-  #D#C#B#A#
-  #D#B#A#C#
-  #A#D#C#A#
-  #########
-|]
-
-exx2 =
-  [s|
-#############
-#.A...B.....#
-###.#.#C#D###
-  #A#B#C#D#
-  #A#B#C#D#
-  #A#B#C#D#
-  #########
-|]
-
--- completes
-exx3 =
-  [s|
-#############
-#A........BD#
-###B#C#.#.###
-  #D#C#B#.#
-  #D#B#A#C#
-  #A#D#C#A#
-  #########
-|]
-
-exx4 =
-  [s|
-#############
-#A.........D#
-###B#C#B#.###
-  #D#C#B#.#
-  #D#B#A#C#
-  #A#D#C#A#
-  #########
-|]
-
--- should complete fast
-exx5 =
-  [s|
-#############
-#AA.....B.BD#
-###B#.#.#.###
-  #D#C#.#.#
-  #D#B#C#C#
-  #A#D#C#A#
-  #########
-|]
-
-exx6 =
-  [s|
-#############
-#.........AD#
-###.#B#C#.###
-  #A#B#C#D#
-  #A#B#C#D#
-  #A#B#C#D#
-  ######### 
-|]
-
-exx7 =
-  [s|
-#############
-#AA.D.....AD#
-###.#B#C#.###
-  #.#B#C#.#
-  #.#B#C#D#
-  #A#B#C#D#
-  #########
-|]
-
--- TODO: reenable
 part1 :: Maybe Int
 part1 =
-  const (Just 10411) $
+  const (Just 10411) $ -- Disabled due to slowness
     (readGrid maze1 :: Grid Cell)
       & fillDef None
       & solve
 
--- TODO: reenable
 part2 :: Maybe Int
 part2 =
-  const (Just 46721) $
+  const (Just 46721) $ -- Disabled due to slowness
     (readGrid maze2 :: Grid Cell)
       & fillDef None
       & solve
