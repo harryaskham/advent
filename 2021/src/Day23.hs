@@ -1,30 +1,20 @@
--- TODO:
--- reenable tests
-
 module Day23 where
 
-import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
 import Data.List ((!!))
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
-import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
-import Data.PSQueue qualified as PS
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.String.QQ
+import Data.String.QQ (s)
 import Data.Text qualified as T
-import Data.Text.Read
 import Data.Vector qualified as V
 import Helper.Coord (Coord2, neighborsNoDiags)
-import Helper.Grid hiding (Empty, Wall)
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec hiding (updateState)
+import Helper.Grid (Grid, GridCell (charMap), fillDef, find, pretty, readGrid)
+import Helper.Util (enumerate)
 import Prelude hiding (find)
 
 maze1 :: Text
