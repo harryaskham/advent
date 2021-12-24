@@ -141,11 +141,12 @@ runBlocks ws blocks = go ws blocks 0
   where
     go _ [] z = z
     go (w : ws) ((d, a, b) : blocks) z =
-      -- traceShow (w, d, a, b, z, z `mod` 26, z `mod` 26 + a, z `div` d) $
-      let z' = z `div` d
-       in if (z `mod` 26) + a == w
-            then go ws blocks z'
-            else go ws blocks (z' * 26 + (w + b))
+      --traceShow (w, d, a, b, z, z `mod` 26, z `mod` 26 + a, z `div` d) $
+      traceShow (z `mod` 26 + a) $
+        let z' = z `div` d
+         in if (z `mod` 26) + a == w
+              then go ws blocks z'
+              else go ws blocks (z' * 26 + (w + b))
 
 brute :: Int
 brute =
@@ -172,39 +173,6 @@ parFilterMap p f as = do
   ibs <- mapM (spawn . return . f) as
   mapM get ibs
 
-data IList a
-  = Nil
-  | Cons a (IVar (IList a))
-
-type Stream a = IVar (IList a)
-
-streamFromList :: NFData a => [a] -> Par (Stream a)
-streamFromList xs = do
-  var <- new
-  fork $ loop xs var
-  return var
-  where
-    loop [] var = put var Nil
-    loop (x : xs) var = do
-      tail <- new
-      put var (Cons x tail)
-      loop xs tail
-
-streamMap :: NFData b => (a -> b) -> Stream a -> Par (Stream b)
-streamMap fn instrm = do
-  outstrm <- new
-  fork $ loop instrm outstrm
-  return outstrm
-  where
-    loop instrm outstrm = do
-      ilst <- get instrm
-      case ilst of
-        Nil -> put outstrm Nil
-        Cons h t -> do
-          newtl <- new
-          put outstrm (Cons (fn h) newtl)
-          loop t newtl
-
 -- brutePar = runPar $ parFilterMap (/= 0) runBInt [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 13)]
 brutePar = runPar $ parFilterMap (/= 0) runBInt [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 14 - 100)]
 
@@ -213,7 +181,10 @@ brutePar = runPar $ parFilterMap (/= 0) runBInt [(10 ^ 14 -1), (10 ^ 14 - 2) .. 
 -- make a map for each block that tells you:
 -- input (w, z) -> output
 -- where z can be quite big and gets bigger each block
-part1 = bruteMap
+--part1 = bruteMap
+
+part1 :: Int
+part1 = 98998519596997 -- by hand
 
 part1'' =
   let ops = parseLinesWith line $(input 24)
@@ -226,5 +197,5 @@ part1' =
 -- [ | (i, chunk) <- opChunks, s <- [1..9]]
 -- L.head [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], validMonad (traceShowId x) ops]
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 = 31521119151421 -- by hand
