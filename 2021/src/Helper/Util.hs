@@ -44,6 +44,12 @@ readAs r text = do
     [] -> fst <$> rs
     es -> error (show es)
 
+readOne :: TR.Reader a -> Text -> a
+readOne r text =
+  case r text of
+    Left e -> error (show e)
+    Right (a, _) -> a
+
 -- Helper utility for running a parser on a Text path
 parseWithIO :: GenParser Char () a -> FilePath -> IO a
 parseWithIO parser path = parseWith parser <$> readFile (toString path)
