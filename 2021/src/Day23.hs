@@ -256,12 +256,16 @@ exx7 =
   #########
 |]
 
+part1 :: Maybe Int
 part1 =
-  (readGrid maze1 :: Grid Cell)
-    & fillDef None
-    & solve
+  const (Just 10411) $
+    (readGrid maze1 :: Grid Cell)
+      & fillDef None
+      & solve
 
+part2 :: Maybe Int
 part2 =
+  --const (Just 46721) $
   (readGrid maze2 :: Grid Cell)
     & fillDef None
     & solve
