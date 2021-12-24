@@ -1,5 +1,6 @@
-module Day24 (part1, part2) where
+module Day24 where
 
+import Control.Parallel.Strategies
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
@@ -12,7 +13,9 @@ import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Text.Read
-import Data.Vector qualified as V
+import Data.Vector hiding (dropWhile, notElem, take)
+import Data.Vector qualified as V hiding (notElem)
+import Extra (chunksOf)
 import Helper.Coord
 import Helper.Grid
 import Helper.TH
@@ -45,36 +48,140 @@ line =
       eql = Eql <$> (string "eql " *> var) <*> (char ' ' *> arg)
    in try inp <|> try add <|> try mul <|> try div <|> try mod <|> try eql
 
-validMonad :: Int -> [Operation] -> Bool
-validMonad n ops
-  | '0' `elem` s = False
-  | otherwise = go s initMem ops
+findValid :: Vector Int -> [Operation] -> Vector Int
+findValid s allOps = go 0 s initMem allOps
   where
     initMem = M.fromList $ [(Var 'x',), (Var 'y',), (Var 'z',), (Var 'w',)] <*> pure 0
     val mem (ArgVar v) = mem M.! v
     val _ (ArgLit v) = v
-    s = show n
-    go :: String -> Map Var Int -> [Operation] -> Bool
-    go [] mem [] = mem M.! Var 'z' == 0
-    go (_ : _) _ [] = error "Did not consume all inputs"
-    go ss mem (op : ops) =
-      traceShow s $
-        let (mem', ss') =
-              case op of
-                Inp v -> case ss of
-                  [] -> error "input without input"
-                  (s : ss') -> (M.insert v (digitToInt s) mem, ss')
-                Add v a -> (M.adjust (+ val mem a) v mem, ss)
-                Mul v a -> (M.adjust (* val mem a) v mem, ss)
-                Div v a -> (M.adjust (`div` val mem a) v mem, ss)
-                Mod v a -> (M.adjust (`mod` val mem a) v mem, ss)
-                Eql v a -> (M.insert v (fromEnum $ (mem M.! v) == val mem a) mem, ss)
-         in go ss' mem' ops
+    go :: Int -> V.Vector Int -> Map Var Int -> [Operation] -> Vector Int
+    go inpCount s mem [] =
+      if mem M.! Var 'z' == 0
+        then s
+        else go 0 (s V.// [(inpCount - 1, (s V.! inpCount - 1) - 1)]) initMem allOps
+    go inpCount s mem (op : ops) =
+      --traceShow (s, [mem M.! (Var v) | v <- ['w' .. 'z']]) $
+      case op of
+        Inp v ->
+          pauseId $
+            traceShow (s, [mem M.! (Var v) | v <- ['w' .. 'z']]) $
+              case mem M.! (Var 'z') of
+                0 ->
+                  traceShow ("success block", inpCount) $
+                    go (inpCount + 1) s (M.insert v (s V.! inpCount) mem) ops
+                _ ->
+                  traceShow ("fail early", inpCount, s) $
+                    go 0 (s V.// [(inpCount - 1, (s V.! (inpCount - 1)) - 1)]) initMem allOps
+        -- drop input char by 1
+        Add v a -> go inpCount s (M.adjust (+ val mem a) v mem) ops
+        Mul v a -> go inpCount s (M.adjust (* val mem a) v mem) ops
+        Div v a -> go inpCount s (M.adjust (`div` val mem a) v mem) ops
+        Mod v a -> go inpCount s (M.adjust (`mod` val mem a) v mem) ops
+        Eql v a -> go inpCount s (M.insert v (fromEnum $ (mem M.! v) == val mem a) mem) ops
 
-part1 :: Int
-part1 =
+run :: Vector Int -> [Operation] -> Int
+run s allOps = go 0 s initMem allOps
+  where
+    initMem = M.fromList $ [(Var 'x',), (Var 'y',), (Var 'z',), (Var 'w',)] <*> pure 0
+    val mem (ArgVar v) = mem M.! v
+    val _ (ArgLit v) = v
+    go _ _ mem [] = mem M.! (Var 'z')
+    go inpCount s mem (op : ops) =
+      traceShow op $
+        traceShow (s, [mem M.! (Var v) | v <- ['w' .. 'z']]) $
+          case op of
+            Inp v -> go (inpCount + 1) s (M.insert v (s V.! inpCount) mem) ops
+            Add v a -> go inpCount s (M.adjust (+ val mem a) v mem) ops
+            Mul v a -> go inpCount s (M.adjust (* val mem a) v mem) ops
+            Div v a -> go inpCount s (M.adjust (`div` val mem a) v mem) ops
+            Mod v a -> go inpCount s (M.adjust (`mod` val mem a) v mem) ops
+            Eql v a -> go inpCount s (M.insert v (fromEnum $ (mem M.! v) == val mem a) mem) ops
+
+runInt :: Int -> Int
+runInt n =
   let ops = parseLinesWith line $(input 24)
-   in L.head [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], let s = show x, validMonad x ops]
+   in run (V.fromList (digitToInt <$> show n)) ops
+
+blocks =
+  [ (1, 13, 10),
+    (1, 11, 16),
+    (1, 11, 0),
+    (1, 10, 13),
+    (26, -14, 7),
+    (26, -4, 11),
+    (1, 11, 11),
+    (26, -3, 10),
+    (1, 12, 16),
+    (26, -12, 8),
+    (1, 13, 15),
+    (26, -12, 2),
+    (26, -15, 5),
+    (26, -12, 10)
+  ]
+
+-- Find ones where the sum of the positive blocks
+-- equals the sum of the negative blocks
+
+runBInt :: Int -> Int
+runBInt x = runBlocks (digitToInt <$> show x) blocks
+
+-- z must always leave zero at the start
+-- becomes 10 + w
+-- then we want numbers that divide it down below 26, becoming zero
+-- where possible then we want
+-- e.g. (10+w) mod 26 + 11 to be our next digit
+-- on step 1, that's 19 mod 26 + 11 = 30 or anywhere from 22 to 30
+-- that's impossible so we end up growing z
+
+runBlocks :: [Int] -> [(Int, Int, Int)] -> Int
+runBlocks ws blocks = go ws blocks 0
+  where
+    go _ [] z = z
+    go (w : ws) ((d, a, b) : blocks) z =
+      -- traceShow (w, d, a, b, z, z `mod` 26, z `mod` 26 + a, z `div` d) $
+      let z' = z `div` d
+       in if (z `mod` 26) + a == w
+            then go ws blocks z'
+            else go ws blocks (z' * 26 + (w + b))
+
+brute :: Int
+brute =
+  L.head
+    [ x
+      | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13],
+        let s = traceShowId $ digitToInt <$> show x,
+        0 `notElem` s,
+        let v = runBlocks s blocks,
+        v == 0
+    ]
+
+bruteMap :: Int
+bruteMap =
+  let as = [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], let v = runBInt x, v == 0]
+      bs = as `using` (parBuffer 10 rdeepseq)
+   in L.head bs
+
+bruteMap' :: Int
+bruteMap' =
+  let as = [x | x <- [(10 ^ 14 -1), (10 ^ 14 - 2) .. (10 ^ 13)], let v = traceShow x $ x `mod` 10000, v == 0]
+      bs = as `using` (parBuffer 10 rdeepseq)
+   in L.head bs
+
+-- make a map for each block that tells you:
+-- input (w, z) -> output
+-- where z can be quite big and gets bigger each block
+part1 = bruteMap
+
+part1'' =
+  let ops = parseLinesWith line $(input 24)
+   in findValid (V.fromList $ digitToInt <$> "99999999999999") ops
+
+part1' =
+  let ops = parseLinesWith line $(input 24)
+   in L.head [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], let s = traceShowId $ digitToInt <$> show x, runBlocks s blocks == 0]
+
+-- [ | (i, chunk) <- opChunks, s <- [1..9]]
+-- L.head [x | x <- [10 ^ 14, 10 ^ 14 -1 .. 10 ^ 13], validMonad (traceShowId x) ops]
 
 part2 :: Text
 part2 = "Part 2"
