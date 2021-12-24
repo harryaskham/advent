@@ -28,7 +28,7 @@ blocks =
 solve :: [Int] -> Int
 solve digitRange =
   readOne decimal . T.pack . fmap intToDigit . reverse $
-    (go (M.singleton 0 []) blocks) M.! 0
+    go (M.singleton 0 []) blocks M.! 0
   where
     go :: Map Int [Int] -> [(Int, Int, Int)] -> Map Int [Int]
     go m [] = m
