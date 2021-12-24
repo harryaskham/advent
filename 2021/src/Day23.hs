@@ -68,7 +68,7 @@ validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
 type APos = Map Amphipod (Set Coord2)
 
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinations g a origin@(ox, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
+allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
     allAPos = foldl1 S.union (M.elems aPos)
     otherAPos = foldl1 S.union [ps | (a', ps) <- M.toList aPos, a /= a']
@@ -98,6 +98,7 @@ emptyG =
   #########
 |]
 
+prettyA :: APos -> Text
 prettyA aPos =
   pretty $
     foldl'
@@ -116,14 +117,11 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | aPos `S.member` seen =
         go rest seen
       | otherwise =
-        --pauseId
-        --  ( traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
+        --traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
         --      traceTextLn (prettyA aPos)
-        --  )
-        traceShow ("pathCost", pathCost, "pq cost", cost, "q size", PQ.size queue, "seen size", S.size seen) $
-          (go queue' seen')
+        go queue' seen'
       where
-        ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
+        ((_, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
         move p d a aPos = M.adjust (S.delete p . S.insert d) a aPos
         states =
