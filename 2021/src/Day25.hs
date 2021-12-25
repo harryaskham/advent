@@ -1,8 +1,9 @@
-module Day25 (part1, part2) where
+module Day25 where
 
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
+import Data.List (foldl1')
 import Data.Map.Strict qualified as M
 import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
@@ -18,33 +19,25 @@ import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
 
--- parser :: GenParser Char () [Int]
--- parser = many1 (number <* eol) <* eof
+data Cucumber = CEast | CSouth deriving (Eq, Ord)
 
--- line :: GenParser Char () Int
--- line = number
+data Cell = CEmpty | Full Cucumber deriving (Eq, Ord)
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+instance GridCell Cell where
+  charMap = BM.fromList [(CEmpty, '.'), (Full CEast, '>'), (Full CSouth, 'v')]
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+moveCuc :: Int -> Int -> Cucumber -> (Coord2 -> Coord2) -> Grid Cell -> Grid Cell
+moveCuc w h cuc f g = foldl' (\g (p, c) -> M.insert p c g) g (concat [[(n, c), (p, CEmpty)] | (p@(x, y), c) <- M.toList g, c == Full cuc, let n = wrap w h (f p), g M.! n == CEmpty])
 
-part1 :: Text
+step :: Int -> Int -> Grid Cell -> Grid Cell
+step = moveCuc w h CSouth (second (+ 1)) . moveCuc w h CEast (first (+ 1))
+
+part1 :: Int
 part1 =
-  $(input 25)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+  let g = readGrid $(input 25) :: Grid Cell
+      (w, h) = both (+ 1) (maxXY g)
+      gs = iterate (step w h) g
+   in length (takeWhile (uncurry (/=)) (zip gs (drop 1 gs))) + 1
 
 part2 :: Text
-part2 = "Part 2"
+part2 = "Merry Christmas!"

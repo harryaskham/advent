@@ -113,3 +113,6 @@ linePoints :: (Coord2, Coord2) -> [Coord2]
 linePoints ((x1, y1), (x2, y2))
   | x1 == x2 || y1 == y2 = [(x, y) | x <- [x1 .. x2], y <- [y1 .. y2]]
   | otherwise = [(x, y) | x <- [x1 .. x2], let y = y1 + (x - x1) * signum (y2 - y1)]
+
+wrap :: Int -> Int -> Coord2 -> Coord2
+wrap w h (x, y) = ((x `mod` w), (y `mod` h))
