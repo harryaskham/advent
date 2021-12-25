@@ -17,16 +17,24 @@ instance GridCell Cell where
   charMap = BM.fromList [(CEmpty, '.'), (Full CEast, '>'), (Full CSouth, 'v')]
 
 moveCuc :: Int -> Int -> Cucumber -> (Coord2 -> Coord2) -> Grid Cell -> Grid Cell
-moveCuc w h cuc f g = foldl' (\g (p, c) -> M.insert p c g) g (concat [[(n, c), (p, CEmpty)] | (p@(x, y), c) <- M.toList g, c == Full cuc, let n = wrap w h (f p), g M.! n == CEmpty])
-
-step :: Int -> Int -> Grid Cell -> Grid Cell
-step w h = moveCuc w h CSouth (second (+ 1)) . moveCuc w h CEast (first (+ 1))
+moveCuc w h cuc f g =
+  foldl'
+    (\g (p, c) -> M.insert p c g)
+    g
+    ( concat
+        [ [(n, c), (p, CEmpty)]
+          | (p, c) <- M.toList g,
+            c == Full cuc,
+            let n = wrap w h (f p),
+            g M.! n == CEmpty
+        ]
+    )
 
 part1 :: Int
 part1 =
   let g = readGrid $(input 25) :: Grid Cell
       (w, h) = both (+ 1) (maxXY g)
-      gs = iterate (step w h) g
+      gs = iterate (moveCuc w h CSouth (second (+ 1)) . moveCuc w h CEast (first (+ 1))) g
    in length (takeWhile (uncurry (/=)) (zip gs (drop 1 gs))) + 1
 
 part2 :: Text
