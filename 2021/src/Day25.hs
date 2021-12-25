@@ -18,17 +18,8 @@ instance GridCell Cell where
 
 moveCuc :: (Int, Int) -> Cucumber -> (Coord2 -> Coord2) -> Grid Cell -> Grid Cell
 moveCuc (w, h) cuc f g =
-  foldl'
-    (\g (p, c) -> M.insert p c g)
-    g
-    ( concat
-        [ [(n, c), (p, CEmpty)]
-          | (p, c) <- M.toList g,
-            c == Full cuc,
-            let n = wrap w h (f p),
-            g M.! n == CEmpty
-        ]
-    )
+  let moves = concat [[(n, c), (p, CEmpty)] | (p, c) <- M.toList g, c == Full cuc, let n = wrap w h (f p), g M.! n == CEmpty]
+   in foldl' (\g (p, c) -> M.insert p c g) g moves
 
 part1 :: Int
 part1 =
