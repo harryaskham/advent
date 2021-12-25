@@ -16,8 +16,8 @@ data Cell = CEmpty | Full Cucumber deriving (Eq, Ord)
 instance GridCell Cell where
   charMap = BM.fromList [(CEmpty, '.'), (Full CEast, '>'), (Full CSouth, 'v')]
 
-moveCuc :: Int -> Int -> Cucumber -> (Coord2 -> Coord2) -> Grid Cell -> Grid Cell
-moveCuc w h cuc f g =
+moveCuc :: (Int, Int) -> Cucumber -> (Coord2 -> Coord2) -> Grid Cell -> Grid Cell
+moveCuc (w, h) cuc f g =
   foldl'
     (\g (p, c) -> M.insert p c g)
     g
@@ -33,8 +33,8 @@ moveCuc w h cuc f g =
 part1 :: Int
 part1 =
   let g = readGrid $(input 25) :: Grid Cell
-      (w, h) = both (+ 1) (maxXY g)
-      gs = iterate (moveCuc w h CSouth (second (+ 1)) . moveCuc w h CEast (first (+ 1))) g
+      move = moveCuc $ both (+ 1) (maxXY g)
+      gs = iterate (move CSouth (second (+ 1)) . move CEast (first (+ 1))) g
    in length (takeWhile (uncurry (/=)) (zip gs (drop 1 gs))) + 1
 
 part2 :: Text
