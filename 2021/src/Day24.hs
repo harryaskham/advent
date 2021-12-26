@@ -1,50 +1,46 @@
 module Day24 (part1, part2) where
 
 import Data.Char (intToDigit)
+import Data.List ((!!))
+import Data.List.Extra (chunksOf)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Text.Read (decimal)
-import Helper.Util (readOne)
+import Data.Vector (Vector)
+import Data.Vector qualified as V
+import Helper.TH (input)
+import Helper.Util (number, parseWith, readOne, toTuple3)
+import Text.ParserCombinators.Parsec (anyChar, count)
 
--- Taken from the input; what Z is divided by, the first and second constants in each block
-blocks :: [(Int, Int, Int)]
+blocks :: Vector (Int, Int, Int)
 blocks =
-  [ (1, 13, 10),
-    (1, 11, 16),
-    (1, 11, 0),
-    (1, 10, 13),
-    (26, -14, 7),
-    (26, -4, 11),
-    (1, 11, 11),
-    (26, -3, 10),
-    (1, 12, 16),
-    (26, -12, 8),
-    (1, 13, 15),
-    (26, -12, 2),
-    (26, -15, 5),
-    (26, -12, 10)
-  ]
+  $(input 24)
+    & T.lines
+    & fmap T.unpack
+    & chunksOf 18
+    & fmap (\ls -> toTuple3 (parseWith (count 6 anyChar *> number) . (ls !!) <$> [4, 5, 15]))
+    & V.fromList
 
-solve :: [Int] -> Int
-solve digitRange =
-  readOne decimal . T.pack . fmap intToDigit . reverse $
-    go (M.singleton 0 []) blocks M.! 0
+solve :: ([Int] -> [Int] -> [Int]) -> Int
+solve minMax = readOne decimal . T.pack $ (intToDigit <$> go (M.singleton 0 []))
   where
-    go :: Map Int [Int] -> [(Int, Int, Int)] -> Map Int [Int]
-    go m [] = m
-    go m ((d, a, b) : blocks) =
-      let m' =
-            M.fromList
-              [ (z', w : v)
-                | w <- digitRange,
-                  (z, v) <- M.toList m,
-                  let z' = if (z `mod` 26) + a == w then z `div` d else (z `div` d) * 26 + (w + b),
-                  z' <= 456976
+    go izws
+      | (length <$> M.lookup 0 izws) == Just (length blocks) = izws M.! 0
+      | otherwise =
+        traceShow (M.size izws) $
+          go $
+            M.fromListWith
+              minMax
+              [ (z', w : ws)
+                | w <- [1 .. 9 :: Int],
+                  (z, ws) <- M.toList izws,
+                  let i = length ws,
+                  let (d, a, b) = blocks V.! i,
+                  let z' = if (z `mod` 26) + a == w then z `div` d else (z `div` d) * 26 + (w + b)
               ]
-       in go m' blocks
 
 part1 :: Int
-part1 = solve [1 .. 9]
+part1 = solve max
 
 part2 :: Int
-part2 = solve [9, 8 .. 1]
+part2 = solve min
