@@ -13,9 +13,9 @@ import Data.Text qualified as T
 import Data.Vector qualified as V
 import Helper.Coord (Coord2, neighborsNoDiags)
 import Helper.Grid (Grid, GridCell (charMap), fillDef, find, readGrid)
+import Helper.Tracers
 import Helper.Util (enumerate)
 import Prelude hiding (find)
-import Helper.Tracers
 
 maze1 :: Text
 maze1 =
@@ -112,15 +112,15 @@ allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.em
         queue = rest SQ.>< SQ.fromList nextStates
 
 solve :: Grid Cell -> Maybe Int
-solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
+solve g = go (PQ.singleton 0 (positions g, 0)) S.empty M.empty
   where
-    go queue seen
+    go queue seen destDistCache
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
-      | aPos `S.member` seen = go rest seen
+      | aPos `S.member` seen = go rest seen destDistCache
       | otherwise =
-        traceShow (pathCost, cost)
-        $ go queue' seen'
+        traceShow (pathCost, cost) $
+          go queue' seen' destDistCache'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
@@ -129,7 +129,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
           [ (aPos', pathCost + dist)
             | (a, ps) <- M.toList aPos,
               p <- S.toList ps,
-              (d, dist) <- allowedDestinations g a p aPos,
+              (d, dist) <- allowedDestinations g a p aPos.
               let aPos' = move p d a aPos
           ]
         minDistanceToDest (x, y) a
@@ -138,16 +138,14 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
           | otherwise = y - 1 + abs (x - dx) + 1
           where
             dx = fst . L.head . S.toList $ destinationMap M.! a
-        -- h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
-        h aPos = 0
-        queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
+        h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
+        queue' = foldl' (\q st@(aPos', pathCost') -> PQ.insert (pathCost' + h aPos') st q) rest states
 
 part1 :: Maybe Int
 part1 =
-  const (Just 10411) $ -- Disabled due to slowness
-    (readGrid maze1 :: Grid Cell)
-      & fillDef None
-      & solve
+  (readGrid maze1 :: Grid Cell)
+    & fillDef None
+    & solve
 
 part2 :: Maybe Int
 part2 =
