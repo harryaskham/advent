@@ -31,7 +31,7 @@ solve minMax = readOne decimal . T.pack $ (intToDigit <$> go (M.singleton 0 []))
           M.fromListWith
             minMax
             [ (z', w : ws)
-              | w <- [1 .. 9 :: Int],
+              | w <- [1 .. 9],
                 (z, ws) <- M.toList izws,
                 let i = length ws,
                 let (d, a, b) = blocks V.! i,
