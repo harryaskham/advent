@@ -15,6 +15,7 @@ import Helper.Coord (Coord2, neighborsNoDiags)
 import Helper.Grid (Grid, GridCell (charMap), fillDef, find, readGrid)
 import Helper.Util (enumerate)
 import Prelude hiding (find)
+import Helper.Tracers
 
 maze1 :: Text
 maze1 =
@@ -117,9 +118,11 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
       | aPos `S.member` seen = go rest seen
-      | otherwise = go queue' seen'
+      | otherwise =
+        traceShow (pathCost, cost)
+        $ go queue' seen'
       where
-        ((_, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
+        ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
         move p d a aPos = M.adjust (S.delete p . S.insert d) a aPos
         states =
@@ -135,7 +138,8 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
           | otherwise = y - 1 + abs (x - dx) + 1
           where
             dx = fst . L.head . S.toList $ destinationMap M.! a
-        h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
+        -- h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
+        h aPos = 0
         queue' = foldl' (flip (PQ.insert (pathCost + h aPos))) rest states
 
 part1 :: Maybe Int
@@ -147,7 +151,6 @@ part1 =
 
 part2 :: Maybe Int
 part2 =
-  const (Just 46721) $ -- Disabled due to slowness
-    (readGrid maze2 :: Grid Cell)
-      & fillDef None
-      & solve
+  (readGrid maze2 :: Grid Cell)
+    & fillDef None
+    & solve
