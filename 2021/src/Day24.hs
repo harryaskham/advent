@@ -25,19 +25,18 @@ solve :: ([Int] -> [Int] -> [Int]) -> Int
 solve minMax = readOne decimal . T.pack $ (intToDigit <$> go (M.singleton 0 []))
   where
     go izws
-      | (length <$> M.lookup 0 izws) == Just (length blocks) = izws M.! 0
+      | (length <$> M.lookup 0 izws) == Just (length blocks) = reverse $ izws M.! 0
       | otherwise =
-        traceShow (M.size izws) $
-          go $
-            M.fromListWith
-              minMax
-              [ (z', w : ws)
-                | w <- [1 .. 9 :: Int],
-                  (z, ws) <- M.toList izws,
-                  let i = length ws,
-                  let (d, a, b) = blocks V.! i,
-                  let z' = if (z `mod` 26) + a == w then z `div` d else (z `div` d) * 26 + (w + b)
-              ]
+        go $
+          M.fromListWith
+            minMax
+            [ (z', w : ws)
+              | w <- [1 .. 9 :: Int],
+                (z, ws) <- M.toList izws,
+                let i = length ws,
+                let (d, a, b) = blocks V.! i,
+                let z' = if (z `mod` 26) + a == w then z `div` d else (z `div` d) * 26 + (w + b)
+            ]
 
 part1 :: Int
 part1 = solve max
