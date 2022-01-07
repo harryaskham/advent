@@ -118,9 +118,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
       | aPos `S.member` seen = go rest seen
-      | otherwise =
-        --traceShow (pathCost, cost) $
-        go queue' seen'
+      | otherwise = traceShow (pathCost, cost) $ go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
