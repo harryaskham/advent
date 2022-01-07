@@ -118,7 +118,9 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
       | aPos `S.member` seen = go rest seen
-      | otherwise = traceShow (pathCost, cost) $ go queue' seen'
+      | otherwise =
+        --traceShow (pathCost, cost) $
+        go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = S.insert aPos seen
@@ -141,14 +143,14 @@ solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
 
 part1 :: Maybe Int
 part1 =
-  const (Just 10411) $
-    (readGrid maze1 :: Grid Cell)
-      & fillDef None
-      & solve
+  --const (Just 10411) $
+  (readGrid maze1 :: Grid Cell)
+    & fillDef None
+    & solve
 
 part2 :: Maybe Int
 part2 =
-  const (Just 46721) $
-    (readGrid maze2 :: Grid Cell)
-      & fillDef None
-      & solve
+  --const (Just 46721) $
+  (readGrid maze2 :: Grid Cell)
+    & fillDef None
+    & solve
