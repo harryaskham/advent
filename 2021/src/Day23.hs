@@ -86,7 +86,7 @@ destinationMap =
     ]
 
 validHallwayDestinations :: Set Coord2
-validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 9, 10, 11]
+validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 10, 11]
 
 allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
