@@ -3,6 +3,7 @@ module Day23 (part1, part2) where
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
+import Data.HashSet qualified as HS
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
@@ -41,7 +42,9 @@ maze2 =
   #########
 |]
 
-data Amphipod = Amber | Bronze | Copper | Desert deriving (Eq, Ord, Show, Enum)
+data Amphipod = Amber | Bronze | Copper | Desert deriving (Eq, Ord, Show, Enum, Generic)
+
+instance Hashable Amphipod
 
 type APos = Map Amphipod (Set Coord2)
 
@@ -112,16 +115,16 @@ allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.em
         queue = rest SQ.>< SQ.fromList nextStates
 
 solve :: Grid Cell -> Maybe Int
-solve g = go (PQ.singleton 0 (positions g, 0)) S.empty
+solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
   where
     go queue seen
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
-      | aPos `S.member` seen = go rest seen
+      | aPos `HS.member` seen = go rest seen
       | otherwise = traceShow (pathCost, cost) $ go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
-        seen' = S.insert aPos seen
+        seen' = HS.insert aPos seen
         move p d a aPos = M.adjust (S.delete p . S.insert d) a aPos
         states =
           [ (aPos', pathCost + dist)
