@@ -4,7 +4,9 @@ import Control.Lens.Combinators (none)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
+import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
+import Data.Hashable (Hashable)
 import Data.List qualified as L
 import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
@@ -15,7 +17,6 @@ import Data.Text qualified as T
 import Data.Vector qualified as V
 import Helper.Coord (Coord2, neighborsNoDiags)
 import Helper.Grid (Grid, GridCell (charMap), fillDef, find, readGrid)
-import Helper.Tracers
 import Helper.Util (enumerate)
 import Prelude hiding (find)
 
@@ -47,7 +48,7 @@ data Amphipod = Amber | Bronze | Copper | Desert deriving (Eq, Ord, Show, Enum, 
 
 instance Hashable Amphipod
 
-type APos = Map Amphipod (Set Coord2)
+type APos = HashMap Amphipod (HashSet Coord2)
 
 data Cell
   = None
@@ -68,59 +69,56 @@ instance GridCell Cell where
         (Full Desert, 'D')
       ]
 
-energy :: Amphipod -> Int
-energy Amber = 1
-energy Bronze = 10
-energy Copper = 100
-energy Desert = 1000
+energy :: Map Amphipod Int
+energy = M.fromList [(Amber, 1), (Bronze, 10), (Copper, 100), (Desert, 1000)]
 
 positions :: Grid Cell -> APos
-positions g = M.fromList [(a, S.fromList $ find (Full a) g) | a <- enumerate]
+positions g = HM.fromList [(a, HS.fromList $ find (Full a) g) | a <- enumerate]
 
 organized :: APos -> Bool
-organized aPos = all (\a -> aPos M.! a `S.isSubsetOf` (destinationMap M.! a)) enumerate
+organized aPos = all (\a -> aPos HM.! a `HS.isSubsetOf` (destinationMap HM.! a)) enumerate
 
-destinationMap :: Map Amphipod (Set Coord2)
+destinationMap :: HashMap Amphipod (HashSet Coord2)
 destinationMap =
-  M.fromList
-    [ (Amber, S.fromList $ (3,) <$> [2 .. 5]),
-      (Bronze, S.fromList $ (5,) <$> [2 .. 5]),
-      (Copper, S.fromList $ (7,) <$> [2 .. 5]),
-      (Desert, S.fromList $ (9,) <$> [2 .. 5])
+  HM.fromList
+    [ (Amber, HS.fromList $ (3,) <$> [2 .. 5]),
+      (Bronze, HS.fromList $ (5,) <$> [2 .. 5]),
+      (Copper, HS.fromList $ (7,) <$> [2 .. 5]),
+      (Desert, HS.fromList $ (9,) <$> [2 .. 5])
     ]
 
-validHallwayDestinations :: Set Coord2
-validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 10, 11]
+validHallwayDestinations :: HashSet Coord2
+validHallwayDestinations = HS.fromList $ (,1) <$> [1, 2, 4, 6, 8, 10, 11]
 
 allowedDestinationsPaths :: Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (S.toList validDestinations)
+allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.toList validDestinations)
   where
-    allAPos = foldl1 S.union (M.elems aPos)
-    otherAPos = foldl1 S.union [ps | (a', ps) <- M.toList aPos, a /= a']
+    allAPos = foldl1 HS.union (HM.elems aPos)
+    otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
     hallWayOrigin = oy == 1
     validRoomDestinations =
-      let others = otherAPos `S.intersection` (destinationMap M.! a)
+      let others = otherAPos `HS.intersection` (destinationMap HM.! a)
        in if null others
-            then destinationMap M.! a S.\\ allAPos
-            else S.empty
+            then destinationMap HM.! a `HS.difference` allAPos
+            else HS.empty
     validDestinations =
       if hallWayOrigin
         then validRoomDestinations
-        else validHallwayDestinations `S.union` validRoomDestinations
+        else validHallwayDestinations `HS.union` validRoomDestinations
     accessibleFrom current dest =
-      let path = allPaths M.! (current, dest)
-       in if none (`S.member` allAPos) path
+      let path = allPaths HM.! (current, dest)
+       in if none (`HS.member` allAPos) path
             then Just path
             else Nothing
     pathCost origin dest =
       case accessibleFrom origin dest of
         Nothing -> Nothing
-        Just path -> Just (dest, length path * energy a)
+        Just path -> Just (dest, length path * energy M.! a)
 
-allPaths :: Map (Coord2, Coord2) [Coord2]
+allPaths :: HashMap (Coord2, Coord2) [Coord2]
 allPaths =
-  let allPos = S.toList $ foldl1 S.union (M.elems destinationMap) `S.union` validHallwayDestinations
-   in M.fromList [((a, b), L.nub . L.delete a $ pathFrom a b) | a <- allPos, b <- allPos]
+  let allPos = HS.toList $ foldl1 HS.union (HM.elems destinationMap) `HS.union` validHallwayDestinations
+   in HM.fromList [((a, b), L.nub . L.delete a $ pathFrom a b) | a <- allPos, b <- allPos]
 
 pathFrom :: Coord2 -> Coord2 -> [Coord2]
 pathFrom (x, y) (dx, dy)
@@ -133,24 +131,24 @@ pathFrom (x, y) (dx, dy)
 allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinationsBfs g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
-    allAPos = foldl1 S.union (M.elems aPos)
-    otherAPos = foldl1 S.union [ps | (a', ps) <- M.toList aPos, a /= a']
+    allAPos = foldl1 HS.union (HM.elems aPos)
+    otherAPos = foldl1 HS.union [ps | (a', ps) <- HM.toList aPos, a /= a']
     hallWayOrigin = oy == 1
     validRoomDestinations =
-      let others = otherAPos `S.intersection` (destinationMap M.! a)
+      let others = otherAPos `HS.intersection` (destinationMap HM.! a)
        in if null others
-            then destinationMap M.! a S.\\ allAPos
-            else S.empty
-    validDestinations = validHallwayDestinations `S.union` validRoomDestinations
+            then destinationMap HM.! a `HS.difference` allAPos
+            else HS.empty
+    validDestinations = validHallwayDestinations `HS.union` validRoomDestinations
     go SQ.Empty _ destinations = destinations
     go ((p, cost) SQ.:<| rest) seen destinations
       | p `S.member` seen = go rest seen destinations
-      | hallWayOrigin && p `S.member` validRoomDestinations = go queue seen' ((p, cost) : destinations)
-      | not hallWayOrigin && p `S.member` validDestinations = go queue seen' ((p, cost) : destinations)
+      | hallWayOrigin && p `HS.member` validRoomDestinations = go queue seen' ((p, cost) : destinations)
+      | not hallWayOrigin && p `HS.member` validDestinations = go queue seen' ((p, cost) : destinations)
       | otherwise = go queue seen' destinations
       where
         seen' = S.insert p seen
-        nextStates = [(n, cost + energy a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `S.member` allAPos)]
+        nextStates = [(n, cost + energy M.! a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `HS.member` allAPos)]
         queue = rest SQ.>< SQ.fromList nextStates
 
 solve :: Grid Cell -> Maybe Int
@@ -164,13 +162,13 @@ solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = HS.insert aPos seen
-        move p d a aPos = M.adjust (S.delete p . S.insert d) a aPos
+        move p d a aPos = HM.adjust (HS.delete p . HS.insert d) a aPos
         states =
           [ (aPos', pathCost + dist)
-            | (a, ps) <- M.toList aPos,
-              p <- S.toList ps,
-              --(d, dist) <- allowedDestinationsBfs g a p aPos,
-              (d, dist) <- allowedDestinationsPaths a p aPos,
+            | (a, ps) <- HM.toList aPos,
+              p <- HS.toList ps,
+              (d, dist) <- allowedDestinationsBfs g a p aPos,
+              -- (d, dist) <- allowedDestinationsPaths a p aPos,
               let aPos' = move p d a aPos
           ]
         minDistanceToDest (x, y) a
@@ -178,8 +176,8 @@ solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
           | x == dx && y == 1 = 1
           | otherwise = y - 1 + abs (x - dx) + 1
           where
-            dx = fst . L.head . S.toList $ destinationMap M.! a
-        h aPos = sum [energy a * minDistanceToDest p a | a <- enumerate, p <- S.toList (aPos M.! a)]
+            dx = fst . L.head . HS.toList $ destinationMap HM.! a
+        h aPos = sum [energy M.! a * minDistanceToDest p a | a <- enumerate, p <- HS.toList (aPos HM.! a)]
         queue' = foldl' (\q st@(aPos', pathCost') -> PQ.insert (pathCost' + h aPos') st q) rest states
 
 part1 :: Maybe Int

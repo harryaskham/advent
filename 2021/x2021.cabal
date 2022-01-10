@@ -16,6 +16,7 @@ common common-settings
                         extra,
                         text,
                         containers,
+                        unordered-containers,
                         mtl,
                         bimap,
                         mod,
@@ -33,7 +34,8 @@ common common-settings
                         lens,
                         bitwise,
                         random,
-                        string-qq
+                        string-qq,
+                        hashable
     default-language:   Haskell2010
     mixins:             base hiding (Prelude),
                         relude (Relude as Prelude),
