@@ -1,5 +1,6 @@
-module Day23 (part1, part2) where
+module Day23 where
 
+import Control.Lens.Combinators (none)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
@@ -91,8 +92,46 @@ destinationMap =
 validHallwayDestinations :: Set Coord2
 validHallwayDestinations = S.fromList $ (,1) <$> [1, 2, 4, 6, 8, 10, 11]
 
-allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinations g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
+allowedDestinationsPaths :: Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
+allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (S.toList validDestinations)
+  where
+    allAPos = foldl1 S.union (M.elems aPos)
+    otherAPos = foldl1 S.union [ps | (a', ps) <- M.toList aPos, a /= a']
+    hallWayOrigin = oy == 1
+    validRoomDestinations =
+      let others = otherAPos `S.intersection` (destinationMap M.! a)
+       in if null others
+            then destinationMap M.! a S.\\ allAPos
+            else S.empty
+    validDestinations =
+      if hallWayOrigin
+        then validRoomDestinations
+        else validHallwayDestinations `S.union` validRoomDestinations
+    accessibleFrom current dest =
+      let path = allPaths M.! (current, dest)
+       in if none (`S.member` allAPos) path
+            then Just path
+            else Nothing
+    pathCost origin dest =
+      case accessibleFrom origin dest of
+        Nothing -> Nothing
+        Just path -> Just (dest, length path * energy a)
+
+allPaths :: Map (Coord2, Coord2) [Coord2]
+allPaths =
+  let allPos = S.toList $ foldl1 S.union (M.elems destinationMap) `S.union` validHallwayDestinations
+   in M.fromList [((a, b), L.nub . L.delete a $ pathFrom a b) | a <- allPos, b <- allPos]
+
+pathFrom :: Coord2 -> Coord2 -> [Coord2]
+pathFrom (x, y) (dx, dy)
+  | (x, y) == (dx, dy) = []
+  | x == dx = [(x, y') | y' <- [1 .. dy]]
+  | y > 1 && x == dx = [(dx, y') | y' <- [min y dy .. max y dy]]
+  | y > 1 && x /= dx = [(x, y') | y' <- [1 .. y]] ++ pathFrom (x, 1) (dx, dy)
+  | y == 1 = [(x', 1) | x' <- [min x dx .. max x dx]] ++ pathFrom (dx, 1) (dx, dy)
+
+allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
+allowedDestinationsBfs g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
     allAPos = foldl1 S.union (M.elems aPos)
     otherAPos = foldl1 S.union [ps | (a', ps) <- M.toList aPos, a /= a']
@@ -130,7 +169,8 @@ solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
           [ (aPos', pathCost + dist)
             | (a, ps) <- M.toList aPos,
               p <- S.toList ps,
-              (d, dist) <- allowedDestinations g a p aPos,
+              --(d, dist) <- allowedDestinationsBfs g a p aPos,
+              (d, dist) <- allowedDestinationsPaths a p aPos,
               let aPos' = move p d a aPos
           ]
         minDistanceToDest (x, y) a
