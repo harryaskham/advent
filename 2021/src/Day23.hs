@@ -109,8 +109,8 @@ allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.
     otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
     hallWayOrigin = oy == 1
     validRoomDestinations =
-      let others = otherAPos `HS.intersection` (destinationMap HM.! a)
-       in if null others
+      let othersInRoom = otherAPos `HS.intersection` (destinationMap HM.! a)
+       in if null othersInRoom
             then destinationMap HM.! a `HS.difference` allAPos
             else HS.empty
     validDestinations =
