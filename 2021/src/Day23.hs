@@ -102,21 +102,23 @@ pathFrom (x, y) (dx, dy)
   | y > 1 && x /= dx = [(x, y') | y' <- [1 .. y]] ++ pathFrom (x, 1) (dx, dy)
   | y == 1 = [(x', 1) | x' <- [min x dx .. max x dx]] ++ pathFrom (dx, 1) (dx, dy)
 
-allowedDestinationsPaths :: Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.toList validDestinations)
+getValidDestinations :: Amphipod -> HashSet Coord2 -> HashSet Coord2 -> Coord2 -> HashSet Coord2
+getValidDestinations a allAPos otherAPos (_, oy)
+  | hallWayOrigin = validRoomDestinations
+  | otherwise = validHallwayDestinations `HS.union` validRoomDestinations
   where
-    allAPos = foldl1 HS.union (HM.elems aPos)
-    otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
     hallWayOrigin = oy == 1
     validRoomDestinations =
       let othersInRoom = otherAPos `HS.intersection` (destinationMap HM.! a)
        in if null othersInRoom
             then destinationMap HM.! a `HS.difference` allAPos
             else HS.empty
-    validDestinations =
-      if hallWayOrigin
-        then validRoomDestinations
-        else validHallwayDestinations `HS.union` validRoomDestinations
+
+allowedDestinationsPaths :: Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
+allowedDestinationsPaths a origin aPos = mapMaybe (pathCost origin) (HS.toList $ getValidDestinations a allAPos otherAPos origin)
+  where
+    allAPos = foldl1 HS.union (HM.elems aPos)
+    otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
     accessibleFrom current dest =
       let path = allPaths HM.! (current, dest)
        in if any (`HS.member` allAPos) path then Nothing else Just path
@@ -126,22 +128,15 @@ allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.
         Just path -> Just (dest, length path * energy HM.! a)
 
 allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinationsBfs g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
+allowedDestinationsBfs g a origin aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
     allAPos = foldl1 HS.union (HM.elems aPos)
-    otherAPos = foldl1 HS.union [ps | (a', ps) <- HM.toList aPos, a /= a']
-    hallWayOrigin = oy == 1
-    validRoomDestinations =
-      let others = otherAPos `HS.intersection` (destinationMap HM.! a)
-       in if null others
-            then destinationMap HM.! a `HS.difference` allAPos
-            else HS.empty
-    validDestinations = validHallwayDestinations `HS.union` validRoomDestinations
+    otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
+    validDestinations = getValidDestinations a allAPos otherAPos origin
     go SQ.Empty _ destinations = destinations
     go ((p, cost) SQ.:<| rest) seen destinations
       | p `S.member` seen = go rest seen destinations
-      | hallWayOrigin && p `HS.member` validRoomDestinations = go queue seen' ((p, cost) : destinations)
-      | not hallWayOrigin && p `HS.member` validDestinations = go queue seen' ((p, cost) : destinations)
+      | p `HS.member` validDestinations = go queue seen' ((p, cost) : destinations)
       | otherwise = go queue seen' destinations
       where
         seen' = S.insert p seen
