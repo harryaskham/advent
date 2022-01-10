@@ -68,8 +68,8 @@ instance GridCell Cell where
         (Full Desert, 'D')
       ]
 
-energy :: Map Amphipod Int
-energy = M.fromList [(Amber, 1), (Bronze, 10), (Copper, 100), (Desert, 1000)]
+energy :: HashMap Amphipod Int
+energy = HM.fromList [(Amber, 1), (Bronze, 10), (Copper, 100), (Desert, 1000)]
 
 positions :: Grid Cell -> APos
 positions g = HM.fromList [(a, HS.fromList $ find (Full a) g) | a <- enumerate]
@@ -123,7 +123,7 @@ allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.
     pathCost origin dest =
       case accessibleFrom origin dest of
         Nothing -> Nothing
-        Just path -> Just (dest, length path * energy M.! a)
+        Just path -> Just (dest, length path * energy HM.! a)
 
 allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinationsBfs g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
@@ -145,7 +145,7 @@ allowedDestinationsBfs g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S
       | otherwise = go queue seen' destinations
       where
         seen' = S.insert p seen
-        nextStates = [(n, cost + energy M.! a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `HS.member` allAPos)]
+        nextStates = [(n, cost + energy HM.! a) | n <- neighborsNoDiags p, g M.! n /= Wall, not (n `HS.member` allAPos)]
         queue = rest SQ.>< SQ.fromList nextStates
 
 solve :: Grid Cell -> Maybe Int
@@ -174,7 +174,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
           | otherwise = y - 1 + abs (x - dx) + 1
           where
             dx = fst . L.head . HS.toList $ destinationMap HM.! a
-        h aPos = sum [energy M.! a * minDistanceToDest p a | a <- enumerate, p <- HS.toList (aPos HM.! a)]
+        h aPos = sum [energy HM.! a * minDistanceToDest p a | a <- enumerate, p <- HS.toList (aPos HM.! a)]
         queue' = foldl' (\q st@(aPos', pathCost') -> PQ.insert (pathCost' + h aPos') st q) rest states
 
 part1 :: Maybe Int
