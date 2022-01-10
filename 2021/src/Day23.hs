@@ -1,6 +1,5 @@
 module Day23 where
 
-import Control.Lens.Combinators (none)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Foldable (foldl1)
@@ -90,6 +89,19 @@ destinationMap =
 validHallwayDestinations :: HashSet Coord2
 validHallwayDestinations = HS.fromList $ (,1) <$> [1, 2, 4, 6, 8, 10, 11]
 
+allPaths :: HashMap (Coord2, Coord2) [Coord2]
+allPaths =
+  let allPos = HS.toList $ foldl1 HS.union (HM.elems destinationMap) `HS.union` validHallwayDestinations
+   in HM.fromList [((a, b), L.nub . L.delete a $ pathFrom a b) | a <- allPos, b <- allPos]
+
+pathFrom :: Coord2 -> Coord2 -> [Coord2]
+pathFrom (x, y) (dx, dy)
+  | (x, y) == (dx, dy) = []
+  | x == dx = [(x, y') | y' <- [1 .. dy]]
+  | y > 1 && x == dx = [(dx, y') | y' <- [min y dy .. max y dy]]
+  | y > 1 && x /= dx = [(x, y') | y' <- [1 .. y]] ++ pathFrom (x, 1) (dx, dy)
+  | y == 1 = [(x', 1) | x' <- [min x dx .. max x dx]] ++ pathFrom (dx, 1) (dx, dy)
+
 allowedDestinationsPaths :: Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.toList validDestinations)
   where
@@ -107,26 +119,11 @@ allowedDestinationsPaths a origin@(_, oy) aPos = mapMaybe (pathCost origin) (HS.
         else validHallwayDestinations `HS.union` validRoomDestinations
     accessibleFrom current dest =
       let path = allPaths HM.! (current, dest)
-       in if none (`HS.member` allAPos) path
-            then Just path
-            else Nothing
+       in if any (`HS.member` allAPos) path then Nothing else Just path
     pathCost origin dest =
       case accessibleFrom origin dest of
         Nothing -> Nothing
         Just path -> Just (dest, length path * energy M.! a)
-
-allPaths :: HashMap (Coord2, Coord2) [Coord2]
-allPaths =
-  let allPos = HS.toList $ foldl1 HS.union (HM.elems destinationMap) `HS.union` validHallwayDestinations
-   in HM.fromList [((a, b), L.nub . L.delete a $ pathFrom a b) | a <- allPos, b <- allPos]
-
-pathFrom :: Coord2 -> Coord2 -> [Coord2]
-pathFrom (x, y) (dx, dy)
-  | (x, y) == (dx, dy) = []
-  | x == dx = [(x, y') | y' <- [1 .. dy]]
-  | y > 1 && x == dx = [(dx, y') | y' <- [min y dy .. max y dy]]
-  | y > 1 && x /= dx = [(x, y') | y' <- [1 .. y]] ++ pathFrom (x, 1) (dx, dy)
-  | y == 1 = [(x', 1) | x' <- [min x dx .. max x dx]] ++ pathFrom (dx, 1) (dx, dy)
 
 allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinationsBfs g a origin@(_, oy) aPos = go (SQ.singleton (origin, 0)) S.empty []
