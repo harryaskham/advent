@@ -101,8 +101,8 @@ getValidDestinations a allAPos otherAPos (_, oy)
             then destinationMap HM.! a `HS.difference` allAPos
             else HS.empty
 
-allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinationsBfs g a origin aPos = go (SQ.singleton (origin, 0)) S.empty []
+allowedDestinations :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
+allowedDestinations g a origin aPos = go (SQ.singleton (origin, 0)) S.empty []
   where
     allAPos = foldl1 HS.union (HM.elems aPos)
     otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
@@ -132,7 +132,9 @@ solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
       | PQ.null queue = Nothing
       | organized aPos = Just pathCost
       | aPos `HS.member` seen = go rest seen
-      | otherwise = traceShow (pathCost, cost) $ go queue' seen'
+      | otherwise =
+        --traceShow (pathCost, cost) $
+        go queue' seen'
       where
         ((cost, (aPos, pathCost)), rest) = PQ.deleteFindMin queue
         seen' = HS.insert aPos seen
@@ -142,7 +144,7 @@ solve g = go (PQ.singleton 0 (positions g, 0)) HS.empty
             | (a, ps) <- HM.toList aPos,
               p <- HS.toList ps,
               not (isFixed p a aPos),
-              (d, dist) <- allowedDestinationsBfs g a p aPos,
+              (d, dist) <- allowedDestinations g a p aPos,
               let aPos' = move p d a aPos
           ]
         minDistanceToDest (x, y) a
