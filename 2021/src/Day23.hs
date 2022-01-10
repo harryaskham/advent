@@ -1,4 +1,4 @@
-module Day23 where
+module Day23 (part1, part2) where
 
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
