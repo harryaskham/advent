@@ -115,17 +115,16 @@ getValidDestinations a allAPos otherAPos (_, oy)
             else HS.empty
 
 allowedDestinationsPaths :: Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
-allowedDestinationsPaths a origin aPos = mapMaybe (pathCost origin) (HS.toList $ getValidDestinations a allAPos otherAPos origin)
+allowedDestinationsPaths a origin aPos =
+  mapMaybe (accessibleFrom origin) (HS.toList $ getValidDestinations a allAPos otherAPos origin)
   where
     allAPos = foldl1 HS.union (HM.elems aPos)
     otherAPos = foldl1 HS.union [aPos HM.! a' | a' <- enumerate, a /= a']
     accessibleFrom current dest =
       let path = allPaths HM.! (current, dest)
-       in if any (`HS.member` allAPos) path then Nothing else Just path
-    pathCost origin dest =
-      case accessibleFrom origin dest of
-        Nothing -> Nothing
-        Just path -> Just (dest, length path * energy HM.! a)
+       in if any (`HS.member` allAPos) path
+            then Nothing
+            else Just (dest, length path * energy HM.! a)
 
 allowedDestinationsBfs :: Grid Cell -> Amphipod -> Coord2 -> APos -> [(Coord2, Int)]
 allowedDestinationsBfs g a origin aPos = go (SQ.singleton (origin, 0)) S.empty []
