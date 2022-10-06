@@ -18,10 +18,10 @@ import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
 
--- parser :: GenParser Char () [Int]
+-- parser :: Parser [Int]
 -- parser = many1 (number <* eol) <* eof
 
--- line :: GenParser Char () Int
+-- line :: Parser Int
 -- line = number
 
 -- data Cell
