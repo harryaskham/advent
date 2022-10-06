@@ -1,45 +1,50 @@
 module Day17 (part1, part2) where
 
-import Data.List qualified as L
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-data Target = Target
-  { minX :: Int,
-    maxX :: Int,
-    minY :: Int,
-    maxY :: Int
-  }
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-target :: Target
-target = Target 34 67 (-215) (-186)
+-- line :: GenParser Char () Int
+-- line = number
 
-step :: (Int, Int) -> Maybe Int -> (Int, Int) -> Maybe Int
-step (x, y) peak (vx, vy)
-  | x > maxX target = Nothing
-  | vx == 0 && y < minY target = Nothing
-  | y < minY target = Nothing
-  | x >= minX target
-      && x <= maxX target
-      && y >= minY target
-      && y <= maxY target =
-    peak
-  | otherwise =
-    step
-      (x + vx, y + vy)
-      (if Just y > peak then Just y else peak)
-      (if vx > 0 then vx - 1 else if vx < 0 then vx + 1 else 0, vy - 1)
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-peaks :: [Int]
-peaks =
-  let minBound = floor ((1 / 4) + (1 / 2) * sqrt (fromIntegral (1 + 8 * minX target)))
-   in mapMaybe
-        (step (0, 0) Nothing)
-        [ (vx, vy)
-          | vx <- [minBound .. maxX target],
-            vy <- [minY target .. abs (minY target)]
-        ]
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-part1 :: Int
-part1 = L.maximum peaks
+part1 :: Text
+part1 =
+  $(input 17)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-part2 :: Int
-part2 = length peaks
+part2 :: Text
+part2 = "Part 2"

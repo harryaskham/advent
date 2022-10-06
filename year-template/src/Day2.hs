@@ -1,46 +1,50 @@
 module Day2 (part1, part2) where
 
-import Helper.TH (input)
-import Helper.Util (Solution (..), number, parseLinesWith)
-import Text.ParserCombinators.Parsec (GenParser, choice, string)
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-data Movement
-  = MForward Integer
-  | MDown Integer
-  | MUp Integer
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-line :: GenParser Char () Movement
-line =
-  choice
-    [ MForward <$> (string "forward " >> number),
-      MDown <$> (string "down " >> number),
-      MUp <$> (string "up " >> number)
-    ]
+-- line :: GenParser Char () Int
+-- line = number
 
-data Submarine = Submarine Integer Integer Integer
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-instance Solution Submarine Integer where
-  toSolution (Submarine x h _) = x * h
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-moveSubmarine1 :: Submarine -> Movement -> Submarine
-moveSubmarine1 (Submarine x h a) (MForward v) = Submarine (x + v) h a
-moveSubmarine1 (Submarine x h a) (MDown v) = Submarine x (h + v) a
-moveSubmarine1 (Submarine x h a) (MUp v) = Submarine x (h - v) a
-
-moveSubmarine2 :: Submarine -> Movement -> Submarine
-moveSubmarine2 (Submarine x h a) (MForward v) = Submarine (x + v) (h + a * v) a
-moveSubmarine2 (Submarine x h a) (MDown v) = Submarine x h (a + v)
-moveSubmarine2 (Submarine x h a) (MUp v) = Submarine x h (a - v)
-
-solve :: (Submarine -> Movement -> Submarine) -> Integer
-solve moveSubmarine =
+part1 :: Text
+part1 =
   $(input 2)
-    & parseLinesWith line
-    & foldl' moveSubmarine (Submarine 0 0 0)
-    & toSolution
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-part1 :: Integer
-part1 = solve moveSubmarine1
-
-part2 :: Integer
-part2 = solve moveSubmarine2
+part2 :: Text
+part2 = "Part 2"

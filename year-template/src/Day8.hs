@@ -1,45 +1,50 @@
 module Day8 (part1, part2) where
 
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Helper.TH (input)
-import Helper.Util (count, listAsInt, parseLinesWith, permutationMaps, permuteSet, (<$$>))
-import Text.ParserCombinators.Parsec (GenParser, char, letter, many1, string)
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-data Segment = A | B | C | D | E | F | G deriving (Eq, Ord, Enum)
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-fromChar :: Char -> Segment
-fromChar = (M.fromList (zip ['a' .. 'g'] [A .. G]) M.!)
+-- line :: GenParser Char () Int
+-- line = number
 
-digits :: Map (Set Segment) Int
-digits =
-  M.fromList . flip zip [0 ..] . fmap S.fromList $
-    [ [A, B, C, E, F, G],
-      [C, F],
-      [A, C, D, E, G],
-      [A, C, D, F, G],
-      [B, C, D, F],
-      [A, B, D, F, G],
-      [A, B, D, E, F, G],
-      [A, C, F],
-      [A, B, C, D, E, F, G],
-      [A, B, C, D, F, G]
-    ]
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-validPermutations :: [Set Segment] -> [Map Segment Segment]
-validPermutations ss =
-  let valid p = all (`M.member` digits) (permuteSet p <$> ss)
-   in filter valid permutationMaps
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-line :: GenParser Char () [Int]
-line = do
-  let block = S.fromList <$> (fromChar <$$> many1 letter)
-      blocks = many1 (block <* optional (char ' '))
-  (p : _) <- validPermutations <$> (blocks <* string "| ")
-  (digits M.!) . permuteSet p <$$> blocks
+part1 :: Text
+part1 =
+  $(input 8)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-part1 :: Int
-part1 = parseLinesWith line $(input 8) & fmap (count (`elem` [1, 4, 7, 8])) & sum
-
-part2 :: Int
-part2 = parseLinesWith line $(input 8) & fmap listAsInt & sum
+part2 :: Text
+part2 = "Part 2"

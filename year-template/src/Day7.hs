@@ -1,17 +1,50 @@
 module Day7 (part1, part2) where
 
-import Data.List (maximum, minimum)
-import Helper.TH (input)
-import Helper.Util (about, csvLine, mean, median, number, parseWith, triangular)
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-xs :: [Integer]
-xs = parseWith (csvLine number) $(input 7)
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-solve :: ([Integer] -> Integer) -> (Integer -> Integer) -> Integer
-solve m f = minimum [sum [f . abs $ x - c | x <- xs] | c <- 1 `about` m xs]
+-- line :: GenParser Char () Int
+-- line = number
 
-part1 :: Integer
-part1 = solve median id
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-part2 :: Integer
-part2 = solve mean triangular
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
+
+part1 :: Text
+part1 =
+  $(input 7)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
+
+part2 :: Text
+part2 = "Part 2"

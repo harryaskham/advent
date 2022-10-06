@@ -1,49 +1,50 @@
 module Day21 (part1, part2) where
 
-import Control.Lens (makeLenses, over, view, (^.))
-import Control.Monad.Memo (Memo, MonadMemo (memo), startEvalMemo)
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-data Game = Game
-  { _p1Pos :: Int,
-    _p2Pos :: Int,
-    _p1Score :: Int,
-    _p2Score :: Int,
-    _p1Turn :: Bool
-  }
-  deriving (Eq, Ord)
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-makeLenses ''Game
+-- line :: GenParser Char () Int
+-- line = number
 
-mkGame :: Int -> Int -> Game
-mkGame p1Pos p2Pos = Game (p1Pos - 1) (p2Pos - 1) 0 0 True
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-roll :: Game -> Int -> Game
-roll game n
-  | game ^. p1Turn = go p1Pos p1Pos p1Score
-  | otherwise = go p2Pos p2Pos p2Score
-  where
-    go pPos pPos' pScore =
-      game
-        & over pPos ((`rem` 10) . (+ n))
-        & (\g -> over pScore (+ (view pPos' g + 1)) g)
-        & over p1Turn not
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-run :: [Int] -> Int -> Game -> Int
-run rolls numRolls game
-  | game ^. p1Score >= 1000 = numRolls * game ^. p2Score
-  | game ^. p2Score >= 1000 = numRolls * game ^. p1Score
-  | otherwise = run (drop 3 rolls) (numRolls + 3) $ roll game (sum $ take 3 rolls)
+part1 :: Text
+part1 =
+  $(input 21)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-runQuantum :: Game -> Memo Game (Sum Int, Sum Int) (Sum Int, Sum Int)
-runQuantum game
-  | game ^. p1Score >= 21 = return (Sum 1, Sum 0)
-  | game ^. p2Score >= 21 = return (Sum 0, Sum 1)
-  | otherwise =
-    let rolls = [r1 + r2 + r3 | let rs = [1 .. 3], r1 <- rs, r2 <- rs, r3 <- rs]
-     in mconcat <$> traverse (memo runQuantum) (roll game <$> rolls)
-
-part1 :: Int
-part1 = run (cycle [1 .. 100]) 0 (mkGame 9 3)
-
-part2 :: Int
-part2 = getSum . uncurry max . startEvalMemo . runQuantum $ mkGame 9 3
+part2 :: Text
+part2 = "Part 2"

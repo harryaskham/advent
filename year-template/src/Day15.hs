@@ -1,39 +1,50 @@
 module Day15 (part1, part2) where
 
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
+import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Helper.Coord (neighborsNoDiags)
-import Helper.Grid (Grid, IntCell (IntCell), extendGrid, readGrid)
-import Helper.TH (input)
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-lowestRisk :: Int -> Grid IntCell -> Maybe Int
-lowestRisk n g = go (PQ.singleton 0 (0, 0)) M.empty
-  where
-    extension (IntCell c) (xOff, yOff) =
-      let v = c + xOff + yOff
-       in if v > 9 then v - 9 else v
-    (member, lookup, end) = extendGrid n extension g
-    go queue lowestRiskAt
-      | null queue = Nothing
-      | pos == end = Just risk'
-      | not (member pos) = go rest lowestRiskAt
-      | otherwise =
-        case M.lookup pos lowestRiskAt of
-          Nothing -> go queue' lowestRiskAt'
-          Just lowest ->
-            if lowest <= risk
-              then go rest lowestRiskAt
-              else go queue' lowestRiskAt'
-      where
-        ((risk, pos), rest) = PQ.deleteFindMin queue
-        risk' = if pos == (0, 0) then 0 else risk + lookup pos
-        next = filter member (neighborsNoDiags pos)
-        queue' = foldl' (flip (PQ.insert risk')) rest next
-        lowestRiskAt' = M.insertWith min pos risk lowestRiskAt
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-part1 :: Maybe Int
-part1 = lowestRisk 1 (readGrid $(input 15))
+-- line :: GenParser Char () Int
+-- line = number
 
-part2 :: Maybe Int
-part2 = lowestRisk 5 (readGrid $(input 15))
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
+
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
+
+part1 :: Text
+part1 =
+  $(input 15)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
+
+part2 :: Text
+part2 = "Part 2"

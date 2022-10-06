@@ -1,74 +1,50 @@
 module Day4 (part1, part2) where
 
-import Data.IntMap qualified as IM
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Helper.TH (input)
-import Helper.Util (eol, number, parseWith, (<$$>))
-import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, sepBy, sepBy1)
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-data Board = Board (IntMap (Int, Int)) (Set (Int, Int))
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-toBoard :: [[Int]] -> Board
-toBoard ass =
-  Board
-    ( IM.fromList
-        [ (a, (x, y))
-          | (y, as) <- zip [0 ..] ass,
-            (x, a) <- zip [0 ..] as
-        ]
-    )
-    S.empty
+-- line :: GenParser Char () Int
+-- line = number
 
-parser :: GenParser Char () ([Int], [Board])
-parser = do
-  calls <- number `sepBy` char ',' <* count 2 eol
-  let line = optional (char ' ') >> (number `sepBy1` many1 (char ' ')) <* eol
-  boards <- (toBoard <$$> many1 line `sepBy` eol) <* eof
-  return (calls, boards)
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-mark :: Int -> Board -> Board
-mark a b@(Board m marked) =
-  maybe b (Board m) ((`S.insert` marked) <$> m IM.!? a)
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-isWon :: Board -> Bool
-isWon (Board _ marked) =
-  any
-    (all (`S.member` marked))
-    ( uncurry (++) . (id &&& transpose) $
-        [[(x, y) | y <- [0 .. 4]] | x <- [0 .. 4]]
-    )
-
-score :: Board -> Int
-score (Board m marked) =
-  sum [a | (a, p) <- IM.toList m, not (p `S.member` marked)]
-
-firstWinningBoard :: [Int] -> [Board] -> Maybe (Board, Int)
-firstWinningBoard (c : calls) boards =
-  let markedBoards = mark c <$> boards
-   in case filter isWon markedBoards of
-        [] -> firstWinningBoard calls markedBoards
-        b : _ -> Just (b, c)
-firstWinningBoard _ _ = Nothing
-
-lastWinningBoard :: Maybe (Board, Int) -> [Int] -> [Board] -> Maybe (Board, Int)
-lastWinningBoard lastWon [] _ = lastWon
-lastWinningBoard lastWon (c : calls) boards =
-  let markedBoards = mark c <$> boards
-      remainingBoards = filter (not . isWon) markedBoards
-      lastWon' = case filter isWon markedBoards of
-        b : _ -> Just (b, c)
-        _ -> lastWon
-   in lastWinningBoard lastWon' calls remainingBoards
-
-scoreBoard :: ([Int] -> [Board] -> Maybe (Board, Int)) -> Maybe Int
-scoreBoard f =
+part1 :: Text
+part1 =
   $(input 4)
-    & parseWith parser
-    & uncurry f
-    & fmap (uncurry (*) . first score)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-part1 :: Maybe Int
-part1 = scoreBoard firstWinningBoard
-
-part2 :: Maybe Int
-part2 = scoreBoard (lastWinningBoard Nothing)
+part2 :: Text
+part2 = "Part 2"

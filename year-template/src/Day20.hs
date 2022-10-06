@@ -1,47 +1,50 @@
 module Day20 (part1, part2) where
 
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
-import Data.Bits.Bitwise (fromListBE)
 import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Vector (Vector)
+import Data.Text.Read
 import Data.Vector qualified as V
-import Helper.Grid (Grid, GridCell (charMap, fromChar), maxXY, minXY, readGrid)
-import Helper.TH (input)
-import Helper.Util (eol, parseWith)
-import Text.ParserCombinators.Parsec (GenParser, eof, many1, oneOf)
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-newtype Cell = Cell {uncell :: Bool} deriving (Eq, Ord)
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-instance GridCell Cell where
-  charMap = BM.fromList [(Cell False, '.'), (Cell True, '#')]
+-- line :: GenParser Char () Int
+-- line = number
 
-parser :: GenParser Char () (Vector Cell, Grid Cell)
-parser =
-  (,)
-    <$> (V.fromList <$> many1 (fromChar <$> oneOf ".#") <* (eol >> eol))
-    <*> (readGrid . unlines <$> many1 (T.pack <$> (many1 (oneOf ".#") <* eol)) <* eof)
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-algIx :: Cell -> Grid Cell -> Int -> Int -> Int
-algIx def grid x y =
-  fromListBE
-    [ uncell $ M.findWithDefault def (x', y') grid
-      | (x', y') <- flip (,) <$> [y - 1 .. y + 1] <*> [x - 1 .. x + 1]
-    ]
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-enhance :: Vector Cell -> Cell -> Grid Cell -> Grid Cell
-enhance alg def grid =
-  let ((x0, y0), (x1, y1)) = (minXY &&& maxXY) grid
-   in M.fromList [((x, y), alg V.! algIx def grid x y) | x <- [x0 - 1 .. x1 + 1], y <- [y0 - 1 .. y1 + 1]]
+part1 :: Text
+part1 =
+  $(input 20)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-solve :: Int -> Int
-solve n =
-  let (alg, grid) = parseWith parser $(input 20)
-      enhances = take n $ enhance alg <$> cycle [Cell False, Cell True]
-   in M.size . M.filter (== Cell True) $ foldl' (&) grid enhances
-
-part1 :: Int
-part1 = solve 2
-
-part2 :: Int
-part2 = solve 50
+part2 :: Text
+part2 = "Part 2"

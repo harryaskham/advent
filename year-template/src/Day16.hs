@@ -1,96 +1,50 @@
 module Day16 (part1, part2) where
 
-import Data.List qualified as L
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
 import Data.Text qualified as T
-import Helper.Bits (bitsToInt, hexToBin)
-import Helper.TH (input)
-import Helper.Util (bitChar, nBitInt, parseWith, toTuple2)
-import Text.ParserCombinators.Parsec (GenParser, count, oneOf)
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-newtype Version = Version Integer
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-data OpType
-  = OpSum
-  | OpProduct
-  | OpMin
-  | OpMax
-  | OpGT
-  | OpLT
-  | OpEq
+-- line :: GenParser Char () Int
+-- line = number
 
-data Body
-  = Literal Integer
-  | Operator OpType [Packet]
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-data Packet = Packet Version Body
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
 
-opFromInt :: Integer -> OpType
-opFromInt 0 = OpSum
-opFromInt 1 = OpProduct
-opFromInt 2 = OpMin
-opFromInt 3 = OpMax
-opFromInt 5 = OpGT
-opFromInt 6 = OpLT
-opFromInt 7 = OpEq
-opFromInt i = error ("Invalid op: " <> show i)
-
-packet :: GenParser Char () Packet
-packet = do
-  version <- Version <$> nBitInt 3
-  typeId <- nBitInt 3
-  case typeId of
-    4 -> Packet version <$> literal
-    opId -> Packet version <$> operator opId
-
-literal :: GenParser Char () Body
-literal = Literal . bitsToInt <$> groupedBin
-  where
-    groupedBin = do
-      b : bs <- count 5 bitChar
-      if b then (bs ++) <$> groupedBin else return bs
-
-operator :: Integer -> GenParser Char () Body
-operator opId =
-  Operator (opFromInt opId) <$> do
-    ltID <- bitChar
-    if ltID then packetBody else lengthBody
-  where
-    packetBody = do
-      numPackets <- nBitInt 11
-      count (fromIntegral numPackets) packet
-    lengthBody = do
-      bitLength <- nBitInt 15
-      packetBits <- count (fromIntegral bitLength) (oneOf "01")
-      return $ parseWith (many packet) packetBits
-
-versionSum :: Packet -> Integer
-versionSum (Packet (Version v) (Literal _)) = v
-versionSum (Packet (Version v) (Operator _ ps)) = v + sum (versionSum <$> ps)
-
-eval :: Packet -> Integer
-eval (Packet _ (Literal v)) = v
-eval (Packet _ (Operator ot ps)) =
-  let vs = eval <$> ps
-      binOp f = fromIntegral . fromEnum . (f <$> fst <*> snd) . toTuple2 $ vs
-   in case ot of
-        OpSum -> sum vs
-        OpProduct -> product vs
-        OpMin -> L.minimum vs
-        OpMax -> L.maximum vs
-        OpGT -> binOp (>)
-        OpLT -> binOp (<)
-        OpEq -> binOp (==)
-
-solve :: (Packet -> Integer) -> Integer
-solve f =
+part1 :: Text
+part1 =
   $(input 16)
-    & (T.unpack . L.head . T.lines)
-    & (hexToBin =<<)
-    & parseWith packet
-    & f
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-part1 :: Integer
-part1 = solve versionSum
-
-part2 :: Integer
-part2 = solve eval
+part2 :: Text
+part2 = "Part 2"

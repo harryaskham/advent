@@ -1,33 +1,50 @@
 module Day3 (part1, part2) where
 
-import Data.Bits (Bits (complement))
-import Helper.Bits (bitsToInt, leastCommonBit, mostCommonBit)
-import Helper.TH (input)
-import Helper.Util (bitChar, both, parseLinesWith)
-import Text.ParserCombinators.Parsec (GenParser, many1)
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-filterBits :: ([Bool] -> Bool) -> [[Bool]] -> [Bool]
-filterBits getCommonBit = go 0
-  where
-    go _ [bs] = bs
-    go i bss =
-      let cb = getCommonBit <$> (transpose bss !!? i)
-       in go (i + 1) [bs | bs <- bss, (bs !!? i) == cb]
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-part1 :: Integer
+-- line :: GenParser Char () Int
+-- line = number
+
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
+
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
+
+part1 :: Text
 part1 =
   $(input 3)
-    & parseLinesWith (many1 bitChar)
-    & transpose
-    & fmap mostCommonBit
-    & (id &&& complement)
-    & both bitsToInt
-    & uncurry (*)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-part2 :: Integer
-part2 =
-  $(input 3)
-    & parseLinesWith (many1 bitChar)
-    & (filterBits mostCommonBit &&& filterBits leastCommonBit)
-    & both bitsToInt
-    & uncurry (*)
+part2 :: Text
+part2 = "Part 2"

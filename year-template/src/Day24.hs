@@ -1,45 +1,50 @@
 module Day24 (part1, part2) where
 
-import Data.Char (intToDigit)
-import Data.List ((!!))
-import Data.List.Extra (chunksOf)
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Text.Read (decimal)
-import Data.Vector (Vector)
+import Data.Text.Read
 import Data.Vector qualified as V
-import Helper.TH (input)
-import Helper.Util (number, parseWith, readOne, toTuple3)
-import Text.ParserCombinators.Parsec (anyChar, count)
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-blocks :: Vector (Int, Int, Int)
-blocks =
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
+
+-- line :: GenParser Char () Int
+-- line = number
+
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
+
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
+
+part1 :: Text
+part1 =
   $(input 24)
-    & T.lines
-    & fmap T.unpack
-    & chunksOf 18
-    & fmap (\ls -> toTuple3 (parseWith (count 6 anyChar *> number) . (ls !!) <$> [4, 5, 15]))
-    & V.fromList
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
 
-solve :: ([Int] -> [Int] -> [Int]) -> Int
-solve minMax = readOne decimal . T.pack $ (intToDigit <$> go (M.singleton 0 []))
-  where
-    go izws
-      | (length <$> M.lookup 0 izws) == Just (length blocks) = reverse $ izws M.! 0
-      | otherwise =
-        go $
-          M.fromListWith
-            minMax
-            [ (z', w : ws)
-              | w <- [1 .. 9],
-                (z, ws) <- M.toList izws,
-                let i = length ws,
-                let (d, a, b) = blocks V.! i,
-                let z' = if (z `mod` 26) + a == w then z `div` d else (z `div` d) * 26 + (w + b)
-            ]
-
-part1 :: Int
-part1 = solve max
-
-part2 :: Int
-part2 = solve min
+part2 :: Text
+part2 = "Part 2"

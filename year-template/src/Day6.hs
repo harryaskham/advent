@@ -1,21 +1,50 @@
 module Day6 (part1, part2) where
 
-import Control.Monad.Memo (MonadMemo (memo), startEvalMemo)
-import Helper.TH (input)
-import Helper.Util (csvLine, eol, number, parseWith)
+import Data.Array qualified as A
+import Data.Bimap (Bimap)
+import Data.Bimap qualified as BM
+import Data.Map.Strict qualified as M
+import Data.Mod
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Text.Read
+import Data.Vector qualified as V
+import Helper.Coord
+import Helper.Grid
+import Helper.TH
+import Helper.Tracers
+import Helper.Util
+import Text.ParserCombinators.Parsec
 
-fish :: [Integer]
-fish = parseWith (csvLine number) $(input 6)
+-- parser :: GenParser Char () [Int]
+-- parser = many1 (number <* eol) <* eof
 
-progeny :: Integer -> Integer
-progeny d' = startEvalMemo (sum <$> mapM (memo go . (d',)) fish)
-  where
-    go (0, _) = return 1
-    go (d, 0) = (+) <$> memo go (d - 1, 6) <*> memo go (d - 1, 8)
-    go (d, f) = memo go (d - 1, f - 1)
+-- line :: GenParser Char () Int
+-- line = number
 
-part1 :: Integer
-part1 = progeny 80
+-- data Cell
+--   = Empty
+--   | Wall
+--   deriving (Eq, Ord)
 
-part2 :: Integer
-part2 = progeny 256
+-- instance GridCell Cell where
+--   charMap =
+--     BM.fromList
+--       [ (Empty, ' '),
+--         (Wall, '#')
+--       ]
+
+part1 :: Text
+part1 =
+  $(input 6)
+    -- & readAs (signed decimal)
+    -- & parseWith parser
+    -- & parseLinesWith line
+    -- & lines
+    -- & readGrid
+    & (<> "Part 1")
+
+part2 :: Text
+part2 = "Part 2"
