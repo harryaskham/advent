@@ -43,7 +43,7 @@ type Grid a = M.Map (Int, Int) a
 
 -- Helper for reading a Grid from an input file
 readGridIO :: GridCell a => FilePath -> IO (Grid a)
-readGridIO path = readGrid <$> readFileText path
+readGridIO path = readGrid . decodeUtf8 @Text <$> readFileBS path
 
 readGrid :: GridCell a => Text -> Grid a
 readGrid = toGrid . lines
