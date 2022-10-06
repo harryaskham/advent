@@ -1,0 +1,208 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:x2021"
+
+    - path: "app/Main.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Main.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day1.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day2.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day3.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day4.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day5.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day6.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day7.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day8.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day9.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day10.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day11.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day12.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day13.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day14.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day15.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day16.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day17.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day18.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day19.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day20.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day21.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day22.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day23.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day24.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day25.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Day666.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/Coord.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/Grid.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/Tracers.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/Util.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/Bits.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "app/Helper/TH.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day1.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day2.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day3.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day4.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day5.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day6.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day7.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day8.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day9.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day10.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day11.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day12.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day13.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day14.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day15.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day16.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day17.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day18.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day19.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day20.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day21.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day22.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day23.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day24.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day25.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Day666.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Helper/Coord.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Helper/Grid.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Helper/Tracers.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Helper/Util.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Helper/Bits.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "src/Helper/TH.hs"
+      component: "x2021:exe:x2021"
+
+    - path: "test"
+      component: "x2021:test:projectname-testsuite"
+
+    - path: "src"
+      component: "x2021:test:projectname-testsuite"
