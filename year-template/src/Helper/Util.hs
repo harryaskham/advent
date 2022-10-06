@@ -18,7 +18,7 @@ import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Bits (bitsToInt)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe (read)
-import Text.ParserCombinators.Parsec (GenParser, char, count, eof, many1, oneOf, parse, sepBy)
+import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, parse, sepBy)
 
 -- Input parsing
 
@@ -34,7 +34,7 @@ exampleInputNPath day n = "input/" <> show day <> "_example_" <> show n <> ".txt
 -- Parse input lines with the given Reader.
 -- If any error occurs, fail.
 readAsIO :: TR.Reader a -> FilePath -> IO [a]
-readAsIO r path = readAs r <$> readFileText path
+readAsIO r path = readAs r . decodeUtf8 @Text <$> readFileBS path
 
 readAs :: TR.Reader a -> Text -> [a]
 readAs r text = do
@@ -51,16 +51,16 @@ readOne r text =
     Right (a, _) -> a
 
 -- Helper utility for running a parser on a Text path
-parseWithIO :: GenParser Char () a -> FilePath -> IO a
-parseWithIO parser path = parseWith parser <$> readFile (toString path)
+parseWithIO :: Parser a -> FilePath -> IO a
+parseWithIO parser path = parseWith parser . decodeUtf8 @String <$> readFileBS (toString path)
 
-parseWith :: GenParser Char () a -> String -> a
+parseWith :: Parser a -> String -> a
 parseWith parser body =
   case parse parser "[input]" body of
     Right x -> x
     Left e -> error (show e)
 
-parseLinesWith :: GenParser Char () a -> String -> [a]
+parseLinesWith :: Parser a -> String -> [a]
 parseLinesWith line = parseWith $ many1 (line <* eol) <* eof
 
 -- Typeclass helpers / functional helpers
@@ -157,22 +157,22 @@ toV3 = uncurry3 V3
 
 -- Parser Combinator Utils
 
-eol :: GenParser Char () Char
+eol :: Parser Char
 eol = char '\n'
 
-number :: Read a => GenParser Char () a
+number :: Read a => Parser a
 number = read <$> many1 (oneOf "-0123456789")
 
-bitChar :: GenParser Char () Bool
+bitChar :: Parser Bool
 bitChar = (char '1' >> return True) <|> (char '0' >> return False)
 
-nBitInt :: Int -> GenParser Char () Integer
+nBitInt :: Int -> Parser Integer
 nBitInt n = bitsToInt <$> Text.ParserCombinators.Parsec.count n bitChar
 
-coord2 :: GenParser Char () (Int, Int)
+coord2 :: Parser (Int, Int)
 coord2 = (,) <$> (number <* char ',') <*> number
 
-csvLine :: GenParser Char () a -> GenParser Char () [a]
+csvLine :: Parser a -> Parser [a]
 csvLine a = a `sepBy` char ',' <* (eol >> eof)
 
 -- Map helpers

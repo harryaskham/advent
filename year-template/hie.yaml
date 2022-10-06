@@ -1,208 +1,208 @@
 cradle:
   cabal:
     - path: "src"
-      component: "lib:x2021"
+      component: "lib:year-template"
 
     - path: "app/Main.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Main.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day1.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day2.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day3.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day4.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day5.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day6.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day7.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day8.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day9.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day10.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day11.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day12.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day13.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day14.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day15.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day16.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day17.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day18.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day19.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day20.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day21.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day22.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day23.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day24.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day25.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Day666.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Helper/Coord.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Helper/Grid.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Helper/Tracers.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Helper/Util.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Helper/Bits.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "app/Helper/TH.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day1.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day2.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day3.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day4.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day5.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day6.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day7.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day8.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day9.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day10.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day11.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day12.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day13.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day14.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day15.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day16.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day17.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day18.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day19.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day20.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day21.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day22.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day23.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day24.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day25.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Day666.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Helper/Coord.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Helper/Grid.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Helper/Tracers.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Helper/Util.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Helper/Bits.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "src/Helper/TH.hs"
-      component: "x2021:exe:x2021"
+      component: "year-template:exe:year-template"
 
     - path: "test"
-      component: "x2021:test:projectname-testsuite"
+      component: "year-template:test:projectname-testsuite"
 
     - path: "src"
-      component: "x2021:test:projectname-testsuite"
+      component: "year-template:test:projectname-testsuite"
