@@ -7,7 +7,7 @@ maintainer:         harryaskham@gmail.com
 extra-source-files: input/*
 
 common common-settings
-    build-depends:      base ^>=4.14.1.0,
+    build-depends:      base ^>=4.15.1.0,
                         relude,
                         pqueue,
                         parsec,
@@ -23,7 +23,6 @@ common common-settings
                         semirings,
                         template-haskell,
                         file-embed,
-                        hs-functors,
                         utility-ht,
                         monad-memo,
                         benchpress,
