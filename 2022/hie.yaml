@@ -1,0 +1,274 @@
+cradle:
+  cabal:
+    - path: "test/TestSuite.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day1.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day2.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day3.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day4.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day5.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day6.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day7.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day8.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day9.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day10.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day11.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day12.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day13.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day14.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day15.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day16.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day17.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day18.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day19.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day20.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day21.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day22.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day23.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day24.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "src/Day25.hs"
+      component: "x2022:test:projectname-testsuite"
+
+    - path: "app/Main.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day1.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day2.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day3.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day4.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day5.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day6.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day7.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day8.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day9.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day10.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day11.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day12.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day13.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day14.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day15.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day16.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day17.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day18.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day19.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day20.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day21.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day22.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day23.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day24.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day25.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day666.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Helper/Coord.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Helper/Grid.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Helper/Tracers.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Helper/Util.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Helper/Bits.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Helper/TH.hs"
+      component: "x2022:exe:x2022"
+
+    - path: "src/Day1.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day2.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day3.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day4.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day5.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day6.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day7.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day8.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day9.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day10.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day11.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day12.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day13.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day14.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day15.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day16.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day17.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day18.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day19.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day20.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day21.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day22.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day23.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day24.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day25.hs"
+      component: "lib:x2022"
+
+    - path: "src/Day666.hs"
+      component: "lib:x2022"
+
+    - path: "src/Helper/Coord.hs"
+      component: "lib:x2022"
+
+    - path: "src/Helper/Grid.hs"
+      component: "lib:x2022"
+
+    - path: "src/Helper/Tracers.hs"
+      component: "lib:x2022"
+
+    - path: "src/Helper/Util.hs"
+      component: "lib:x2022"
+
+    - path: "src/Helper/Bits.hs"
+      component: "lib:x2022"
+
+    - path: "src/Helper/TH.hs"
+      component: "lib:x2022"

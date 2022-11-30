@@ -1,0 +1,33 @@
+#+TITLE: Advent of Code x2022 Solutions
+
+* Instantiating Template
+- copy this directory as e.g. ~2022~
+- replace ~x2022.cabal~ with e.g. ~x2022.cabal~
+- Run e.g. ~find . -type f | xargs sed -i "" "s/x2022/x2022/g"~
+
+* Running
+- To run with Cabal, ~cabal run x2022~
+- REPL with ~cabal v2-repl~
+- Or, inside a ~nix-shell~:
+  - Run with e.g. ~cabal --enable-nix run x2022~
+  - REPL with ~cabal --enable-nix v2-repl~
+- To build and run with Nix manually, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2022~
+
+* Testing
+- Tests are set up to validate the results of each day against example input and true input.
+- ~cabal test~ will run the contents of ~test/TestSuite.hs~
+
+* Adding New Modules
+- For every new module added, ~x2022.cabal~ needs updating.
+- We also need to run ~gen-hie . > hie.yaml~ for HLS to pick the new modules up.
+- Finally, to have Nix pick up new modules, we need:
+  - ~cabal2nix . > default.nix && ~cabal2nix --shell ./. >shell.nix~
+
+* Profiling
+Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
+
+* Templating
+~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run e.g. ~for i in {1..25}; do sed "s/666/$i/g" src/Day666.hs > src/Day$i.hs; done; cabal v2-run x2022~.
+
+* Inputs
+Inputs are stored in ~inputs~ and we use ~TemplateHaskell~ to embed them at compile time, to avoid unneccessary ~IO~ in the solutions.
