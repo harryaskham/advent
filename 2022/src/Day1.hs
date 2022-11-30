@@ -18,33 +18,17 @@ import Helper.Tracers
 import Helper.Util
 import Text.ParserCombinators.Parsec
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+elf :: Parser [Integer]
+elf = many1 (number <* eol) <* eol
 
--- line :: Parser Int
--- line = number
-
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+elves :: Parser [[Integer]]
+elves = many1 elf <* eol
 
 part1 :: Text
 part1 =
   $(input 1)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & parseWith elves
+    & show
 
 part2 :: Text
 part2 = "Part 2"
