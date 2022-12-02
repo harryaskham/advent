@@ -1,50 +1,47 @@
 module Day2 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.TH (input)
+import Helper.Util (eol, parseWith, predCyc, succCyc)
+import Text.ParserCombinators.Parsec (Parser, char, eof, many1, spaces, (<|>))
+import Prelude hiding ((<|>))
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+data RPS = Rock | Paper | Scissors deriving (Eq, Enum, Bounded)
 
--- line :: Parser Int
--- line = number
+data Entry = Entry RPS RPS
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+parser :: Parser [Entry]
+parser = many1 (entry <* eol) <* eof
+  where
+    rps = rock <|> paper <|> scissors
+    rock = (char 'A' <|> char 'X') $> Rock
+    paper = (char 'B' <|> char 'Y') $> Paper
+    scissors = (char 'C' <|> char 'Z') $> Scissors
+    entry = Entry <$> rps <* spaces <*> rps
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+value :: RPS -> Integer
+value Rock = 1
+value Paper = 2
+value Scissors = 3
 
-part1 :: Text
-part1 =
-  $(input 2)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+outcomeScore :: RPS -> RPS -> Integer
+outcomeScore a b
+  | a == succCyc b = 0
+  | a == b = 3
+  | otherwise = 6
 
-part2 :: Text
-part2 = "Part 2"
+scoreEntry :: Entry -> Integer
+scoreEntry (Entry a b) = outcomeScore a b + value b
+
+updateEntry :: Entry -> Entry
+updateEntry (Entry a Rock) = Entry a (predCyc a)
+updateEntry (Entry a Paper) = Entry a a
+updateEntry (Entry a Scissors) = Entry a (succCyc a)
+
+solve :: (Entry -> Entry) -> Integer
+solve f = $(input 2) & parseWith parser & fmap (scoreEntry . f) & sum
+
+part1 :: Integer
+part1 = solve id
+
+part2 :: Integer
+part2 = solve updateEntry

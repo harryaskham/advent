@@ -268,3 +268,15 @@ mean :: Integral a => [a] -> a
 mean xs = sum xs `div` fromIntegral (length xs)
 
 type Nat10 = 'S Nat9
+
+-- Enum helpers
+
+succCyc :: (Enum a, Bounded a, Eq a) => a -> a
+succCyc a
+  | a == maxBound = minBound
+  | otherwise = succ a
+
+predCyc :: (Enum a, Bounded a, Eq a) => a -> a
+predCyc a
+  | a == minBound = maxBound
+  | otherwise = pred a
