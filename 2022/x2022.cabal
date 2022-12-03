@@ -28,6 +28,7 @@ common common-settings
                         benchpress,
                         fin,
                         MissingH,
+                        split,
                         safe,
                         linear,
                         lens,
