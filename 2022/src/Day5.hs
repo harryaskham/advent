@@ -26,8 +26,11 @@ runMove revFn stacks (n, s, d) =
 
 solve :: ([Char] -> [Char]) -> String
 solve revFn =
-  let (stacks, moves) = $(input 5) & parseWith parser
-   in V.toList $ U.head <$> foldl' (runMove revFn) stacks moves
+  $(input 5)
+    & parseWith parser
+    & uncurry (foldl' (runMove revFn))
+    & fmap U.head
+    & V.toList
 
 part1 :: String
 part1 = solve reverse
