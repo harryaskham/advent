@@ -17,21 +17,20 @@ parser = (,) <$> (stackRows <* (skipLine >> skipLine)) <*> (many1 numberLine3 <*
     emptyStackItem = string "   " $> Nothing
     fullStackItem = Just <$> between (char '[') (char ']') anyChar
 
-runMove :: Bool -> Vector [Char] -> (Int, Int, Int) -> Vector [Char]
-runMove doReverse stacks (n, s, d) =
+runMove :: ([Char] -> [Char]) -> Vector [Char] -> (Int, Int, Int) -> Vector [Char]
+runMove revFn stacks (n, s, d) =
   stacks V.// [(s', drop n $ stacks V.! s'), (d', toMove ++ stacks V.! d')]
   where
     (s', d') = (s - 1, d - 1)
-    revFn = if doReverse then reverse else id
     toMove = revFn . take n $ stacks V.! s'
 
-solve :: Bool -> String
-solve doReverse =
+solve :: ([Char] -> [Char]) -> String
+solve revFn =
   let (stacks, moves) = $(input 5) & parseWith parser
-   in V.toList $ U.head <$> foldl' (runMove doReverse) stacks moves
+   in V.toList $ U.head <$> foldl' (runMove revFn) stacks moves
 
 part1 :: String
-part1 = solve True
+part1 = solve reverse
 
 part2 :: String
-part2 = solve False
+part2 = solve id
