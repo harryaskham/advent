@@ -7,7 +7,7 @@ maintainer:         harryaskham@gmail.com
 extra-source-files: input/*
 
 common common-settings
-    build-depends:      base ^>=4.15.1.0,
+    build-depends:      base,
                         relude,
                         pqueue,
                         parsec,
