@@ -1,50 +1,37 @@
 module Day5 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
+import Data.Vector (Vector)
 import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.TH (input)
+import Helper.Util (eol, numberLine3, parseWith, skipLine)
+import Relude.Unsafe qualified as U
+import Text.ParserCombinators.Parsec (Parser, anyChar, between, char, count, eof, many1, sepBy, string, (<|>))
+import Prelude hiding ((<|>))
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+parser :: Parser (Vector [Char], [(Int, Int, Int)])
+parser = (,) <$> (stackRows <* (skipLine >> skipLine)) <*> (many1 numberLine3 <* eof)
+  where
+    stackRows = V.fromList . fmap catMaybes . transpose <$> count 8 stackRow
+    stackRow = (stackItem `sepBy` char ' ') <* eol
+    stackItem = emptyStackItem <|> fullStackItem
+    emptyStackItem = string "   " $> Nothing
+    fullStackItem = Just <$> between (char '[') (char ']') anyChar
 
--- line :: Parser Int
--- line = number
+runMove :: Bool -> Vector [Char] -> (Int, Int, Int) -> Vector [Char]
+runMove doReverse stacks (n, s, d) =
+  stacks V.// [(s', drop n $ stacks V.! s'), (d', toMove ++ stacks V.! d')]
+  where
+    (s', d') = (s - 1, d - 1)
+    revFn = if doReverse then reverse else id
+    toMove = revFn . take n $ stacks V.! s'
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+solve :: Bool -> String
+solve doReverse =
+  let (stacks, moves) = $(input 5) & parseWith parser
+   in V.toList $ U.head <$> foldl' (runMove doReverse) stacks moves
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+part1 :: String
+part1 = solve True
 
-part1 :: Text
-part1 =
-  $(input 5)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+part2 :: String
+part2 = solve False

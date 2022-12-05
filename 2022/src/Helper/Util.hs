@@ -18,7 +18,7 @@ import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Bits (bitsToInt)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe (read)
-import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, option, parse, sepBy, string)
+import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, noneOf, oneOf, option, parse, sepBy, string)
 
 -- Input parsing
 
@@ -160,12 +160,28 @@ toV3 = uncurry3 V3
 eol :: Parser Char
 eol = char '\n'
 
+skipLine :: Parser Char
+skipLine = many (noneOf "\n") >> eol
+
 number :: Read a => Parser a
 number =
   read <$> do
     sgn <- option "" (string "-")
     n <- many1 (oneOf "0123456789")
     return $ sgn <> n
+
+-- Pull three numbers out of a line
+numberLine3 :: Read a => Parser (a, a, a)
+numberLine3 = do
+  many $ noneOf "0123456789\n"
+  a <- number
+  many $ noneOf "0123456789\n"
+  b <- number
+  many $ noneOf "0123456789\n"
+  c <- number
+  many $ noneOf "0123456789\n"
+  eol
+  return (a, b, c)
 
 bitChar :: Parser Bool
 bitChar = (char '1' >> return True) <|> (char '0' >> return False)
