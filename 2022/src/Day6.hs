@@ -1,50 +1,19 @@
 module Day6 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
+import Data.List (nub)
 import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.TH (input)
+import Relude.Unsafe qualified as U
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+seqStart :: Int -> Text -> Integer
+seqStart n as = go (fromIntegral n) $ T.unpack as
+  where
+    go c as
+      | length (nub $ take n as) == n = c
+      | otherwise = go (c + 1) (U.tail as)
 
--- line :: Parser Int
--- line = number
+part1 :: Integer
+part1 = $(input 6) & seqStart 4
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
-part1 =
-  $(input 6)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+part2 :: Integer
+part2 = $(input 6) & seqStart 14
