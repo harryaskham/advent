@@ -1,85 +1,71 @@
 module Day8 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Char (intToDigit)
-import Data.List (maximum)
+import Data.List (foldl1, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Data.Tuple.Extra (fst3)
+import Helper.Coord (Coord2)
+import Helper.Grid (Grid, GridCell (charMap), readGrid, rowsCols)
+import Helper.TH (input)
+import Helper.Util ((<$$>))
+import Relude.Unsafe qualified as U
 
-newtype Cell = Cell Int deriving (Eq, Ord)
+newtype Cell = Cell Int deriving (Eq, Ord, Enum)
 
 instance GridCell Cell where
   charMap = BM.fromList [(Cell x, intToDigit x) | x <- [0 .. 9]]
 
-visible :: Grid Cell -> Coord2 -> Bool
-visible g (x, y) = visibleFrom `any` [above, below, left, right]
+visibilityFrom :: Grid Cell -> [Coord2] -> [Coord2]
+visibilityFrom g (first : rest) =
+  fst $
+    foldl'
+      ( \(visible, tallest) c ->
+          if g M.! c > g M.! tallest
+            then (c : visible, c)
+            else (visible, tallest)
+      )
+      ([], first)
+      rest
+
+visible :: Grid Cell -> [Coord2]
+visible g =
+  nub $
+    perimeter
+      ++ ( visibilityFrom g
+             =<< concat [rows, cols, reverse <$> rows, reverse <$> cols]
+         )
   where
-    (w, h) = maxXY g
-    above = [(x, y') | y' <- [0 .. y - 1]]
-    below = [(x, y') | y' <- [y + 1 .. h]]
-    left = [(x', y) | x' <- [0 .. x - 1]]
-    right = [(x', y) | x' <- [x + 1 .. w]]
-    visibleFrom = all ((< g M.! (x, y)) . (g M.!))
+    (rows, cols) = rowsCols g
+    perimeter = U.head rows ++ U.head cols ++ U.last rows ++ U.last cols
 
-allVisible :: Grid Cell -> [Coord2]
-allVisible g = [c | c <- M.keys g, visible g c]
+scoresFrom :: Grid Cell -> [Coord2] -> Map Coord2 Int
+scoresFrom g cs =
+  fst3 $
+    foldl'
+      ( \(distances, distanceToLastTree, n) c ->
+          let distance =
+                case catMaybes [distanceToLastTree M.! t | t <- [g M.! c .. Cell 9]] of
+                  [] -> n
+                  ds -> 1 + minimum ds
+           in ( M.insert c distance distances,
+                M.insert (g M.! c) (Just 0) $ (+ 1) <$$> distanceToLastTree,
+                n + 1
+              )
+      )
+      (M.empty, M.fromList [(t, Nothing) | t <- [Cell 0 .. Cell 9]], 0)
+      cs
 
-scenicScore :: Grid Cell -> Coord2 -> Int
-scenicScore g (x, y) = product [above, below, left, right]
+scores :: Grid Cell -> Map Coord2 Int
+scores g =
+  foldl1
+    (M.unionWith (*))
+    (concat (scoresFrom g <$$> [rows, cols, reverse <$> rows, reverse <$> cols]))
   where
-    (w, h) = maxXY g
-    distance =
-      fst
-        . foldl'
-          ( \(n, stop) c ->
-              if stop
-                then (n, stop)
-                else
-                  if g M.! c < g M.! (x, y)
-                    then (n + 1, False)
-                    else (n, True)
-          )
-          (1, False)
-    above = distance [(x, y') | y' <- [y - 1, y - 2 .. 1]]
-    below = distance [(x, y') | y' <- [y + 1 .. h - 1]]
-    left = distance [(x', y) | x' <- [x - 1, x -2 .. 1]]
-    right = distance [(x', y) | x' <- [x + 1 .. w - 1]]
-
-maxScenicScore :: Grid Cell -> Int
-maxScenicScore g =
-  maximum
-    [ scenicScore g c
-      | let (w, h) = maxXY g,
-        c@(x, y) <- M.keys g,
-        x > 0,
-        y > 0,
-        x < w,
-        y < h
-    ]
+    (rows, cols) = rowsCols g
 
 part1 :: Int
-part1 =
-  $(input 8)
-    & readGrid
-    & allVisible
-    & length
+part1 = $(input 8) & readGrid & visible & length
 
 part2 :: Int
-part2 =
-  $(input 8)
-    & readGrid
-    & maxScenicScore
+part2 = $(input 8) & readGrid & scores & maximum

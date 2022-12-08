@@ -159,3 +159,10 @@ extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
 
 find :: (Eq a) => a -> Grid a -> [(Int, Int)]
 find a g = [k | (k, v) <- M.toList g, v == a]
+
+rowsCols :: Grid a -> ([[(Int, Int)]], [[(Int, Int)]])
+rowsCols g = (rows, cols)
+  where
+    (w, h) = maxXY g
+    rows = [[(x, y) | x <- [0 .. w]] | y <- [0 .. h]]
+    cols = [[(x, y) | y <- [0 .. h]] | x <- [0 .. w]]
