@@ -287,6 +287,9 @@ median xs = sort xs !! (length xs `div` 2)
 mean :: Integral a => [a] -> a
 mean xs = sum xs `div` fromIntegral (length xs)
 
+clip :: Int -> Int -> Int -> Int
+clip a b = max a . min b
+
 type Nat10 = 'S Nat9
 
 -- Enum helpers
