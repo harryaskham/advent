@@ -16,13 +16,12 @@ moveRope ([], path) _ = ([], path)
 moveRope (h : ts, path) (d, n) = moveRope (rope', last rope' : path) (d, n - 1)
   where
     rope' = moveTail d (move d 1 h : ts)
-    moveTail d (a@(x, y) : b@(x', y') : rest) =
-      if b `elem` a : neighbors a
-        then a : b : rest
-        else
-          let clip = max (-1) . min 1
-              b' = (x' + clip (x - x'), y' + clip (y - y'))
-           in a : moveTail d (b' : rest)
+    moveTail d (a@(x, y) : b@(x', y') : rest)
+      | b `elem` a : neighbors a = a : b : rest
+      | otherwise =
+        let clip = max (-1) . min 1
+            b' = (x' + clip (x - x'), y' + clip (y - y'))
+         in a : moveTail d (b' : rest)
     moveTail _ a = a
 
 solve :: Int -> Int
