@@ -170,16 +170,23 @@ number =
     n <- many1 (oneOf "0123456789")
     return $ sgn <> n
 
--- Pull three numbers out of a line
+numberLine :: Read a => Parser a
+numberLine = do
+  many $ noneOf "-0123456789\n"
+  a <- number
+  many $ noneOf "-0123456789\n"
+  eol
+  return a
+
 numberLine3 :: Read a => Parser (a, a, a)
 numberLine3 = do
-  many $ noneOf "0123456789\n"
+  many $ noneOf "-0123456789\n"
   a <- number
-  many $ noneOf "0123456789\n"
+  many $ noneOf "-0123456789\n"
   b <- number
-  many $ noneOf "0123456789\n"
+  many $ noneOf "-0123456789\n"
   c <- number
-  many $ noneOf "0123456789\n"
+  many $ noneOf "-0123456789\n"
   eol
   return (a, b, c)
 

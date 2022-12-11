@@ -4,7 +4,7 @@ import Data.List (foldl', iterate, sortOn, take, (!!))
 import Data.Map.Strict qualified as M
 import Data.Sequence qualified as SQ
 import Helper.TH (input)
-import Helper.Util (eol, number, parseWith, toTuple2)
+import Helper.Util (eol, number, numberLine, parseWith, toTuple2)
 import Text.ParserCombinators.Parsec (Parser, char, eof, sepBy, spaces, string, (<|>))
 import Prelude hiding ((<|>))
 
@@ -12,20 +12,20 @@ data Monkey = Monkey (Seq Integer) (Integer -> Integer) (Integer -> Integer) Int
 
 parser :: Parser (Map Integer Monkey, Integer)
 parser = do
-  monkeyDs <- (monkeyD `sepBy` eol) <* eof
-  return (M.fromList $ fst <$> monkeyDs, product $ snd <$> monkeyDs)
+  monkeyMods <- (monkeyMod `sepBy` eol) <* eof
+  return (M.fromList $ fst <$> monkeyMods, product $ snd <$> monkeyMods)
   where
-    monkeyD = do
-      mId <- string "Monkey " *> number <* (string ":" >> eol)
+    monkeyMod = do
+      mId <- numberLine
       items <- SQ.fromList <$> (string "  Starting items: " *> number `sepBy` string ", ") <* eol
       operation <- do
         op <- string "  Operation: new = old " *> ((char '+' $> (+)) <|> (char '*' $> (*))) <* spaces
         (op <$> (number <* eol)) <|> ((string "old" >> eol) $> (\x -> op x x))
-      (test, modulus) <- do
-        modulus <- string "  Test: divisible by " *> number <* eol
-        a <- string "    If true: throw to monkey " *> number <* eol
-        b <- string "    If false: throw to monkey " *> number <* eol
-        return (\x -> if x `mod` modulus == 0 then a else b, modulus)
+      modulus <- numberLine
+      test <- do
+        a <- numberLine
+        b <- numberLine
+        return (\x -> if x `mod` modulus == 0 then a else b)
       return ((mId, Monkey items operation test 0), modulus)
 
 runTurn :: Integer -> Integer -> Map Integer Monkey -> Integer -> Map Integer Monkey
