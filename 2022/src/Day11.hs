@@ -20,7 +20,7 @@ parser = do
       items <- SQ.fromList <$> (string "  Starting items: " *> number `sepBy` string ", ") <* eol
       operation <- do
         op <- string "  Operation: new = old " *> ((char '+' $> (+)) <|> (char '*' $> (*))) <* spaces
-        (op <$> (number <* eol)) <|> ((string "old" >> eol) $> (^ 2))
+        (op <$> (number <* eol)) <|> ((string "old" >> eol) $> (\x -> op x x))
       (test, modulus) <- do
         modulus <- string "  Test: divisible by " *> number <* eol
         a <- string "    If true: throw to monkey " *> number <* eol
