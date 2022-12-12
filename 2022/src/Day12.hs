@@ -1,23 +1,13 @@
 module Day12 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.List (minimum)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Coord (neighborsNoDiags)
+import Helper.Grid (Grid, GridCell (charMap), findOne, readGrid)
+import Helper.TH (input)
 
 data Cell = Start Char | End Char | Cell Char deriving (Eq, Ord)
 
