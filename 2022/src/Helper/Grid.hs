@@ -8,6 +8,8 @@ import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Helper.Util (Nat10, both)
+import Relude.Unsafe qualified as U
+import Prelude hiding (find)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
@@ -159,6 +161,9 @@ extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
 
 find :: (Eq a) => a -> Grid a -> [(Int, Int)]
 find a g = [k | (k, v) <- M.toList g, v == a]
+
+findOne :: (Eq a) => a -> Grid a -> (Int, Int)
+findOne a g = U.head $ find a g
 
 rowsCols :: Grid a -> ([[(Int, Int)]], [[(Int, Int)]])
 rowsCols g = (rows, cols)
