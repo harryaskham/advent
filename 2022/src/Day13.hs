@@ -6,7 +6,7 @@ import Helper.Util (eol, number, parseWith, toTuple2)
 import Text.ParserCombinators.Parsec (Parser, between, char, count, eof, sepBy, (<|>))
 import Prelude hiding ((<|>))
 
-data Packet = PInt Int | PList [Packet] deriving (Eq, Show)
+data Packet = PInt Int | PList [Packet] deriving (Eq)
 
 parser :: Parser [(Packet, Packet)]
 parser = (packetPair `sepBy` eol) <* eof
