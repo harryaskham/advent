@@ -24,8 +24,7 @@ cmp (PList _) (PList []) = GT
 cmp (PList (a : as)) (PList (b : bs)) =
   case cmp a b of
     EQ -> cmp (PList as) (PList bs)
-    LT -> LT
-    GT -> GT
+    r -> r
 
 part1 :: Int
 part1 =
