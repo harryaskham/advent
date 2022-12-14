@@ -42,5 +42,5 @@ part1 = $(input 14) & parseWith parser & solve
 
 part2 :: Int
 part2 =
-  let addFloor cs = let h = maximum (snd <$> cs) in cs ++ [(x, h + 2) | x <- [0 .. 1000]]
+  let addFloor cs = cs ++ [(x, maximum (snd <$> cs) + 2) | x <- [0 .. 1000]]
    in $(input 14) & parseWith parser & addFloor & solve
