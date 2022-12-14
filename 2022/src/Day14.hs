@@ -27,9 +27,10 @@ dropGrain h g = go (500, 0)
       | M.lookup (x + 1, y + 1) g == Just Empty = go (x + 1, y + 1)
       | otherwise = Just (M.insert (x, y) Sand g)
 
-solve :: Grid Cell -> Int
-solve g =
-  let (_, h) = maxXY g
+solve :: [Coord2] -> Int
+solve coords =
+  let g = fromCoords Wall coords
+      (_, h) = maxXY g
    in Just g
         & iterate (>>= dropGrain h)
         & takeWhile isJust
@@ -37,16 +38,9 @@ solve g =
         & subtract 1
 
 part1 :: Int
-part1 =
-  $(input 14)
-    & parseWith parser
-    & fromCoords Wall
-    & solve
+part1 = $(input 14) & parseWith parser & solve
 
 part2 :: Int
 part2 =
-  $(input 14)
-    & parseWith parser
-    & (\cs -> let h = maximum (snd <$> cs) in cs ++ [(x, h + 2) | x <- [0 .. 1000]])
-    & fromCoords Wall
-    & solve
+  let addFloor cs = let h = maximum (snd <$> cs) in cs ++ [(x, h + 2) | x <- [0 .. 1000]]
+   in $(input 14) & parseWith parser & addFloor & solve
