@@ -20,8 +20,8 @@ dropGrain :: Int -> Grid Cell -> Maybe (Grid Cell)
 dropGrain h g = go (500, 0)
   where
     go (x, y)
-      | M.lookup (500, 0) g == Just Sand = Nothing
       | y >= h = Nothing
+      | M.lookup (500, 0) g == Just Sand = Nothing
       | M.lookup (x, y + 1) g == Just Empty = go (x, y + 1)
       | M.lookup (x - 1, y + 1) g == Just Empty = go (x - 1, y + 1)
       | M.lookup (x + 1, y + 1) g == Just Empty = go (x + 1, y + 1)
@@ -47,8 +47,6 @@ part2 :: Int
 part2 =
   $(input 14)
     & parseWith parser
-    & (\cs -> let h = maximum (snd <$> cs) in cs ++ [(x, h + 2) | x <- [300 .. 700]])
+    & (\cs -> let h = maximum (snd <$> cs) in cs ++ [(x, h + 2) | x <- [0 .. 1000]])
     & fromCoords Wall
-    & M.filterWithKey (\(x, _) _ -> x > 300)
-    & fillDef Empty
     & solve
