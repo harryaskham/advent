@@ -16,10 +16,9 @@ parser = concat <$> many1 (segment <* eol) <* eof
     segment = toCoords <$> (toTuple2 <$> number `sepBy` char ',') `sepBy` string " -> "
     toCoords ss = [(x, y) | ((x1, y1), (x2, y2)) <- zip ss (drop 1 ss), x <- range x1 x2, y <- range y1 y2]
 
-dropGrain :: Grid Cell -> Maybe (Grid Cell)
-dropGrain g = go (500, 0)
+dropGrain :: Int -> Grid Cell -> Maybe (Grid Cell)
+dropGrain h g = go (500, 0)
   where
-    (_, h) = maxXY g
     go (x, y)
       | M.lookup (500, 0) g == Just Sand = Nothing
       | y >= h = Nothing
@@ -30,11 +29,12 @@ dropGrain g = go (500, 0)
 
 solve :: Grid Cell -> Int
 solve g =
-  Just g
-    & iterate (>>= dropGrain)
-    & takeWhile isJust
-    & length
-    & subtract 1
+  let (_, h) = maxXY g
+   in Just g
+        & iterate (>>= dropGrain h)
+        & takeWhile isJust
+        & length
+        & subtract 1
 
 part1 :: Int
 part1 =
