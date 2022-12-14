@@ -1,50 +1,54 @@
 module Day14 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
+import Data.List (maximum)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Coord (Coord2)
+import Helper.Grid (Grid, fillDef, fromCoords, maxXY)
+import Helper.TH (input)
+import Helper.Util (eol, number, parseWith, range, toTuple2)
+import Text.ParserCombinators.Parsec (Parser, char, eof, many1, sepBy, string)
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+data Cell = Empty | Wall | Sand deriving (Eq, Ord, Bounded)
 
--- line :: Parser Int
--- line = number
+parser :: Parser [Coord2]
+parser = concat <$> many1 (segment <* eol) <* eof
+  where
+    segment = toCoords <$> (toTuple2 <$> number `sepBy` char ',') `sepBy` string " -> "
+    toCoords ss = [(x, y) | ((x1, y1), (x2, y2)) <- zip ss (drop 1 ss), x <- range x1 x2, y <- range y1 y2]
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+dropGrain :: Grid Cell -> Maybe (Grid Cell)
+dropGrain g = go (500, 0)
+  where
+    (_, h) = maxXY g
+    go (x, y)
+      | M.lookup (500, 0) g == Just Sand = Nothing
+      | y >= h = Nothing
+      | M.lookup (x, y + 1) g == Just Empty = go (x, y + 1)
+      | M.lookup (x - 1, y + 1) g == Just Empty = go (x - 1, y + 1)
+      | M.lookup (x + 1, y + 1) g == Just Empty = go (x + 1, y + 1)
+      | otherwise = Just (M.insert (x, y) Sand g)
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+solve :: Grid Cell -> Int
+solve g =
+  Just g
+    & iterate (>>= dropGrain)
+    & takeWhile isJust
+    & length
+    & subtract 1
 
-part1 :: Text
+part1 :: Int
 part1 =
   $(input 14)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & parseWith parser
+    & fromCoords Wall
+    & solve
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  $(input 14)
+    & parseWith parser
+    & (\cs -> let h = maximum (snd <$> cs) in cs ++ [(x, h + 2) | x <- [300 .. 700]])
+    & fromCoords Wall
+    & M.filterWithKey (\(x, _) _ -> x > 300)
+    & fillDef Empty
+    & solve

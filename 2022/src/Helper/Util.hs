@@ -271,6 +271,10 @@ duplicates xs = M.keys $ M.filter (> 1) (countMap xs)
 enumerate :: Enum a => [a]
 enumerate = enumFrom (toEnum 0)
 
+-- Range ignoring ordering
+range :: (Enum a, Ord a) => a -> a -> [a]
+range a b = [min a b .. max a b]
+
 permutationMaps :: (Enum a, Ord a) => [Map a a]
 permutationMaps = M.fromList . zip enumerate <$> permutations enumerate
 
