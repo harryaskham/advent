@@ -69,8 +69,7 @@ main = do
   assertEqual "Day 13 (Part 2)" Day13.part2 25792
 
   assertEqual "Day 14 (Part 1)" Day14.part1 737
-  -- TODO: Too slow, reenable later
-  -- assertEqual "Day 14 (Part 2)" Day14.part2 28145
+  assertEqual "Day 14 (Part 2)" Day14.part2 28145
 
   assertEqual "Day 15 (Part 1)" Day15.part1 "Part 1"
   assertEqual "Day 15 (Part 2)" Day15.part2 "Part 2"
