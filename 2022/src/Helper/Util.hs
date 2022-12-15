@@ -190,6 +190,20 @@ numberLine3 = do
   eol
   return (a, b, c)
 
+numberLine4 :: Read a => Parser (a, a, a, a)
+numberLine4 = do
+  many $ noneOf "-0123456789\n"
+  a <- number
+  many $ noneOf "-0123456789\n"
+  b <- number
+  many $ noneOf "-0123456789\n"
+  c <- number
+  many $ noneOf "-0123456789\n"
+  d <- number
+  many $ noneOf "-0123456789\n"
+  eol
+  return (a, b, c, d)
+
 bitChar :: Parser Bool
 bitChar = (char '1' >> return True) <|> (char '0' >> return False)
 

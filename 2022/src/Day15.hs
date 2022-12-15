@@ -1,50 +1,44 @@
 module Day15 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
+import Data.List (foldl1)
 import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.Coord (Coord2, manhattan, neighbors)
+import Helper.TH (input)
+import Helper.Util (count, numberLine4, parseWith)
+import Text.ParserCombinators.Parsec (eof, many1)
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+rangesCovered :: Int -> (Int, Int, Int, Int) -> Maybe (Set Coord2)
+rangesCovered row (sx, sy, bx, by)
+  | abs (sy - row) > d = Nothing
+  | otherwise = Just (S.delete (bx, by) (S.fromList ((,row) <$> [sx - coverage .. sx + coverage])))
+  where
+    d = manhattan (sx, sy) (bx, by)
+    coverage = d - abs (sy - row)
 
--- line :: Parser Int
--- line = number
+search :: [(Int, Int, Int, Int)] -> Int
+search sensors = go (PQ.singleton (h start) start) S.empty
+  where
+    start = (2000000, 2000000)
+    h (x, y) = count (`sees` (x, y)) sensors
+    sees (sx, sy, bx, by) (x, y) = manhattan (sx, sy) (x, y) <= manhattan (sx, sy) (bx, by)
+    go queue seen
+      | score == 0 = x * 4000000 + y
+      | otherwise = go queue' (S.insert (x, y) seen)
+      where
+        ((score, (x, y)), rest) = PQ.deleteFindMin queue
+        queue' = foldl' (\q n -> PQ.insert (h n) n q) rest (neighbors (x, y))
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
+part1 :: Int
 part1 =
   $(input 15)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & parseWith (many1 numberLine4 <* eof)
+    & mapMaybe (rangesCovered 2000000)
+    & foldl1 S.union
+    & S.size
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  $(input 15)
+    & parseWith (many1 numberLine4 <* eof)
+    & search
