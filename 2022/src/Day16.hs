@@ -19,6 +19,7 @@ import Helper.Grid
 import Helper.TH
 import Helper.Tracers
 import Helper.Util hiding (count)
+import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec hiding (State)
 import Prelude hiding ((<|>))
 
@@ -151,6 +152,23 @@ mostPressure3 g = go (SQ.singleton ("AA", "AA", 0, 0, M.empty, S.empty)) S.empty
         aWaits = (currentA, currentB, tA + 1, tB, open, seen')
         bWaits = (currentA, currentB, tA, tB + 1, open, seen')
         next = aWaits : bWaits : (bothMoveAndOpen ++ aMoveAndOpen ++ bMoveAndOpen)
+        queue' = queue
+
+mostPressure4 :: Map String (Int, [String]) -> Int
+mostPressure4 g = maximum [score g $ M.unionWith min pA pB | pA <- singlePaths, pB <- singlePaths]
+  where
+    -- bestPath = U.last $ sortOn (score g) singlePaths
+    singlePaths = S.toList $ go (SQ.singleton ("AA", 0, M.empty)) S.empty
+    paths = shortestPaths g
+    go SQ.Empty opens = opens
+    go ((current, t, open) SQ.:<| queue) opens
+      | M.size open == M.size paths - 1 = go queue (S.insert open opens)
+      | t >= 26 = go queue (S.insert open opens)
+      | otherwise =
+        traceShow (current, t, M.size open) $ go queue' opens
+      where
+        ns = M.toList (paths M.! current)
+        next = [(n, t + d + 1, M.insert n (t + d + 1) open) | (n, d) <- ns, not (n `M.member` open)]
         queue' = queue SQ.>< SQ.fromList next
 
 -- DFS in state monad
@@ -201,7 +219,7 @@ part2 :: Int
 part2 =
   $(exampleInput 16)
     & parseWith parser
-    & mostPressure3
+    & mostPressure4
 
 -- & mostPressure2
 
