@@ -155,10 +155,12 @@ mostPressure3 g = go (SQ.singleton ("AA", "AA", 0, 0, M.empty, S.empty)) S.empty
         queue' = queue
 
 mostPressure4 :: Map String (Int, [String]) -> Int
-mostPressure4 g = maximum [score g $ M.unionWith min pA pB | pA <- singlePaths, pB <- singlePaths]
+mostPressure4 g = maximum [traceShowId $ score g $ M.unionWith min pA pB | pA <- thePaths, pB <- thePaths]
   where
     -- bestPath = U.last $ sortOn (score g) singlePaths
     singlePaths = S.toList $ go (SQ.singleton ("AA", 0, M.empty)) S.empty
+    bestPaths = take 250 $ sortOn (Down . score g) singlePaths
+    thePaths = bestPaths
     paths = shortestPaths g
     go SQ.Empty opens = opens
     go ((current, t, open) SQ.:<| queue) opens
@@ -217,7 +219,7 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(exampleInput 16)
+  $(input 16)
     & parseWith parser
     & mostPressure4
 
