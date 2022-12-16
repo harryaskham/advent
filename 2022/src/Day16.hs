@@ -118,7 +118,7 @@ dfs g = go "AA" "AA" HS.empty 0 0 0
             results <- traverse (\((a, b), s, f, to, ti) -> go a b s f to ti) next
             return (maximum results)
       case cv of
-        Just oldTotal -> if oldTotal >= total then return Nothing else continue
+        Just oldTotal -> if oldTotal >= total then traceShow "cache hit" $ return Nothing else continue
         Nothing -> continue
 
 part1 :: Int
@@ -127,9 +127,15 @@ part1 =
     & parseWith parser
     & mostPressure
 
-part2 :: Maybe Int
+part2 :: Int
 part2 =
-  $(exampleInput 16)
+  $(input 16)
     & parseWith parser
-    & dfs
-    & flip evalState M.empty
+    & mostPressure2
+
+--part2 :: Maybe Int
+--part2 =
+--  $(exampleInput 16)
+--    & parseWith parser
+--    & dfs
+--    & flip evalState M.empty
