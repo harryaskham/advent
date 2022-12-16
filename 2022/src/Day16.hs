@@ -101,7 +101,7 @@ shortestPaths g = M.fromList ([(n, startFrom n) | n <- "AA" : S.toList nodesWith
             queue' = queue SQ.>< SQ.fromList next
 
 score :: Map String (Int, [String]) -> Map String Int -> Int
-score g open = traceShow open $ sum [f * (26 - t) | (n, t) <- M.toList open, let (f, _) = g M.! n]
+score g open = sum [f * (26 - t) | (n, t) <- M.toList open, let (f, _) = g M.! n]
 
 -- TODO: don't visit nodes where we would not be the first to open
 -- TODO: some caching
@@ -113,12 +113,12 @@ mostPressure3 g = go (SQ.singleton ("AA", "AA", 0, 0, M.empty, S.empty)) S.empty
     paths = shortestPaths g
     go SQ.Empty _ best = best
     go ((currentA, currentB, tA, tB, open, seen) SQ.:<| queue) cache best
-      | M.size open == M.size paths - 1 = go queue cache (max best (traceShowId $ score g open))
+      | M.size open == M.size paths - 1 = go queue cache (max best (score g open))
       | tA >= 26 && tB >= 26 = go queue cache (max best (score g open))
       | cacheKey `S.member` cache = go queue cache best
       | (currentA, currentB) `S.member` seen = go queue cache best
       | otherwise =
-        traceShow (paths, currentA, currentB, tA, tB, M.size open, best) $ go queue' cache' best
+        traceShow (currentA, currentB, tA, tB, M.size open, best) $ go queue' cache' best
       where
         cacheKey = (currentA, currentB, open)
         cacheKey2 = (currentB, currentA, open)
@@ -127,7 +127,7 @@ mostPressure3 g = go (SQ.singleton ("AA", "AA", 0, 0, M.empty, S.empty)) S.empty
         nsB = M.toList (paths M.! currentB)
         ins = M.insertWith min
         seen' = S.insert (currentA, currentB) seen
-        moveAndOpen =
+        bothMoveAndOpen =
           [ (nA, nB, tA + dA + 1, tB + dB + 1, ins nA (tA + dA + 1) . ins nB (tB + dB + 1) $ open, seen')
             | (nA, dA) <- nsA,
               (nB, dB) <- nsB,
@@ -136,29 +136,21 @@ mostPressure3 g = go (SQ.singleton ("AA", "AA", 0, 0, M.empty, S.empty)) S.empty
               tA + dA + 1 < 26,
               tB + dB + 1 < 26
           ]
-        bothMove = [(nA, nB, tA + dA, tB + dB, open, seen') | (nA, dA) <- nsA, (nB, dB) <- nsB]
-        aMoves = [(nA, currentB, tA + dA, tB + 1, open, seen') | (nA, dA) <- nsA]
-        bMoves = [(currentA, nB, tA + 1, tB + dB, open, seen') | (nB, dB) <- nsB]
-        aOpens = [(currentA, nB, tA + 1, tB + dB, ins currentA tA open, seen') | (nB, dB) <- nsB]
-        bOpens = [(nA, currentB, tA + dA, tB + 1, ins currentB tB open, seen') | (nA, dA) <- nsA]
-        bothOpen = (currentA, currentB, tA + 1, tB + 1, ins currentA tA . ins currentB tB $ open, seen')
-        next =
-          moveAndOpen
-        --  concat
-        --  [ if currentFlowA > 0 && (not (currentA `M.member` open) || open M.! currentA > tA) then aOpens else [],
-        --    if currentFlowB > 0 && (not (currentB `M.member` open) || open M.! currentB > tB) then bOpens else [],
-        --    if ( currentFlowA /= currentFlowB
-        --           && currentFlowA > 0
-        --           && currentFlowB > 0
-        --           && (not (currentA `M.member` open) || open M.! currentA > tA)
-        --           && (not (currentB `M.member` open) || open M.! currentB > tB)
-        --       )
-        --      then [bothOpen]
-        --      else [],
-        --    bothMove,
-        --    aMoves,
-        --    bMoves
-        --  ]
+        aMoveAndOpen =
+          [ (nA, currentB, tA + dA + 1, tB, ins nA (tA + dA + 1) open, seen')
+            | (nA, dA) <- nsA,
+              nA /= currentA,
+              tA + dA + 1 < 26
+          ]
+        bMoveAndOpen =
+          [ (currentA, nB, tA, tB + dB + 1, ins nB (tB + dB + 1) open, seen')
+            | (nB, dB) <- nsB,
+              nB /= currentB,
+              tB + dB + 1 < 26
+          ]
+        aWaits = (currentA, currentB, tA + 1, tB, open, seen')
+        bWaits = (currentA, currentB, tA, tB + 1, open, seen')
+        next = aWaits : bWaits : (bothMoveAndOpen ++ aMoveAndOpen ++ bMoveAndOpen)
         queue' = queue SQ.>< SQ.fromList next
 
 -- DFS in state monad
