@@ -5,7 +5,7 @@ import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
-import Data.List (maximum)
+import Data.List (foldl1, maximum)
 import Data.Map.Strict qualified as M
 import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
@@ -83,6 +83,67 @@ mostPressure2 g = go (SQ.singleton (("AA", "AA"), HS.empty, 0, 0, 0)) M.empty 0
             ]
         queue' = queue SQ.>< SQ.fromList next
 
+shortestPaths :: Map String (Int, [String]) -> Map String (Map String Int)
+shortestPaths g = M.fromList ([(n, startFrom n) | n <- "AA" : S.toList nodesWithFlow])
+  where
+    nodesWithFlow = S.fromList . M.keys $ M.filter (\(flow, _) -> flow > 0) g
+    startFrom start = go (SQ.singleton (start, 0, S.empty)) M.empty
+      where
+        go SQ.Empty paths = paths
+        go ((current, n, seen) SQ.:<| queue) paths
+          | current `S.member` seen = go queue paths
+          | otherwise = go queue' paths'
+          where
+            seen' = S.insert current seen
+            paths' = if current `S.member` nodesWithFlow then M.insert current n paths else paths
+            (currentFlow, currentNs) = g M.! current
+            next = [(node, n + 1, seen') | node <- currentNs]
+            queue' = queue SQ.>< SQ.fromList next
+
+-- TODO
+score open = undefined
+
+mostPressure3 :: Map String (Int, [String]) -> Int
+mostPressure3 g = go (SQ.singleton ("AA", "AA", 0, 0, M.empty, S.empty)) 0
+  where
+    paths = shortestPaths g
+    go SQ.Empty best = best
+    go ((currentA, currentB, tA, tB, open, seen) SQ.:<| queue) best
+      | tA > 26 && tB > 26 = go queue (max best (score open))
+      | (currentA, currentB) `S.member` seen = go queue best
+      | otherwise =
+        traceShow (currentA, currentB, tA, tB, M.size open, best) $ go queue' best
+      where
+        (currentFlowA, _) = g M.! currentA
+        (currentFlowB, _) = g M.! currentB
+        nsA = M.toList (paths M.! currentA)
+        nsB = M.toList (paths M.! currentB)
+        -- TODO: a seen cache
+        -- TODO: insert into open taking a minimum
+        -- TODO: include moves where only one moves
+        -- TODO: include moves where only one opens and other waits
+        -- TODO: terminate at the right time
+        seen' = S.insert (currentA, currentB) seen
+        bothMove = [(nA, nB, tA + dA, tB + dB, open, seen') | (nA, dA) <- nsA, (nB, dB) <- nsB]
+        aOpens = [(currentA, nB, tA + 1, tB + dB, M.insert currentA tA open, seen') | (nB, dB) <- nsB]
+        bOpens = [(nA, currentB, tA + dA, tB + 1, M.insert currentB tB open, seen') | (nA, dA) <- nsA]
+        bothOpen = (currentA, currentB, tA + 1, tB + 1, M.insert currentA tA . M.insert currentB tB $ open, seen')
+        next =
+          concat
+            [ if currentFlowA > 0 && (not (currentA `M.member` open) || open M.! currentA > tA) then aOpens else [],
+              if currentFlowB > 0 && (not (currentB `M.member` open) || open M.! currentB > tB) then bOpens else [],
+              if ( currentFlowA /= currentFlowB
+                     && currentFlowA > 0
+                     && currentFlowB > 0
+                     && (not (currentA `M.member` open) || open M.! currentA > tA)
+                     && (not (currentB `M.member` open) || open M.! currentB > tB)
+                 )
+                then [bothOpen]
+                else [],
+              bothMove
+            ]
+        queue' = queue SQ.>< SQ.fromList next
+
 -- DFS in state monad
 -- can terminate once all valves are open
 
@@ -129,9 +190,11 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(input 16)
+  $(exampleInput 16)
     & parseWith parser
-    & mostPressure2
+    & mostPressure3
+
+-- & mostPressure2
 
 --part2 :: Maybe Int
 --part2 =
