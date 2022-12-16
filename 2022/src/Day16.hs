@@ -15,7 +15,12 @@ parser = M.fromList <$> many1 (line <* eol) <* eof
     line = do
       vid <- string "Valve " *> count 2 anyChar
       rate <- string " has flow rate=" *> number
-      ns <- (try (string "; tunnels lead to valves ") <|> try (string "; tunnel leads to valve ")) *> count 2 anyChar `sepBy` string ", "
+      ns <-
+        ( try (string "; tunnels lead to valves ")
+            <|> try (string "; tunnel leads to valve ")
+          )
+          *> count 2 anyChar
+          `sepBy` string ", "
       return (vid, (rate, ns))
 
 mostPressure' :: Map String (Int, [String]) -> Int
@@ -52,9 +57,6 @@ shortestPaths g = M.fromList ([(n, startFrom n) | n <- "AA" : S.toList nodesWith
             next = [(node, n + 1, seen') | node <- currentNs]
             queue' = queue SQ.>< SQ.fromList next
 
-score :: Map String (Int, [String]) -> Map String Int -> Int
-score g open = sum [f * (26 - t) | (n, t) <- M.toList open, let (f, _) = g M.! n]
-
 singlePaths :: Int -> Map String (Int, [String]) -> [Map String Int]
 singlePaths limit g = S.toList $ go (SQ.singleton ("AA", 0, M.empty)) S.empty
   where
@@ -69,14 +71,17 @@ singlePaths limit g = S.toList $ go (SQ.singleton ("AA", 0, M.empty)) S.empty
         next = [(n, t + d + 1, M.insert n (t + d + 1) open) | (n, d) <- ns, not (n `M.member` open)]
         queue' = queue SQ.>< SQ.fromList next
 
--- TODO: Not working?
-mostPressure :: Map String (Int, [String]) -> Int
-mostPressure g = maximum [score g p | p <- singlePaths 30 g]
+score :: Int -> Map String (Int, [String]) -> Map String Int -> Int
+score limit g open = sum [f * (limit - t) | (n, t) <- M.toList open, let (f, _) = g M.! n]
+
+-- TODO: Not working to just choose the best path we can construct in 30 steps?
+-- mostPressure :: Map String (Int, [String]) -> Int
+-- mostPressure g = maximum [score 30 g p | p <- singlePaths 30 g]
 
 mostPressurePaired :: Map String (Int, [String]) -> Int
 mostPressurePaired g =
-  let bestPaths = take 250 $ sortOn (Down . score g) (singlePaths 26 g)
-   in maximum [score g $ M.unionWith min pA pB | pA <- bestPaths, pB <- bestPaths]
+  let bestPaths = take 250 $ sortOn (Down . score 26 g) (singlePaths 26 g)
+   in maximum [score 26 g $ M.unionWith min pA pB | pA <- bestPaths, pB <- bestPaths]
 
 part1 :: Int
 part1 = $(input 16) & parseWith parser & mostPressure'
