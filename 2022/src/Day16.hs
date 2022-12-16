@@ -5,6 +5,7 @@ import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
+import Data.List (maximum)
 import Data.Map.Strict qualified as M
 import Data.Mod
 import Data.PQueue.Prio.Min qualified as PQ
@@ -18,7 +19,7 @@ import Helper.Grid
 import Helper.TH
 import Helper.Tracers
 import Helper.Util hiding (count)
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding (State)
 import Prelude hiding ((<|>))
 
 parser :: Parser (Map String (Int, [String]))
@@ -82,14 +83,53 @@ mostPressure2 g = go (SQ.singleton (("AA", "AA"), HS.empty, 0, 0, 0)) M.empty 0
             ]
         queue' = queue SQ.>< SQ.fromList next
 
+-- DFS in state monad
+-- can terminate once all valves are open
+
+dfs :: Map String (Int, [String]) -> State (Map (String, String, HashSet String) Int) (Maybe Int)
+dfs g = go "AA" "AA" HS.empty 0 0 0
+  where
+    go :: String -> String -> HashSet String -> Int -> Int -> Int -> State (Map (String, String, HashSet String) Int) (Maybe Int)
+    go _ _ _ _ total 26 = return (Just total)
+    go currentA currentB open flow total t = traceShow (currentA, currentB, HS.size open, flow, total, t) $ do
+      let cacheKey = (currentA, currentB, open)
+      cv <- gets (M.lookup cacheKey)
+      let (currentFlowA, nsA) = g M.! currentA
+      let (currentFlowB, nsB) = g M.! currentB
+      let bothMove = [((nA, nB), open, flow, total + flow, t + 1) | nA <- nsA, nB <- nsB]
+      let aOpens = [((currentA, nB), HS.insert currentA open, flow + currentFlowA, total + flow, t + 1) | nB <- nsB]
+      let bOpens = [((nA, currentB), HS.insert currentB open, flow + currentFlowB, total + flow, t + 1) | nA <- nsA]
+      let bothOpen = ((currentA, currentB), HS.insert currentA . HS.insert currentB $ open, flow + currentFlowA + currentFlowB, total + flow, t + 1)
+      let next =
+            concat
+              [ if currentFlowA > 0 && not (currentA `HS.member` open) then aOpens else [],
+                if currentFlowB > 0 && not (currentB `HS.member` open) then bOpens else [],
+                if ( currentFlowA /= currentFlowB
+                       && currentFlowA > 0
+                       && currentFlowB > 0
+                       && not (currentA `HS.member` open)
+                       && not (currentB `HS.member` open)
+                   )
+                  then [bothOpen]
+                  else [],
+                bothMove
+              ]
+      let continue = do
+            results <- traverse (\((a, b), s, f, to, ti) -> go a b s f to ti) next
+            return (maximum results)
+      case cv of
+        Just oldTotal -> if oldTotal >= total then return Nothing else continue
+        Nothing -> continue
+
 part1 :: Int
 part1 =
   $(input 16)
     & parseWith parser
     & mostPressure
 
-part2 :: Int
+part2 :: Maybe Int
 part2 =
-  $(input 16)
+  $(exampleInput 16)
     & parseWith parser
-    & mostPressure2
+    & dfs
+    & flip evalState M.empty
