@@ -50,12 +50,14 @@ dropPieces g (p : ps) moves =
         cs'' = if any (\(x, y) -> x < 0 || x >= 7 || (x, y) `M.member` g) cs' then cs else cs'
         cs''' = second (subtract 1) <$> cs''
 
-dropPieces2 :: Int -> Grid SimpleWall -> [[Coord2]] -> Int -> String -> Int
-dropPieces2 lenMoves g (p : ps) nMoves moves
-  | nMoves > 0 && nMoves `mod` lenMoves == 0 && p == U.head pieces = snd (maxXY g) + 1
+dropPieces2 :: Int -> Grid SimpleWall -> [[Coord2]] -> Int -> Int -> String -> (Int, Int)
+dropPieces2 lenMoves g (p : ps) nMoves nPieces moves
+  | nMoves > 0 && nMoves `mod` lenMoves == 0 && nPieces `mod` length pieces == 0 =
+    traceTextLn (T.unlines . reverse . T.lines . pretty $ fillEmpty g) $
+      (nPieces, snd (maxXY g) + 1)
   | otherwise =
-    traceShow (nMoves) $
-      let (g', moves', nMoves') = drop p' moves 0 in dropPieces2 lenMoves g' ps (nMoves + nMoves') moves'
+    traceShow (nPieces, nMoves) $
+      let (g', moves', nMoves') = drop p' moves 0 in dropPieces2 lenMoves g' ps (nMoves + nMoves') (nPieces + 1) moves'
   where
     h = if M.null g then 3 else snd (maxXY g) + 4
     p' = bimap (+ 2) (+ h) <$> p
@@ -78,6 +80,11 @@ dropPieces2 lenMoves g (p : ps) nMoves moves
 -- check that we start fresh with our base piece
 -- this gives a height per #pieces, fit this in and find the remainder
 -- then drop the remainder
+
+-- on example input we drop 95 pieces to get to 149 height
+-- so in 10526315789 loops we drop 10526315789 * 95 = 999999999955 pieces
+-- that is 10526315789 * 149 = 1568421052561 height
+-- so need an extra 45 pieces too whcih we compute
 
 --oneLoop :: Int -> Grid SimpleWall -> [[Coord2]] -> Int -> String -> (Int, Int)
 --oneLoop cycLen g (p : ps) moves
@@ -120,11 +127,17 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(input 17)
+  $(exampleInput 17)
     & lines
     & U.head
     & T.unpack
-    & (\moves -> dropPieces2 (length moves) M.empty (cycle pieces) 0 (cycle moves))
+    & (\moves -> (moves, dropPieces2 (length moves) M.empty (cycle pieces) 0 0 (cycle moves)))
+    & ( \(moves, (nPieces, height)) ->
+          traceShow (nPieces, height) $
+            let extraPieces = 1000000000000 `mod` nPieces
+                numLoops = 1000000000000 `div` nPieces
+             in numLoops * height + (dropPieces M.empty (take extraPieces $ cycle pieces) (cycle moves) & maxXY & snd & (+ 1))
+      )
 
 -- Need to find a floor but also take into account where we're at in the piece rotation
 -- and the move rotation! so a floor that is also multiple of 5 and number of moves?
@@ -139,3 +152,4 @@ part2 =
 --   in (dropPieces M.empty (take toRun $ cycle pieces) moves & maxXY & snd & (+ 1)) + (loops * (gh + 1))
 
 -- 1571593533485  too high
+-- 1553902340071 too high
