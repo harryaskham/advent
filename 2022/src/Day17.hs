@@ -36,10 +36,35 @@ dropPieces g (p : ps) moves =
     h = if M.null g then 3 else snd (maxXY g) + 4
     p' = bimap (+ 2) (+ h) <$> p
     drop cs (m : ms)
-      -- any (\(_, y) -> y == 0) cs''' && not (any (\(x, y) -> (x, y) `M.member` g) cs''') = (foldl' (\g c -> M.insert c Wall g) g cs''', ms)
       | any (\(x, y) -> y == -1 || (x, y) `M.member` g) cs''' =
-        traceShow (cs, m) $
-          (foldl' (\g c -> M.insert c Wall g) g cs'', ms)
+        (foldl' (\g c -> M.insert c Wall g) g cs'', ms)
+      | otherwise =
+        -- (if M.null g then id else traceTextLn (T.unlines . reverse . T.lines . pretty $ fillEmpty (foldl' (\g c -> M.insert c Wall g) g cs))) $
+        -- traceShow (cs, m) $
+        -- pauseId $
+        drop cs''' ms
+      where
+        cs' = case m of
+          '<' -> first (subtract 1) <$> cs
+          '>' -> first (+ 1) <$> cs
+        cs'' = if any (\(x, y) -> x < 0 || x >= 7 || (x, y) `M.member` g) cs' then cs else cs'
+        cs''' = second (subtract 1) <$> cs''
+
+oneLoop :: Int -> Grid SimpleWall -> [[Coord2]] -> Int -> String -> (Int, Int)
+oneLoop cycLen g (p : ps) n moves
+  | all (`M.member` g) ([(x, gh) | x <- [0 .. 6]]) && n `mod` cycLen == 0 =
+    traceTextLn (T.unlines . reverse . T.lines . pretty $ fillEmpty g) $
+      (n, gh)
+  | otherwise =
+    traceShow (cycLen, n) $
+      let (g', moves') = drop p' moves in oneLoop cycLen g' ps (n + 1) moves'
+  where
+    gh = if M.null g then 0 else snd (maxXY g)
+    h = if M.null g then 3 else snd (maxXY g) + 4
+    p' = bimap (+ 2) (+ h) <$> p
+    drop cs (m : ms)
+      | any (\(x, y) -> y == -1 || (x, y) `M.member` g) cs''' =
+        (foldl' (\g c -> M.insert c Wall g) g cs'', ms)
       | otherwise =
         -- (if M.null g then id else traceTextLn (T.unlines . reverse . T.lines . pretty $ fillEmpty (foldl' (\g c -> M.insert c Wall g) g cs))) $
         -- traceShow (cs, m) $
@@ -64,5 +89,16 @@ part1 =
     & snd
     & (+ 1)
 
-part2 :: Text
-part2 = "Part 2"
+-- Need to find a floor but also take into account where we're at in the piece rotation
+-- and the move rotation! so a floor that is also multiple of 5 and number of moves?
+
+part2 :: Int
+part2 =
+  let moves = $(input 17) & lines & U.head & T.unpack
+      cycLen = lcm (length moves) (length pieces)
+      (n, gh) = oneLoop cycLen M.empty (cycle pieces) 0 (cycle moves)
+      loops = 1000000000000 `div` n
+      toRun = 1000000000000 `mod` n
+   in (dropPieces M.empty (take toRun $ cycle pieces) moves & maxXY & snd & (+ 1)) + (loops * (gh + 1))
+
+-- 1571593533485  too high
