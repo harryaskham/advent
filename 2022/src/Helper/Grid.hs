@@ -23,7 +23,7 @@ class Ord a => GridCell a where
 data SimpleWall = Empty | Wall deriving (Eq, Ord, Bounded, Show)
 
 instance GridCell SimpleWall where
-  charMap = BM.fromList [(Empty, ' '), (Wall, '#')]
+  charMap = BM.fromList [(Empty, '.'), (Wall, '#')]
 
 newtype DigitCell = DigitCell (Fin Nat10) deriving (Eq, Ord, Bounded, Num, Show)
 
@@ -73,10 +73,10 @@ points :: [(Int, Int)] -> Grid a -> [a]
 points ps g = catMaybes $ M.lookup <$> ps <*> pure g
 
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
-maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
+maxXY m = if M.null m then (0, 0) else (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
 
 minXY :: M.Map (Int, Int) a -> (Int, Int)
-minXY m = (minimum $ fst <$> M.keys m, minimum $ snd <$> M.keys m)
+minXY m = if M.null m then (0, 0) else (minimum $ fst <$> M.keys m, minimum $ snd <$> M.keys m)
 
 modifyCoords :: ((Int, Int) -> (Int, Int)) -> Grid a -> Grid a
 modifyCoords f grid = M.mapKeys (fromOrigin . f . toOrigin) grid
