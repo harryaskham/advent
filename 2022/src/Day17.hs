@@ -86,6 +86,9 @@ dropPieces2 lenMoves g (p : ps) nMoves nPieces moves
 -- that is 10526315789 * 149 = 1568421052561 height
 -- so need an extra 45 pieces too whcih we compute
 
+-- So the 95 / 149 doesn't work, a later piece must break it
+-- Yeah the second loop around something different happens and a square piece ends up coming down
+
 --oneLoop :: Int -> Grid SimpleWall -> [[Coord2]] -> Int -> String -> (Int, Int)
 --oneLoop cycLen g (p : ps) moves
 --  | all (`M.member` g) ([(x, gh) | x <- [0 .. 6]]) && n `mod` cycLen == 0 =
@@ -115,12 +118,13 @@ dropPieces2 lenMoves g (p : ps) nMoves nPieces moves
 
 part1 :: Int
 part1 =
-  $(input 17)
+  $(exampleInput 17)
     & lines
     & U.head
     & T.unpack
     & cycle
     & dropPieces M.empty (take 2022 $ cycle pieces)
+    & (\g -> traceTextLn (T.unlines . reverse . T.lines . pretty $ fillEmpty g) g)
     & maxXY
     & snd
     & (+ 1)
