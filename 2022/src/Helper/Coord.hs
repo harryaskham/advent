@@ -80,7 +80,7 @@ neighborsNoDiags (x, y) =
   [ (x + 1, y),
     (x - 1, y),
     (x, y + 1),
-    (x, y -1)
+    (x, y - 1)
   ]
 
 neighbors3 :: Coord3 -> [Coord3]
@@ -90,6 +90,16 @@ neighbors3 (x, y, z) =
       yO <- [-1 .. 1],
       zO <- [-1 .. 1],
       xO /= 0 || yO /= 0 || zO /= 0
+  ]
+
+neighbors3NoDiags :: Coord3 -> [Coord3]
+neighbors3NoDiags (x, y, z) =
+  [ (x + 1, y, z),
+    (x - 1, y, z),
+    (x, y + 1, z),
+    (x, y - 1, z),
+    (x, y, z + 1),
+    (x, y, z - 1)
   ]
 
 partitionSpace :: Coord3 -> Coord3 -> [(Coord3, Coord3)]
