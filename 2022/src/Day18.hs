@@ -46,25 +46,25 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(input 18)
-    & parseWith (many1 numberLine3 <* eof)
-    & S.fromList
-    & ( \ps ->
-          [ a
-            | x <- [1 .. 18],
-              y <- [1 .. 18],
-              z <- [0 .. 19],
-              let a = exteriorArea (x, y, z) ps,
-              isJust a,
-              a /= Just 3454
-          ]
-      )
-    & catMaybes
-    & fmap (3454 -)
-    & countMap
-    & M.adjust (`div` 2) 10
-    & M.adjust (`div` 1024) 1196
-    & M.toList
-    & fmap (uncurry (*))
-    & sum
-    & (3454 -)
+  let ps = $(input 18) & parseWith (many1 numberLine3 <* eof) & S.fromList
+      area = surfaceArea ps
+   in ps
+        & ( \ps ->
+              [ a
+                | x <- [1 .. 18],
+                  y <- [1 .. 18],
+                  z <- [0 .. 19],
+                  let a = exteriorArea (x, y, z) ps,
+                  isJust a,
+                  a /= Just area
+              ]
+          )
+        & catMaybes
+        & fmap (area -)
+        & countMap
+        & M.adjust (`div` 2) 10
+        & M.insert 1196 1
+        & M.toList
+        & fmap (uncurry (*))
+        & sum
+        & (area -)
