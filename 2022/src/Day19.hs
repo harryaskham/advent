@@ -41,7 +41,7 @@ potentialGeodes duration t obsidian obsidianRs geode geodeRs obsidianNeeded =
   let d = duration - t
       potentialObsidian = obsidian + d * obsidianRs + ((d * (d - 1)) `div` 2)
       newGeodesSupported = potentialObsidian `div` obsidianNeeded
-      newGeodesPossible = d * geodeRs + ((d * (d - 1)) `div` 2)
+      newGeodesPossible = d * geodeRs + (d * (d - 1)) `div` 2
    in -- geode + min newGeodesSupported newGeodesPossible
       geode + newGeodesPossible
 
@@ -92,7 +92,7 @@ geodesOpened duration blueprint = go (PQ.singleton (h init) init) M.empty 0
 
 part1 :: Int
 part1 =
-  $(exampleInput 19)
+  $(input 19)
     & parseWith parser
     & fmap (\b -> _id b * geodesOpened 24 b)
     & sum
@@ -102,8 +102,10 @@ part2 =
   $(input 19)
     & parseWith parser
     & take 3
-    & (\a -> (!!) a <$> [0, 2])
+    -- & (\a -> (!!) a <$> [0, 2])
     & fmap (geodesOpened 32)
     & product
 
 -- 288 too low
+
+-- 1972 too low

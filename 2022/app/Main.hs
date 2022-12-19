@@ -33,7 +33,7 @@ main :: IO ()
 --main = benchAllDays
 --main = benchOne (Day20.part1, Day20.part2)
 --main = benchEachPart
-main = print Day19.part2
+main = print Day19.part1
 
 --main = print Day24.part1 >> print Day24.part2
 
