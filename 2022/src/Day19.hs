@@ -40,9 +40,11 @@ potentialGeodes :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
 potentialGeodes duration t obsidian obsidianRs geode geodeRs obsidianNeeded =
   let d = duration - t
       potentialObsidian = obsidian + d * obsidianRs + ((d * (d - 1)) `div` 2)
-      newGeodesSupported = potentialObsidian `div` obsidianNeeded
-      newGeodesPossible = d * geodeRs + (d * (d - 1)) `div` 2
-   in -- geode + min newGeodesSupported newGeodesPossible
+      newGeodesRsSupported = potentialObsidian `div` obsidianNeeded
+      -- this is (for 4 robots with 2 new ones supported: 4 + 5 + 6 + 6 + ...
+      newGeodesPossible = d * geodeRs + (d * (d - 1)) `div` 2 - ((d - newGeodesRsSupported) * (d - newGeodesRsSupported - 1) `div` 2)
+   in --sum (min newGeodesRsSupported <$> take d [1 ..]) -- + (d * (d - 1)) `div` 2
+      -- geode + min newGeodesSupported newGeodesPossible
       geode + newGeodesPossible
 
 geodesOpened :: Int -> Blueprint -> Int
@@ -102,10 +104,5 @@ part2 =
   $(input 19)
     & parseWith parser
     & take 3
-    -- & (\a -> (!!) a <$> [0, 2])
     & fmap (geodesOpened 32)
     & product
-
--- 288 too low
-
--- 1972 too low
