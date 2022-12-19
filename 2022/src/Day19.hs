@@ -35,7 +35,11 @@ parser = many1 line <* eof
       (a, b, c, d, e, f, g) <- numberLine7
       return $ Blueprint a b c (d, e) (f, g)
 
+potentialGeodes t geode geodeRs =
+  geode + ((t * (t - 1)) `div` 2) * geodeRs -- num geodes we could build in t steps, upper bound if we build one geode per step
+
 -- TODO: if we had the same number of robots or fewer but more ore then stop
+-- TODO: can abort early if it's not possible to generate enough geodes in time
 quality :: Blueprint -> Int
 quality blueprint = go (SQ.singleton (0, 0, 0, 0, 0, 1, 0, 0, 0)) M.empty 0
   where
@@ -44,7 +48,7 @@ quality blueprint = go (SQ.singleton (0, 0, 0, 0, 0, 1, 0, 0, 0)) M.empty 0
       | t == 24 = go queue seen (max best (_id blueprint * geode))
       -- TODO: or if we had more robots in the past with less ore
       | cacheKey `M.member` seen && ore <= bestOre && clay <= bestClay && obsidian <= bestObsidian && geode <= bestGeode =
-        go queue seen best
+        traceShow "cache hit" $ go queue seen best
       | otherwise = traceShow (_id blueprint, best, st) $ go queue' seen' best
       where
         cacheKey = (oreRs, clayRs, obsidianRs, geodeRs)
@@ -72,16 +76,12 @@ quality blueprint = go (SQ.singleton (0, 0, 0, 0, 0, 1, 0, 0, 0)) M.empty 0
             then Just (t', ore' - fst (_geodeCost blueprint), clay', obsidian' - snd (_geodeCost blueprint), geode', oreRs, clayRs, obsidianRs, geodeRs + 1)
             else Nothing
         -- If we can make a geode, just do that
-        -- If we can make an obsidian this is the only way to use clay
-        --next =
-        --  catMaybes
-        --    if isJust makeGeodeR
-        --      then [makeGeodeR]
-        --      else
-        --        if isJust makeObsidianR
-        --          then [makeObsidianR]
-        --          else [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
-        next = catMaybes [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
+        next =
+          catMaybes
+            if isJust makeGeodeR
+              then [makeGeodeR]
+              else [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
+        -- next = catMaybes [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
         queue' = queue SQ.>< SQ.fromList next
         seen' = M.insert cacheKey (ore, clay, obsidian, geode) seen
 
@@ -89,10 +89,10 @@ part1 :: Int
 part1 =
   $(exampleInput 19)
     & parseWith parser
-    & drop 1
-    & take 1
     & fmap quality
     & sum
+
+-- 943 too low
 
 part2 :: Text
 part2 = ""
