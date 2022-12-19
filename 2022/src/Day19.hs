@@ -3,9 +3,10 @@ module Day19 (part1, part2) where
 import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
+import Data.List hiding (product, sum)
 import Data.Map.Strict qualified as M
 import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
+import Data.PQueue.Prio.Max qualified as PQ
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Text qualified as T
@@ -35,24 +36,34 @@ parser = many1 line <* eof
       (a, b, c, d, e, f, g) <- numberLine7
       return $ Blueprint a b c (d, e) (f, g)
 
-potentialGeodes t geode geodeRs =
-  geode + ((t * (t - 1)) `div` 2) * geodeRs -- num geodes we could build in t steps, upper bound if we build one geode per step
+potentialGeodes :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+potentialGeodes duration t obsidian obsidianRs geode geodeRs obsidianNeeded =
+  let d = duration - t
+      potentialObsidian = obsidian + d * obsidianRs + ((d * (d - 1)) `div` 2)
+      newGeodesSupported = potentialObsidian `div` obsidianNeeded
+      newGeodesPossible = d * geodeRs + ((d * (d - 1)) `div` 2)
+   in -- geode + min newGeodesSupported newGeodesPossible
+      geode + newGeodesPossible
 
--- TODO: if we had the same number of robots or fewer but more ore then stop
--- TODO: can abort early if it's not possible to generate enough geodes in time
-quality :: Blueprint -> Int
-quality blueprint = go (SQ.singleton (0, 0, 0, 0, 0, 1, 0, 0, 0)) M.empty 0
+geodesOpened :: Int -> Blueprint -> Int
+geodesOpened duration blueprint = go (PQ.singleton (h init) init) M.empty 0
   where
-    go SQ.Empty _ best = best
-    go (st@(t, ore, clay, obsidian, geode, oreRs, clayRs, obsidianRs, geodeRs) SQ.:<| queue) seen best
-      | t == 24 = go queue seen (max best (_id blueprint * geode))
-      -- TODO: or if we had more robots in the past with less ore
+    init = (0, 0, 0, 0, 0, 1, 0, 0, 0)
+    h (t, _, _, obsidian, geode, _, _, obsidianRs, geodeRs) =
+      potentialGeodes duration t obsidian obsidianRs geode geodeRs (snd (_geodeCost blueprint))
+    go queue seen maxGeode
       | cacheKey `M.member` seen && ore <= bestOre && clay <= bestClay && obsidian <= bestObsidian && geode <= bestGeode =
-        traceShow "cache hit" $ go queue seen best
-      | otherwise = traceShow (_id blueprint, best, st) $ go queue' seen' best
+        traceShow (_id blueprint, maxGeode, length queue, score, st, "cache hit, skipping") $
+          go rest seen maxGeode
+      | score <= maxGeode = maxGeode -- nothing in the queue can reach past the max ever so this must be a global max
+      | otherwise =
+        traceShow (_id blueprint, maxGeode, length queue, score, st) $
+          go queue' seen' maxGeode'
       where
+        ((score, st@(t, ore, clay, obsidian, geode, oreRs, clayRs, obsidianRs, geodeRs)), rest) = PQ.deleteFindMax queue
         cacheKey = (oreRs, clayRs, obsidianRs, geodeRs)
         (bestOre, bestClay, bestObsidian, bestGeode) = seen M.! cacheKey
+        maxGeode' = max maxGeode geode' -- Store the highest seen incl. in the future
         t' = t + 1
         ore' = ore + oreRs
         clay' = clay + clayRs
@@ -75,24 +86,24 @@ quality blueprint = go (SQ.singleton (0, 0, 0, 0, 0, 1, 0, 0, 0)) M.empty 0
           if ore >= fst (_geodeCost blueprint) && obsidian >= snd (_geodeCost blueprint)
             then Just (t', ore' - fst (_geodeCost blueprint), clay', obsidian' - snd (_geodeCost blueprint), geode', oreRs, clayRs, obsidianRs, geodeRs + 1)
             else Nothing
-        -- If we can make a geode, just do that
-        next =
-          catMaybes
-            if isJust makeGeodeR
-              then [makeGeodeR]
-              else [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
-        -- next = catMaybes [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
-        queue' = queue SQ.>< SQ.fromList next
+        next = catMaybes [makeNone, makeOreR, makeClayR, makeObsidianR, makeGeodeR]
+        queue' = foldl' (\q st -> PQ.insert (h st) st q) rest next
         seen' = M.insert cacheKey (ore, clay, obsidian, geode) seen
 
 part1 :: Int
 part1 =
   $(exampleInput 19)
     & parseWith parser
-    & fmap quality
+    & fmap (\b -> _id b * geodesOpened 24 b)
     & sum
 
--- 943 too low
+part2 :: Int
+part2 =
+  $(input 19)
+    & parseWith parser
+    & take 3
+    & (\a -> (!!) a <$> [0, 2])
+    & fmap (geodesOpened 32)
+    & product
 
-part2 :: Text
-part2 = ""
+-- 288 too low
