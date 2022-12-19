@@ -1,24 +1,11 @@
 module Day19 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.List hiding (product, sum)
 import Data.Map.Strict qualified as M
-import Data.Mod
 import Data.PQueue.Prio.Max qualified as PQ
-import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Foreign.C (throwErrnoPath)
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.TH (input)
+import Helper.Util (numberLine7, parseWith)
+import Text.ParserCombinators.Parsec (Parser, eof, many1)
 
 data Blueprint = Blueprint
   { _id :: Int,
@@ -41,11 +28,8 @@ potentialGeodes duration t obsidian obsidianRs geode geodeRs obsidianNeeded =
   let d = duration - t
       potentialObsidian = obsidian + d * obsidianRs + ((d * (d - 1)) `div` 2)
       newGeodesRsSupported = potentialObsidian `div` obsidianNeeded
-      -- this is (for 4 robots with 2 new ones supported: 4 + 5 + 6 + 6 + ...
       newGeodesPossible = d * geodeRs + (d * (d - 1)) `div` 2 - ((d - newGeodesRsSupported) * (d - newGeodesRsSupported - 1) `div` 2)
-   in --sum (min newGeodesRsSupported <$> take d [1 ..]) -- + (d * (d - 1)) `div` 2
-      -- geode + min newGeodesSupported newGeodesPossible
-      geode + newGeodesPossible
+   in geode + newGeodesPossible
 
 geodesOpened :: Int -> Blueprint -> Int
 geodesOpened duration blueprint = go (PQ.singleton (h init) init) M.empty 0
@@ -55,17 +39,15 @@ geodesOpened duration blueprint = go (PQ.singleton (h init) init) M.empty 0
       potentialGeodes duration t obsidian obsidianRs geode geodeRs (snd (_geodeCost blueprint))
     go queue seen maxGeode
       | cacheKey `M.member` seen && ore <= bestOre && clay <= bestClay && obsidian <= bestObsidian && geode <= bestGeode =
-        traceShow (_id blueprint, maxGeode, length queue, score, st, "cache hit, skipping") $
-          go rest seen maxGeode
-      | score <= maxGeode = maxGeode -- nothing in the queue can reach past the max ever so this must be a global max
+        go rest seen maxGeode
+      | score <= maxGeode = maxGeode
       | otherwise =
-        traceShow (_id blueprint, maxGeode, length queue, score, st) $
-          go queue' seen' maxGeode'
+        go queue' seen' maxGeode'
       where
-        ((score, st@(t, ore, clay, obsidian, geode, oreRs, clayRs, obsidianRs, geodeRs)), rest) = PQ.deleteFindMax queue
+        ((score, (t, ore, clay, obsidian, geode, oreRs, clayRs, obsidianRs, geodeRs)), rest) = PQ.deleteFindMax queue
         cacheKey = (oreRs, clayRs, obsidianRs, geodeRs)
         (bestOre, bestClay, bestObsidian, bestGeode) = seen M.! cacheKey
-        maxGeode' = max maxGeode geode' -- Store the highest seen incl. in the future
+        maxGeode' = max maxGeode geode'
         t' = t + 1
         ore' = ore + oreRs
         clay' = clay + clayRs
