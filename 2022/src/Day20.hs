@@ -27,15 +27,10 @@ mkRing :: [Int] -> Ring
 mkRing xs = V.fromList $ (\(i, x) -> (x, (i - 1) `mod` length xs, (i + 1) `mod` length xs)) <$> zip [0 ..] xs
 
 mix :: Ring -> Ring
-mix r = foldl' mixOne r [0 .. length r - 1]
+mix r = foldl' mixOnce r [0 .. length r - 1]
 
--- We can follow ptrs to construct the ptr ring
--- e.g. follow terminates after 5000
--- then use mod to figure out where we'd be in the ring after our actual amount of steps
--- then make the swaps
-
-mixOne :: Ring -> Int -> Ring
-mixOne r i
+mixOnce :: Ring -> Int -> Ring
+mixOnce r i
   | n == 0 = r
   | otherwise = traceShow i $ r''
   where
@@ -48,7 +43,7 @@ mixOne r i
     followBwd 0 prevPtr nextPtr = (prevPtr, nextPtr)
     followBwd j prevPtr _ = let (_, prevPtr', _) = r' V.! prevPtr in followBwd (j - 1) prevPtr' prevPtr
     follow = if n < 0 then followBwd else followFwd
-    (prevI', nextI') = follow (abs n) prevI nextI
+    (prevI', nextI') = follow (abs n `mod` (length r - 1)) prevI nextI
     (prevN', prevPrevI', _) = r' V.! prevI'
     (nextN', _, nextNextI') = r' V.! nextI'
     r'' = r' V.// [(i, (n, prevI', nextI')), (prevI', (prevN', prevPrevI', i)), (nextI', (nextN', i, nextNextI'))]
