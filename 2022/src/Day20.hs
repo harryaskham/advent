@@ -1,25 +1,12 @@
 module Day20 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
 import Data.List ((!!))
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
+import Data.Text.Read (decimal, signed)
 import Data.Tuple.Extra (fst3, snd3, thd3)
 import Data.Vector (Vector)
 import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Helper.TH (input)
+import Helper.Util (readAs)
 
 type Ring = Vector (Int, Int, Int)
 
@@ -32,7 +19,7 @@ mix r = foldl' mixOnce r [0 .. length r - 1]
 mixOnce :: Ring -> Int -> Ring
 mixOnce r i
   | n == 0 = r
-  | otherwise = traceShow i $ r''
+  | otherwise = r''
   where
     (n, prevI, nextI) = r V.! i
     (prevN, prevPrevI, _) = r V.! prevI
