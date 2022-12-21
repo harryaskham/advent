@@ -19,20 +19,25 @@ parser :: Parser Monkeys
 parser = M.fromList <$> many1 (monkey <* eol) <* eof
   where
     monkey = do
-      name <- count 4 anyChar
-      string ": "
+      name <- count 4 anyChar <* string ": "
       monkey <- try constMonkey <|> try rootMonkey <|> try opMonkey
       return (name, monkey)
+    operation =
+      try (string " + " $> (+))
+        <|> try (string " - " $> (-))
+        <|> try (string " * " $> (*))
+        <|> try (string " / " $> div)
+    args = do
+      nameA <- count 4 anyChar
+      op <- operation
+      nameB <- count 4 anyChar
+      return (nameA, op, nameB)
     constMonkey = ConstMonkey <$> number
     opMonkey = do
-      nameA <- count 4 anyChar
-      op <- try (string " + " $> (+)) <|> try (string " - " $> (-)) <|> try (string " * " $> (*)) <|> try (string " / " $> div)
-      nameB <- count 4 anyChar
+      (nameA, op, nameB) <- args
       return $ OpMonkey (\ms -> value ms (ms M.! nameA) `op` value ms (ms M.! nameB))
     rootMonkey = do
-      nameA <- count 4 anyChar
-      op <- try (string " + " $> (+)) <|> try (string " - " $> (-)) <|> try (string " * " $> (*)) <|> try (string " / " $> div)
-      nameB <- count 4 anyChar
+      (nameA, op, nameB) <- args
       return $
         RootMonkey
           (\ms -> value ms (ms M.! nameA) `op` value ms (ms M.! nameB))
@@ -59,7 +64,7 @@ search ms a b
 
 part1 :: Integer
 part1 =
-  $(exampleInput 21)
+  $(input 21)
     & parseWith parser
     & (\ms -> let root = ms M.! "root" in value ms root)
 

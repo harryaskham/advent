@@ -142,7 +142,7 @@ dropPieces3 lenMoves g (p : ps) nMoves nPieces moves
 
 part1 :: Int
 part1 =
-  $(exampleInput 17)
+  $(input 17)
     & lines
     & U.head
     & T.unpack
@@ -156,7 +156,7 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(exampleInput 17)
+  $(input 17)
     & lines
     & U.head
     & T.unpack
