@@ -1,23 +1,9 @@
 module Day21 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util hiding (count)
-import Relude.Unsafe qualified as U
-import Text.ParserCombinators.Parsec
+import Helper.TH (exampleInput, input)
+import Helper.Util (eol, number, parseWith)
+import Text.ParserCombinators.Parsec (Parser, anyChar, count, eof, many1, string, try, (<|>))
 import Prelude hiding ((<|>))
 
 type Monkeys = Map String Monkey
@@ -56,12 +42,6 @@ parser = M.fromList <$> many1 (monkey <* eol) <* eof
                in compare a b
           )
 
-part1 :: Integer
-part1 =
-  $(exampleInput 21)
-    & parseWith parser
-    & (\ms -> let root = ms M.! "root" in value ms root)
-
 search :: Monkeys -> Integer -> Integer -> Integer
 search ms a b
   | abs (a - b) <= 1 = b
@@ -72,11 +52,16 @@ search ms a b
     m = (a + b) `div` 2
     ms' = M.insert "humn" (ConstMonkey m) ms
     vM = p ms'
-    (a', b') =
-      case vM of
-        EQ -> (a, b)
-        LT -> (a, m)
-        GT -> (m, b)
+    (a', b') = case vM of
+      EQ -> (a, b)
+      LT -> (a, m)
+      GT -> (m, b)
+
+part1 :: Integer
+part1 =
+  $(exampleInput 21)
+    & parseWith parser
+    & (\ms -> let root = ms M.! "root" in value ms root)
 
 part2 :: Integer
 part2 =
