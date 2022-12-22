@@ -19,8 +19,7 @@ instance GridCell Cell where
     BM.fromList
       [ (OOB, ' '),
         (Open, '.'),
-        (Solid, '#'),
-        (Current, 'X')
+        (Solid, '#')
       ]
 
 data Move = MoveFwd Int | Rotate (Dir2 -> Dir2)
