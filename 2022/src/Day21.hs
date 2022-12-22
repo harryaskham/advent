@@ -72,4 +72,4 @@ part2 :: Integer
 part2 =
   $(input 21)
     & parseWith parser
-    & (\ms -> search ms 0 10000000000000)
+    & (\ms -> search ms 0 (2 ^ 64))
