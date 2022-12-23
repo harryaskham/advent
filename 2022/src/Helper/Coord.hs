@@ -24,6 +24,17 @@ nsewToDir2 'E' = DirRight
 nsewToDir2 'W' = DirLeft
 nsewToDir2 c = error $ "Invalid nsew: " <> show c
 
+nsewToDirs :: String -> [Dir2]
+nsewToDirs "N" = [DirUp]
+nsewToDirs "S" = [DirDown]
+nsewToDirs "E" = [DirRight]
+nsewToDirs "W" = [DirLeft]
+nsewToDirs "NE" = [DirUp, DirRight]
+nsewToDirs "SE" = [DirDown, DirRight]
+nsewToDirs "NW" = [DirUp, DirLeft]
+nsewToDirs "SW" = [DirDown, DirLeft]
+nsewToDirs c = error $ "Invalid nsew: " <> show c
+
 type Coord2 = (Int, Int)
 
 type Coord3 = (Int, Int, Int)

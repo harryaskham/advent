@@ -171,3 +171,8 @@ rowsCols g = (rows, cols)
     (w, h) = maxXY g
     rows = [[(x, y) | x <- [0 .. w]] | y <- [0 .. h]]
     cols = [[(x, y) | y <- [0 .. h]] | x <- [0 .. w]]
+
+alignTo0 :: Grid a -> Grid a
+alignTo0 g = M.fromList [((x - mx, y - my), v) | ((x, y), v) <- M.toList g]
+  where
+    (mx, my) = minXY g
