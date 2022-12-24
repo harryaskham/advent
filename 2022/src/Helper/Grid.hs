@@ -18,7 +18,9 @@ class Ord a => GridCell a where
   fromChar :: Char -> a
   fromChar c = charMap BM.!> c
   toChar :: a -> Char
-  toChar a = charMap BM.! a
+  toChar a
+    | a `BM.member` charMap = charMap BM.! a
+    | otherwise = '?'
 
 data SimpleWall = Empty | Wall deriving (Eq, Ord, Bounded, Show)
 
