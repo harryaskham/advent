@@ -1,6 +1,6 @@
 #+TITLE: Advent of Code Solutions
 
-[[350.png]]
+[[400.png]]
 
 Complete solutions to Advent of Code problems in Haskell.
 
