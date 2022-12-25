@@ -101,5 +101,5 @@ main = do
   assertEqual "Day 24 (Part 1)" Day24.part1 (Just 288)
   assertEqual "Day 24 (Part 2)" Day24.part2 (Just 861)
 
-  assertEqual "Day 25 (Part 1)" Day25.part1 "Part 1"
-  assertEqual "Day 25 (Part 2)" Day25.part2 "Part 2"
+  assertEqual "Day 25 (Part 1)" Day25.part1 "2=0-2-1-0=20-01-2-20"
+  assertEqual "Day 25 (Part 2)" Day25.part2 "Merry Christmas!"
