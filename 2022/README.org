@@ -1,10 +1,5 @@
 #+TITLE: Advent of Code x2022 Solutions
 
-* Instantiating Template
-- copy this directory as e.g. ~2022~
-- replace ~x2022.cabal~ with e.g. ~x2022.cabal~
-- Run e.g. ~find . -type f | xargs sed -i "" "s/x2022/x2022/g"~
-
 * Running
 - To run with Cabal, ~cabal run x2022~
 - REPL with ~cabal v2-repl~
