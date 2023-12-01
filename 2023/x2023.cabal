@@ -1,0 +1,203 @@
+cabal-version:      2.4
+name:               x2023
+version:            0.1.0.0
+author:             Harry Askham
+maintainer:         harryaskham@gmail.com
+
+extra-source-files: input/*
+
+common common-settings
+    build-depends:      base,
+                        relude,
+                        pqueue,
+                        parsec,
+                        vector,
+                        array,
+                        extra,
+                        text,
+                        containers,
+                        unordered-containers,
+                        mtl,
+                        bimap,
+                        mod,
+                        semirings,
+                        template-haskell,
+                        file-embed,
+                        utility-ht,
+                        monad-memo,
+                        benchpress,
+                        fin,
+                        MissingH,
+                        safe,
+                        linear,
+                        lens,
+                        bitwise,
+                        random,
+                        string-qq,
+                        hashable
+    default-language:   Haskell2010
+    mixins:             base hiding (Prelude),
+                        relude (Relude as Prelude),
+                        relude
+    default-extensions: OverloadedStrings,
+                        TupleSections,
+                        LambdaCase,
+                        MultiWayIf,
+                        BlockArguments,
+                        ImportQualifiedPost,
+                        EmptyCase,
+                        FlexibleContexts,
+                        FlexibleInstances,
+                        InstanceSigs,
+                        MultiParamTypeClasses,
+                        QuasiQuotes,
+                        NamedFieldPuns,
+                        DeriveFoldable,
+                        DeriveFunctor,
+                        DeriveGeneric,
+                        DeriveLift,
+                        DeriveTraversable,
+                        DerivingStrategies,
+                        GeneralizedNewtypeDeriving,
+                        StandaloneDeriving,
+                        ScopedTypeVariables,
+                        ConstraintKinds,
+                        RankNTypes,
+                        TypeApplications,
+                        ApplicativeDo,
+                        DefaultSignatures,
+                        PatternSynonyms,
+                        ExistentialQuantification,
+                        FunctionalDependencies,
+                        GADTs,
+                        DataKinds,
+                        KindSignatures,
+                        StrictData,
+                        TemplateHaskell,
+                        RecordWildCards
+    ghc-options:        -Weverything
+                        -Wno-implicit-prelude
+                        -Wno-unused-imports
+                        -Wno-unused-packages
+                        -Wno-missing-export-lists
+                        -Wno-missing-deriving-strategies
+                        -Wno-missing-safe-haskell-mode
+                        -Wno-missing-exported-signatures
+                        -Wno-missing-import-lists
+                        -Wno-missed-specialisations
+                        -Wno-all-missed-specialisations
+                        -Wno-unsafe
+                        -Wno-safe
+                        -Wno-missing-local-signatures
+                        -Wno-monomorphism-restriction
+                        -Wno-missing-home-modules
+                        -Wno-name-shadowing
+                        -Wno-type-defaults
+                        -Wno-incomplete-patterns
+                        -Wno-incomplete-uni-patterns
+library
+    import:             common-settings
+    hs-source-dirs:     src
+    exposed-modules:    Day1,
+                        Day2,
+                        Day3,
+                        Day4,
+                        Day5,
+                        Day6,
+                        Day7,
+                        Day8,
+                        Day9,
+                        Day10,
+                        Day11,
+                        Day12,
+                        Day13,
+                        Day14,
+                        Day15,
+                        Day16,
+                        Day17,
+                        Day18,
+                        Day19,
+                        Day20,
+                        Day21,
+                        Day22,
+                        Day23,
+                        Day24,
+                        Day25,
+                        Day666,
+                        Helper.Coord,
+                        Helper.Grid,
+                        Helper.Tracers,
+                        Helper.Util,
+                        Helper.Bits,
+                        Helper.TH
+executable x2023
+    import:             common-settings
+    main-is:            Main.hs
+    hs-source-dirs:     app,
+                        src
+    other-modules:      Day1,
+                        Day2,
+                        Day3,
+                        Day4,
+                        Day5,
+                        Day6,
+                        Day7,
+                        Day8,
+                        Day9,
+                        Day10,
+                        Day11,
+                        Day12,
+                        Day13,
+                        Day14,
+                        Day15,
+                        Day16,
+                        Day17,
+                        Day18,
+                        Day19,
+                        Day20,
+                        Day21,
+                        Day22,
+                        Day23,
+                        Day24,
+                        Day25,
+                        Day666,
+                        Helper.Coord,
+                        Helper.Grid,
+                        Helper.Tracers,
+                        Helper.Util,
+                        Helper.Bits,
+                        Helper.TH
+
+Test-Suite projectname-testsuite
+    import:             common-settings
+    main-is:            TestSuite.hs
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     test
+                        src
+    other-modules:      Day1,
+                        Day2,
+                        Day3,
+                        Day4,
+                        Day5,
+                        Day6,
+                        Day7,
+                        Day8,
+                        Day9,
+                        Day10,
+                        Day11,
+                        Day12,
+                        Day13,
+                        Day14,
+                        Day15,
+                        Day16,
+                        Day17,
+                        Day18,
+                        Day19,
+                        Day20,
+                        Day21,
+                        Day22,
+                        Day23,
+                        Day24,
+                        Day25
+    build-depends:      QuickCheck,
+                        HUnit
