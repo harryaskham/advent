@@ -20,8 +20,9 @@ import Data.Tuple.HT (uncurry3)
 import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Bits (bitsToInt)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
-import Relude.Unsafe (read)
+import Relude.Unsafe qualified as U
 import Text.Megaparsec (Parsec, Stream, parseMaybe)
+import Text.Megaparsec.Char (digitChar)
 import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, parse, sepBy)
 
 -- Input parsing
@@ -73,6 +74,9 @@ type MParser a = Parsec Void String a
 
 parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a
 parserM p t = unjust $ parseMaybe p t
+
+digit :: MParser Int
+digit = U.read . pure <$> digitChar
 
 -- Typeclass helpers / functional helpers
 
@@ -172,7 +176,7 @@ eol :: Parser Char
 eol = char '\n'
 
 number :: (Read a) => Parser a
-number = read <$> many1 (oneOf "-0123456789")
+number = U.read <$> many1 (oneOf "-0123456789")
 
 bitChar :: Parser Bool
 bitChar = (char '1' >> return True) <|> (char '0' >> return False)

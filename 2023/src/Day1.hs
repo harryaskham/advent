@@ -1,17 +1,14 @@
 module Day1 (part1, part2) where
 
 import Data.Text qualified as T
-import Data.Text.Read
-import Helper.TH
-import Helper.Util
+import Data.Text.Read ()
+import Helper.TH (input)
+import Helper.Util (MParser, digit, parserM)
 import Relude.Unsafe qualified as U
-import Replace.Megaparsec
-import Text.Megaparsec
-import Text.Megaparsec.Char
+import Replace.Megaparsec (sepCap)
+import Text.Megaparsec (MonadParsec (try), choice, (<|>))
+import Text.Megaparsec.Char (string)
 import Prelude hiding (many, optional, (<|>))
-
-digit :: MParser Int
-digit = U.read . pure <$> digitChar
 
 word :: MParser Int
 word =
