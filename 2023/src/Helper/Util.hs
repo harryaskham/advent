@@ -1,3 +1,6 @@
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+
 module Helper.Util where
 
 import Control.Arrow (Arrow ((***)))
@@ -18,6 +21,7 @@ import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Bits (bitsToInt)
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe (read)
+import Text.Megaparsec (Parsec, Stream, parseMaybe)
 import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, parse, sepBy)
 
 -- Input parsing
@@ -63,6 +67,13 @@ parseWith parser body =
 parseLinesWith :: Parser a -> String -> [a]
 parseLinesWith line = parseWith $ many1 (line <* eol) <* eof
 
+-- megaparsec helpers
+type MParser :: Type -> Type
+type MParser a = Parsec Void String a
+
+parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a
+parserM p t = unjust $ parseMaybe p t
+
 -- Typeclass helpers / functional helpers
 
 infixl 5 <$$>
@@ -70,13 +81,13 @@ infixl 5 <$$>
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 (<$$>) = fmap . fmap
 
-both :: Bifunctor f => (a -> b) -> f a a -> f b b
+both :: (Bifunctor f) => (a -> b) -> f a a -> f b b
 both f = bimap f f
 
-same :: Eq a => (a, a) -> Bool
+same :: (Eq a) => (a, a) -> Bool
 same = uncurry (==)
 
-iterateFix :: Eq a => (a -> a) -> a -> a
+iterateFix :: (Eq a) => (a -> a) -> a -> a
 iterateFix f a
   | a == a' = a
   | otherwise = iterateFix f a'
@@ -84,11 +95,11 @@ iterateFix f a
     a' = f a
 
 -- A symmetrical split
-split :: Arrow a => a b c -> a (b, b) (c, c)
+split :: (Arrow a) => a b c -> a (b, b) (c, c)
 split f = f *** f
 
 -- A symmetrical fanout
-fanout :: Arrow a => a b c -> a b (c, c)
+fanout :: (Arrow a) => a b c -> a b (c, c)
 fanout f = f &&& f
 
 -- Apply the given function only if the predicate holds on the input
@@ -160,7 +171,7 @@ toV3 = uncurry3 V3
 eol :: Parser Char
 eol = char '\n'
 
-number :: Read a => Parser a
+number :: (Read a) => Parser a
 number = read <$> many1 (oneOf "-0123456789")
 
 bitChar :: Parser Bool
@@ -177,23 +188,23 @@ csvLine a = a `sepBy` char ',' <* (eol >> eof)
 
 -- Map helpers
 
-countMap :: Ord a => [a] -> M.Map a Int
+countMap :: (Ord a) => [a] -> M.Map a Int
 countMap xs = M.fromListWith (+) (zip xs (repeat 1))
 
-adjustWithDefault :: Ord k => a -> (a -> a) -> k -> M.Map k a -> M.Map k a
+adjustWithDefault :: (Ord k) => a -> (a -> a) -> k -> M.Map k a -> M.Map k a
 adjustWithDefault def f k m = case M.lookup k m of
   Nothing -> M.insert k (f def) m
   Just a -> M.insert k (f a) m
 
-adjustMany :: Ord k => (a -> a) -> [k] -> M.Map k a -> M.Map k a
+adjustMany :: (Ord k) => (a -> a) -> [k] -> M.Map k a -> M.Map k a
 adjustMany f ks m = foldl' (flip (M.adjust f)) m ks
 
-swapMap :: Ord b => M.Map a b -> M.Map b a
+swapMap :: (Ord b) => M.Map a b -> M.Map b a
 swapMap = M.fromList . fmap swap . M.toList
 
 -- Set helpers
 
-insertMany :: Ord a => [a] -> Set a -> Set a
+insertMany :: (Ord a) => [a] -> Set a -> Set a
 insertMany as s = foldl' (flip S.insert) s as
 
 -- List helpers
@@ -207,10 +218,10 @@ batch3 xs = toList3 <$> zip3 (drop 2 xs) (drop 1 xs) xs
 pair :: a -> a -> [a]
 pair a b = [a, b]
 
-about :: Integral a => a -> a -> [a]
+about :: (Integral a) => a -> a -> [a]
 about n x = [x - n .. x + n]
 
-listAsInt :: Integral a => [a] -> a
+listAsInt :: (Integral a) => [a] -> a
 listAsInt xs = sum $ uncurry (*) <$> zip (reverse xs) [10 ^ i | i <- [0 :: Integer ..]]
 
 unlist :: [a] -> a
@@ -223,7 +234,7 @@ pairs [_] = []
 pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
 -- Early terminating search for n items in a thing
-nSameIn :: Ord a => Int -> [a] -> Maybe a
+nSameIn :: (Ord a) => Int -> [a] -> Maybe a
 nSameIn n = go M.empty
   where
     go _ [] = Nothing
@@ -238,16 +249,16 @@ count :: (a -> Bool) -> [a] -> Int
 count p xs = length (filter p xs)
 
 -- Returns unique members of a list that appear more than once
-duplicates :: Ord a => [a] -> [a]
+duplicates :: (Ord a) => [a] -> [a]
 duplicates xs = M.keys $ M.filter (> 1) (countMap xs)
 
-enumerate :: Enum a => [a]
+enumerate :: (Enum a) => [a]
 enumerate = enumFrom (toEnum 0)
 
 permutationMaps :: (Enum a, Ord a) => [Map a a]
 permutationMaps = M.fromList . zip enumerate <$> permutations enumerate
 
-permuteSet :: Ord a => Map a a -> Set a -> Set a
+permuteSet :: (Ord a) => Map a a -> Set a -> Set a
 permuteSet = S.map . (M.!)
 
 -- A Solution typeclass for objects that end up representing the solution in some way
@@ -258,13 +269,13 @@ class Solution a b where
 -- Mathy utils
 
 -- nth triangular number
-triangular :: Integral a => a -> a
+triangular :: (Integral a) => a -> a
 triangular n = n * (n + 1) `div` 2
 
-median :: Ord a => [a] -> a
+median :: (Ord a) => [a] -> a
 median xs = sort xs !! (length xs `div` 2)
 
-mean :: Integral a => [a] -> a
+mean :: (Integral a) => [a] -> a
 mean xs = sum xs `div` fromIntegral (length xs)
 
 type Nat10 = 'S Nat9
