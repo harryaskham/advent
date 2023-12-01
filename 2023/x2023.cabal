@@ -11,6 +11,8 @@ common common-settings
                         relude,
                         pqueue,
                         parsec,
+                        megaparsec,
+                        replace-megaparsec,
                         vector,
                         array,
                         extra,

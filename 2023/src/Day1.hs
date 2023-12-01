@@ -1,50 +1,54 @@
 module Day1 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
+import Replace.Megaparsec
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Prelude hiding ((<|>), many, optional)
+import Relude.Unsafe qualified as U
+import Data.Char
 import Data.Text qualified as T
 import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
 import Helper.TH
-import Helper.Tracers
 import Helper.Util
-import Text.ParserCombinators.Parsec
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+number :: Parsec Void String Int
+number = U.read . pure <$> digitChar
+word :: Parsec Void String Int
+word = choice (try <$> [
+                    string "one" $> 1,
+                    string "two" $> 2,
+                    string "three" $> 3,
+                    string "four" $> 4,
+                    string "five" $> 5,
+                    string "six" $> 6,
+                    string "seven" $> 7,
+                    string "eight" $> 8,
+                    string "nine" $> 9])
+word :: Parsec Void String Int
+drow = choice (try <$> [
+                    string "eno" $> 1,
+                    string "owt" $> 2,
+                    string "eerht" $> 3,
+                    string "ruof" $> 4,
+                    string "evif" $> 5,
+                    string "xis" $> 6,
+                    string "neves" $> 7,
+                    string "thgie" $> 8,
+                    string "enin" $> 9])
 
--- line :: Parser Int
--- line = number
+parser :: String ->  Int
+parser p q line = 10*U.head (go p line) + U.head (go q (reverse line)
+  where
+    go parser = snd . partitionEithers . unjust . parseMaybe (sepCap parser)
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
-part1 =
+solve p q =
   $(input 1)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & T.lines
+    & fmap (parser p q . T.unpack)
+    & sum
 
-part2 :: Text
-part2 = "Part 2"
+part1 :: Int
+part1 = solve number number
+
+part2 :: Int
+part2 = solve  (number <|> word) (number <|> drow)

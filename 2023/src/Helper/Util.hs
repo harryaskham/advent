@@ -268,3 +268,6 @@ mean :: Integral a => [a] -> a
 mean xs = sum xs `div` fromIntegral (length xs)
 
 type Nat10 = 'S Nat9
+
+unjust (Just a) = a
+unjust Nothing = error "unjust Nothing"
