@@ -5,14 +5,14 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Prelude hiding ((<|>), many, optional)
 import Relude.Unsafe qualified as U
-import Data.Char
 import Data.Text qualified as T
 import Data.Text.Read
 import Helper.TH
 import Helper.Util
 
-number :: Parsec Void String Int
-number = U.read . pure <$> digitChar
+digit :: Parsec Void String Int
+digit = U.read . pure <$> digitChar
+
 word :: Parsec Void String Int
 word = choice (try <$> [
                     string "one" $> 1,
@@ -24,7 +24,8 @@ word = choice (try <$> [
                     string "seven" $> 7,
                     string "eight" $> 8,
                     string "nine" $> 9])
-word :: Parsec Void String Int
+
+drow :: Parsec Void String Int
 drow = choice (try <$> [
                     string "eno" $> 1,
                     string "owt" $> 2,
@@ -36,11 +37,12 @@ drow = choice (try <$> [
                     string "thgie" $> 8,
                     string "enin" $> 9])
 
-parser :: String ->  Int
-parser p q line = 10*U.head (go p line) + U.head (go q (reverse line)
-  where
-    go parser = snd . partitionEithers . unjust . parseMaybe (sepCap parser)
+parser :: Parsec Void String Int -> Parsec Void String Int -> String -> Int
+parser p q line =
+  let go pq = snd . partitionEithers . unjust . parseMaybe (sepCap pq)
+  in 10*U.head (go p line) + U.head (go q (reverse line))
 
+solve :: Parsec Void String Int -> Parsec Void String Int -> Int
 solve p q =
   $(input 1)
     & T.lines
@@ -48,7 +50,7 @@ solve p q =
     & sum
 
 part1 :: Int
-part1 = solve number number
+part1 = solve digit digit
 
 part2 :: Int
-part2 = solve  (number <|> word) (number <|> drow)
+part2 = solve  (digit <|> word) (digit <|> drow)
