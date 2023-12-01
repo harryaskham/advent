@@ -1,7 +1,6 @@
 module Day1 (part1, part2) where
 
 import Data.Text qualified as T
-import Data.Text.Read ()
 import Helper.TH (input)
 import Helper.Util (MParser, digit, parserM)
 import Relude.Unsafe qualified as U
@@ -10,35 +9,25 @@ import Text.Megaparsec (MonadParsec (try), choice, (<|>))
 import Text.Megaparsec.Char (string)
 import Prelude hiding (many, optional, (<|>))
 
-word :: MParser Int
-word =
-  choice
-    ( try
-        <$> [ string "one" $> 1,
-              string "two" $> 2,
-              string "three" $> 3,
-              string "four" $> 4,
-              string "five" $> 5,
-              string "six" $> 6,
-              string "seven" $> 7,
-              string "eight" $> 8,
-              string "nine" $> 9
-            ]
-    )
+numbers :: [String]
+numbers =
+  [ "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine"
+  ]
 
-drow :: MParser Int
-drow =
+word :: (String -> String) -> MParser Int
+word f =
   choice
     ( try
-        <$> [ string "eno" $> 1,
-              string "owt" $> 2,
-              string "eerht" $> 3,
-              string "ruof" $> 4,
-              string "evif" $> 5,
-              string "xis" $> 6,
-              string "neves" $> 7,
-              string "thgie" $> 8,
-              string "enin" $> 9
+        <$> [ string (f n) $> i
+              | (n, i) <- zip numbers [1 ..]
             ]
     )
 
@@ -58,4 +47,4 @@ part1 :: Int
 part1 = solve digit digit
 
 part2 :: Int
-part2 = solve (digit <|> word) (digit <|> drow)
+part2 = solve (digit <|> word id) (digit <|> word reverse)
