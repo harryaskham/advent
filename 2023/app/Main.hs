@@ -30,15 +30,16 @@ import Helper.TH (runAllDays)
 import Test.BenchPress (benchMany)
 
 main :: IO ()
---main = benchAllDays
---main = benchOne (Day20.part1, Day20.part2)
-main = benchEachPart
+-- main = benchAllDays
+-- main = benchOne (Day20.part1, Day20.part2)
+-- main = benchEachPart
+main = print Day2.part1
 
---main = print Day23.part2
+-- main = print Day23.part2
 
---main = print Day24.part1 >> print Day24.part2
+-- main = print Day24.part1 >> print Day24.part2
 
-benchOne :: Show a => a -> IO ()
+benchOne :: (Show a) => a -> IO ()
 benchOne a = benchMany 1 [("One Thing", putTextLn (show a))]
 
 benchEachPart :: IO ()
