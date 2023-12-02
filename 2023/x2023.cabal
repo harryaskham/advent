@@ -91,6 +91,7 @@ common common-settings
                         -Wno-unsafe
                         -Wno-safe
                         -Wno-missing-local-signatures
+                        -Wno-missing-kind-signatures
                         -Wno-monomorphism-restriction
                         -Wno-missing-home-modules
                         -Wno-name-shadowing
