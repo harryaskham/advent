@@ -1,6 +1,5 @@
 module Day2 (part1, part2) where
 
-import Data.Text qualified as T
 import Helper.TH (input)
 import Helper.Util (eol, number, parseWith)
 import Text.ParserCombinators.Parsec
@@ -12,17 +11,12 @@ import Text.ParserCombinators.Parsec
   )
 
 data Color = Red Int | Blue Int | Green Int
-  deriving (Show)
 
-data Game = Game
-  { index :: Int,
-    cubes :: [[Color]]
-  }
+data Game = Game {index :: Int, cubes :: [[Color]]}
 
 color :: Parser Color
 color = do
-  amount <- number
-  string " "
+  amount <- number <* string " "
   c <- choice [string "red", string "green", string "blue"]
   return case c of
     "red" -> Red amount
@@ -31,9 +25,7 @@ color = do
 
 game :: Parser Game
 game = do
-  string "Game "
-  index <- number
-  string ": "
+  index <- string "Game " *> number <* string ": "
   cubes <- (color `sepBy1` string ", ") `sepBy1` string "; "
   return $ Game index cubes
 
