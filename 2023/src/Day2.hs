@@ -14,31 +14,22 @@ data Color = Red Int | Blue Int | Green Int
 
 data Game = Game {index :: Int, cubes :: [[Color]]}
 
-color :: Parser Color
-color = do
-  amount <- number <* string " "
-  c <- choice [string "red", string "green", string "blue"]
-  return case c of
-    "red" -> Red amount
-    "green" -> Green amount
-    "blue" -> Blue amount
-
-game :: Parser Game
-game = do
-  index <- string "Game " *> number <* string ": "
-  cubes <- (color `sepBy1` string ", ") `sepBy1` string "; "
-  return $ Game index cubes
-
 games :: Parser [Game]
 games = game `sepBy1` eol <* eof
-
-possibleColor :: Color -> Bool
-possibleColor (Red i) = i <= 12
-possibleColor (Green i) = i <= 13
-possibleColor (Blue i) = i <= 14
+  where
+    color = do
+      n <- number <* string " "
+      choice [Red n <$ string "red", Green n <$ string "green", Blue n <$ string "blue"]
+    game = do
+      i <- string "Game " *> number <* string ": "
+      Game i <$> (color `sepBy1` string ", ") `sepBy1` string "; "
 
 possibleGame :: Game -> Bool
-possibleGame (Game _ colors) = all (all possibleColor) colors
+possibleGame = all (all possibleColor) . cubes
+  where
+    possibleColor (Red i) = i <= 12
+    possibleColor (Green i) = i <= 13
+    possibleColor (Blue i) = i <= 14
 
 power :: [Color] -> Int
 power colors = go colors 0 0 0
