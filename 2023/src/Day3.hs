@@ -1,31 +1,15 @@
 module Day3 (part1, part2) where
 
-import Data.Array qualified as A
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Char (digitToInt, intToDigit)
 import Data.List (foldl1', nub)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
+import Helper.Coord (Coord2, neighbors)
+import Helper.Grid (Grid, GridCell (charMap), maxXY, readGrid)
+import Helper.TH (input)
 import Relude.Unsafe qualified as U
-import Text.ParserCombinators.Parsec
-
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
-
--- line :: Parser Int
--- line = number
 
 data Cell
   = None
@@ -65,20 +49,17 @@ isMark _ = False
 part1 :: Int
 part1 =
   $(input 3)
-    -- \$(exampleInput 3)
     & readGrid
     & ( \g ->
           getNumbers g
             & filter (\(_, cs) -> any isMark $ catMaybes [M.lookup c g | c <- cs])
       )
-    & traceShowId
     & fmap fst
     & sum
 
 part2 :: Int
 part2 =
   $(input 3)
-    -- \$(exampleInput 3)
     & readGrid
     & ( \g ->
           getNumbers g
@@ -87,7 +68,6 @@ part2 =
     & foldl1' (M.unionWith (<>))
     & M.filter ((== 2) . length)
     & fmap (\[a, b] -> a * b)
-    & traceShowId
     & M.toList
     & fmap snd
     & sum
