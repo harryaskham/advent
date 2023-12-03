@@ -5,7 +5,6 @@ import Data.Bimap qualified as BM
 import Data.Char (digitToInt, intToDigit)
 import Data.List (foldl1', nub)
 import Data.Map.Strict qualified as M
-import Data.Text qualified as T
 import Helper.Coord (Coord2, neighbors)
 import Helper.Grid (Grid, GridCell (charMap), maxXY, readGrid)
 import Helper.TH (input)
@@ -67,7 +66,7 @@ part2 =
       )
     & foldl1' (M.unionWith (<>))
     & M.filter ((== 2) . length)
-    & fmap (\[a, b] -> a * b)
+    & fmap product
     & M.toList
     & fmap snd
     & sum
