@@ -10,11 +10,11 @@ import Prelude hiding (many)
 parser :: Parser [(Int, [Int], [Int])]
 parser = many1 (line <* eol) <* eof
   where
-    whitespace = many $ string " "
+    gap = many $ string " "
     line = do
-      i <- (string "Card" >> whitespace) *> number <* (string ":" >> whitespace)
-      as <- count 10 (number <* whitespace) <* (string "|" >> whitespace)
-      bs <- number `sepBy1` whitespace
+      i <- (string "Card" >> gap) *> number <* (string ":" >> gap)
+      as <- many1 (number <* gap) <* (string "|" >> gap)
+      bs <- number `sepBy1` gap
       return (i, as, bs)
 
 part1 :: Int
