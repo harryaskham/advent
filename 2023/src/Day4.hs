@@ -1,50 +1,51 @@
 module Day4 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
+import Data.List (intersect)
 import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
+import Helper.TH (input)
+import Helper.Util (eol, number, parseWith)
 import Text.ParserCombinators.Parsec
+  ( Parser,
+    count,
+    eof,
+    many,
+    many1,
+    sepBy1,
+    string,
+  )
+import Prelude hiding (many, optional)
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+parser :: Parser [(Int, [Int], [Int])]
+parser = many1 (line <* eol) <* eof
+  where
+    whitespace = many $ string " "
+    line = do
+      i <- (string "Card" >> whitespace) *> number <* (string ":" >> whitespace)
+      as <- count 10 (number <* whitespace) <* (string "|" >> whitespace)
+      bs <- number `sepBy1` whitespace
+      return (i, as, bs)
 
--- line :: Parser Int
--- line = number
-
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
+part1 :: Int
 part1 =
   $(input 4)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & parseWith parser
+    & fmap (\(_, as, bs) -> (2 ^ length (as `intersect` (bs :: [Int]))) `div` 2)
+    & sum
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  $(input 4)
+    & parseWith parser
+    & ( \cards ->
+          foldl'
+            ( \m (i, as, bs) ->
+                let n = length (as `intersect` (bs :: [Int]))
+                    c = fromMaybe 0 $ M.lookup i m
+                 in foldl' (flip (M.adjust (+ c))) m [i + 1 .. i + n]
+            )
+            (M.fromList [(i, 1) | (i, _, _) <- cards])
+            cards
+      )
+    & M.toList
+    & fmap snd
+    & sum
