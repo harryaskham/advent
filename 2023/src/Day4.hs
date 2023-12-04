@@ -5,7 +5,7 @@ import Data.Map.Strict qualified as M
 import Helper.TH (input)
 import Helper.Util (eol, number, parseWith)
 import Text.ParserCombinators.Parsec (Parser, count, eof, many, many1, sepBy1, string)
-import Prelude hiding (many, optional)
+import Prelude hiding (many)
 
 parser :: Parser [(Int, [Int], [Int])]
 parser = many1 (line <* eol) <* eof
