@@ -4,7 +4,7 @@ import Data.List (intersect)
 import Data.Map.Strict qualified as M
 import Helper.TH (input)
 import Helper.Util (eol, number, parseWith)
-import Text.ParserCombinators.Parsec (Parser, count, eof, many, many1, sepBy1, string)
+import Text.ParserCombinators.Parsec (Parser, eof, many, many1, sepBy1, string)
 import Prelude hiding (many)
 
 parser :: Parser [(Int, [Int], [Int])]
@@ -21,7 +21,7 @@ part1 :: Int
 part1 =
   $(input 4)
     & parseWith parser
-    & fmap (\(_, as, bs) -> (2 ^ length (as `intersect` (bs :: [Int]))) `div` 2)
+    & fmap (\(_, as, bs) -> 2 ^ length (as `intersect` bs) `div` 2)
     & sum
 
 part2 :: Int
@@ -31,7 +31,7 @@ part2 =
     & ( \cards ->
           foldl'
             ( \m (i, as, bs) ->
-                let n = length (as `intersect` (bs :: [Int]))
+                let n = length (as `intersect` bs)
                     c = fromMaybe 0 $ M.lookup i m
                  in foldl' (flip (M.adjust (+ c))) m [i + 1 .. i + n]
             )
