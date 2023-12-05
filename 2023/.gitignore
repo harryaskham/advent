@@ -79,3 +79,5 @@ bench.html
 
 # Emacs
 .projectile
+
+.vscode/
