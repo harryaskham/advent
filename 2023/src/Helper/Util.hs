@@ -284,5 +284,6 @@ mean xs = sum xs `div` fromIntegral (length xs)
 
 type Nat10 = 'S Nat9
 
+unjust :: Maybe a -> a
 unjust (Just a) = a
 unjust Nothing = error "unjust Nothing"
