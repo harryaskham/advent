@@ -1,6 +1,6 @@
 module Day5 (part1, part2) where
 
-import Data.List (foldl1, foldr1, minimum)
+import Data.List (minimum)
 import Data.List.Extra (chunksOf)
 import Helper.TH (input)
 import Helper.Util (eol, number, parseWith, toTuple2)
