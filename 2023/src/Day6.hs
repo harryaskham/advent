@@ -1,50 +1,33 @@
 module Day6 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Text.ParserCombinators.Parsec
+import Data.Tuple.Extra (both)
+import Helper.TH (input)
+import Helper.Util (eol, number, parseWith, whitespace)
+import Relude.Unsafe qualified as U
+import Text.ParserCombinators.Parsec (Parser, eof, sepBy, string)
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+asMany :: Parser [(Double, Double)]
+asMany = do
+  let l s = (string (s <> ":") >> whitespace) *> (number `sepBy` whitespace)
+  zip <$> (l "Time" <* eol) <*> (l "Distance" <* eof)
 
--- line :: Parser Int
--- line = number
+asOne :: Parser (Double, Double)
+asOne = asMany <&> (unzip >>> both (fmap (round >>> show) >>> mconcat >>> U.read))
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+ways :: (Double, Double) -> Int
+ways (t, d) =
+  let f pm = ((-t `pm` sqrt (t ** 2 - 4 * d)) / (-2))
+   in ceiling (f (+)) - floor (f (-)) - 1
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
+part1 :: Int
 part1 =
   $(input 6)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    & parseWith asMany
+    & fmap ways
+    & product
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  $(input 6)
+    & parseWith asOne
+    & ways

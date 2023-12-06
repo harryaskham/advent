@@ -23,7 +23,7 @@ import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe qualified as U
 import Text.Megaparsec (Parsec, Stream, parseMaybe)
 import Text.Megaparsec.Char (digitChar)
-import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, parse, sepBy)
+import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, parse, sepBy, try)
 
 -- Input parsing
 
@@ -174,6 +174,9 @@ toV3 = uncurry3 V3
 
 eol :: Parser Char
 eol = char '\n'
+
+whitespace :: Parser String
+whitespace = try . many1 $ char ' '
 
 number :: (Read a) => Parser a
 number = U.read <$> many1 (oneOf "-0123456789")
