@@ -60,7 +60,6 @@ instance HasHand JHand where
     | isJust $ M.lookup 3 reverseCounts =
         case nj of
           3 -> Four
-          2 -> Five
           1 -> Four
           _ -> Three
     | isJust $ M.lookup 2 reverseCounts =
