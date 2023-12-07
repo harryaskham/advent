@@ -26,7 +26,9 @@ data Card = C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | CT | CJ | CQ | CK | CA deriv
 newtype JCard = JCard Card deriving (Eq, Show)
 
 instance Ord JCard where
+  JCard CJ <= JCard CJ = True
   JCard CJ <= _ = True
+  JCard _ <= JCard CJ = False
   JCard a <= JCard b = a <= b
 
 data HandType = High | Pair | TwoPair | Three | FullHouse | Four | Five deriving (Eq, Ord, Show, Bounded, Enum)
@@ -95,11 +97,11 @@ charToCard 'K' = CK
 charToCard 'A' = CA
 
 -- parser :: (Show a, Ord a, Ord b, HasBid a, HasHand a, HasCards a b) => (([Card], Int) -> a) -> Parser Int
-parser :: (Show a, Ord a, HasBid a) => (([Card], Int) -> a) -> Parser Int
+parser :: (Show a, Ord a, HasBid a, HasHand a) => (([Card], Int) -> a) -> Parser Int
 parser h = do
   cardsBids <- many1 ((,) <$> (charToCard <$$> (count 5 (oneOf "23456789TJKQA") <* string " ")) <*> (number <* eol)) <* eof
-  let rankedHands = zip [1 ..] . sort $ h <$> cardsBids
-  return . sum . fmap (\(r, b) -> r * getBid b) $ (fmap traceShowId) rankedHands
+  let rankedHands = fmap (\x -> traceShow (getHand (snd x), x) $ x) . zip [1 ..] . sort $ h <$> cardsBids
+  return . sum . fmap (\(r, b) -> r * getBid b) $ rankedHands
 
 -- return . sum . fmap (\(r, b) -> r * getBid b) . zip [1 ..] . sort $ (\(cards, bid) -> h (hand cards, cards, bid)) <$> cardsBids
 
@@ -132,7 +134,6 @@ jHand cards
         2 -> Five
         _ -> FullHouse
   | isJust $ M.lookup 3 reverseCounts =
-      -- the jokers can become different cards to one another
       case nj of
         3 -> Four
         2 -> Five
