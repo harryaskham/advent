@@ -5,9 +5,24 @@ import Helper.TH (input)
 import Helper.Util (countMap, eol, number, parseWith, swapMapCollect, (<$$>))
 import Text.ParserCombinators.Parsec (Parser, count, eof, many1, oneOf, string)
 
-data Card = C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | CT | CJ | CQ | CK | CA deriving (Eq, Ord, Show, Bounded, Enum)
+data Card = C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | CT | CJ | CQ | CK | CA deriving (Eq, Ord, Bounded, Enum)
 
-newtype JCard = JCard Card deriving (Eq, Show)
+charToCard :: Char -> Card
+charToCard '2' = C2
+charToCard '3' = C3
+charToCard '4' = C4
+charToCard '5' = C5
+charToCard '6' = C6
+charToCard '7' = C7
+charToCard '8' = C8
+charToCard '9' = C9
+charToCard 'T' = CT
+charToCard 'J' = CJ
+charToCard 'Q' = CQ
+charToCard 'K' = CK
+charToCard 'A' = CA
+
+newtype JCard = JCard Card deriving (Eq)
 
 instance Ord JCard where
   JCard CJ <= JCard CJ = True
@@ -15,23 +30,23 @@ instance Ord JCard where
   JCard _ <= JCard CJ = False
   JCard a <= JCard b = a <= b
 
-data HandType = High | Pair | TwoPair | Three | FullHouse | Four | Five deriving (Eq, Ord, Show, Bounded, Enum)
+data Hand = High | Pair | TwoPair | Three | FullHouse | Four | Five deriving (Eq, Ord, Bounded, Enum)
 
-data Hand = Hand [Card] Int deriving (Eq, Show)
+data HandBid = HandBid [Card] Int deriving (Eq)
 
-instance Ord Hand where
-  h@(Hand cs _) <= h'@(Hand cs' _) = (getHand h, cs) <= (getHand h', cs')
+instance Ord HandBid where
+  h@(HandBid cs _) <= h'@(HandBid cs' _) = (getHand h, cs) <= (getHand h', cs')
 
-newtype JHand = JHand Hand deriving (Eq, Show)
+newtype JHand = JHand HandBid deriving (Eq)
 
 instance Ord JHand where
-  h@(JHand (Hand cs _)) <= h'@(JHand (Hand cs' _)) = (getHand h, JCard <$> cs) <= (getHand h', JCard <$> cs')
+  h@(JHand (HandBid cs _)) <= h'@(JHand (HandBid cs' _)) = (getHand h, JCard <$> cs) <= (getHand h', JCard <$> cs')
 
 class HasHand a where
-  getHand :: a -> HandType
+  getHand :: a -> Hand
 
-instance HasHand Hand where
-  getHand (Hand cards _)
+instance HasHand HandBid where
+  getHand (HandBid cards _)
     | isJust $ M.lookup 5 reverseCounts = Five
     | isJust $ M.lookup 4 reverseCounts = Four
     | isJust (M.lookup 3 reverseCounts) && isJust (M.lookup 2 reverseCounts) = FullHouse
@@ -45,7 +60,7 @@ instance HasHand Hand where
       reverseCounts = swapMapCollect $ countMap cards
 
 instance HasHand JHand where
-  getHand (JHand (Hand cards _))
+  getHand (JHand (HandBid cards _))
     | isJust $ M.lookup 5 reverseCounts = Five
     | isJust $ M.lookup 4 reverseCounts =
         case nj of
@@ -84,34 +99,19 @@ instance HasHand JHand where
 class HasBid a where
   getBid :: a -> Int
 
-instance HasBid Hand where
-  getBid (Hand _ bid) = bid
+instance HasBid HandBid where
+  getBid (HandBid _ bid) = bid
 
 instance HasBid JHand where
   getBid (JHand rh) = getBid rh
 
-charToCard :: Char -> Card
-charToCard '2' = C2
-charToCard '3' = C3
-charToCard '4' = C4
-charToCard '5' = C5
-charToCard '6' = C6
-charToCard '7' = C7
-charToCard '8' = C8
-charToCard '9' = C9
-charToCard 'T' = CT
-charToCard 'J' = CJ
-charToCard 'Q' = CQ
-charToCard 'K' = CK
-charToCard 'A' = CA
-
-parser :: (Show a, Ord a, HasBid a, HasHand a) => (([Card], Int) -> a) -> Parser Int
+parser :: (Ord a, HasBid a) => (([Card], Int) -> a) -> Parser Int
 parser h = do
   cardsBids <- many1 ((,) <$> (charToCard <$$> (count 5 (oneOf "23456789TJKQA") <* string " ")) <*> (number <* eol)) <* eof
   return . sum . fmap (\(r, b) -> r * getBid b) $ zip [1 ..] . sort $ h <$> cardsBids
 
 part1 :: Int
-part1 = $(input 7) & parseWith (parser (uncurry Hand))
+part1 = $(input 7) & parseWith (parser (uncurry HandBid))
 
 part2 :: Int
-part2 = $(input 7) & parseWith (parser (JHand . uncurry Hand))
+part2 = $(input 7) & parseWith (parser (JHand . uncurry HandBid))
