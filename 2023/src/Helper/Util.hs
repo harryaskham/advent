@@ -209,6 +209,9 @@ adjustMany f ks m = foldl' (flip (M.adjust f)) m ks
 swapMap :: (Ord b) => M.Map a b -> M.Map b a
 swapMap = M.fromList . fmap swap . M.toList
 
+swapMapCollect :: (Ord b) => M.Map a b -> M.Map b [a]
+swapMapCollect = M.fromListWith (<>) . fmap (second pure . swap) . M.toList
+
 -- Set helpers
 
 insertMany :: (Ord a) => [a] -> Set a -> Set a
