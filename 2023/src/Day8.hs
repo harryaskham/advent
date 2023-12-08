@@ -2,7 +2,6 @@ module Day8 (part1, part2) where
 
 import Data.List (foldl1)
 import Data.Map.Strict qualified as M
-import Data.Set qualified as S
 import Data.Text qualified as T
 import Helper.TH (input)
 import Helper.Util (eol, parseWith)
@@ -10,11 +9,21 @@ import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec (Parser, alphaNum, count, eof, many1, oneOf, string)
 
 parser :: Parser ([Char], Map String (String, String))
-parser = do
-  lr <- many1 (oneOf "LR") <* eol <* eol
+parser =
   let name = count 3 alphaNum
-  edges <- many1 ((,) <$> (name <* string " = (") <*> ((,) <$> (name <* string ", ") <*> (name <* string ")" <* eol))) <* eof
-  return (lr, M.fromList edges)
+   in (,)
+        <$> (many1 (oneOf "LR") <* eol <* eol)
+        <*> ( M.fromList
+                <$> many1
+                  ( (,)
+                      <$> (name <* string " = (")
+                      <*> ( (,)
+                              <$> (name <* string ", ")
+                              <*> (name <* string ")" <* eol)
+                          )
+                  )
+                <* eof
+            )
 
 travel :: (String -> Bool) -> String -> String -> Map String (String, String) -> [(Int, String)]
 travel p s lr' g = go (cycle lr') 0 s
