@@ -36,15 +36,6 @@ travel p s lr' g = go (cycle lr') 0 s
           'L' -> go lr (n + 1) (fst $ g M.! c)
           'R' -> go lr (n + 1) (snd $ g M.! c)
 
-travelAll :: String -> Map String (String, String) -> [Int]
-travelAll lr' g = go S.empty [] <$> [travel p s lr' g | s <- ss]
-  where
-    p = (U.!! 2) >>> (== 'Z')
-    ss = [s | (s, _) <- M.toList g, s U.!! 2 == 'A']
-    go seen ns ((n, c) : ts)
-      | (n `mod` length lr', c) `S.member` seen = U.head ns
-      | otherwise = go (S.insert (n `mod` length lr', c) seen) (n : ns) ts
-
 part1 :: Int
 part1 =
   $(input 8)
@@ -57,5 +48,10 @@ part2 :: Int
 part2 =
   $(input 8)
     & parseWith parser
-    & uncurry travelAll
+    & ( \(lr, g) ->
+          fst . U.head
+            <$> [ travel ((U.!! 2) >>> (== 'Z')) s lr g
+                  | s <- [s | (s, _) <- M.toList g, s U.!! 2 == 'A']
+                ]
+      )
     & foldl1 lcm
