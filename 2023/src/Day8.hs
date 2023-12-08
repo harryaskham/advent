@@ -25,11 +25,11 @@ parser =
                 <* eof
             )
 
-travel :: (String -> Bool) -> String -> String -> Map String (String, String) -> [(Int, String)]
+travel :: (String -> Bool) -> String -> String -> Map String (String, String) -> [Int]
 travel p s lr' g = go (cycle lr') 0 s
   where
     go (d : lr) n c
-      | p c = (n, c) : next
+      | p c = n : next
       | otherwise = next
       where
         next = case d of
@@ -42,16 +42,15 @@ part1 =
     & parseWith parser
     & uncurry (travel (== "ZZZ") "AAA")
     & U.head
-    & fst
 
 part2 :: Int
 part2 =
   $(input 8)
     & parseWith parser
     & ( \(lr, g) ->
-          fst . U.head
-            <$> [ travel ((U.!! 2) >>> (== 'Z')) s lr g
-                  | s <- [s | (s, _) <- M.toList g, s U.!! 2 == 'A']
-                ]
+          [ travel ((U.!! 2) >>> (== 'Z')) s lr g
+            | s <- [s | (s, _) <- M.toList g, s U.!! 2 == 'A']
+          ]
       )
+    & fmap U.head
     & foldl1 lcm
