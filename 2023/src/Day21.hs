@@ -16,6 +16,7 @@ import Helper.Grid
 import Helper.TH
 import Helper.Tracers
 import Helper.Util
+import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec
 
 -- parser :: Parser [Int]
