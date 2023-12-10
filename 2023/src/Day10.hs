@@ -71,7 +71,7 @@ part1 :: Int
 part1 =
   $(input 10)
     & readGrid
-    & (pathOutside >>> fst >>> length >>> (+ 1) >>> (`div` 2))
+    & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (`div` 2))
 
 part2 :: Int
 part2 =
