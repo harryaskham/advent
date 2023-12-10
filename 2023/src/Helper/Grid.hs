@@ -8,10 +8,11 @@ import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Helper.Util (Nat10, both)
+import Relude.Unsafe qualified as U
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
-class Ord a => GridCell a where
+class (Ord a) => GridCell a where
   charMap :: Bimap a Char
   fromChar :: Char -> a
   fromChar c = charMap BM.!> c
@@ -42,10 +43,10 @@ instance GridCell IntCell where
 type Grid a = M.Map (Int, Int) a
 
 -- Helper for reading a Grid from an input file
-readGridIO :: GridCell a => FilePath -> IO (Grid a)
+readGridIO :: (GridCell a) => FilePath -> IO (Grid a)
 readGridIO path = readGrid . decodeUtf8 @Text <$> readFileBS path
 
-readGrid :: GridCell a => Text -> Grid a
+readGrid :: (GridCell a) => Text -> Grid a
 readGrid = toGrid . lines
 
 fromCoords :: (Foldable f, Bounded a) => a -> f (Int, Int) -> Grid a
@@ -59,7 +60,7 @@ fillDef def g =
 fillEmpty :: (Bounded a) => Grid a -> Grid a
 fillEmpty = fillDef minBound
 
-toGrid :: GridCell a => [Text] -> Grid a
+toGrid :: (GridCell a) => [Text] -> Grid a
 toGrid rows =
   M.fromList
     [ ((x, y), fromChar c)
@@ -85,7 +86,7 @@ modifyCoords f grid = M.mapKeys (fromOrigin . f . toOrigin) grid
     toOrigin (x, y) = (x - xO, y - yO)
     fromOrigin (x, y) = (x + xO, y + yO)
 
-variants :: Eq a => Grid a -> [Grid a]
+variants :: (Eq a) => Grid a -> [Grid a]
 variants grid = nub $ modifyCoords <$> mods <*> pure grid
   where
     (maxX, _) = maxXY grid
@@ -128,7 +129,7 @@ joinGrids grids =
     (maxGX, maxGY) = maxXY grids
     (maxX, maxY) = maxXY $ grids M.! (0, 0)
 
-pretty :: GridCell a => Grid a -> Text
+pretty :: (GridCell a) => Grid a -> Text
 pretty grid =
   T.pack $
     intercalate
@@ -138,7 +139,7 @@ pretty grid =
     (minX, minY) = minXY grid
     (maxX, maxY) = maxXY grid
 
-prettyPrint :: GridCell a => Grid a -> IO ()
+prettyPrint :: (GridCell a) => Grid a -> IO ()
 prettyPrint = putTextLn . pretty
 
 -- Extends the grid logically n times in each direction.
@@ -159,3 +160,6 @@ extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
 
 find :: (Eq a) => a -> Grid a -> [(Int, Int)]
 find a g = [k | (k, v) <- M.toList g, v == a]
+
+findOne :: (Eq a) => a -> Grid a -> (Int, Int)
+findOne a g = U.head $ Helper.Grid.find a g
