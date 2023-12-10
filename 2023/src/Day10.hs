@@ -79,6 +79,6 @@ part2 =
     & readGrid
     & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first S.fromList)))
     & uncurry both
-    & both (\cs -> if (0, 0) `S.member` cs then S.empty else cs)
+    & both (bool id (const S.empty) . ((0, 0) `S.member`) &&& id >>> uncurry ($))
     & uncurry S.union
     & S.size
