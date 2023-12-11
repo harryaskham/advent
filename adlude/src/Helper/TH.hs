@@ -2,6 +2,7 @@ module Helper.TH where
 
 import Data.FileEmbed (embedFile, makeRelativeToProject)
 import Helper.Tracers
+import Helper.Grid (readGrid)
 import Helper.Util
   ( exampleInputNPath,
     exampleInputPath,
@@ -48,3 +49,6 @@ exampleInputN :: Int -> Int -> Q Exp
 exampleInputN day n = do
   path <- makeRelativeToProject (exampleInputNPath day n)
   AppE (VarE 'decodeUtf8) <$> embedFile path
+
+grid :: Int -> Q Exp
+grid day = AppE (VarE 'readGrid) <$> input day
