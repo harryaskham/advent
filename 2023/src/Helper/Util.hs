@@ -170,6 +170,12 @@ fromV3 p = (p ^. _x, p ^. _y, p ^. _z)
 toV3 :: (a, a, a) -> V3 a
 toV3 = uncurry3 V3
 
+fsts2 :: ((a, b1), (b2, b3)) -> (a, b2)
+fsts2 ((a, _), (b, _)) = (a, b)
+
+snds2 :: ((a1, a2), (a3, b)) -> (a2, b)
+snds2 ((_, a), (_, b)) = (a, b)
+
 -- Parser Combinator Utils
 
 eol :: Parser Char

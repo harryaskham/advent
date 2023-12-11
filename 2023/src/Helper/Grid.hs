@@ -168,3 +168,9 @@ find a g = [k | (k, v) <- M.toList g, v == a]
 
 findOne :: (Eq a) => a -> Grid a -> (Int, Int)
 findOne a g = U.head $ Helper.Grid.find a g
+
+gridFind :: (Eq a) => a -> Grid a -> [(Int, Int)]
+gridFind = Helper.Grid.find
+
+gridFindOne :: (Eq a) => a -> Grid a -> (Int, Int)
+gridFindOne = findOne
