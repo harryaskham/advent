@@ -51,15 +51,15 @@ instance GridCell Cell where
 --               ]
 --           )
 
-pairwiseDistances :: Grid Cell -> Map Coord2 (Map Coord2 Int)
-pairwiseDistances g =
+pairwiseDistances :: Int -> Grid Cell -> Map Coord2 (Map Coord2 Int)
+pairwiseDistances scale g =
   let stars = find Star g
       (maxX, maxY) = maxXY g
       emptyX = S.fromList [x | x <- [0 .. maxX], all (== None) [g M.! (x, y) | y <- [0 .. maxY]]]
       emptyY = S.fromList [y | y <- [0 .. maxY], all (== None) [g M.! (x, y) | x <- [0 .. maxX]]]
       distance (ax, ay) (bx, by) =
-        let xd = sum [delta | x <- [min ax bx .. max ax bx], let delta = if x `S.member` emptyX then 2 else 1]
-            yd = sum [delta | y <- [min ay by .. max ay by], let delta = if y `S.member` emptyY then 2 else 1]
+        let xd = sum [delta | x <- [min ax bx .. max ax bx], let delta = if x `S.member` emptyX then scale else 1]
+            yd = sum [delta | y <- [min ay by .. max ay by], let delta = if y `S.member` emptyY then scale else 1]
          in xd + yd - 2
    in M.fromList
         <$> M.fromListWith
@@ -72,29 +72,22 @@ pairwiseDistances g =
               ]
           )
 
-shortestPath :: Grid Cell -> Int
-shortestPath g =
-  let distances = pairwiseDistances g
-      stars = M.keys distances
-      go q
-        | S.size seen == length stars = d
-        | c `S.member` seen = go q'
-        | otherwise =
-            traceShow (d, S.size seen, PQ.size q) $
-              go (foldl' (\q (n, nd) -> PQ.insert (d + nd) (n, S.insert c seen) q) q' (M.toList $ distances M.! c))
-        where
-          ((d, (c, seen)), q') = PQ.deleteFindMin q
-   in go (foldl' (\q c -> PQ.insert 0 (c, S.empty) q) PQ.empty stars)
-
 part1 :: Int
 part1 =
   $(input 11)
     -- \$(exampleInput 11)
     & readGrid
-    & pairwiseDistances
+    & pairwiseDistances 2
     -- & traceShowId
     & (\d -> [d M.! a M.! b | let stars = M.keys d, (i, a) <- zip [1 ..] stars, b <- drop i stars])
     & sum
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  $(input 11)
+    -- \$(exampleInput 11)
+    & readGrid
+    & pairwiseDistances 1000000
+    -- & traceShowId
+    & (\d -> [d M.! a M.! b | let stars = M.keys d, (i, a) <- zip [1 ..] stars, b <- drop i stars])
+    & sum
