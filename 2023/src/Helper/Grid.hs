@@ -24,6 +24,11 @@ data SimpleWall = Empty | Wall deriving (Eq, Ord, Bounded, Show)
 instance GridCell SimpleWall where
   charMap = BM.fromList [(Empty, ' '), (Wall, '#')]
 
+data DotHash = Dot | Hash deriving (Eq, Ord, Bounded, Show)
+
+instance GridCell DotHash where
+  charMap = BM.fromList [(Dot, '.'), (Hash, '#')]
+
 newtype DigitCell = DigitCell (Fin Nat10) deriving (Eq, Ord, Bounded, Num, Show)
 
 cellToInt :: DigitCell -> Integer
