@@ -134,7 +134,9 @@ library
                         Helper.Tracers,
                         Helper.Util,
                         Helper.Bits,
-                        Helper.TH
+                        Helper.TH,
+                        Helper.Collection,
+                        Adlude
 executable x2023
     import:             common-settings
     main-is:            Main.hs
@@ -171,7 +173,9 @@ executable x2023
                         Helper.Tracers,
                         Helper.Util,
                         Helper.Bits,
-                        Helper.TH
+                        Helper.TH,
+                        Helper.Collection,
+                        Adlude
 
 Test-Suite projectname-testsuite
     import:             common-settings
