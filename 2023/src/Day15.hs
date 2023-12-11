@@ -1,7 +1,5 @@
 module Day15 (part1, part2) where
 
-import Adlude
-
 -- parser :: Parser [Int]
 -- parser = many1 (number <* eol) <* eof
 
@@ -23,9 +21,9 @@ import Adlude
 part1 :: Text
 part1 =
   $(input 15)
+    -- \$(grid 15)
     -- & parseWith parser
     -- & parseLinesWith line
-    -- & readGrid
     & (<> "Part 1")
 
 part2 :: Text
