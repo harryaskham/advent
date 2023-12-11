@@ -11,7 +11,7 @@ import Language.Haskell.TH
   ( Exp (AppE, ListE, LitE, TupE, VarE),
     Lit (IntegerL),
     Q,
-    mkName,
+    mkName
   )
 
 -- Build a function that runs all days, converts results to Text,

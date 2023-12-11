@@ -2,8 +2,6 @@ module Day5 (part1, part2) where
 
 import Data.List (minimum)
 import Data.List.Extra (chunksOf)
-import Helper.TH (input)
-import Helper.Util (eol, number, parseWith, toTuple2)
 import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec (Parser, char, eof, many1, noneOf, sepBy1, string)
 

@@ -3,8 +3,6 @@ module Day8 (part1, part2) where
 import Data.List (foldl1)
 import Data.Map.Strict qualified as M
 import Data.Set qualified as S
-import Helper.TH (input)
-import Helper.Util (eol, parseWith)
 import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec (Parser, alphaNum, count, eof, many1, oneOf, string)
 

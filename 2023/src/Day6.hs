@@ -1,8 +1,5 @@
 module Day6 (part1, part2) where
 
-import Data.Tuple.Extra (both)
-import Helper.TH (input)
-import Helper.Util (eol, number, parseWith, whitespace)
 import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec (Parser, eof, sepBy, string)
 

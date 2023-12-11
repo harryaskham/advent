@@ -1,7 +1,5 @@
 module Day11 (part1, part2) where
 
-import Adlude
-
 distanceSum :: Int -> Grid DotHash -> Int
 distanceSum sc g =
   let es cons (a, b) = mkSet [i | i <- [0 .. a], all (== Dot) [g |! cons i j | j <- [0 .. b]]]

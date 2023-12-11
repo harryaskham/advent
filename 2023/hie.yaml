@@ -87,24 +87,6 @@ cradle:
     - path: "app/Day666.hs"
       component: "x2023:exe:x2023"
 
-    - path: "app/Helper/Coord.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "app/Helper/Grid.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "app/Helper/Tracers.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "app/Helper/Util.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "app/Helper/Bits.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "app/Helper/TH.hs"
-      component: "x2023:exe:x2023"
-
     - path: "src/Day1.hs"
       component: "x2023:exe:x2023"
 
@@ -181,24 +163,6 @@ cradle:
       component: "x2023:exe:x2023"
 
     - path: "src/Day666.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "src/Helper/Coord.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "src/Helper/Grid.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "src/Helper/Tracers.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "src/Helper/Util.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "src/Helper/Bits.hs"
-      component: "x2023:exe:x2023"
-
-    - path: "src/Helper/TH.hs"
       component: "x2023:exe:x2023"
 
     - path: "test"

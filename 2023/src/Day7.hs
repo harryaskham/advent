@@ -1,8 +1,6 @@
 module Day7 (part1, part2) where
 
 import Data.Map.Strict qualified as M
-import Helper.TH (input)
-import Helper.Util (countMap, eol, number, parseWith, swapMapCollect, (<$$>))
 import Text.ParserCombinators.Parsec (Parser, count, eof, many1, oneOf, string)
 
 data Card = C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | CT | CJ | CQ | CK | CA deriving (Eq, Ord, Bounded, Enum)

@@ -5,9 +5,6 @@ import Data.Bimap qualified as BM
 import Data.Char (digitToInt, intToDigit)
 import Data.List (foldl1', nub)
 import Data.Map.Strict qualified as M
-import Helper.Coord (Coord2, neighbors)
-import Helper.Grid (Grid, GridCell (charMap), maxXY, readGrid)
-import Helper.TH (input)
 import Relude.Unsafe qualified as U
 
 data Cell

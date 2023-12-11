@@ -4,10 +4,6 @@ import Data.Bimap qualified as BM
 import Data.Map.Strict qualified as M
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Helper.Coord (Coord2, neighborsNoDiags)
-import Helper.Grid (Grid, GridCell (charMap), findOne, readGrid)
-import Helper.TH (input)
-import Helper.Util (both)
 
 data Cell = None | Start | PipeVertical | PipeHorizontal | PipeF | Pipe7 | PipeL | PipeJ deriving (Eq, Ord, Show)
 

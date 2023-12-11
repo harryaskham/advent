@@ -75,9 +75,6 @@ type MParser a = Parsec Void String a
 parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a
 parserM p t = unjust $ parseMaybe p t
 
-digit :: MParser Int
-digit = U.read . pure <$> digitChar
-
 -- Typeclass helpers / functional helpers
 
 infixl 5 <$$>

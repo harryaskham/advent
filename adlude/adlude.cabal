@@ -102,3 +102,10 @@ library
     import:             common-settings
     hs-source-dirs:     src
     exposed-modules:    Adlude
+    other-modules:      Helper.TH
+                        Helper.Bits
+                        Helper.Collection
+                        Helper.Grid
+                        Helper.Coord
+                        Helper.Tracers
+                        Helper.Util

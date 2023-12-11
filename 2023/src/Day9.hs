@@ -1,8 +1,6 @@
 module Day9 (part1, part2) where
 
 import Data.List (foldr1)
-import Helper.TH (input)
-import Helper.Util (eol, number, parseWith)
 import Relude.Unsafe qualified as U
 import Text.ParserCombinators.Parsec (Parser, eof, many1, sepBy, string)
 

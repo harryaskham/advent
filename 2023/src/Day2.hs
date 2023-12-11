@@ -1,7 +1,5 @@
 module Day2 (part1, part2) where
 
-import Helper.TH (input)
-import Helper.Util (eol, number, parseWith)
 import Text.ParserCombinators.Parsec
   ( Parser,
     choice,

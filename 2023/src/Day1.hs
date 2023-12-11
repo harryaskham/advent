@@ -1,13 +1,11 @@
 module Day1 (part1, part2) where
 
 import Data.Text qualified as T
-import Helper.TH (input)
-import Helper.Util (MParser, digit, parserM)
 import Relude.Unsafe qualified as U
 import Replace.Megaparsec (sepCap)
 import Text.Megaparsec (MonadParsec (try), choice, (<|>))
-import Text.Megaparsec.Char (string)
-import Prelude hiding (many, optional, (<|>))
+import Text.Megaparsec.Char (digitChar, string)
+import Prelude hiding (choice, digit, many, optional, string, try, (<|>))
 
 numbers :: [String]
 numbers =
@@ -21,6 +19,9 @@ numbers =
     "eight",
     "nine"
   ]
+
+digit :: MParser Int
+digit = U.read . pure <$> digitChar
 
 word :: (String -> String) -> MParser Int
 word f =

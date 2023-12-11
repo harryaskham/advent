@@ -28,7 +28,7 @@ mkMap = M.fromList
 adjust :: (Ord k) => (v -> v) -> k -> Map k v -> Map k v
 adjust = M.adjust
 
-mkBimap :: (Ord a, Ord b) => [(a, b)] -> Bimap a b
+mkBimap :: (Ord a, Ord b) => [(a, b)] -> BM.Bimap a b
 mkBimap = BM.fromList
 
 mkSeq :: [a] -> Seq a
