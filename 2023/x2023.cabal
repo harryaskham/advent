@@ -8,6 +8,7 @@ extra-source-files: input/*
 
 common common-settings
     build-depends:      base,
+                        base-unicode-symbols,
                         relude,
                         pqueue,
                         parsec,
