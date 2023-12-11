@@ -243,6 +243,9 @@ pairs [] = []
 pairs [_] = []
 pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
+triPairs :: [a] -> [(a, a)]
+triPairs as = [(a, b) | (i, a) <- zip [1 ..] as, b <- drop i as]
+
 -- Early terminating search for n items in a thing
 nSameIn :: (Ord a) => Int -> [a] -> Maybe a
 nSameIn n = go M.empty
