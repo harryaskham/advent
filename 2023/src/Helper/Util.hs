@@ -293,3 +293,9 @@ type Nat10 = 'S Nat9
 unjust :: Maybe a -> a
 unjust (Just a) = a
 unjust Nothing = error "unjust Nothing"
+
+-- Tuple helpers
+
+-- rangeFromTo not caring about ordering
+range :: (Ord a, Enum a) => a -> a -> [a]
+range a b = [min a b .. max a b]
