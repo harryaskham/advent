@@ -8,7 +8,6 @@ import Helper.Coord (Coord2, neighborsNoDiags)
 import Helper.Grid (Grid, GridCell (charMap), findOne, readGrid)
 import Helper.TH (input)
 import Helper.Util (both)
-import Relude.Unsafe qualified as U
 
 data Cell = None | Start | PipeVertical | PipeHorizontal | PipeF | Pipe7 | PipeL | PipeJ deriving (Eq, Ord, Show)
 
