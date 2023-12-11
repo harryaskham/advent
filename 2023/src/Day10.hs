@@ -58,15 +58,11 @@ enclosed g path outside =
    in goAll (∅) (∅) [c | c <- keys g, c ∉ path]
 
 part1 :: Int
-part1 =
-  $(input 10)
-    & readGrid
-    & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (`div` 2))
+part1 = $(grid 10) & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (`div` 2))
 
 part2 :: Int
 part2 =
-  $(input 10)
-    & readGrid
+  $(grid 10)
     & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first mkSet)))
     & uncurry both
     & both (bool id (const (∅)) . ((0, 0) ∈) &&& id >>> uncurry ($))
