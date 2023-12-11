@@ -11,9 +11,9 @@ import Prelude hiding (find)
 distanceSum :: Int -> Grid DotHash -> Int
 distanceSum sc g =
   let es cons (a, b) = S.fromList [i | i <- [0 .. a], all (== Dot) [g M.! cons i j | j <- [0 .. b]]]
-      d (ai, bi) es = sum [o | i <- range ai bi, let o = bool sc 1 (i `S.member` es)]
-      distance (ax, ay) (bx, by) = d (ax, bx) (es (,) (maxXY g)) + d (ay, by) (es (flip (,)) (swap (maxXY g))) - 2
-   in sum [distance a b | (i, a) <- zip [1 ..] (find Hash g), b <- drop i (find Hash g)]
+      di (ai, bi) es = sum [bool 1 sc (i `S.member` es) | i <- range ai bi]
+      d (ax, ay) (bx, by) = di (ax, bx) (es (,) (maxXY g)) + di (ay, by) (es (flip (,)) (swap (maxXY g))) - 2
+   in sum [d a b | (i, a) <- zip [1 ..] (find Hash g), b <- drop i (find Hash g)]
 
 part1 :: Int
 part1 = $(input 11) & readGrid & distanceSum 2
