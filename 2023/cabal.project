@@ -1,0 +1,3 @@
+packages:
+  ./x2023.cabal
+  ../adlude
