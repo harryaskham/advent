@@ -6,7 +6,6 @@ maintainer:         harryaskham@gmail.com
 
 common common-settings
     build-depends:      base,
-                        base-unicode-symbols,
                         relude,
                         pqueue,
                         parsec,
@@ -15,6 +14,7 @@ common common-settings
                         vector,
                         array,
                         extra,
+                        split,
                         text,
                         containers,
                         unordered-containers,

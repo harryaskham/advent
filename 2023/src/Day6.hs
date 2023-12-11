@@ -1,15 +1,12 @@
 module Day6 (part1, part2) where
 
-import Relude.Unsafe qualified as U
-import Text.ParserCombinators.Parsec (Parser, eof, sepBy, string)
-
 asMany :: Parser [(Double, Double)]
 asMany = do
   let l s = (string (s <> ":") >> whitespace) *> (number `sepBy` whitespace)
   zip <$> (l "Time" <* eol) <*> (l "Distance" <* eof)
 
 asOne :: Parser (Double, Double)
-asOne = asMany <&> (unzip >>> both (fmap (round >>> show) >>> mconcat >>> U.read))
+asOne = asMany <&> (unzip >>> both (fmap (round >>> show) >>> mconcat >>> uread))
 
 ways :: (Double, Double) -> Int
 ways (t, d) =

@@ -1,10 +1,5 @@
 module Day4 (part1, part2) where
 
-import Data.List (intersect)
-import Data.Map.Strict qualified as M
-import Text.ParserCombinators.Parsec (Parser, eof, many, many1, sepBy1, string)
-import Prelude hiding (many)
-
 parser :: Parser [(Int, [Int], [Int])]
 parser = many1 (line <* eol) <* eof
   where
@@ -19,7 +14,7 @@ part1 :: Int
 part1 =
   $(input 4)
     & parseWith parser
-    & fmap (\(_, as, bs) -> 2 ^ length (as `intersect` bs) `div` 2)
+    & fmap (\(_, as, bs) -> 2 ^ setSize (mkSet as ∩ mkSet bs) `div` 2)
     & sum
 
 part2 :: Int
@@ -29,13 +24,13 @@ part2 =
     & ( \cards ->
           foldl'
             ( \m (i, as, bs) ->
-                let n = length (as `intersect` bs)
-                    c = fromMaybe 0 $ M.lookup i m
-                 in foldl' (flip (M.adjust (+ c))) m [i + 1 .. i + n]
+                let n = setSize (mkSet as ∩ mkSet bs)
+                    c = fromMaybe 0 $ m |? i
+                 in foldl' (flip (adjust (+ c))) m [i + 1 .. i + n]
             )
-            (M.fromList [(i, 1) | (i, _, _) <- cards])
+            (mkMap [(i, 1) | (i, _, _) <- cards])
             cards
       )
-    & M.toList
+    & unMap
     & fmap snd
     & sum

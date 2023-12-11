@@ -19,11 +19,6 @@ class (Ord a) => GridCell a where
   toChar :: a -> Char
   toChar a = charMap BM.! a
 
-data SimpleWall = Empty | Wall deriving (Eq, Ord, Bounded, Show)
-
-instance GridCell SimpleWall where
-  charMap = BM.fromList [(Empty, ' '), (Wall, '#')]
-
 data DotHash = Dot | Hash deriving (Eq, Ord, Bounded, Show)
 
 instance GridCell DotHash where

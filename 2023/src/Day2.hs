@@ -1,13 +1,5 @@
 module Day2 (part1, part2) where
 
-import Text.ParserCombinators.Parsec
-  ( Parser,
-    choice,
-    eof,
-    sepBy1,
-    string,
-  )
-
 data Color = Red Int | Blue Int | Green Int
 
 data Game = Game {index :: Int, cubes :: [[Color]]}

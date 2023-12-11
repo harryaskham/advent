@@ -1,10 +1,5 @@
 module Day5 (part1, part2) where
 
-import Data.List (minimum)
-import Data.List.Extra (chunksOf)
-import Relude.Unsafe qualified as U
-import Text.ParserCombinators.Parsec (Parser, char, eof, many1, noneOf, sepBy1, string)
-
 parser :: Parser ([Integer], [Integer], [(Integer -> Integer, Integer -> Integer)])
 parser = do
   seeds <- string "seeds: " *> (number `sepBy1` string " ") <* (eol >> eol)

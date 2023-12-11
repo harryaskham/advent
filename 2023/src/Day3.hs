@@ -1,21 +1,10 @@
 module Day3 (part1, part2) where
 
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Char (digitToInt, intToDigit)
-import Data.List (foldl1', nub)
-import Data.Map.Strict qualified as M
-import Relude.Unsafe qualified as U
-
-data Cell
-  = None
-  | Digit Char
-  | Mark Char
-  deriving (Eq, Ord, Show)
+data Cell = None | Digit Char | Mark Char deriving (Eq, Ord, Show)
 
 instance GridCell Cell where
   charMap =
-    BM.fromList $
+    mkBimap $
       [(None, '.')]
         <> [(Digit i, i) | i <- ['0' .. '9']]
         <> [(Mark c, c) | c <- "!@#$%^&*()-=/+"]
@@ -28,14 +17,14 @@ getNumbers g = go 0 0 "" []
       | y > maxY = []
       | x > maxX =
           case (currentNum, currentCoords) of
-            (s@(_ : _), cs@(_ : _)) -> (U.read s, nub cs) : go 0 (y + 1) "" []
+            (s@(_ : _), cs@(_ : _)) -> (uread s, nub cs) : go 0 (y + 1) "" []
             _ -> go 0 (y + 1) "" []
       | otherwise =
-          case g M.! (x, y) of
+          case g |! (x, y) of
             Digit c -> go (x + 1) y (currentNum <> [c]) (currentCoords <> neighbors (x, y))
             _ ->
               case (currentNum, currentCoords) of
-                (s@(_ : _), cs@(_ : _)) -> (U.read s, nub cs) : go (x + 1) y "" []
+                (s@(_ : _), cs@(_ : _)) -> (uread s, nub cs) : go (x + 1) y "" []
                 _ -> go (x + 1) y "" []
 
 isMark :: Cell -> Bool
@@ -48,7 +37,7 @@ part1 =
     & readGrid
     & ( \g ->
           getNumbers g
-            & filter (\(_, cs) -> any isMark $ catMaybes [M.lookup c g | c <- cs])
+            & filter (\(_, cs) -> any isMark $ catMaybes [g |? c | c <- cs])
       )
     & fmap fst
     & sum
@@ -59,11 +48,11 @@ part2 =
     & readGrid
     & ( \g ->
           getNumbers g
-            & fmap (\(n, cs) -> M.fromList [(c, [n]) | c <- cs, let a = M.lookup c g, a == Just (Mark '*')])
+            & fmap (\(n, cs) -> mkMap [(c, [n]) | c <- cs, let a = g |? c, a == Just (Mark '*')])
       )
-    & foldl1' (M.unionWith (<>))
-    & M.filter ((== 2) . length)
+    & foldl1' (unionWith (<>))
+    & mapFilter ((== 2) . length)
     & fmap product
-    & M.toList
+    & unMap
     & fmap snd
     & sum

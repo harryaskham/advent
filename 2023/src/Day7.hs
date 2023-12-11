@@ -1,8 +1,5 @@
 module Day7 (part1, part2) where
 
-import Data.Map.Strict qualified as M
-import Text.ParserCombinators.Parsec (Parser, count, eof, many1, oneOf, string)
-
 data Card = C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | CT | CJ | CQ | CK | CA deriving (Eq, Ord, Bounded, Enum)
 
 charToCard :: Char -> Card
@@ -45,12 +42,12 @@ class HasHand a where
 
 instance HasHand HandBid where
   getHand (HandBid cards _)
-    | isJust $ M.lookup 5 reverseCounts = Five
-    | isJust $ M.lookup 4 reverseCounts = Four
-    | isJust (M.lookup 3 reverseCounts) && isJust (M.lookup 2 reverseCounts) = FullHouse
-    | isJust $ M.lookup 3 reverseCounts = Three
-    | isJust $ M.lookup 2 reverseCounts =
-        case reverseCounts M.! 2 of
+    | isJust $ reverseCounts |? 5 = Five
+    | isJust $ reverseCounts |? 4 = Four
+    | isJust (reverseCounts |? 3) && isJust (reverseCounts |? 2) = FullHouse
+    | isJust $ reverseCounts |? 3 = Three
+    | isJust $ reverseCounts |? 2 =
+        case reverseCounts |! 2 of
           [_] -> Pair
           [_, _] -> TwoPair
     | otherwise = High
@@ -59,24 +56,24 @@ instance HasHand HandBid where
 
 instance HasHand JHand where
   getHand (JHand (HandBid cards _))
-    | isJust $ M.lookup 5 reverseCounts = Five
-    | isJust $ M.lookup 4 reverseCounts =
+    | isJust $ reverseCounts |? 5 = Five
+    | isJust $ reverseCounts |? 4 =
         case nj of
           4 -> Five
           1 -> Five
           _ -> Four
-    | isJust (M.lookup 3 reverseCounts) && isJust (M.lookup 2 reverseCounts) =
+    | isJust (reverseCounts |? 3) && isJust (reverseCounts |? 2) =
         case nj of
           3 -> Five
           2 -> Five
           _ -> FullHouse
-    | isJust $ M.lookup 3 reverseCounts =
+    | isJust $ reverseCounts |? 3 =
         case nj of
           3 -> Four
           1 -> Four
           _ -> Three
-    | isJust $ M.lookup 2 reverseCounts =
-        case reverseCounts M.! 2 of
+    | isJust $ reverseCounts |? 2 =
+        case reverseCounts |! 2 of
           [_] -> case nj of
             2 -> Three
             1 -> Three
@@ -92,7 +89,7 @@ instance HasHand JHand where
     where
       counts = countMap cards
       reverseCounts = swapMapCollect counts
-      nj = fromMaybe 0 $ M.lookup CJ counts
+      nj = fromMaybe 0 $ counts |? CJ
 
 class HasBid a where
   getBid :: a -> Int
