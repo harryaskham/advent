@@ -9,4 +9,5 @@ import Helper.Collection as X
 import Helper.Grid as X
 import Helper.TH as X
 import Helper.Tracers as X
-import Helper.Util as X
+import Helper.Util as X hiding (count, digit)
+import Text.ParserCombinators.Parsec as X

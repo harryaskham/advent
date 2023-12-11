@@ -1,23 +1,6 @@
 module Day21 (part1, part2) where
 
-import Data.Array qualified as A
-import Data.Bimap (Bimap)
-import Data.Bimap qualified as BM
-import Data.Map.Strict qualified as M
-import Data.Mod
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Text.Read
-import Data.Vector qualified as V
-import Helper.Coord
-import Helper.Grid
-import Helper.TH
-import Helper.Tracers
-import Helper.Util
-import Relude.Unsafe qualified as U
-import Text.ParserCombinators.Parsec
+import Adlude
 
 -- parser :: Parser [Int]
 -- parser = many1 (number <* eol) <* eof
@@ -32,7 +15,7 @@ import Text.ParserCombinators.Parsec
 
 -- instance GridCell Cell where
 --   charMap =
---     BM.fromList
+--     mkBimap
 --       [ (Empty, ' '),
 --         (Wall, '#')
 --       ]
@@ -40,10 +23,8 @@ import Text.ParserCombinators.Parsec
 part1 :: Text
 part1 =
   $(input 21)
-    -- & readAs (signed decimal)
     -- & parseWith parser
     -- & parseLinesWith line
-    -- & lines
     -- & readGrid
     & (<> "Part 1")
 
