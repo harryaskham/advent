@@ -19,4 +19,4 @@ import Data.Sequence (Seq(..))
 import Data.Distributive as X
 
 treverse :: (Traversable t, Monad f) => (t a -> b) -> t (f a) -> f b
-treverse f = fmap f . sequence xs
+treverse f = fmap f . sequence
