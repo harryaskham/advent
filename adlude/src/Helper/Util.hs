@@ -88,6 +88,9 @@ both f = bimap f f
 same :: (Eq a) => (a, a) -> Bool
 same = uncurry (==)
 
+treverse :: (Traversable t, Monad f) => (t a -> b) -> t (f a) -> f b
+treverse f = fmap f . sequence
+
 iterateFix :: (Eq a) => (a -> a) -> a -> a
 iterateFix f a
   | a == a' = a
