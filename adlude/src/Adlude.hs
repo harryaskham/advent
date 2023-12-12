@@ -1,6 +1,7 @@
 module Adlude
   ( module X,
-    Seq(..)
+    Seq(..),
+    treverse
   )
 where
 
@@ -15,3 +16,7 @@ import Helper.Tracers as X
 import Helper.Util as X hiding (count)
 import Text.ParserCombinators.Parsec as X hiding (State)
 import Data.Sequence (Seq(..))
+import Data.Distributive as X
+
+treverse :: (Traversable t, Monad f) => (t a -> b) -> t (f a) -> f b
+treverse f = fmap f . sequence xs
