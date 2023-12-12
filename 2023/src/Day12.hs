@@ -1,31 +1,24 @@
 module Day12 (part1, part2) where
 
-data Spring = NoSpring | Spring | Unknown deriving (Show, Eq, Ord)
+line :: Parser (String, [Int])
+line = (,) <$> (many1 (oneOf ".#?") <* string " ") <*> (number `sepBy` string ",")
 
-mkSpring :: Char -> Spring
-mkSpring '.' = NoSpring
-mkSpring '#' = Spring
-mkSpring '?' = Unknown
-
-line :: Parser ([Spring], [Int])
-line = (,) <$> ((mkSpring <$$> (many1 (oneOf ".#?"))) <* string " ") <*> (number `sepBy` string ",")
-
-ways :: ([Spring], [Int]) -> Memo ([Spring], [Int]) Int Int
-ways (ss, []) = return (bool 0 1 (all (∈ mkSet [NoSpring, Unknown]) ss))
+ways :: (String, [Int]) -> Memo (String, [Int]) Int Int
+ways (ss, []) = return (bool 0 1 (all (∈ mkSet ".?") ss))
 ways (ss, (c : cs)) =
   treverse
     sum
     [ memo ways ((drop (c + i) ss), cs)
-      | i <- [1 .. length ss - c],
-        Spring ∉ mkSet (take i ss),
-        NoSpring ∉ mkSet (take c (drop i ss))
+      | i <- [1 . length ss - c],
+        '#' ∉ mkSet (take i ss),
+        '.' ∉ mkSet (take c (drop i ss))
     ]
 
-solve :: (([Spring], [Int]) -> ([Spring], [Int])) -> Int
-solve f = $(input 12) & parseLinesWith line & fmap (f >>> first (NoSpring :) >>> ways >>> startEvalMemo) & sum
+solve :: ((String, [Int]) -> (String, [Int])) -> Int
+solve f = $(input 12) & parseLinesWith line & fmap (f >>> first ('.' :) >>> ways >>> startEvalMemo) & sum
 
 part1 :: Int
 part1 = solve id
 
 part2 :: Int
-part2 = solve (bimap (intercalate [Unknown] . replicate 5) (mconcat . replicate 5))
+part2 = solve (bimap (intercalate "?" . replicate 5) (mconcat . replicate 5))
