@@ -9,7 +9,7 @@ parser = do
     rangeLine = do
       (dest, source) <- let n = (number <* char ' ') in (,) <$> n <*> n
       rangeSize <- number <* eol
-      return $
+      return
         ( toTuple2 $
             [(source, dest), (dest, source)]
               <&> ( \(a, b) x ->
