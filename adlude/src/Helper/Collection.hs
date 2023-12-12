@@ -150,6 +150,9 @@ mkSeq = SQ.fromList
 unSeq :: Seq a -> [a]
 unSeq = F.toList
 
+emptySeq :: Seq a
+emptySeq = SQ.empty
+
 (<|) :: a -> Seq a -> Seq a
 (<|) = (SQ.<|)
 

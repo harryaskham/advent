@@ -26,7 +26,6 @@ import Day6 qualified
 import Day7 qualified
 import Day8 qualified
 import Day9 qualified
-import Helper.TH (runAllDays)
 import Test.BenchPress (benchMany)
 
 main :: IO ()

@@ -4,6 +4,7 @@ module Adlude
   )
 where
 
+import Control.Monad.Memo as X hiding (isNothing)
 import Relude as X hiding (optional, many, (<|>))
 import Helper.Bits as X
 import Helper.Collection as X
