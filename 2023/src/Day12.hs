@@ -59,11 +59,20 @@ part1' =
     & fmap length
     & sum
 
-part1 :: Int
-part1 =
+part1'' :: Int
+part1'' =
   $(input 12)
     & parseLinesWith line
     & fmap (uncurry choices)
+    & sum
+
+part1 =
+  $(input 12)
+    & parseLinesWith line
+    -- & parseLinesWith pline
+    & fmap (first (NoSpring :))
+    & fmap (uncurry ways)
+    -- & fmap (uncurry choices)
     & sum
 
 pline :: Parser [[Spring]]
@@ -112,7 +121,7 @@ part2' =
     & sum
 
 choices :: [Spring] -> [Int] -> Int
-choices ss ns = startEvalMemo (goM (NoSpring : ss, ns))
+choices ss ns = traceShowId $ traceShow (ss, ns) $ startEvalMemo (goM (NoSpring : ss, ns))
   where
     log s a = a -- traceShow s a
     goM = memo (uncurry go)
@@ -135,10 +144,11 @@ choices ss ns = startEvalMemo (goM (NoSpring : ss, ns))
     -- go (NoSpring : Spring : ss) (n : ns) = goM (Spring : ss, n : ns)
     go (NoSpring : Spring : ss) (n : ns) = goS (Spring : ss) (n : ns)
     go (NoSpring : Unknown : ss) (n : ns) = (+) <$> goM ((NoSpring : ss), (n : ns)) <*> goS (Spring : ss) (n : ns)
-    go (Unknown : ss) ns = (+) <$> goM ((NoSpring : ss), ns) <*> goS (Spring : ss) ns
+    go (Unknown : Spring : ss) ns = goS (Spring : ss) ns
+    go (Unknown : Unknown : ss) ns = (+) <$> goM ((NoSpring : ss), ns) <*> goS (Spring : ss) ns
+    go (Unknown : NoSpring : ss) ns = goM ((NoSpring : ss), ns)
     go ss ns = log ("M", ss, ns) $ return 0
     goS [] [] = return 1
-    -- goS [] [0] = return 1
     goS [] ns = log ("S", ns) $ return 0
     goS ss@(Spring : _) [] = log ("S", ss) $ return 0
     goS [Spring] [1] = return 1
@@ -151,6 +161,24 @@ choices ss ns = startEvalMemo (goM (NoSpring : ss, ns))
     goS (Spring : Unknown : ss) (n : ns) = goS (Spring : Spring : ss) (n : ns)
     goS ss ns = log ("S", ss, ns) $ return 0
 
+ways :: [Spring] -> [Int] -> Int
+ways ss ns = startEvalMemo $ waysM (ss, ns)
+  where
+    waysM (ss, [])
+      | all (∈ mkSet [NoSpring, Unknown]) ss = return 1
+      | otherwise = return 0
+    waysM ((Spring : _), _) = return 0
+    waysM (ss, css@(c : cs))
+      | length ss < sum css + length css = return 0
+      | otherwise =
+          sum
+            <$> sequence
+              [ memo waysM ((drop (c + i) ss), cs)
+                | i <- [1 .. length ss - c],
+                  Spring ∉ mkSet (take i ss),
+                  NoSpring ∉ mkSet (take c (drop i ss))
+              ]
+
 matching :: [Spring] -> [Spring] -> Bool
 matching [] [] = True
 matching (Unknown : ss) (_ : ps) = matching ss ps
@@ -158,11 +186,13 @@ matching (s : ss) (p : ps) = s == p && matching ss ps
 
 -- 1577845680756 too hgih
 part2 =
-  $(exampleInput 12)
+  $(input 12)
     & parseLinesWith line
     -- & parseLinesWith pline
     & fmap unfold
-    & fmap (uncurry choices)
+    & fmap (first (NoSpring :))
+    & fmap (traceShowId . uncurry ways)
+    -- & fmap (uncurry choices)
     & sum
 
 -- & drop 1
