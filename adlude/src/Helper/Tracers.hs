@@ -13,11 +13,13 @@ pauseId a = unsafePerformIO $ do
 traceStrLn :: String -> a -> a
 traceStrLn s a = unsafePerformIO $ do
   putStrLn s
+  putStrLn ""
   return a
 
 traceTextLn :: Text -> a -> a
 traceTextLn s a = unsafePerformIO $ do
   putTextLn s
+  putTextLn ""
   return a
 
 traceWhen :: Bool -> (a -> a) -> a -> a

@@ -8,6 +8,7 @@ import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Helper.Util (Nat10, both)
+import Helper.Tracers
 import Relude.Unsafe qualified as U
 
 -- To create a Cell, just supply a Bimap between char and cell
@@ -78,25 +79,48 @@ minXY :: M.Map (Int, Int) a -> (Int, Int)
 minXY m = (minimum $ fst <$> M.keys m, minimum $ snd <$> M.keys m)
 
 modifyCoords :: ((Int, Int) -> (Int, Int)) -> Grid a -> Grid a
-modifyCoords f grid = M.mapKeys (fromOrigin . f . toOrigin) grid
+modifyCoords f grid = fromOrigin $ M.mapKeys (f . toOrigin) grid
   where
     (maxX, maxY) = maxXY grid
     xO = (maxX + 1) `div` 2
     yO = (maxY + 1) `div` 2
     toOrigin (x, y) = (x - xO, y - yO)
-    fromOrigin (x, y) = (x + xO, y + yO)
+    --fromOrigin m = let (xO', yO') = both negate (minXY m) in traceShowF M.keys $ M.mapKeys (\(x,y) -> (x + xO', y + yO')) (traceShowF M.keys m)
+    fromOrigin m = let (xO', yO') = both negate (minXY m) in M.mapKeys (\(x,y) -> (x + xO', y + yO')) m
 
-variants :: (Eq a) => Grid a -> [Grid a]
-variants grid = nub $ modifyCoords <$> mods <*> pure grid
+variantsNub :: (Eq a) => Grid a -> [Grid a]
+variantsNub g = nub (variants' g)
+
+variants' :: Grid a -> [Grid a]
+variants' grid = modifyCoords <$> mods <*> pure grid
   where
     (maxX, _) = maxXY grid
     isEven = even (maxX + 1)
-    flipH (x, y) = (if isEven then negate x - 1 else negate x, y)
-    flipV (x, y) = (x, if isEven then negate y - 1 else negate y)
+    flipV (x, y) = (if isEven then negate x - 1 else negate x, y)
+    flipH (x, y) = (x, if isEven then negate y - 1 else negate y)
     rot90 (x, y) = (y, if isEven then negate x - 1 else negate x)
     rot180 = rot90 . rot90
     rot270 = rot90 . rot90 . rot90
     mods = (.) <$> [id, flipH, flipV] <*> [id, rot90, rot180, rot270]
+
+data Variants a = Variants
+  { vId :: Grid a,
+    r90 :: Grid a,
+    r180 :: Grid a,
+    r270 :: Grid a,
+    h0 :: Grid a,
+    h90 :: Grid a,
+    h180 :: Grid a,
+    h270 :: Grid a,
+    v0 :: Grid a,
+    v90 :: Grid a,
+    v180 :: Grid a,
+    v270 :: Grid a
+  }
+
+variants :: Grid a -> Variants a
+variants grid = let [a,b,c,d,e,f,g,h,i,j,k,l] = variants' grid
+              in Variants a b c d e f g h i j k l
 
 splitGrid :: Int -> Int -> Grid a -> M.Map (Int, Int) (Grid a)
 splitGrid xStride yStride grid =

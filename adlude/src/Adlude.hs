@@ -4,6 +4,9 @@ module Adlude
   )
 where
 
+import Data.Either as   X
+import Data.Map.Strict as X hiding (split,filter,foldr,map,foldl',empty,null,toList,take,drop,lookup,splitAt,mapMaybe,fromList)
+import System.IO.Unsafe as X
 import Control.Monad.Memo as X hiding (isNothing)
 import Relude as X hiding (optional, many, (<|>))
 import Helper.Bits as X

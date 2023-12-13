@@ -120,17 +120,14 @@ unMap = M.toList
 mkMapWith :: (Ord k) => (v -> v -> v) -> [(k, v)] -> Map k v
 mkMapWith = M.fromListWith
 
-unionWith :: (Ord k) => (v -> v -> v) -> Map k v -> Map k v -> Map k v
-unionWith = M.unionWith
-
 mapFilter :: (Ord k) => (v -> Bool) -> Map k v -> Map k v
 mapFilter = M.filter
 
 mapSize :: (Ord k) => Map k v -> Int
 mapSize = M.size
 
-keys :: (Ord k) => Map k v -> [k]
-keys = M.keys
+mapSplit :: (Ord k) => k -> Map k v -> (Map k v, Map k v)
+mapSplit = M.split
 
 (|!) :: (Ord k) => Map k v -> k -> v
 (|!) = (M.!)
@@ -138,11 +135,9 @@ keys = M.keys
 (|?) :: (Ord k) => Map k v -> k -> Maybe v
 (|?) = flip M.lookup
 
-adjust :: (Ord k) => (v -> v) -> k -> Map k v -> Map k v
-adjust = M.adjust
-
 mkBimap :: (Ord a, Ord b) => [(a, b)] -> BM.Bimap a b
 mkBimap = BM.fromList
+
 
 mkSeq :: [a] -> Seq a
 mkSeq = SQ.fromList
