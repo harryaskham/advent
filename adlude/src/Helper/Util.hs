@@ -126,6 +126,11 @@ toTuple4 :: [a] -> (a, a, a, a)
 toTuple4 [a, b, c, d] = (a, b, c, d)
 toTuple4 xs = error $ show (length xs) <> "elements in toTuple4"
 
+sortT2On :: (Ord b) => (a -> b) -> (a, a) -> (a, a)
+sortT2On f (a,b)
+  | f a <= f b = (a,b)
+  | otherwise = (b,a)
+
 toList3 :: (a, a, a) -> [a]
 toList3 (a, b, c) = [a, b, c]
 

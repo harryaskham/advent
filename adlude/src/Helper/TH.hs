@@ -1,8 +1,9 @@
 module Helper.TH where
 
+import Data.Text qualified as T
 import Data.FileEmbed (embedFile, makeRelativeToProject)
 import Helper.Tracers
-import Helper.Grid (readGrid)
+import Helper.Grid
 import Helper.Util
   ( exampleInputNPath,
     exampleInputPath,
@@ -40,6 +41,9 @@ input day = do
   path <- makeRelativeToProject (inputPath day)
   AppE (VarE 'decodeUtf8) <$> embedFile path
 
+inputS :: Int -> Q Exp
+inputS day = AppE (VarE 'T.unpack) <$> input day
+
 exampleInput :: Int -> Q Exp
 exampleInput day = do
   path <- makeRelativeToProject (exampleInputPath day)
@@ -52,3 +56,9 @@ exampleInputN day n = do
 
 grid :: Int -> Q Exp
 grid day = AppE (VarE 'readGrid) <$> input day
+
+gridsT :: GridCell a => T.Text -> [Grid a]
+gridsT = fmap readGrid . T.splitOn "\n\n"
+
+grids :: Int -> Q Exp
+grids day = AppE (VarE 'gridsT) <$> input day

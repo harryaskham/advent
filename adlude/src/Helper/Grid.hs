@@ -78,6 +78,12 @@ maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
 minXY :: M.Map (Int, Int) a -> (Int, Int)
 minXY m = (minimum $ fst <$> M.keys m, minimum $ snd <$> M.keys m)
 
+cropX :: Int -> Int -> Grid a -> Grid a
+cropX i j g =
+  let g' = M.filterWithKey (\(x, _) _ -> x >= i && x < j) g
+      xO = fst $ minXY g'
+    in M.mapKeys (first (subtract xO)) g'
+
 modifyCoords :: ((Int, Int) -> (Int, Int)) -> Grid a -> Grid a
 modifyCoords f grid = fromOrigin $ M.mapKeys (f . toOrigin) grid
   where
