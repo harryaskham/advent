@@ -57,6 +57,9 @@ turnCW DirLeft = DirUp
 turn180 :: Dir2 -> Dir2
 turn180 = turnCW . turnCW
 
+opposite :: Dir2 -> Dir2
+opposite = turn180
+
 turnCCW :: Dir2 -> Dir2
 turnCCW = turnCW . turnCW . turnCW
 
@@ -80,7 +83,7 @@ neighborsNoDiags (x, y) =
   [ (x + 1, y),
     (x - 1, y),
     (x, y + 1),
-    (x, y -1)
+    (x, y - 1)
   ]
 
 neighbors3 :: Coord3 -> [Coord3]
@@ -115,4 +118,4 @@ linePoints ((x1, y1), (x2, y2))
   | otherwise = [(x, y) | x <- [x1 .. x2], let y = y1 + (x - x1) * signum (y2 - y1)]
 
 wrap :: Int -> Int -> Coord2 -> Coord2
-wrap w h (x, y) = ((x `mod` w), (y `mod` h))
+wrap w h (x, y) = (x `mod` w, y `mod` h)

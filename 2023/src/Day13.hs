@@ -3,7 +3,7 @@ module Day13 (part1, part2) where
 reflects :: Grid DotHash -> [Either Int Int]
 reflects g' =
   [ f i
-    | (f, g) <- [(Left, g'), (Right, r90 (variants g'))],
+    | (f, g) <- [(Left, g'), (Right, r270 (variants g'))],
       let (maxX, _) = maxXY g,
       i <- [1 .. maxX],
       let w = min i (maxX - i + 1),

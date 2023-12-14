@@ -1,18 +1,17 @@
 module Day14 (part1, part2) where
 
-step :: CGrid -> CGrid
-step g =
-  let f g ((x, y), r) = case (r, g |? (x, y + 1)) of
-        ('#', _) -> g |. ((x, y), '#')
-        ('.', Just 'O') -> g |. ((x, y), 'O') |. ((x, y + 1), '.')
-        _ -> g
-   in foldl' f g (leftToRight g)
+step :: Dir2 -> CGrid -> CGrid
+step d g =
+  let f g c = let c' = move d (-1) c in bool g (g |. (c, 'O') |. (c', '.')) ((g |! c, g |? c') == ('.', Just 'O'))
+   in foldl' f g (iterCoords (opposite d) g)
 
 load :: CGrid -> Int
 load g = sum ((1 + (snd (maxXY g)) -) . snd <$> gridFind 'O' g)
 
 part1 :: Int
-part1 = load $ iterateFix step $(grid input 14)
+part1 = load $ iterateFix (step DirUp) $(grid input 14)
 
 part2 :: Int
-part2 = load $ iterate (iterateFix step >>> variants >>> r270) $(grid input 14) ... 4000000000
+part2 =
+  let oneCycle g = foldl' (\g d -> iterateFix (step d) g) g [DirUp, DirLeft, DirDown, DirRight]
+   in load $ iterate oneCycle $(grid input 14) ... 1000000000

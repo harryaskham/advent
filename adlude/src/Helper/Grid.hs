@@ -6,6 +6,7 @@ import Data.Fin (Fin)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Helper.Collection
+import Helper.Coord
 import Helper.Tracers
 import Helper.Util (Nat10, both)
 import Relude.Unsafe qualified as U
@@ -24,7 +25,7 @@ data DotHash = Dot | Hash deriving (Eq, Ord, Bounded, Show)
 instance GridCell Char where
   fromChar = id
   toChar = id
-  charMap = undefined
+  charMap = BM.empty
 
 type CGrid = Grid Char
 
@@ -78,8 +79,14 @@ toGrid rows =
 points :: [(Int, Int)] -> Grid a -> [a]
 points ps g = catMaybes $ M.lookup <$> ps <*> pure g
 
-leftToRight :: Grid a -> [((Int, Int), a)]
-leftToRight g = mconcat [[((x, y), g |! (x, y)) | x <- [0 .. mx]] | let (mx, my) = maxXY g, y <- [0 .. my]]
+iterGrid :: Dir2 -> Grid a -> [((Int, Int), a)]
+iterGrid DirDown g = mconcat [[((x, y), g |! (x, y)) | x <- [0 .. mx]] | let (mx, my) = maxXY g, y <- [0 .. my]]
+iterGrid DirLeft g = mconcat [[((x, y), g |! (x, y)) | y <- [my, my - 1 .. 0]] | let (mx, my) = maxXY g, x <- [0 .. mx]]
+iterGrid DirRight g = mconcat [[((x, y), g |! (x, y)) | y <- [0 .. my]] | let (mx, my) = maxXY g, x <- [0 .. mx]]
+iterGrid DirUp g = mconcat [[((x, y), g |! (x, y)) | x <- [mx, mx - 1 .. 0]] | let (mx, my) = maxXY g, y <- [my, my - 1 .. 0]]
+
+iterCoords :: Dir2 -> Grid a -> [(Int, Int)]
+iterCoords d g = fst <$> iterGrid d g
 
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
 maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
@@ -113,9 +120,9 @@ variants' grid = modifyCoords <$> mods <*> pure grid
     isEven = even (maxX + 1)
     flipV (x, y) = (if isEven then negate x - 1 else negate x, y)
     flipH (x, y) = (x, if isEven then negate y - 1 else negate y)
-    rot90 (x, y) = (y, if isEven then negate x - 1 else negate x)
-    rot180 = rot90 . rot90
-    rot270 = rot90 . rot90 . rot90
+    rot270 (x, y) = (y, if isEven then negate x - 1 else negate x)
+    rot180 = rot270 . rot270
+    rot90 = rot270 . rot270 . rot270
     mods = (.) <$> [id, flipH, flipV] <*> [id, rot90, rot180, rot270]
 
 data Variants a = Variants
