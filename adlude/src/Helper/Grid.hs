@@ -26,6 +26,8 @@ instance GridCell Char where
   toChar = id
   charMap = undefined
 
+type CGrid = Grid Char
+
 instance GridCell DotHash where
   charMap = BM.fromList [(Dot, '.'), (Hash, '#')]
 
