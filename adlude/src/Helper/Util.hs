@@ -103,14 +103,14 @@ iterateFix f a
   where
     a' = f a
 
-cycleGet :: (Ord a, Eq a) => Int -> [a] -> a
+cycleGet :: (Ord a) => Int -> [a] -> a
 cycleGet n as =
   let go i (a : as) seen at
         | a |∈ seen = let (s, l) = (seen |! a, i - seen |! a) in at |! (s + ((n - s) `mod` l))
         | otherwise = go (i + 1) as (seen |. (a, i)) (at |. (i, a))
    in go 0 as (mkMap []) (mkMap [])
 
-(...) :: (Ord a, Eq a) => [a] -> Int -> a
+(...) :: (Ord a) => [a] -> Int -> a
 (...) = flip cycleGet
 
 -- A symmetrical split
@@ -222,7 +222,7 @@ csvLine a = a `sepBy` char ',' <* (eol >> eof)
 -- Map helpers
 
 countMap :: (Ord a) => [a] -> M.Map a Int
-countMap xs = M.fromListWith (+) (zip xs (repeat 1))
+countMap xs = M.fromListWith (+) (map (,1) xs)
 
 adjustWithDefault :: (Ord k) => a -> (a -> a) -> k -> M.Map k a -> M.Map k a
 adjustWithDefault def f k m = case M.lookup k m of
