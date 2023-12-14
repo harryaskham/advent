@@ -21,6 +21,11 @@ class (Ord a) => GridCell a where
 
 data DotHash = Dot | Hash deriving (Eq, Ord, Bounded, Show)
 
+instance GridCell Char where
+  fromChar = id
+  toChar = id
+  charMap = undefined
+
 instance GridCell DotHash where
   charMap = BM.fromList [(Dot, '.'), (Hash, '#')]
 

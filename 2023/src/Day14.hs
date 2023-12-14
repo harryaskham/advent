@@ -1,28 +1,18 @@
 module Day14 (part1, part2) where
 
-data Cell = Square | Round | None deriving (Eq, Ord)
+step :: CGrid -> CGrid
+step g =
+  let f g ((x, y), r) = case (r, g |? (x, y + 1)) of
+        ('#', _) -> g |. ((x, y), '#')
+        ('.', Just 'O') -> g |. ((x, y), 'O') |. ((x, y + 1), '.')
+        _ -> g
+   in foldl' f g (leftToRight g)
 
-instance GridCell Cell where
-  charMap = mkBimap [(Square, '#'), (Round, 'O'), (None, '.')]
-
-moveOnce :: Grid Cell -> Grid Cell
-moveOnce g =
-  foldl'
-    ( \g (c, r) ->
-        let c' = move DirDown 1 c
-         in case (r, g |? c') of
-              (Square, _) -> g |. (c, Square)
-              (None, Just Round) -> g |. (c, Round) |. (c', None)
-              _ -> g
-    )
-    g
-    (leftToRight g)
-
-totalLoad :: Grid Cell -> Int
-totalLoad g = sum ((1 + (snd (maxXY g)) -) . snd <$> gridFind Round g)
+totalLoad :: CGrid -> Int
+totalLoad g = sum ((1 + (snd (maxXY g)) -) . snd <$> gridFind 'O' g)
 
 part1 :: Int
-part1 = totalLoad $ iterateFix moveOnce $(gridF input 14)
+part1 = totalLoad $ iterateFix step $(gridF input 14)
 
 part2 :: Int
-part2 = totalLoad $ iterate (iterateFix moveOnce >>> variants >>> r270) $(gridF input 14) ... 4000000000
+part2 = totalLoad $ iterate (iterateFix step >>> variants >>> r270) $(gridF input 14) ... 4000000000
