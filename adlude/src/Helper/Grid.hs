@@ -1,14 +1,18 @@
 module Helper.Grid where
 
+import Control.Monad.Memo.Vector (Vector)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Fin (Fin)
+import Data.List (groupBy)
+import Data.List.Extra (groupOn)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
+import Data.Vector qualified as V
 import Helper.Collection
 import Helper.Coord
 import Helper.Tracers
-import Helper.Util (Nat10, both)
+import Helper.Util (Nat10, both, (<$$>))
 import Relude.Unsafe qualified as U
 
 class Griddable g where
@@ -33,6 +37,7 @@ class Griddable g where
   maxXY :: (GridCell a) => g a -> Coord2
   minXY :: (GridCell a) => g a -> Coord2
   gridFind :: (GridCell a) => a -> g a -> [Coord2]
+  gridFind a g = [k | (k, v) <- unGrid g, v == a]
   gridFindOne :: (GridCell a) => a -> g a -> Coord2
   gridFindOne a g = U.head $ gridFind a g
   fromCoords :: (Foldable f, Bounded a, GridCell a) => a -> f Coord2 -> g a
@@ -44,9 +49,13 @@ class Griddable g where
   fillEmpty :: (Bounded a, GridCell a) => g a -> g a
   fillEmpty = fillDef minBound
   mapCoords :: (GridCell a) => (Coord2 -> Coord2) -> g a -> g a
+  mapCoords f g = mkGrid $ first f <$> unGrid g
   filterCoords :: (GridCell a) => (Coord2 -> Bool) -> g a -> g a
+  filterCoords f g = mkGrid $ filter (f . fst) (unGrid g)
   partitionCoords :: (GridCell a) => (Coord2 -> Bool) -> g a -> (g a, g a)
+  partitionCoords f g = let [a, b] = groupOn (f . fst) (unGrid g) in both mkGrid (a, b)
   gridMember :: (GridCell a) => Coord2 -> g a -> Bool
+  gridMember c g = isJust $ gridGetMaybe c g
   (||∈) :: (GridCell a) => Coord2 -> g a -> Bool
   a ||∈ g = gridMember a g
   (||∉) :: (GridCell a) => Coord2 -> g a -> Bool
@@ -63,11 +72,34 @@ instance Griddable Grid where
   gridModify f c (Grid g) = Grid $ M.adjust f c g
   maxXY (Grid g) = (maximum $ fst <$> M.keys g, maximum $ snd <$> M.keys g)
   minXY (Grid g) = (minimum $ fst <$> M.keys g, minimum $ snd <$> M.keys g)
-  gridFind a (Grid g) = [k | (k, v) <- M.toList g, v == a]
   mapCoords f (Grid g) = Grid $ M.mapKeys f g
   filterCoords f (Grid g) = Grid $ M.filterWithKey (\k _ -> f k) g
   partitionCoords f (Grid g) = both Grid $ M.partitionWithKey (\k _ -> f k) g
   gridMember c (Grid g) = M.member c g
+
+newtype VectorGrid a = VectorGrid (V.Vector (V.Vector a)) deriving (Eq, Ord, Show)
+
+instance Griddable VectorGrid where
+  mkGrid cs = VectorGrid . V.fromList $ V.fromList <$> (snd <$$> (fmap (sortOn (fst . fst)) . sortOn (snd . fst . uhead) . groupOn (snd . fst) $ cs))
+  unGrid g =
+    [ ((x, y), g ||! (x, y))
+      | let (x', y') = minXY g,
+        let (x'', y'') = maxXY g,
+        x <- [x' .. x''],
+        y <- [y' .. y'']
+    ]
+  gridGetMaybe (x, y) (VectorGrid g) = do
+    row <- g V.!? y
+    row V.!? x
+  gridGet (x, y) (VectorGrid g) = g V.! y V.! x
+  gridSet a (x, y) (VectorGrid g) =
+    let row = g V.! y
+     in VectorGrid $ g V.// [(y, row V.// [(x, a)])]
+  gridModify f (x, y) (VectorGrid g) =
+    let row = g V.! y
+     in VectorGrid $ g V.// [(y, row V.// [(x, f (row V.! x))])]
+  maxXY (VectorGrid g) = (V.length (g V.! 0) - 1, V.length g - 1)
+  minXY _ = (0, 0)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
@@ -84,8 +116,6 @@ instance GridCell Char where
   fromChar = id
   toChar = id
   charMap = BM.empty
-
-type CGrid = Grid Char
 
 instance GridCell DotHash where
   charMap = BM.fromList [(Dot, '.'), (Hash, '#')]
