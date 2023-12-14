@@ -85,6 +85,7 @@ instance Griddable Grid where
 newtype VectorGrid a = VectorGrid (V.Vector (V.Vector a)) deriving (Eq, Ord, Show)
 
 instance Griddable VectorGrid where
+  -- TODO: need to respect indices for rotation
   mkGrid cs = VectorGrid . V.fromList $ V.fromList <$> (snd <$$> (fmap (sortOn (fst . fst)) . sortOn (snd . fst . uhead) . groupOn (snd . fst) $ cs))
   unGrid g =
     [ ((x, y), g ||! (x, y))
@@ -103,19 +104,12 @@ instance Griddable VectorGrid where
   gridModify f (x, y) (VectorGrid g) =
     let row = g V.! y
      in VectorGrid $ g V.// [(y, row V.// [(x, f (row V.! x))])]
+
+  -- Need to modify this to support rotation
   maxXY (VectorGrid g) = (V.length (g V.! 0) - 1, V.length g - 1)
   minXY _ = (0, 0)
 
--- newtype STArrayGrid s a = STArrayGrid (ST s (STArray s Coord2 a))
-
--- mkArrayGrid :: (MArray a1 (a2 i e) (STArray s Coord2), MArray a2 e (a1 i)) => [(i, a2 i e)] -> STArrayGrid s (a1 i (a2 i e))
--- mkArrayGrid cs =
---   let bounds = (minimum (fst <$> cs), maximum (fst <$> cs))
---    in STArrayGrid . return $ foldlM (\a (c, v) -> writeArray a c v >> return a) (newArray_ bounds) cs
-
--- unArrayGrid :: STArrayGrid s a -> ST s [(Coord2, a)]
--- unArrayGrid (STArrayGrid g) = getAssocs =<< g
-
+-- Relly slow
 newtype ArrayGrid a = ArrayGrid (IO (IOArray Coord2 a))
 
 instance Griddable ArrayGrid where
@@ -125,9 +119,9 @@ instance Griddable ArrayGrid where
       forM_ cs (uncurry $ writeArray a)
       return a
   unGrid (ArrayGrid g) = unsafePerformIO $ getAssocs =<< g
-  gridGetMaybe c (ArrayGrid g)
-    | let (a, b) = unsafePerformIO (getBounds =<< g), c < a || c > b = Nothing
-    | otherwise = Just . unsafePerformIO $ flip readArray c =<< g
+  gridGetMaybe c@(x, y) (ArrayGrid g)
+    | let ((ax, ay), (bx, by)) = unsafePerformIO (getBounds =<< g), x < ax || y < ay || x > bx || y > by = Nothing
+    | otherwise = Just $ gridGet c (ArrayGrid g)
   gridGet c (ArrayGrid g) = unsafePerformIO $ flip readArray c =<< g
   gridSet a c (ArrayGrid g') = ArrayGrid do
     g <- g'
