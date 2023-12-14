@@ -135,9 +135,11 @@ mapSplit = M.split
 (|?) :: (Ord k) => Map k v -> k -> Maybe v
 (|?) = flip M.lookup
 
+(|.) :: (Ord k) => Map k v -> (k,v) -> Map k v
+m |. (k,v) = M.insert k v m
+
 mkBimap :: (Ord a, Ord b) => [(a, b)] -> BM.Bimap a b
 mkBimap = BM.fromList
-
 
 mkSeq :: [a] -> Seq a
 mkSeq = SQ.fromList

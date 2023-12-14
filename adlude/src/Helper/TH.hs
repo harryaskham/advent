@@ -54,6 +54,9 @@ exampleInputN day n = do
   path <- makeRelativeToProject (exampleInputNPath day n)
   AppE (VarE 'decodeUtf8) <$> embedFile path
 
+gridF :: (Int -> Q Exp) -> Int -> Q Exp
+gridF inputFn day = AppE (VarE 'readGrid) <$> inputFn day
+
 grid :: Int -> Q Exp
 grid day = AppE (VarE 'readGrid) <$> input day
 
