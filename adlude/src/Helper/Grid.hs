@@ -1,7 +1,10 @@
 module Helper.Grid where
 
 import Control.Monad.Memo.Vector (Vector)
-import Data.Array.ST (STUArray, newArray_, writeArray)
+import Control.Monad.ST (ST, runST)
+import Data.Array (assocs)
+import Data.Array.IO (IOArray, getBounds, readArray)
+import Data.Array.MArray (MArray, getAssocs, newArray, newArray_, writeArray)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Fin (Fin)
@@ -15,6 +18,7 @@ import Helper.Coord
 import Helper.Tracers
 import Helper.Util (Nat10, both, (<$$>))
 import Relude.Unsafe qualified as U
+import System.IO.Unsafe (unsafePerformIO)
 
 class Griddable g where
   emptyGrid :: (GridCell a) => g a
@@ -102,34 +106,41 @@ instance Griddable VectorGrid where
   maxXY (VectorGrid g) = (V.length (g V.! 0) - 1, V.length g - 1)
   minXY _ = (0, 0)
 
-newtype STUArrayGrid s a = STUArrayGrid (STUArray s Coord2 a) deriving (Eq)
+-- newtype STArrayGrid s a = STArrayGrid (ST s (STArray s Coord2 a))
 
-instance Griddable (STUArrayGrid s) where
+-- mkArrayGrid :: (MArray a1 (a2 i e) (STArray s Coord2), MArray a2 e (a1 i)) => [(i, a2 i e)] -> STArrayGrid s (a1 i (a2 i e))
+-- mkArrayGrid cs =
+--   let bounds = (minimum (fst <$> cs), maximum (fst <$> cs))
+--    in STArrayGrid . return $ foldlM (\a (c, v) -> writeArray a c v >> return a) (newArray_ bounds) cs
+
+-- unArrayGrid :: STArrayGrid s a -> ST s [(Coord2, a)]
+-- unArrayGrid (STArrayGrid g) = getAssocs =<< g
+
+newtype ArrayGrid a = ArrayGrid (IOArray Coord2 a) deriving (Eq)
+
+instance Griddable ArrayGrid where
   mkGrid cs =
-    let bounds = (minimum (fst <$> cs), maximum (fst <$> cs))
-     in STUArrayGrid do
-          a <- newArray_ bounds
-          forM_ cs (uncurry (writeArray a))
-          return a
-  unGrid g =
-    [ ((x, y), g ||! (x, y))
-      | let (x', y') = minXY g,
-        let (x'', y'') = maxXY g,
-        x <- [x' .. x''],
-        y <- [y' .. y'']
-    ]
-  gridGetMaybe (x, y) (VectorGrid g) = do
-    row <- g V.!? y
-    row V.!? x
-  gridGet (x, y) (VectorGrid g) = g V.! y V.! x
-  gridSet a (x, y) (VectorGrid g) =
-    let row = g V.! y
-     in VectorGrid $ g V.// [(y, row V.// [(x, a)])]
-  gridModify f (x, y) (VectorGrid g) =
-    let row = g V.! y
-     in VectorGrid $ g V.// [(y, row V.// [(x, f (row V.! x))])]
-  maxXY (VectorGrid g) = (V.length (g V.! 0) - 1, V.length g - 1)
-  minXY _ = (0, 0)
+    ArrayGrid . unsafePerformIO $ do
+      a <- newArray_ (minimum (fst <$> cs), maximum (fst <$> cs))
+      forM_ cs (uncurry $ writeArray a)
+      return a
+  unGrid (ArrayGrid g) = unsafePerformIO $ getAssocs g
+  gridGetMaybe c (ArrayGrid g)
+    | let (a, b) = unsafePerformIO (getBounds g), c < a || c > b = Nothing -- weird thing
+    | otherwise = Just . unsafePerformIO $ readArray g c
+  gridGet c (ArrayGrid g) = unsafePerformIO $ readArray g c
+  gridSet a c (ArrayGrid g) = unsafePerformIO do
+    writeArray g c a
+    return $ ArrayGrid g
+  gridModify f c (ArrayGrid g) = unsafePerformIO do
+    a <- readArray g c
+    writeArray g c (f a)
+    return $ ArrayGrid g
+  maxXY (ArrayGrid g) = snd . unsafePerformIO $ getBounds g
+  minXY (ArrayGrid g) = fst . unsafePerformIO $ getBounds g
+
+instance (GridCell a) => Ord (ArrayGrid a) where
+  compare a b = compare (mkSet $ unGrid a) (mkSet $ unGrid b)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
