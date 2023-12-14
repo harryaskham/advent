@@ -6,7 +6,6 @@ module Helper.Util where
 import Control.Arrow (Arrow ((***)))
 import Control.Lens ((^.))
 import Control.Monad (filterM)
-import Data.List ((!!))
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as M
 import Data.Monoid (Sum (Sum, getSum))
@@ -19,6 +18,7 @@ import Data.Tuple.Extra (swap)
 import Data.Tuple.HT (uncurry3)
 import Data.Type.Nat (Nat (S), Nat9)
 import Helper.Bits (bitsToInt)
+import Helper.Collection
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe qualified as U
 import Text.Megaparsec (Parsec, Stream, parseMaybe)
@@ -98,6 +98,16 @@ iterateFix f a
   where
     a' = f a
 
+cycleGet :: (Ord a, Eq a) => Int -> [a] -> a
+cycleGet n as =
+  let go i (a : as) seen at
+        | a |∈ seen = let (s, l) = (seen |! a, i - seen |! a) in at |! (s + ((n - s) `mod` l))
+        | otherwise = go (i + 1) as (seen |. (a, i)) (at |. (i, a))
+   in go 0 as (mkMap []) (mkMap [])
+
+(...) :: (Ord a, Eq a) => [a] -> Int -> a
+(...) = flip cycleGet
+
 -- A symmetrical split
 split :: (Arrow a) => a b c -> a (b, b) (c, c)
 split f = f *** f
@@ -127,9 +137,9 @@ toTuple4 [a, b, c, d] = (a, b, c, d)
 toTuple4 xs = error $ show (length xs) <> "elements in toTuple4"
 
 sortT2On :: (Ord b) => (a -> b) -> (a, a) -> (a, a)
-sortT2On f (a,b)
-  | f a <= f b = (a,b)
-  | otherwise = (b,a)
+sortT2On f (a, b)
+  | f a <= f b = (a, b)
+  | otherwise = (b, a)
 
 toList3 :: (a, a, a) -> [a]
 toList3 (a, b, c) = [a, b, c]

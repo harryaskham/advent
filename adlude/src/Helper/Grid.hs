@@ -2,13 +2,12 @@ module Helper.Grid where
 
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
-import Data.Char (intToDigit)
 import Data.Fin (Fin)
-import Data.List (intercalate, maximum, minimum, nub)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
-import Helper.Util (Nat10, both)
+import Helper.Collection
 import Helper.Tracers
+import Helper.Util (Nat10, both)
 import Relude.Unsafe qualified as U
 
 -- To create a Cell, just supply a Bimap between char and cell
@@ -72,6 +71,9 @@ toGrid rows =
 points :: [(Int, Int)] -> Grid a -> [a]
 points ps g = catMaybes $ M.lookup <$> ps <*> pure g
 
+leftToRight :: Grid a -> [((Int, Int), a)]
+leftToRight g = mconcat [[((x, y), g |! (x, y)) | x <- [0 .. mx]] | let (mx, my) = maxXY g, y <- [0 .. my]]
+
 maxXY :: M.Map (Int, Int) a -> (Int, Int)
 maxXY m = (maximum $ fst <$> M.keys m, maximum $ snd <$> M.keys m)
 
@@ -82,7 +84,7 @@ cropX :: Int -> Int -> Grid a -> Grid a
 cropX i j g =
   let g' = M.filterWithKey (\(x, _) _ -> x >= i && x < j) g
       xO = fst $ minXY g'
-    in M.mapKeys (first (subtract xO)) g'
+   in M.mapKeys (first (subtract xO)) g'
 
 modifyCoords :: ((Int, Int) -> (Int, Int)) -> Grid a -> Grid a
 modifyCoords f grid = fromOrigin $ M.mapKeys (f . toOrigin) grid
@@ -91,8 +93,8 @@ modifyCoords f grid = fromOrigin $ M.mapKeys (f . toOrigin) grid
     xO = (maxX + 1) `div` 2
     yO = (maxY + 1) `div` 2
     toOrigin (x, y) = (x - xO, y - yO)
-    --fromOrigin m = let (xO', yO') = both negate (minXY m) in traceShowF M.keys $ M.mapKeys (\(x,y) -> (x + xO', y + yO')) (traceShowF M.keys m)
-    fromOrigin m = let (xO', yO') = both negate (minXY m) in M.mapKeys (\(x,y) -> (x + xO', y + yO')) m
+    -- fromOrigin m = let (xO', yO') = both negate (minXY m) in traceShowF M.keys $ M.mapKeys (\(x,y) -> (x + xO', y + yO')) (traceShowF M.keys m)
+    fromOrigin m = let (xO', yO') = both negate (minXY m) in M.mapKeys (\(x, y) -> (x + xO', y + yO')) m
 
 variantsNub :: (Eq a) => Grid a -> [Grid a]
 variantsNub g = nub (variants' g)
@@ -125,8 +127,9 @@ data Variants a = Variants
   }
 
 variants :: Grid a -> Variants a
-variants grid = let [a,b,c,d,e,f,g,h,i,j,k,l] = variants' grid
-              in Variants a b c d e f g h i j k l
+variants grid =
+  let [a, b, c, d, e, f, g, h, i, j, k, l] = variants' grid
+   in Variants a b c d e f g h i j k l
 
 splitGrid :: Int -> Int -> Grid a -> M.Map (Int, Int) (Grid a)
 splitGrid xStride yStride grid =
