@@ -116,28 +116,33 @@ instance Griddable VectorGrid where
 -- unArrayGrid :: STArrayGrid s a -> ST s [(Coord2, a)]
 -- unArrayGrid (STArrayGrid g) = getAssocs =<< g
 
-newtype ArrayGrid a = ArrayGrid (IOArray Coord2 a) deriving (Eq)
+newtype ArrayGrid a = ArrayGrid (IO (IOArray Coord2 a))
 
 instance Griddable ArrayGrid where
   mkGrid cs =
-    ArrayGrid . unsafePerformIO $ do
+    ArrayGrid do
       a <- newArray_ (minimum (fst <$> cs), maximum (fst <$> cs))
       forM_ cs (uncurry $ writeArray a)
       return a
-  unGrid (ArrayGrid g) = unsafePerformIO $ getAssocs g
+  unGrid (ArrayGrid g) = unsafePerformIO $ getAssocs =<< g
   gridGetMaybe c (ArrayGrid g)
-    | let (a, b) = unsafePerformIO (getBounds g), c < a || c > b = Nothing -- weird thing
-    | otherwise = Just . unsafePerformIO $ readArray g c
-  gridGet c (ArrayGrid g) = unsafePerformIO $ readArray g c
-  gridSet a c (ArrayGrid g) = unsafePerformIO do
+    | let (a, b) = unsafePerformIO (getBounds =<< g), c < a || c > b = Nothing
+    | otherwise = Just . unsafePerformIO $ flip readArray c =<< g
+  gridGet c (ArrayGrid g) = unsafePerformIO $ flip readArray c =<< g
+  gridSet a c (ArrayGrid g') = ArrayGrid do
+    g <- g'
     writeArray g c a
-    return $ ArrayGrid g
-  gridModify f c (ArrayGrid g) = unsafePerformIO do
+    return g
+  gridModify f c (ArrayGrid g') = ArrayGrid do
+    g <- g'
     a <- readArray g c
     writeArray g c (f a)
-    return $ ArrayGrid g
-  maxXY (ArrayGrid g) = snd . unsafePerformIO $ getBounds g
-  minXY (ArrayGrid g) = fst . unsafePerformIO $ getBounds g
+    return g
+  maxXY (ArrayGrid g) = snd . unsafePerformIO $ getBounds =<< g
+  minXY (ArrayGrid g) = fst . unsafePerformIO $ getBounds =<< g
+
+instance (GridCell a) => Eq (ArrayGrid a) where
+  a == b = mkSet (unGrid a) == mkSet (unGrid b)
 
 instance (GridCell a) => Ord (ArrayGrid a) where
   compare a b = compare (mkSet $ unGrid a) (mkSet $ unGrid b)
