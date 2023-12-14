@@ -1,6 +1,7 @@
 module Helper.Grid where
 
 import Control.Monad.Memo.Vector (Vector)
+import Data.Array.ST (STUArray, newArray_, writeArray)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Fin (Fin)
@@ -81,6 +82,35 @@ newtype VectorGrid a = VectorGrid (V.Vector (V.Vector a)) deriving (Eq, Ord, Sho
 
 instance Griddable VectorGrid where
   mkGrid cs = VectorGrid . V.fromList $ V.fromList <$> (snd <$$> (fmap (sortOn (fst . fst)) . sortOn (snd . fst . uhead) . groupOn (snd . fst) $ cs))
+  unGrid g =
+    [ ((x, y), g ||! (x, y))
+      | let (x', y') = minXY g,
+        let (x'', y'') = maxXY g,
+        x <- [x' .. x''],
+        y <- [y' .. y'']
+    ]
+  gridGetMaybe (x, y) (VectorGrid g) = do
+    row <- g V.!? y
+    row V.!? x
+  gridGet (x, y) (VectorGrid g) = g V.! y V.! x
+  gridSet a (x, y) (VectorGrid g) =
+    let row = g V.! y
+     in VectorGrid $ g V.// [(y, row V.// [(x, a)])]
+  gridModify f (x, y) (VectorGrid g) =
+    let row = g V.! y
+     in VectorGrid $ g V.// [(y, row V.// [(x, f (row V.! x))])]
+  maxXY (VectorGrid g) = (V.length (g V.! 0) - 1, V.length g - 1)
+  minXY _ = (0, 0)
+
+newtype STUArrayGrid s a = STUArrayGrid (STUArray s Coord2 a) deriving (Eq)
+
+instance Griddable (STUArrayGrid s) where
+  mkGrid cs =
+    let bounds = (minimum (fst <$> cs), maximum (fst <$> cs))
+     in STUArrayGrid do
+          a <- newArray_ bounds
+          forM_ cs (uncurry (writeArray a))
+          return a
   unGrid g =
     [ ((x, y), g ||! (x, y))
       | let (x', y') = minXY g,
