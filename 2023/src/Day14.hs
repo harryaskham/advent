@@ -12,7 +12,7 @@ load :: CGrid -> Int
 load g = sum ((1 + (snd (maxXY g)) -) . snd <$> gridFind 'O' g)
 
 part1 :: Int
-part1 = load $ iterateFix step $(gridF input 14)
+part1 = load $ iterateFix step $(grid input 14)
 
 part2 :: Int
-part2 = load $ iterate (iterateFix step >>> variants >>> r270) $(gridF input 14) ... 4000000000
+part2 = load $ iterate (iterateFix step >>> variants >>> r270) $(grid input 14) ... 4000000000

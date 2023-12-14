@@ -1,9 +1,9 @@
 module Helper.TH where
 
-import Data.Text qualified as T
 import Data.FileEmbed (embedFile, makeRelativeToProject)
-import Helper.Tracers
+import Data.Text qualified as T
 import Helper.Grid
+import Helper.Tracers
 import Helper.Util
   ( exampleInputNPath,
     exampleInputPath,
@@ -13,7 +13,7 @@ import Language.Haskell.TH
   ( Exp (AppE, ListE, LitE, TupE, VarE),
     Lit (IntegerL),
     Q,
-    mkName
+    mkName,
   )
 
 -- Build a function that runs all days, converts results to Text,
@@ -54,14 +54,11 @@ exampleInputN day n = do
   path <- makeRelativeToProject (exampleInputNPath day n)
   AppE (VarE 'decodeUtf8) <$> embedFile path
 
-gridF :: (Int -> Q Exp) -> Int -> Q Exp
-gridF inputFn day = AppE (VarE 'readGrid) <$> inputFn day
+grid :: (Int -> Q Exp) -> Int -> Q Exp
+grid inputFn day = AppE (VarE 'readGrid) <$> inputFn day
 
-grid :: Int -> Q Exp
-grid day = AppE (VarE 'readGrid) <$> input day
-
-gridsT :: GridCell a => T.Text -> [Grid a]
+gridsT :: (GridCell a) => T.Text -> [Grid a]
 gridsT = fmap readGrid . T.splitOn "\n\n"
 
-grids :: Int -> Q Exp
-grids day = AppE (VarE 'gridsT) <$> input day
+grids :: (Int -> Q Exp) -> Int -> Q Exp
+grids inputFn day = AppE (VarE 'gridsT) <$> inputFn day

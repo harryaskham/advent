@@ -8,7 +8,7 @@ distanceSum sc g =
    in sum $ d <$> triPairs (gridFind Hash g)
 
 part1 :: Int
-part1 = $(grid 11) & distanceSum 2
+part1 = $(grid input 11) & distanceSum 2
 
 part2 :: Int
-part2 = $(grid 11) & distanceSum 1000000
+part2 = $(grid input 11) & distanceSum 1000000

@@ -26,7 +26,7 @@ solve :: (Grid DotHash -> [Either Int Int]) -> [Grid DotHash] -> Int
 solve f = concatMap f >>> partitionEithers >>> both sum >>> second (* 100) >>> uncurry (+)
 
 part1 :: Int
-part1 = solve reflects $(grids 13)
+part1 = solve reflects $(grids input 13)
 
 part2 :: Int
-part2 = solve reflectsSmudged $(grids 13)
+part2 = solve reflectsSmudged $(grids input 13)

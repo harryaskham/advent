@@ -33,7 +33,7 @@ isMark _ = False
 
 part1 :: Int
 part1 =
-  $(grid 3)
+  $(grid input 3)
     & ( \g ->
           getNumbers g
             & filter (\(_, cs) -> any isMark $ catMaybes [g |? c | c <- cs])
@@ -43,7 +43,7 @@ part1 =
 
 part2 :: Int
 part2 =
-  $(grid 3)
+  $(grid input 3)
     & ( \g ->
           getNumbers g
             & fmap (\(n, cs) -> mkMap [(c, [n]) | c <- cs, let a = g |? c, a == Just (Mark '*')])
