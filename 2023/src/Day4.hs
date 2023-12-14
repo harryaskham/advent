@@ -20,7 +20,7 @@ part1 =
 part2 :: Int
 part2 =
   $(input 4)
-    & parseWith parser
+    |- parser
     & ( \cards ->
           foldl'
             ( \m (i, as, bs) ->

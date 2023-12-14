@@ -31,14 +31,14 @@ travel p s lr' g = go (cycle lr') 0 s
 part1 :: Int
 part1 =
   $(input 8)
-    & parseWith parser
+    |- parser
     & uncurry (travel (== "ZZZ") "AAA")
     & uhead
 
 part2 :: Int
 part2 =
   $(input 8)
-    & parseWith parser
+    |- parser
     & ( \(lr, g) ->
           [ travel ((!! 2) >>> (== 'Z')) s lr g
             | s <- [s | (s, _) <- unMap g, s !! 2 == 'A']

@@ -30,16 +30,7 @@ power colors = go colors 0 0 0
     go ((Blue i) : cs) r g b = go cs r g (max i b)
 
 part1 :: Int
-part1 =
-  $(input 2)
-    & parseWith games
-    & filter possibleGame
-    & fmap index
-    & sum
+part1 = $(input 2) |- games & filter possibleGame & fmap index & sum
 
 part2 :: Int
-part2 =
-  $(input 2)
-    & parseWith games
-    & fmap (power . mconcat . cubes)
-    & sum
+part2 = $(input 2) |- games & fmap (power . mconcat . cubes) & sum

@@ -8,6 +8,7 @@ import Helper.Util
   ( exampleInputNPath,
     exampleInputPath,
     inputPath,
+    parseWith,
   )
 import Language.Haskell.TH
   ( Exp (AppE, ListE, LitE, TupE, VarE),
@@ -15,6 +16,7 @@ import Language.Haskell.TH
     Q,
     mkName,
   )
+import Text.ParserCombinators.Parsec
 
 -- Build a function that runs all days, converts results to Text,
 -- and returns [(day, part, result)]

@@ -22,7 +22,7 @@ part1 :: Text
 part1 =
   $(input 666)
     -- \$(grid 666)
-    -- & parseWith parser
+    -- \|- parser
     -- & parseLinesWith line
     & (<> "Part 1")
 

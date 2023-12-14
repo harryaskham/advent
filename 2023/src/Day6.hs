@@ -14,14 +14,7 @@ ways (t, d) =
    in ceiling (f (+)) - floor (f (-)) - 1
 
 part1 :: Int
-part1 =
-  $(input 6)
-    & parseWith asMany
-    & fmap ways
-    & product
+part1 = $(input 6) |- asMany & fmap ways & product
 
 part2 :: Int
-part2 =
-  $(input 6)
-    & parseWith asOne
-    & ways
+part2 = $(input 6) |- asOne & ways

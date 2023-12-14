@@ -34,14 +34,14 @@ parser = do
 part1 :: Integer
 part1 =
   $(input 5)
-    & parseWith parser
+    |- parser
     & (\(seeds, _, mappings) -> flip (foldl' (flip fst)) mappings <$> seeds)
     & minimum
 
 part2 :: Integer
 part2 =
   $(input 5)
-    & parseWith parser
+    |- parser
     & ( \(seeds, destinations, mappings) ->
           let validSeed seed = or [(seed >= a) && (seed < a + b) | [a, b] <- chunksOf 2 seeds]
            in [d | d <- destinations, validSeed (foldr snd d mappings)]
