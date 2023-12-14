@@ -2,7 +2,7 @@ module Day14 (part1, part2) where
 
 step :: Dir2 -> CGrid -> CGrid
 step d g =
-  let f g c = let c' = move d (-1) c in bool g (g |. (c, 'O') |. (c', '.')) ((g |! c, g |? c') == ('.', Just 'O'))
+  let f g c = let c' = move d (-1) c in bool g (g ||. (c, 'O') ||. (c', '.')) ((g ||! c, g ||? c') == ('.', Just 'O'))
    in foldl' f g (iterCoords (opposite d) g)
 
 load :: CGrid -> Int
