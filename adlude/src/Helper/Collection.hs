@@ -48,7 +48,7 @@ foldr1 = L.foldr1
 mkSet :: (Ord a) => [a] -> Set a
 mkSet = S.fromList
 
-unSet :: (Ord a) => Set a -> [a]
+unSet :: Set a -> [a]
 unSet = S.toList
 
 (<-|) :: (Ord a) => Set a -> a -> Set a
@@ -72,7 +72,7 @@ unSet = S.toList
 (∌) :: (Ord a) => Set a -> a -> Bool
 (∌) = flip S.notMember
 
-(∅) :: (Ord a) => Set a
+(∅) :: Set a
 (∅) = S.empty
 
 (∪) :: (Ord a) => Set a -> Set a -> Set a
@@ -108,22 +108,22 @@ a ⊉ b = not (a ⊇ b)
 (⊅) :: (Ord a) => Set a -> Set a -> Bool
 a ⊅ b = not (a ⊃ b)
 
-setSize :: (Ord a) => Set a -> Int
+setSize :: Set a -> Int
 setSize = S.size
 
 mkMap :: (Ord k) => [(k, v)] -> Map k v
 mkMap = M.fromList
 
-unMap :: (Ord k) => Map k v -> [(k, v)]
+unMap :: Map k v -> [(k, v)]
 unMap = M.toList
 
 mkMapWith :: (Ord k) => (v -> v -> v) -> [(k, v)] -> Map k v
 mkMapWith = M.fromListWith
 
-mapFilter :: (Ord k) => (v -> Bool) -> Map k v -> Map k v
+mapFilter :: (v -> Bool) -> Map k v -> Map k v
 mapFilter = M.filter
 
-mapSize :: (Ord k) => Map k v -> Int
+mapSize :: Map k v -> Int
 mapSize = M.size
 
 mapSplit :: (Ord k) => k -> Map k v -> (Map k v, Map k v)
