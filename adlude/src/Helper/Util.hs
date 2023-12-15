@@ -23,7 +23,7 @@ import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe qualified as U
 import Text.Megaparsec (Parsec, Stream, parseMaybe)
 import Text.Megaparsec.Char (digitChar)
-import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, oneOf, parse, sepBy, try)
+import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, noneOf, oneOf, parse, sepBy, try)
 
 -- Input parsing
 
@@ -218,6 +218,9 @@ coord2 = (,) <$> (number <* char ',') <*> number
 
 csvLine :: Parser a -> Parser [a]
 csvLine a = a `sepBy` char ',' <* (eol >> eof)
+
+csv :: Parser [String]
+csv = many (noneOf ",") `sepBy` char ','
 
 -- Map helpers
 

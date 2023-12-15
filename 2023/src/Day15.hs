@@ -4,7 +4,7 @@ hash :: String -> Int
 hash = foldl' (\n c -> ((n + ord c) * 17) `mod` 256) 0
 
 part1 :: Int
-part1 = $(input 15) |- (many (noneOf ",") `sepBy` char ',') & fmap hash & sum
+part1 = $(input 15) |- csv & fmap hash & sum
 
 part2 :: Int
 part2 =
