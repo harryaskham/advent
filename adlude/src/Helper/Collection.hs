@@ -1,17 +1,17 @@
 module Helper.Collection where
 
 import Data.Bimap qualified as BM
+import Data.Char qualified as C
+import Data.Foldable qualified as F
+import Data.List qualified as L
+import Data.List.Extra qualified as LE
+import Data.List.Split qualified as LS
 import Data.Map.Strict qualified as M
 import Data.PQueue.Prio.Min qualified as PQ
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
-import Relude.Unsafe qualified as U
-import Data.List qualified as L
-import Data.Foldable qualified as F
-import Data.List.Split qualified as LS
-import Data.List.Extra qualified as LE
 import Data.Text qualified as T
-import Data.Char qualified as C
+import Relude.Unsafe qualified as U
 
 class Packable a b where
   pack :: a -> b
@@ -33,7 +33,7 @@ minimum = L.minimum
 maximum :: (Ord a) => [a] -> a
 maximum = L.maximum
 
-nub :: Eq a => [a] -> [a]
+nub :: (Eq a) => [a] -> [a]
 nub = L.nub
 
 foldl1 :: (a -> a -> a) -> [a] -> a
@@ -135,8 +135,11 @@ mapSplit = M.split
 (|?) :: (Ord k) => Map k v -> k -> Maybe v
 (|?) = flip M.lookup
 
-(|.) :: (Ord k) => Map k v -> (k,v) -> Map k v
-m |. (k,v) = M.insert k v m
+(|.) :: (Ord k) => Map k v -> (k, v) -> Map k v
+m |. (k, v) = M.insert k v m
+
+(|~) :: (Ord k) => Map k v -> (k, v -> v) -> Map k v
+m |~ (k, f) = M.adjust f k m
 
 mkBimap :: (Ord a, Ord b) => [(a, b)] -> BM.Bimap a b
 mkBimap = BM.fromList
