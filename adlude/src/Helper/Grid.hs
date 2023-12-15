@@ -139,8 +139,9 @@ class (Monad m) => Griddable m g where
   partitionCoordsM :: (GridCell a) => (Coord2 -> Bool) -> g a -> m (g a, g a)
   partitionCoordsM f g = do
     ab <- groupOn (f . fst) <$> unGridM g
-    gA <- mkGridM (uhead ab)
-    gB <- mkGridM (ab !! 1)
+    let [a, b] = ab
+    gA <- mkGridM a
+    gB <- mkGridM b
     return (gA, gB)
   gridMemberM :: (GridCell a) => Coord2 -> g a -> m Bool
   gridMemberM c g = isJust <$> gridGetMaybeM c g
@@ -254,7 +255,7 @@ readGridM :: (GridCell a, Griddable m g) => Text -> m (g a)
 readGridM = toGridM . lines
 
 readGrid :: (GridCell a, Griddable Identity g) => Text -> g a
-readGrid = runIdentity . readGridM
+readGrid = toGrid . lines
 
 toGridM :: (GridCell a, Griddable m g) => [Text] -> m (g a)
 toGridM rows =
@@ -300,12 +301,15 @@ cropX i j g = runIdentity $ cropXM i j g
 modifyCoordsM :: (GridCell a, Griddable m g) => (Coord2 -> Coord2) -> g a -> m (g a)
 modifyCoordsM f g = do
   (maxX, maxY) <- maxXYM g
-  (minX, minY) <- minXYM g
   let xO = (maxX + 1) `div` 2
   let yO = (maxY + 1) `div` 2
   let toOrigin (x, y) = (x - xO, y - yO)
-  let fromOrigin = let (xO', yO') = both negate (minX, minY) in mapCoordsM (\(x, y) -> (x + xO', y + yO'))
-  fromOrigin =<< mapCoordsM (f . toOrigin) g
+  let fromOrigin g =
+        do
+          (minX, minY) <- minXYM g
+          mapCoordsM (\(x, y) -> (x - minX, y - minY)) g
+  g' <- mapCoordsM (f . toOrigin) g
+  fromOrigin g'
 
 modifyCoords :: (GridCell a, Griddable Identity g) => (Coord2 -> Coord2) -> g a -> g a
 modifyCoords f g = runIdentity $ modifyCoordsM f g
@@ -390,7 +394,7 @@ gridLinesM :: (GridCell a, Griddable m g) => g a -> m [[a]]
 gridLinesM g = do
   (minX, minY) <- minXYM g
   (maxX, maxY) <- maxXYM g
-  sequence [sequence [g <||!> (x, y)] | x <- [minX .. maxX], y <- [minY .. maxY]]
+  sequence [sequence [g <||!> (x, y) | x <- [minX .. maxX]] | y <- [minY .. maxY]]
 
 gridLines :: (GridCell a, Griddable Identity g) => g a -> [[a]]
 gridLines = runIdentity . gridLinesM

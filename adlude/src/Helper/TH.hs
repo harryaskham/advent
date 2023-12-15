@@ -60,7 +60,16 @@ grid :: (Int -> Q Exp) -> Int -> Q Exp
 grid inputFn day = AppE (VarE 'readGrid) <$> inputFn day
 
 gridsT :: (GridCell a, Griddable Identity g) => T.Text -> [g a]
-gridsT = fmap readGrid . T.splitOn "\n\n"
+gridsT s = readGrid <$> T.splitOn "\n\n" s
 
 grids :: (Int -> Q Exp) -> Int -> Q Exp
 grids inputFn day = AppE (VarE 'gridsT) <$> inputFn day
+
+gridM :: (Int -> Q Exp) -> Int -> Q Exp
+gridM inputFn day = AppE (VarE 'readGridM) <$> inputFn day
+
+gridsTM :: (GridCell a, Griddable m g) => T.Text -> m [g a]
+gridsTM s = traverse readGridM $ T.splitOn "\n\n" s
+
+gridsM :: (Int -> Q Exp) -> Int -> Q Exp
+gridsM inputFn day = AppE (VarE 'gridsTM) <$> inputFn day
