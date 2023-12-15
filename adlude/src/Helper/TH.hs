@@ -59,7 +59,7 @@ exampleInputN day n = do
 grid :: (Int -> Q Exp) -> Int -> Q Exp
 grid inputFn day = AppE (VarE 'readGrid) <$> inputFn day
 
-gridsT :: (GridCell a, Griddable g) => T.Text -> [g a]
+gridsT :: (GridCell a, Griddable Identity g) => T.Text -> [g a]
 gridsT = fmap readGrid . T.splitOn "\n\n"
 
 grids :: (Int -> Q Exp) -> Int -> Q Exp

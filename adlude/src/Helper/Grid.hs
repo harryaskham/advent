@@ -20,126 +20,200 @@ import Helper.Util (Nat10, both, (<$$>))
 import Relude.Unsafe qualified as U
 import System.IO.Unsafe (unsafePerformIO)
 
-class Griddable g where
-  emptyGrid :: (GridCell a) => g a
-  emptyGrid = mkGrid []
-  mkGrid :: (GridCell a) => [(Coord2, a)] -> g a
-  unGrid :: (GridCell a) => g a -> [(Coord2, a)]
-  coords :: (GridCell a) => g a -> [Coord2]
-  coords = fmap fst . unGrid
-  gridGetMaybe :: (GridCell a) => Coord2 -> g a -> Maybe a
-  (||?) :: (GridCell a) => g a -> Coord2 -> Maybe a
-  (||?) = flip gridGetMaybe
-  gridGet :: (GridCell a) => Coord2 -> g a -> a
-  (||!) :: (GridCell a) => g a -> Coord2 -> a
-  (||!) = flip gridGet
-  gridSet :: (GridCell a) => a -> Coord2 -> g a -> g a
-  (||.) :: (GridCell a) => g a -> (Coord2, a) -> g a
-  g ||. (c, a) = gridSet a c g
-  gridModify :: (GridCell a) => (a -> a) -> Coord2 -> g a -> g a
-  (||~) :: (GridCell a) => g a -> (Coord2, a -> a) -> g a
-  g ||~ (c, f) = gridModify f c g
-  maxXY :: (GridCell a) => g a -> Coord2
-  minXY :: (GridCell a) => g a -> Coord2
-  gridFind :: (GridCell a) => a -> g a -> [Coord2]
-  gridFind a g = [k | (k, v) <- unGrid g, v == a]
-  gridFindOne :: (GridCell a) => a -> g a -> Coord2
-  gridFindOne a g = U.head $ gridFind a g
-  fromCoords :: (Foldable f, Bounded a, GridCell a) => a -> f Coord2 -> g a
-  fromCoords def = fillEmpty . foldl' (\g c -> g ||. (c, def)) emptyGrid
-  fillDef :: (GridCell a) => a -> g a -> g a
-  fillDef def g =
-    let (w, h) = maxXY g
-     in mkGrid [((x, y), v) | x <- [0 .. w], y <- [0 .. h], let v = fromMaybe def (g ||? (x, y))]
-  fillEmpty :: (Bounded a, GridCell a) => g a -> g a
-  fillEmpty = fillDef minBound
-  mapCoords :: (GridCell a) => (Coord2 -> Coord2) -> g a -> g a
-  mapCoords f g = mkGrid $ first f <$> unGrid g
-  filterCoords :: (GridCell a) => (Coord2 -> Bool) -> g a -> g a
-  filterCoords f g = mkGrid $ filter (f . fst) (unGrid g)
-  partitionCoords :: (GridCell a) => (Coord2 -> Bool) -> g a -> (g a, g a)
-  partitionCoords f g = let [a, b] = groupOn (f . fst) (unGrid g) in both mkGrid (a, b)
-  gridMember :: (GridCell a) => Coord2 -> g a -> Bool
-  gridMember c g = isJust $ gridGetMaybe c g
-  (||∈) :: (GridCell a) => Coord2 -> g a -> Bool
-  a ||∈ g = gridMember a g
-  (||∉) :: (GridCell a) => Coord2 -> g a -> Bool
-  a ||∉ g = not (a ||∈ g)
+emptyGrid :: (Griddable Identity g, GridCell a) => g a
+emptyGrid = runIdentity emptyGridM
+
+mkGrid :: (GridCell a, Griddable Identity g) => [(Coord2, a)] -> g a
+mkGrid = runIdentity . mkGridM
+
+unGrid :: (GridCell a, Griddable Identity g) => g a -> [(Coord2, a)]
+unGrid = runIdentity . unGridM
+
+coords :: (GridCell a, Griddable Identity g) => g a -> [Coord2]
+coords = runIdentity . coordsM
+
+gridGetMaybe :: (GridCell a, Griddable Identity g) => Coord2 -> g a -> Maybe a
+gridGetMaybe c g = runIdentity $ gridGetMaybeM c g
+
+(||?) :: (GridCell a, Griddable Identity g) => g a -> Coord2 -> Maybe a
+g ||? c = gridGetMaybe c g
+
+gridGet :: (GridCell a, Griddable Identity g) => Coord2 -> g a -> a
+gridGet c g = runIdentity $ gridGetM c g
+
+(||!) :: (GridCell a, Griddable Identity g) => g a -> Coord2 -> a
+g ||! c = gridGet c g
+
+gridSet :: (GridCell a, Griddable Identity g) => a -> Coord2 -> g a -> g a
+gridSet a c g = runIdentity $ gridSetM a c g
+
+(||.) :: (GridCell a, Griddable Identity g) => g a -> (Coord2, a) -> g a
+g ||. (c, a) = gridSet a c g
+
+gridModify :: (GridCell a, Griddable Identity g) => (a -> a) -> Coord2 -> g a -> g a
+gridModify f c g = runIdentity $ gridModifyM f c g
+
+(||~) :: (GridCell a, Griddable Identity g) => g a -> (Coord2, a -> a) -> g a
+g ||~ (c, f) = gridModify f c g
+
+maxXY :: (GridCell a, Griddable Identity g) => g a -> Coord2
+maxXY = runIdentity . maxXYM
+
+minXY :: (GridCell a, Griddable Identity g) => g a -> Coord2
+minXY = runIdentity . minXYM
+
+gridFind :: (GridCell a, Griddable Identity g) => a -> g a -> [Coord2]
+gridFind a g = runIdentity $ gridFindM a g
+
+gridFindOne :: (GridCell a, Griddable Identity g) => a -> g a -> Coord2
+gridFindOne a g = runIdentity $ gridFindOneM a g
+
+fromCoords :: (Foldable f, Bounded a, GridCell a, Griddable Identity g) => a -> f Coord2 -> g a
+fromCoords def cs = runIdentity $ fromCoordsM def cs
+
+fillDef :: (GridCell a, Griddable Identity g) => a -> g a -> g a
+fillDef def g = runIdentity $ fillDefM def g
+
+fillEmpty :: (Bounded a, GridCell a, Griddable Identity g) => g a -> g a
+fillEmpty = runIdentity . fillEmptyM
+
+mapCoords :: (GridCell a, Griddable Identity g) => (Coord2 -> Coord2) -> g a -> g a
+mapCoords f g = runIdentity $ mapCoordsM f g
+
+filterCoords :: (GridCell a, Griddable Identity g) => (Coord2 -> Bool) -> g a -> g a
+filterCoords f g = runIdentity $ filterCoordsM f g
+
+partitionCoords :: (GridCell a, Griddable Identity g) => (Coord2 -> Bool) -> g a -> (g a, g a)
+partitionCoords f g = runIdentity $ partitionCoordsM f g
+
+gridMember :: (GridCell a, Griddable Identity g) => Coord2 -> g a -> Bool
+gridMember c g = runIdentity $ gridMemberM c g
+
+(||∈) :: (GridCell a, Griddable Identity g) => Coord2 -> g a -> Bool
+a ||∈ g = gridMember a g
+
+(||∉) :: (GridCell a, Griddable Identity g) => Coord2 -> g a -> Bool
+a ||∉ g = not (a ||∈ g)
+
+class (Monad m) => Griddable m g where
+  emptyGridM :: (GridCell a) => m (g a)
+  emptyGridM = mkGridM []
+  mkGridM :: (GridCell a) => [(Coord2, a)] -> m (g a)
+  unGridM :: (GridCell a) => g a -> m [(Coord2, a)]
+  coordsM :: (GridCell a) => g a -> m [Coord2]
+  coordsM g = fst <$$> unGridM g
+  gridGetMaybeM :: (GridCell a) => Coord2 -> g a -> m (Maybe a)
+  (<||?>) :: (GridCell a) => g a -> Coord2 -> m (Maybe a)
+  (<||?>) = flip gridGetMaybeM
+  gridGetM :: (GridCell a) => Coord2 -> g a -> m a
+  (<||!>) :: (GridCell a) => g a -> Coord2 -> m a
+  (<||!>) = flip gridGetM
+  gridSetM :: (GridCell a) => a -> Coord2 -> g a -> m (g a)
+  (<||.>) :: (GridCell a) => g a -> (Coord2, a) -> m (g a)
+  g <||.> (c, a) = gridSetM a c g
+  gridModifyM :: (GridCell a) => (a -> a) -> Coord2 -> g a -> m (g a)
+  (<||~>) :: (GridCell a) => g a -> (Coord2, a -> a) -> m (g a)
+  g <||~> (c, f) = gridModifyM f c g
+  maxXYM :: (GridCell a) => g a -> m Coord2
+  minXYM :: (GridCell a) => g a -> m Coord2
+  gridFindM :: (GridCell a) => a -> g a -> m [Coord2]
+  gridFindM a g = (\cs -> [k | (k, v) <- cs, v == a]) <$> unGridM g
+  gridFindOneM :: (GridCell a) => a -> g a -> m Coord2
+  gridFindOneM a g = U.head <$> gridFindM a g
+  fromCoordsM :: (Foldable f, Bounded a, GridCell a) => a -> f Coord2 -> m (g a)
+  fromCoordsM def cs = do
+    e <- emptyGridM
+    e' <- foldlM (\g c -> g <||.> (c, def)) e cs
+    fillDefM def e'
+  fillDefM :: (GridCell a) => a -> g a -> m (g a)
+  fillDefM def g = do
+    (w, h) <- maxXYM g
+    elems <- sequence [(c,) . fromMaybe def <$> (g <||?> c) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
+    mkGridM elems
+  fillEmptyM :: (Bounded a, GridCell a) => g a -> m (g a)
+  fillEmptyM = fillDefM minBound
+  mapCoordsM :: (GridCell a) => (Coord2 -> Coord2) -> g a -> m (g a)
+  mapCoordsM f g = mkGridM =<< (first f <$$> unGridM g)
+  filterCoordsM :: (GridCell a) => (Coord2 -> Bool) -> g a -> m (g a)
+  filterCoordsM f g = mkGridM . filter (f . fst) =<< unGridM g
+  partitionCoordsM :: (GridCell a) => (Coord2 -> Bool) -> g a -> m (g a, g a)
+  partitionCoordsM f g = do
+    ab <- groupOn (f . fst) <$> unGridM g
+    gA <- mkGridM (uhead ab)
+    gB <- mkGridM (ab !! 1)
+    return (gA, gB)
+  gridMemberM :: (GridCell a) => Coord2 -> g a -> m Bool
+  gridMemberM c g = isJust <$> gridGetMaybeM c g
+  (<||∈>) :: (GridCell a) => Coord2 -> g a -> m Bool
+  a <||∈> g = gridMemberM a g
+  (<||∉>) :: (GridCell a) => Coord2 -> g a -> m Bool
+  a <||∉> g = not <$> (a <||∈> g)
 
 newtype Grid a = Grid (Map Coord2 a) deriving (Eq, Ord, Show)
 
-instance Griddable Grid where
-  mkGrid = Grid . M.fromList
-  unGrid (Grid g) = M.toList g
-  gridGetMaybe c (Grid g) = M.lookup c g
-  gridGet c (Grid g) = g M.! c
-  gridSet a c (Grid g) = Grid $ M.insert c a g
-  gridModify f c (Grid g) = Grid $ M.adjust f c g
-  maxXY (Grid g) = (maximum $ fst <$> M.keys g, maximum $ snd <$> M.keys g)
-  minXY (Grid g) = (minimum $ fst <$> M.keys g, minimum $ snd <$> M.keys g)
-  mapCoords f (Grid g) = Grid $ M.mapKeys f g
-  filterCoords f (Grid g) = Grid $ M.filterWithKey (\k _ -> f k) g
-  partitionCoords f (Grid g) = both Grid $ M.partitionWithKey (\k _ -> f k) g
-  gridMember c (Grid g) = M.member c g
+instance Griddable Identity Grid where
+  mkGridM = pure . Grid . M.fromList
+  unGridM (Grid g) = pure $ M.toList g
+  gridGetMaybeM c (Grid g) = pure $ M.lookup c g
+  gridGetM c (Grid g) = pure $ g M.! c
+  gridSetM a c (Grid g) = pure . Grid $ M.insert c a g
+  gridModifyM f c (Grid g) = pure . Grid $ M.adjust f c g
+  maxXYM (Grid g) = pure (maximum $ fst <$> M.keys g, maximum $ snd <$> M.keys g)
+  minXYM (Grid g) = pure (minimum $ fst <$> M.keys g, minimum $ snd <$> M.keys g)
+  mapCoordsM f (Grid g) = pure . Grid $ M.mapKeys f g
+  filterCoordsM f (Grid g) = pure . Grid $ M.filterWithKey (\k _ -> f k) g
+  partitionCoordsM f (Grid g) = pure . both Grid $ M.partitionWithKey (\k _ -> f k) g
+  gridMemberM c (Grid g) = pure $ M.member c g
 
 newtype VectorGrid a = VectorGrid (V.Vector (V.Vector a)) deriving (Eq, Ord, Show)
 
-instance Griddable VectorGrid where
+instance Griddable Identity VectorGrid where
   -- TODO: need to respect indices for rotation
-  mkGrid cs = VectorGrid . V.fromList $ V.fromList <$> (snd <$$> (fmap (sortOn (fst . fst)) . sortOn (snd . fst . uhead) . groupOn (snd . fst) $ cs))
-  unGrid g =
-    [ ((x, y), g ||! (x, y))
-      | let (x', y') = minXY g,
-        let (x'', y'') = maxXY g,
-        x <- [x' .. x''],
-        y <- [y' .. y'']
-    ]
-  gridGetMaybe (x, y) (VectorGrid g) = do
+  mkGridM cs = pure . VectorGrid . V.fromList $ V.fromList <$> (snd <$$> (fmap (sortOn (fst . fst)) . sortOn (snd . fst . uhead) . groupOn (snd . fst) $ cs))
+  unGridM g = do
+    (x', y') <- minXYM g
+    (x'', y'') <- maxXYM g
+    sequence [((x, y),) <$> g <||!> (x, y) | x <- [x' .. x''], y <- [y' .. y'']]
+  gridGetMaybeM (x, y) (VectorGrid g) = pure do
     row <- g V.!? y
     row V.!? x
-  gridGet (x, y) (VectorGrid g) = g V.! y V.! x
-  gridSet a (x, y) (VectorGrid g) =
+  gridGetM (x, y) (VectorGrid g) = pure $ g V.! y V.! x
+  gridSetM a (x, y) (VectorGrid g) =
     let row = g V.! y
-     in VectorGrid $ g V.// [(y, row V.// [(x, a)])]
-  gridModify f (x, y) (VectorGrid g) =
+     in pure . VectorGrid $ g V.// [(y, row V.// [(x, a)])]
+  gridModifyM f (x, y) (VectorGrid g) =
     let row = g V.! y
-     in VectorGrid $ g V.// [(y, row V.// [(x, f (row V.! x))])]
+     in pure . VectorGrid $ g V.// [(y, row V.// [(x, f (row V.! x))])]
 
   -- Need to modify this to support rotation
-  maxXY (VectorGrid g) = (V.length (g V.! 0) - 1, V.length g - 1)
-  minXY _ = (0, 0)
+  maxXYM (VectorGrid g) = pure (V.length (g V.! 0) - 1, V.length g - 1)
+  minXYM _ = pure (0, 0)
 
 -- Relly slow
-newtype ArrayGrid a = ArrayGrid (IO (IOArray Coord2 a))
+newtype ArrayGrid a = ArrayGrid (IOArray Coord2 a) deriving (Eq)
 
-instance Griddable ArrayGrid where
-  mkGrid cs =
-    ArrayGrid do
+instance Griddable IO ArrayGrid where
+  mkGridM cs =
+    ArrayGrid <$> do
       a <- newArray_ (minimum (fst <$> cs), maximum (fst <$> cs))
       forM_ cs (uncurry $ writeArray a)
       return a
-  unGrid (ArrayGrid g) = unsafePerformIO $ getAssocs =<< g
-  gridGetMaybe c@(x, y) (ArrayGrid g)
-    | let ((ax, ay), (bx, by)) = unsafePerformIO (getBounds =<< g), x < ax || y < ay || x > bx || y > by = Nothing
-    | otherwise = Just $ gridGet c (ArrayGrid g)
-  gridGet c (ArrayGrid g) = unsafePerformIO $ flip readArray c =<< g
-  gridSet a c (ArrayGrid g') = ArrayGrid do
-    g <- g'
-    writeArray g c a
-    return g
-  gridModify f c (ArrayGrid g') = ArrayGrid do
-    g <- g'
-    a <- readArray g c
-    writeArray g c (f a)
-    return g
-  maxXY (ArrayGrid g) = snd . unsafePerformIO $ getBounds =<< g
-  minXY (ArrayGrid g) = fst . unsafePerformIO $ getBounds =<< g
-
-instance (GridCell a) => Eq (ArrayGrid a) where
-  a == b = mkSet (unGrid a) == mkSet (unGrid b)
-
-instance (GridCell a) => Ord (ArrayGrid a) where
-  compare a b = compare (mkSet $ unGrid a) (mkSet $ unGrid b)
+  unGridM (ArrayGrid g) = getAssocs g
+  gridGetMaybeM c@(x, y) (ArrayGrid g) = do
+    ((ax, ay), (bx, by)) <- getBounds g
+    if x < ax || y < ay || x > bx || y > by then return Nothing else Just <$> gridGetM c (ArrayGrid g)
+  gridGetM c (ArrayGrid g) = readArray g c
+  gridSetM a c (ArrayGrid g) =
+    ArrayGrid <$> do
+      writeArray g c a
+      return g
+  gridModifyM f c (ArrayGrid g) =
+    ArrayGrid <$> do
+      a <- readArray g c
+      writeArray g c (f a)
+      return g
+  maxXYM (ArrayGrid g) = snd <$> getBounds g
+  minXYM (ArrayGrid g) = fst <$> getBounds g
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
@@ -176,58 +250,86 @@ newtype IntCell = IntCell Int deriving (Eq, Ord, Num, Show)
 instance GridCell IntCell where
   charMap = BM.fromList [(IntCell i, intToDigit i) | i <- [0 .. 9]]
 
-readGrid :: (GridCell a, Griddable g) => Text -> g a
-readGrid = toGrid . lines
+readGridM :: (GridCell a, Griddable m g) => Text -> m (g a)
+readGridM = toGridM . lines
 
-toGrid :: (GridCell a, Griddable g) => [Text] -> g a
-toGrid rows =
-  mkGrid
+readGrid :: (GridCell a, Griddable Identity g) => Text -> g a
+readGrid = runIdentity . readGridM
+
+toGridM :: (GridCell a, Griddable m g) => [Text] -> m (g a)
+toGridM rows =
+  mkGridM
     [ ((x, y), fromChar c)
       | (y, row) <- zip [0 ..] rows,
         (x, c) <- zip [0 ..] (T.unpack row)
     ]
 
-points :: (GridCell a, Griddable g) => [Coord2] -> g a -> [a]
-points ps g = mapMaybe (g ||?) ps
+toGrid :: (GridCell a, Griddable Identity g) => [Text] -> g a
+toGrid = runIdentity . toGridM
 
-iterGrid :: (GridCell a, Griddable g) => Dir2 -> g a -> [(Coord2, a)]
-iterGrid DirDown g = mconcat [[((x, y), g ||! (x, y)) | x <- [0 .. mx]] | let (mx, my) = maxXY g, y <- [0 .. my]]
-iterGrid DirLeft g = mconcat [[((x, y), g ||! (x, y)) | y <- [my, my - 1 .. 0]] | let (mx, my) = maxXY g, x <- [0 .. mx]]
-iterGrid DirRight g = mconcat [[((x, y), g ||! (x, y)) | y <- [0 .. my]] | let (mx, my) = maxXY g, x <- [0 .. mx]]
-iterGrid DirUp g = mconcat [[((x, y), g ||! (x, y)) | x <- [mx, mx - 1 .. 0]] | let (mx, my) = maxXY g, y <- [my, my - 1 .. 0]]
+pointsM :: (GridCell a, Griddable m g) => [Coord2] -> g a -> m [a]
+pointsM ps g = catMaybes <$> mapM (g <||?>) ps
 
-iterCoords :: (GridCell a, Griddable g) => Dir2 -> g a -> [Coord2]
-iterCoords d g = fst <$> iterGrid d g
+points :: (GridCell a, Griddable Identity g) => [Coord2] -> g a -> [a]
+points ps g = runIdentity $ pointsM ps g
 
-cropX :: (GridCell a, Griddable g) => Int -> Int -> g a -> g a
-cropX i j g =
-  let g' = filterCoords (\(x, _) -> x >= i && x < j) g
-      xO = fst $ minXY g'
-   in mapCoords (first (subtract xO)) g'
+iterGridM :: (GridCell a, Griddable m g) => Dir2 -> g a -> m [(Coord2, a)]
+iterGridM DirDown g = do (mx, my) <- maxXYM g; fmap mconcat . mapM sequence $ [[((x, y),) <$> g <||!> (x, y) | x <- [0 .. mx]] | y <- [0 .. my]]
+iterGridM DirLeft g = do (mx, my) <- maxXYM g; fmap mconcat . mapM sequence $ [[((x, y),) <$> g <||!> (x, y) | y <- [my, my - 1 .. 0]] | x <- [0 .. mx]]
+iterGridM DirRight g = do (mx, my) <- maxXYM g; fmap mconcat . mapM sequence $ [[((x, y),) <$> g <||!> (x, y) | y <- [0 .. my]] | x <- [0 .. mx]]
+iterGridM DirUp g = do (mx, my) <- maxXYM g; fmap mconcat . mapM sequence $ [[((x, y),) <$> g <||!> (x, y) | x <- [mx, mx - 1 .. 0]] | y <- [my, my - 1 .. 0]]
 
-modifyCoords :: (GridCell a, Griddable g) => (Coord2 -> Coord2) -> g a -> g a
-modifyCoords f g = fromOrigin $ mapCoords (f . toOrigin) g
-  where
-    (maxX, maxY) = maxXY g
-    xO = (maxX + 1) `div` 2
-    yO = (maxY + 1) `div` 2
-    toOrigin (x, y) = (x - xO, y - yO)
-    fromOrigin m = let (xO', yO') = both negate (minXY m) in mapCoords (\(x, y) -> (x + xO', y + yO')) m
+iterGrid :: (GridCell a, Griddable Identity g) => Dir2 -> g a -> [(Coord2, a)]
+iterGrid d g = runIdentity $ iterGridM d g
 
-variantsNub :: (GridCell a, Griddable g, Eq (g a)) => g a -> [g a]
-variantsNub g = nub (variants' g)
+iterCoordsM :: (GridCell a, Griddable m g) => Dir2 -> g a -> m [Coord2]
+iterCoordsM d g = fst <$$> iterGridM d g
 
-variants' :: (GridCell a, Griddable g) => g a -> [g a]
-variants' grid = modifyCoords <$> mods <*> pure grid
-  where
-    (maxX, _) = maxXY grid
-    isEven = even (maxX + 1)
-    flipV (x, y) = (if isEven then negate x - 1 else negate x, y)
-    flipH (x, y) = (x, if isEven then negate y - 1 else negate y)
-    rot270 (x, y) = (y, if isEven then negate x - 1 else negate x)
-    rot180 = rot270 . rot270
-    rot90 = rot270 . rot270 . rot270
-    mods = (.) <$> [id, flipH, flipV] <*> [id, rot90, rot180, rot270]
+iterCoords :: (GridCell a, Griddable Identity g) => Dir2 -> g a -> [Coord2]
+iterCoords d g = runIdentity $ iterCoordsM d g
+
+cropXM :: (GridCell a, Griddable m g) => Int -> Int -> g a -> m (g a)
+cropXM i j g = do
+  g' <- filterCoordsM (\(x, _) -> x >= i && x < j) g
+  xO <- fst <$> minXYM g'
+  mapCoordsM (first (subtract xO)) g'
+
+cropX :: (GridCell a, Griddable Identity g) => Int -> Int -> g a -> g a
+cropX i j g = runIdentity $ cropXM i j g
+
+modifyCoordsM :: (GridCell a, Griddable m g) => (Coord2 -> Coord2) -> g a -> m (g a)
+modifyCoordsM f g = do
+  (maxX, maxY) <- maxXYM g
+  (minX, minY) <- minXYM g
+  let xO = (maxX + 1) `div` 2
+  let yO = (maxY + 1) `div` 2
+  let toOrigin (x, y) = (x - xO, y - yO)
+  let fromOrigin = let (xO', yO') = both negate (minX, minY) in mapCoordsM (\(x, y) -> (x + xO', y + yO'))
+  fromOrigin =<< mapCoordsM (f . toOrigin) g
+
+modifyCoords :: (GridCell a, Griddable Identity g) => (Coord2 -> Coord2) -> g a -> g a
+modifyCoords f g = runIdentity $ modifyCoordsM f g
+
+variantsNubM :: (GridCell a, Griddable m g, Eq (g a)) => g a -> m [g a]
+variantsNubM g = nub <$> variantsM' g
+
+variantsNub :: (GridCell a, Griddable Identity g, Eq (g a)) => g a -> [g a]
+variantsNub = runIdentity . variantsNubM
+
+variantsM' :: (GridCell a, Griddable m g) => g a -> m [g a]
+variantsM' grid = do
+  (maxX, _) <- maxXYM grid
+  let isEven = even (maxX + 1)
+      flipV (x, y) = (if isEven then negate x - 1 else negate x, y)
+      flipH (x, y) = (x, if isEven then negate y - 1 else negate y)
+      rot270 (x, y) = (y, if isEven then negate x - 1 else negate x)
+      rot180 = rot270 . rot270
+      rot90 = rot270 . rot270 . rot270
+      mods = (.) <$> [id, flipH, flipV] <*> [id, rot90, rot180, rot270]
+  sequence $ modifyCoordsM <$> mods <*> pure grid
+
+variants' :: (GridCell a, Griddable Identity g) => g a -> [g a]
+variants' = runIdentity . variantsM'
 
 data Variants g a = Variants
   { vId :: g a,
@@ -244,67 +346,73 @@ data Variants g a = Variants
     v270 :: g a
   }
 
-variants :: (Griddable g, GridCell a) => g a -> Variants g a
-variants grid =
-  let [a, b, c, d, e, f, g, h, i, j, k, l] = variants' grid
-   in Variants a b c d e f g h i j k l
+variantsM :: (GridCell a, Griddable m g) => g a -> m (Variants g a)
+variantsM grid = do
+  vs <- variantsM' grid
+  let [a, b, c, d, e, f, g, h, i, j, k, l] = vs
+  return $ Variants a b c d e f g h i j k l
 
-splitGrid :: (Griddable g, GridCell a) => Int -> Int -> g a -> M.Map Coord2 (g a)
-splitGrid xStride yStride grid =
-  M.fromList
-    [ ((gx, gy), subGrid gx gy)
-      | gx <- [0 .. ((maxX + 1) `div` xStride) - 1],
-        gy <- [0 .. ((maxY + 1) `div` yStride) - 1]
-    ]
-  where
-    (maxX, maxY) = maxXY grid
-    subGrid gx gy =
-      mkGrid
-        [ ((x, y), grid ||! (gx * xStride + x, gy * yStride + y))
-          | x <- [0 .. xStride - 1],
-            y <- [0 .. yStride - 1]
-        ]
+variants :: (GridCell a, Griddable Identity g) => g a -> Variants g a
+variants = runIdentity . variantsM
 
-joinGrids :: (Griddable g, GridCell a) => M.Map Coord2 (g a) -> g a
-joinGrids grids =
-  mkGrid
-    [ ( (gx * (maxX + 1) + x, gy * (maxY + 1) + y),
-        grids M.! (gx, gy) ||! (x, y)
-      )
-      | gx <- [0 .. maxGX],
-        gy <- [0 .. maxGY],
-        x <- [0 .. maxX],
-        y <- [0 .. maxY]
-    ]
-  where
-    (maxGX, maxGY) = maxXY (Grid (' ' <$ grids))
-    (maxX, maxY) = maxXY $ grids M.! (0, 0)
+-- splitGrid :: (Monad m, GridCell a, Griddable m g) => Int -> Int -> g a -> M.Map Coord2 (g a)
+-- splitGrid xStride yStride grid =
+--   M.fromList
+--     [ ((gx, gy), subGrid gx gy)
+--       | gx <- [0 .. ((maxX + 1) `div` xStride) - 1],
+--         gy <- [0 .. ((maxY + 1) `div` yStride) - 1]
+--     ]
+--   where
+--     (maxX, maxY) = maxXYM grid
+--     subGrid gx gy =
+--       mkGridM
+--         [ ((x, y), grid ||! (gx * xStride + x, gy * yStride + y))
+--           | x <- [0 .. xStride - 1],
+--             y <- [0 .. yStride - 1]
+--         ]
 
-pretty :: (GridCell a, Griddable g) => g a -> Text
-pretty grid =
-  T.pack $
-    intercalate
-      "\n"
-      [[toChar $ grid ||! (x, y) | x <- [minX .. maxX]] | y <- [minY .. maxY]]
-  where
-    (minX, minY) = minXY grid
-    (maxX, maxY) = maxXY grid
+-- joinGrids :: (Monad m, GridCell a, Griddable m g) => M.Map Coord2 (g a) -> g a
+-- joinGrids grids =
+--   mkGridM
+--     [ ( (gx * (maxX + 1) + x, gy * (maxY + 1) + y),
+--         grids M.! (gx, gy) ||! (x, y)
+--       )
+--       | gx <- [0 .. maxGX],
+--         gy <- [0 .. maxGY],
+--         x <- [0 .. maxX],
+--         y <- [0 .. maxY]
+--     ]
+--   where
+--     (maxGX, maxGY) = maxXYM (Grid (' ' <$ grids))
+--     (maxX, maxY) = maxXYM $ grids M.! (0, 0)
 
-prettyPrint :: (GridCell a) => Grid a -> IO ()
-prettyPrint = putTextLn . pretty
+gridLinesM :: (GridCell a, Griddable m g) => g a -> m [[a]]
+gridLinesM g = do
+  (minX, minY) <- minXYM g
+  (maxX, maxY) <- maxXYM g
+  sequence [sequence [g <||!> (x, y)] | x <- [minX .. maxX], y <- [minY .. maxY]]
 
--- Extends the grid logically n times in each direction.
--- Takes a function used to determine the value given by lookup, which has access to the
--- meta coordinates of the grid extension (e.g. x=15, y=15 in an extended 10x10 grid would
--- have (1,1) as its extension guide coords.
--- Returns the interface to the type, its membership, lookup and bottom-right.
-extendGrid :: (GridCell a, Griddable g) => Int -> (a -> Coord2 -> b) -> g a -> (Coord2 -> Bool, Coord2 -> b, Coord2)
-extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
-  where
-    (w, h) = both (+ 1) (maxXY g)
-    lookup (x, y) =
-      let (xi, x') = x `divMod` w
-          (yi, y') = y `divMod` h
-          c = g ||! (x', y')
-       in f c (xi, yi)
-    member (x, y) = x >= 0 && y >= 0 && x < w * n && y < h * n
+gridLines :: (GridCell a, Griddable Identity g) => g a -> [[a]]
+gridLines = runIdentity . gridLinesM
+
+prettyM :: (GridCell a, Griddable m g) => g a -> m Text
+prettyM grid = T.pack . intercalate "\n" <$> (fmap toChar <$$> gridLinesM grid)
+
+pretty :: (GridCell a, Griddable Identity g) => g a -> Text
+pretty = runIdentity . prettyM
+
+-- -- Extends the grid logically n times in each direction.
+-- -- Takes a function used to determine the value given by lookup, which has access to the
+-- -- meta coordinates of the grid extension (e.g. x=15, y=15 in an extended 10x10 grid would
+-- -- have (1,1) as its extension guide coords.
+-- -- Returns the interface to the type, its membership, lookup and bottom-right.
+-- extendGrid :: (Monad m, GridCell a, Griddable m g) => Int -> (a -> Coord2 -> b) -> g a -> (Coord2 -> Bool, Coord2 -> b, Coord2)
+-- extendGrid n f g = (member, lookup, (w * n - 1, h * n - 1))
+--   where
+--     (w, h) = both (+ 1) (maxXYM g)
+--     lookup (x, y) =
+--       let (xi, x') = x `divMod` w
+--           (yi, y') = y `divMod` h
+--           c = g ||! (x', y')
+--        in f c (xi, yi)
+--     member (x, y) = x >= 0 && y >= 0 && x < w * n && y < h * n
