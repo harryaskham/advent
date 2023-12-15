@@ -141,6 +141,9 @@ m |. (k, v) = M.insert k v m
 (|~) :: (Ord k) => Map k v -> (k, v -> v) -> Map k v
 m |~ (k, f) = M.adjust f k m
 
+(|/) :: (Ord k) => Map k v -> k -> Map k v
+m |/ k = M.delete k m
+
 mkBimap :: (Ord a, Ord b) => [(a, b)] -> BM.Bimap a b
 mkBimap = BM.fromList
 
@@ -161,6 +164,9 @@ emptySeq = SQ.empty
 
 (><) :: Seq a -> Seq a -> Seq a
 (><) = (SQ.><)
+
+(>/<) :: (Eq a) => Seq a -> a -> Seq a
+s >/< a = foldl' (flip SQ.deleteAt) s (SQ.elemIndicesL a s)
 
 mkMinQ :: (Ord k) => [(k, a)] -> PQ.MinPQueue k a
 mkMinQ = PQ.fromList
