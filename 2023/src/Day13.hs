@@ -9,8 +9,7 @@ reflects g' =
       let w = min i (maxX - i + 1),
       g
         & partitionCoords (< (i, 0))
-        & second (mapCoords (first (subtract i)))
-        & bimap (cropX (i - w) i) (cropX 0 w)
+        & bimap (cropX (i - w) i) (cropX 0 w . mapCoords (first (subtract i)))
         & sortT2On (length . coords)
         & second (v0 . variants)
         & uncurry (==)
@@ -20,7 +19,7 @@ reflectsSmudged :: Grid DotHash -> [Either Int Int]
 reflectsSmudged g =
   filter
     (∉ mkSet (reflects g))
-    (nub $ reflects =<< [g ||~ (c, (bool Dot Hash . (== Dot))) | c <- coords g])
+    (nub $ reflects =<< [g ||~ (c, bool Dot Hash . (== Dot)) | c <- coords g])
 
 solve :: (Grid DotHash -> [Either Int Int]) -> [Grid DotHash] -> Int
 solve f = concatMap f >>> partitionEithers >>> both sum >>> second (* 100) >>> uncurry (+)
