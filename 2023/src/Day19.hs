@@ -3,9 +3,6 @@ module Day19 (part1, part2) where
 -- parser :: Parser [Int]
 -- parser = many1 (number <* eol) <* eof
 
--- line :: Parser Int
--- line = number
-
 -- data Cell
 --   = Empty
 --   | Wall
@@ -21,9 +18,8 @@ module Day19 (part1, part2) where
 part1 :: Text
 part1 =
   $(input 19)
-    -- \$(grid 19)
-    -- & parseWith parser
-    -- & parseLinesWith line
+    -- \$(grid input 19)
+    -- \|- parser
     & (<> "Part 1")
 
 part2 :: Text
