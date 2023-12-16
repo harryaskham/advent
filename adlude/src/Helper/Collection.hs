@@ -111,6 +111,9 @@ a ⊅ b = not (a ⊃ b)
 setSize :: Set a -> Int
 setSize = S.size
 
+setMap :: (Ord b) => (a -> b) -> Set a -> Set b
+setMap = S.map
+
 mkMap :: (Ord k) => [(k, v)] -> Map k v
 mkMap = M.fromList
 
