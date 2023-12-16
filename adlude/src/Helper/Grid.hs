@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Helper.Grid where
 
 import Control.Monad.Memo.Vector (Vector)
@@ -420,3 +422,41 @@ pretty = runIdentity . prettyM
 --           c = g ||! (x', y')
 --        in f c (xi, yi)
 --     member (x, y) = x >= 0 && y >= 0 && x < w * n && y < h * n
+
+data Perimeter = Perimeter
+  { pTop :: [Coord2],
+    pRight :: [Coord2],
+    pBottom :: [Coord2],
+    pLeft :: [Coord2]
+  }
+  deriving (Eq, Ord, Show)
+
+pFrom :: Perimeter -> Dir2 -> [Coord2]
+pFrom p DirDown = pTop p
+pFrom p DirLeft = pRight p
+pFrom p DirRight = pLeft p
+pFrom p DirUp = pBottom p
+
+perimeterM :: (GridCell a, Griddable m g) => g a -> m Perimeter
+perimeterM g = do
+  (maxX, maxY) <- maxXYM g
+  let top = [(x, 0) | x <- [0 .. maxX]]
+  let right = [(maxX, y) | y <- [0 .. maxY]]
+  let bottom = [(x, maxY) | x <- [0 .. maxX]]
+  let left = [(0, y) | y <- [0 .. maxY]]
+  return $ Perimeter top right bottom left
+
+perimeter :: (GridCell a, Griddable Identity g) => g a -> Perimeter
+perimeter = runIdentity . perimeterM
+
+instance (GridCell a) => Memberable Coord2 (Grid a) where
+  (∈) = (||∈)
+
+instance (GridCell a) => Memberable Coord2 (VectorGrid a) where
+  (∈) = (||∈)
+
+instance Unionable (Grid a) where
+  (Grid a) ∪ (Grid b) = Grid (a ∪ b)
+
+instance Intersectable (Grid a) where
+  (Grid a) ∩ (Grid b) = Grid (a ∩ b)

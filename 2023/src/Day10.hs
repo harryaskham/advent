@@ -65,6 +65,6 @@ part2 =
   $(grid input 10)
     & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first mkSet)))
     & uncurry both
-    & both (bool id (const (∅)) . ((0, 0) ∈) &&& id >>> uncurry ($))
+    & both (bool id (const (∅)) . (((0, 0) :: Coord2) ∈) &&& id >>> uncurry ($))
     & uncurry (∪)
-    & setSize
+    & size

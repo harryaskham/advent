@@ -1,6 +1,6 @@
 module Helper.Coord where
 
-data Dir2 = DirUp | DirDown | DirLeft | DirRight deriving (Show, Eq, Ord)
+data Dir2 = DirUp | DirDown | DirLeft | DirRight deriving (Show, Eq, Ord, Enum, Bounded)
 
 udlrToDir2 :: Char -> Dir2
 udlrToDir2 'u' = DirUp

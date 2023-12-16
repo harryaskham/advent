@@ -57,29 +57,74 @@ unSet = S.toList
 (|->) :: (Ord a) => a -> Set a -> Set a
 (|->) = S.insert
 
-(∈) :: (Ord a) => a -> Set a -> Bool
-(∈) = S.member
+class Sizable a where
+  size :: a -> Int
+
+instance Sizable [a] where
+  size = L.length
+
+instance Sizable (Set a) where
+  size = S.size
+
+instance Sizable (Map k v) where
+  size = M.size
+
+instance Sizable (Seq a) where
+  size = SQ.length
+
+instance Sizable (PQ.MinPQueue k v) where
+  size = PQ.size
+
+class Memberable a b where
+  (∈) :: a -> b -> Bool
+  (∉) :: a -> b -> Bool
+  a ∉ b = not $ a ∈ b
+  (∋) :: b -> a -> Bool
+  (∋) = flip (∈)
+  (∌) :: b -> a -> Bool
+  (∌) = flip (∉)
+
+instance (Ord a) => Memberable a (Set a) where
+  (∈) = S.member
+  (∉) = S.notMember
+
+instance (Eq a) => Memberable a [a] where
+  (∈) = L.elem
+  (∉) = L.notElem
+
+instance (Ord a) => Memberable a (Map a b) where
+  (∈) = M.member
+  (∉) = M.notMember
+
+class Unionable a where
+  (∪) :: a -> a -> a
+
+instance (Ord a) => Unionable (Set a) where
+  (∪) = S.union
+
+instance (Ord k) => Unionable (Map k v) where
+  (∪) = M.union
+
+instance Unionable [a] where
+  (∪) = (L.++)
+
+class Intersectable a where
+  (∩) :: a -> a -> a
+
+instance (Ord a) => Intersectable (Set a) where
+  (∩) = S.intersection
+
+instance (Ord k) => Intersectable (Map k v) where
+  (∩) = M.intersection
+
+instance (Eq a) => Intersectable [a] where
+  (∩) = L.intersect
 
 (|∈) :: (Ord a) => a -> Map a b -> Bool
 (|∈) = M.member
 
-(∋) :: (Ord a) => Set a -> a -> Bool
-(∋) = flip S.member
-
-(∉) :: (Ord a) => a -> Set a -> Bool
-(∉) = S.notMember
-
-(∌) :: (Ord a) => Set a -> a -> Bool
-(∌) = flip S.notMember
-
 (∅) :: Set a
 (∅) = S.empty
-
-(∪) :: (Ord a) => Set a -> Set a -> Set a
-(∪) = S.union
-
-(∩) :: (Ord a) => Set a -> Set a -> Set a
-(∩) = S.intersection
 
 (∖) :: (Ord a) => Set a -> Set a -> Set a
 (∖) = S.difference
@@ -108,9 +153,6 @@ a ⊉ b = not (a ⊇ b)
 (⊅) :: (Ord a) => Set a -> Set a -> Bool
 a ⊅ b = not (a ⊃ b)
 
-setSize :: Set a -> Int
-setSize = S.size
-
 setMap :: (Ord b) => (a -> b) -> Set a -> Set b
 setMap = S.map
 
@@ -125,9 +167,6 @@ mkMapWith = M.fromListWith
 
 mapFilter :: (v -> Bool) -> Map k v -> Map k v
 mapFilter = M.filter
-
-mapSize :: Map k v -> Int
-mapSize = M.size
 
 mapSplit :: (Ord k) => k -> Map k v -> (Map k v, Map k v)
 mapSplit = M.split

@@ -14,7 +14,7 @@ part1 :: Int
 part1 =
   $(input 4)
     & parseWith parser
-    & fmap (\(_, as, bs) -> 2 ^ setSize (mkSet as ∩ mkSet bs) `div` 2)
+    & fmap (\(_, as, bs) -> 2 ^ size (as ∩ bs) `div` 2)
     & sum
 
 part2 :: Int
@@ -24,7 +24,7 @@ part2 =
     & ( \cards ->
           foldl'
             ( \m (i, as, bs) ->
-                let n = setSize (mkSet as ∩ mkSet bs)
+                let n = size (as ∩ bs)
                     c = fromMaybe 0 $ m |? i
                  in foldl' (flip (adjust (+ c))) m [i + 1 .. i + n]
             )
