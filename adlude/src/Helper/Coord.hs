@@ -30,6 +30,16 @@ type Coord3 = (Int, Int, Int)
 
 type Coord4 = (Int, Int, Int, Int)
 
+class Coord a where
+  fromXY :: (Int, Int) -> a
+  toXY :: a -> (Int, Int)
+  mapXY :: ((Int, Int) -> (Int, Int)) -> a -> a
+
+instance Coord Coord2 where
+  fromXY = id
+  toXY = id
+  mapXY f = f
+
 manhattan0 :: Coord2 -> Int
 manhattan0 = (+) <$> (abs . fst) <*> (abs . snd)
 

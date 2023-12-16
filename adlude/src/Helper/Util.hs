@@ -106,7 +106,7 @@ iterateFix f a
 cycleGet :: (Ord a) => Int -> [a] -> a
 cycleGet n as =
   let go i (a : as) seen at
-        | a |∈ seen = let (s, l) = (seen |! a, i - seen |! a) in at |! (s + ((n - s) `mod` l))
+        | a ∈ seen = let (s, l) = (seen |! a, i - seen |! a) in at |! (s + ((n - s) `mod` l))
         | otherwise = go (i + 1) as (seen |. (a, i)) (at |. (i, a))
    in go 0 as (mkMap []) (mkMap [])
 

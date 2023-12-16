@@ -8,7 +8,7 @@ instance GridCell Cell where
 pathOutside :: Grid Cell -> (([Coord2], Set Coord2), ([Coord2], Set Coord2))
 pathOutside g =
   let pipesTo n@(x, y) c =
-        c `elem` case g ||? n of
+        c `elem` case g |? n of
           Just PipeVertical -> [(x, y + 1), (x, y - 1)]
           Just PipeHorizontal -> [(x + 1, y), (x - 1, y)]
           Just PipeF -> [(x + 1, y), (x, y + 1)]
@@ -17,7 +17,7 @@ pathOutside g =
           Just PipeJ -> [(x - 1, y), (x, y - 1)]
           _ -> []
       outsideOf (x, y) (lx, ly) =
-        case ((x - lx, y - ly), g ||? (x, y)) of
+        case ((x - lx, y - ly), g |? (x, y)) of
           ((0, 1), Just PipeVertical) -> [(x + 1, y)]
           ((0, -1), Just PipeVertical) -> [(x - 1, y)]
           ((1, 0), Just PipeHorizontal) -> [(x, y - 1)]
@@ -47,7 +47,7 @@ enclosed g path outside =
         | c ∈ (seen <> path) = go seen cs
         | c ∈ outside = (seen, (∅))
         | otherwise =
-            let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ||∈ g]
+            let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ∈ g]
              in go (c |-> seen) (cs >< mkSeq ns)
       goAll _ es [] = es
       goAll seen es (start : starts)

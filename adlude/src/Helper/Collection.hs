@@ -120,8 +120,29 @@ instance (Ord k) => Intersectable (Map k v) where
 instance (Eq a) => Intersectable [a] where
   (∩) = L.intersect
 
-(|∈) :: (Ord a) => a -> Map a b -> Bool
-(|∈) = M.member
+class Gettable f k v where
+  (|!) :: f k v -> k -> v
+
+instance (Ord k) => Gettable Map k v where
+  (|!) = (M.!)
+
+class MaybeGettable f k v where
+  (|?) :: f k v -> k -> Maybe v
+
+instance (Ord k) => MaybeGettable Map k v where
+  (|?) = flip M.lookup
+
+class Settable f k v where
+  (|.) :: f k v -> (k, v) -> f k v
+
+instance (Ord k) => Settable Map k v where
+  m |. (k, v) = M.insert k v m
+
+class Modifiable f k v where
+  (|~) :: f k v -> (k, v -> v) -> f k v
+
+instance (Ord k) => Modifiable Map k v where
+  m |~ (k, f) = M.adjust f k m
 
 (∅) :: Set a
 (∅) = S.empty
@@ -170,18 +191,6 @@ mapFilter = M.filter
 
 mapSplit :: (Ord k) => k -> Map k v -> (Map k v, Map k v)
 mapSplit = M.split
-
-(|!) :: (Ord k) => Map k v -> k -> v
-(|!) = (M.!)
-
-(|?) :: (Ord k) => Map k v -> k -> Maybe v
-(|?) = flip M.lookup
-
-(|.) :: (Ord k) => Map k v -> (k, v) -> Map k v
-m |. (k, v) = M.insert k v m
-
-(|~) :: (Ord k) => Map k v -> (k, v -> v) -> Map k v
-m |~ (k, f) = M.adjust f k m
 
 (|/) :: (Ord k) => Map k v -> k -> Map k v
 m |/ k = M.delete k m
