@@ -105,6 +105,7 @@ common common-settings
                         -Wno-type-defaults
                         -Wno-incomplete-patterns
                         -Wno-incomplete-uni-patterns
+                        -O2
 library
     import:             common-settings
     hs-source-dirs:     src

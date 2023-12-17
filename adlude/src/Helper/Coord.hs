@@ -1,6 +1,15 @@
 module Helper.Coord where
 
+import Data.Array
+import Helper.Collection
+import Text.Megaparsec (count')
+
 data Dir2 = DirUp | DirDown | DirLeft | DirRight deriving (Show, Eq, Ord, Enum, Bounded)
+
+instance Ix Dir2 where
+  range (a, b) = [a .. b]
+  index (a, _) c = fromEnum c - fromEnum a
+  inRange (a, b) c = c >= a && c <= b
 
 udlrToDir2 :: Char -> Dir2
 udlrToDir2 'u' = DirUp
