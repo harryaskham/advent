@@ -53,6 +53,7 @@ common common-settings
                         BlockArguments,
                         ImportQualifiedPost,
                         EmptyCase,
+                        PostfixOperators,
                         FlexibleContexts,
                         FlexibleInstances,
                         InstanceSigs,

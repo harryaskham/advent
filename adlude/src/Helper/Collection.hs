@@ -138,6 +138,9 @@ class Settable f k v where
 instance (Ord k) => Settable Map k v where
   m |. (k, v) = M.insert k v m
 
+instance (Ord k) => Settable PQ.MinPQueue k v where
+  m |. (k, v) = PQ.insert k v m
+
 class Modifiable f k v where
   (|~) :: f k v -> (k, v -> v) -> f k v
 
@@ -221,6 +224,12 @@ s >/< a = foldl' (flip SQ.deleteAt) s (SQ.elemIndicesL a s)
 
 mkMinQ :: (Ord k) => [(k, a)] -> PQ.MinPQueue k a
 mkMinQ = PQ.fromList
+
+nullQ :: PQ.MinPQueue k a -> Bool
+nullQ = PQ.null
+
+(<!) :: (Ord k) => PQ.MinPQueue k a -> ((k, a), PQ.MinPQueue k a)
+(<!) q = PQ.deleteFindMin q
 
 (!!) :: [a] -> Int -> a
 (!!) = (U.!!)

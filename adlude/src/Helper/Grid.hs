@@ -233,6 +233,11 @@ instance GridCell Char where
   toChar = id
   charMap = BM.empty
 
+instance GridCell Int where
+  fromChar = digitToInt
+  toChar = intToDigit
+  charMap = BM.empty
+
 instance GridCell DotHash where
   charMap = BM.fromList [(Dot, '.'), (Hash, '#')]
 
