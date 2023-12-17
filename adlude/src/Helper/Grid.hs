@@ -426,3 +426,18 @@ instance (Griddable Identity Grid' k a) => Settable Grid' k a where
 
 instance (Griddable Identity Grid' k a) => Modifiable Grid' k a where
   (|~) = (||~)
+
+instance (Griddable Identity VectorGrid' k a) => Gettable VectorGrid' k a where
+  (|!) = (||!)
+
+instance (Griddable Identity VectorGrid' k a) => MaybeGettable VectorGrid' k a where
+  (|?) = (||?)
+
+instance (Griddable Identity VectorGrid' k a) => Settable VectorGrid' k a where
+  (|.) = (||.)
+
+instance (Griddable Identity VectorGrid' k a) => Modifiable VectorGrid' k a where
+  (|~) = (||~)
+
+instance (Griddable Identity VectorGrid' k a) => Memberable k (VectorGrid' k a) where
+  a ∈ g = gridMember a g

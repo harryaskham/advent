@@ -58,6 +58,7 @@ common common-settings
                         DeriveFoldable,
                         DeriveFunctor,
                         DeriveGeneric,
+                        PostfixOperators,
                         DeriveLift,
                         DeriveTraversable,
                         DerivingStrategies,
