@@ -12,8 +12,8 @@ tracePerimeter' =
    in go 0 (0, 0) (mkSet [])
 
 -- y edge start and end, keyed and sorted by there ex coordinate
-verticals' :: [(Dir2, Int)] -> [(Int, [(Int, Int)])]
-verticals' ms =
+verticals :: [(Dir2, Int)] -> [(Int, [(Int, Int)])]
+verticals ms =
   let go _ [_] _ = []
       go c@(x, y) ((d, n) : rest@((nextD, _) : _)) lastD =
         case (d, lastD, nextD) of
@@ -29,8 +29,8 @@ verticals' ms =
    in sort (unMap (mkMapWith (<>) (second pure <$> sort (go (0, 0) (ms <> take 1 ms) (fst (ulast ms))))))
 
 -- y edge start and end, keyed and sorted by there ex coordinate
-verticals :: [(Dir2, Int)] -> [(Int, [(Int, Int)])]
-verticals ms =
+verticals' :: [(Dir2, Int)] -> [(Int, [(Int, Int)])]
+verticals' ms =
   let go _ [_] _ = []
       go c@(x, y) ((d, n) : rest@((nextD, _) : _)) lastD =
         case (d, lastD, nextD) of
@@ -49,17 +49,21 @@ scanFromLeft :: [(Int, [(Int, Int)])] -> Int
 -- scanFromLeft (v : vs) = go (sumActive (snd v)) v vs
 scanFromLeft (v : vs) = go (sumActive (snd v)) (snd v) (v : vs)
   where
-    -- go n oldActive [(x, edges), (x', edges')] = (n + (x' - x) * sumActive oldActive)
-    go n oldActive [_] = n
-    go n oldActive ((x, edges) : (x', edges') : rest) =
-      let active = splitActive oldActive edges'
-       in traceShow (n, "|", x, x', oldActive, active) $
+    -- go n active [(x, edges), (x', edges')] = (n + (x' - x) * sumActive active)
+    go n active [_] = n
+    go n active ((x, edges) : (x', edges') : rest) =
+      let active' = splitActive active edges'
+          merged' = mergeSegs active' edges'
+       in traceShow (n, "|", x, x', "active", active, active', "edges", edges, edges', "merged", merged') $
             -- getting broken by last edges
-            go (n + (x' - x - 1) * sumActive oldActive + sumActive (mergeSegs oldActive edges')) active ((x', edges') : rest)
+            go (n + (x' - x - 1) * sumActive active + sumActive merged') active' ((x', edges') : rest)
     mergeSegs active edges =
       -- traceShow (active, edges) . traceShowId $
-      unSet $
-        iterateFix mergeAll (mkSet (active <> edges))
+      iterateFix mergeOnce (sort (active <> edges))
+    mergeOnce [a] = [a]
+    mergeOnce ((a, b) : (c, d) : rest)
+      | overlapping (a, b) (c, d) = mergeOnce ((min a c, max b d) : rest)
+      | otherwise = (a, b) : mergeOnce ((c, d) : rest)
     mergeOne (a, b) (c, d)
       | overlapping (a, b) (c, d) = [(min a c, max b d)]
       | otherwise = [(a, b), (c, d)]
