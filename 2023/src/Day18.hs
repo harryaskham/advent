@@ -64,21 +64,6 @@ scanFromLeft (v : vs) = go (sumActive (snd v)) (snd v) (v : vs)
     mergeOnce ((a, b) : (c, d) : rest)
       | overlapping (a, b) (c, d) = mergeOnce ((min a c, max b d) : rest)
       | otherwise = (a, b) : mergeOnce ((c, d) : rest)
-    mergeOne (a, b) (c, d)
-      | overlapping (a, b) (c, d) = [(min a c, max b d)]
-      | otherwise = [(a, b), (c, d)]
-    mergeAll s = mkSet $ concat [mergeOne a b | a <- unSet s, b <- unSet s]
-    -- go n (x, active) [(x', edges)] =
-    --   traceShow (x, n, active) $
-    --     n + (x' - x) * sumActive active
-    -- traceShow (x, n, snd $ ulast vs) $
-    --   n + sumActive (snd $ ulast vs)
-    -- go n (x, active) ((x', edges) : vs) =
-    --   let active' = splitActive active edges
-    --       oldSum = sumActive active
-    --       newSum = sumActive active'
-    --    in traceShow (x, n, active) $
-    --         go (n + (x' - x - 1) * sumActive active + (max oldSum newSum)) (x', active') vs
     sumActive active = sum $ (\(a, b) -> b - a + 1) <$> active
     splitActive active edges =
       (mconcat [overlaps a edges | a <- active])
@@ -94,31 +79,6 @@ scanFromLeft (v : vs) = go (sumActive (snd v)) (snd v) (v : vs)
       | c >= a && d > b = [(a, c)] -- again only let the active bit through
 
 -- just make the vertical segments their full height and only intersect one in from the top and bottom
-
-tracePerimeter :: [(Dir2, Int)] -> Set (Coord2, Int)
-tracePerimeter =
-  let go _ _ seen [] = seen
-      go i (x, y) seen ((d, n) : rest) =
-        traceShow i $
-          let cs = case d of
-                DirDown -> [((x, y + j), i + j - 1) | j <- [1 .. n]]
-                DirUp -> [((x, y - j), i + j - 1) | j <- [1 .. n]]
-                DirLeft -> [((x - j, y), i + j - 1) | j <- [1 .. n]]
-                DirRight -> [((x + j, y), i + j - 1) | j <- [1 .. n]]
-           in go (i + n) (fst $ ulast cs) (seen ∪ mkSet cs) rest
-   in go 0 (0, 0) (mkSet [])
-
-floodFill :: Set Coord2 -> Set Coord2
-floodFill p =
-  let go qs =
-        let f (Empty, seen) = Right seen
-            f (c :<| q, seen)
-              | c ∈ seen = Left (q, seen)
-              | otherwise = Left (q >< mkSeq (neighborsNoDiags c), c |-> seen)
-         in case partitionEithers (f <$> qs) of
-              (_, seen : _) -> seen
-              (qs', _) -> go qs'
-   in go ((,p) <$> (mkSeq . pure <$> [(-1, -1), (-1, 1), (1, -1), (1, 1)]))
 
 volume :: Set (Coord2, Int) -> Int
 volume p =
@@ -219,7 +179,7 @@ volume p =
 
 solve :: (((Dir2, Int), (Dir2, Int)) -> (Dir2, Int)) -> Int
 solve f =
-  $(exampleInput 18)
+  $(input 18)
     |- ( f
            <$$> ( many
                     ( (,)
@@ -237,9 +197,17 @@ solve f =
                     <* eof
                 )
        )
-    & verticals
-    & (\vs -> traceShow ("verticals", vs) vs)
-    & scanFromLeft
+    -- & verticals
+    & pick (0, 0) 0 0
+
+-- & (\vs -> traceShow ("verticals", vs) vs)
+-- & scanFromLeft
+
+pick :: (Int, Int) -> Int -> Int -> [(Dir2, Int)] -> Int
+pick _ p a [] = a + (p `div` 2) + 1
+pick (x, y) p a ((d, l) : rest) =
+  let (x', y') = (move d l (x, y))
+   in pick (x', y') (p + l) (a + x' * (y' - y)) rest
 
 -- & tracePerimeter
 -- & floodFill
@@ -249,5 +217,6 @@ solve f =
 part1 :: Int
 part1 = solve fst
 
+-- 106446812342186 too low
 part2 :: Int
 part2 = solve snd
