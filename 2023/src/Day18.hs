@@ -234,6 +234,7 @@ solve f =
                 )
        )
     & verticals
+    & (\vs -> traceShow ("verticals", vs) vs)
     & scanFromLeft
 
 -- & tracePerimeter
