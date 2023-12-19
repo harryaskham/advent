@@ -42,19 +42,15 @@ totalAccepted fs =
       invert (Left (c, '<', n, next)) = Left (c, '>', n - 1, next)
       invert (Left (c, '>', n, next)) = Left (c, '<', n + 1, next)
       invert c = c
-      expand :: [Either (Char, Char, Int, String) String] -> Int
-      expand = go (Just $ mkMap ((,(1, 4000)) <$> "xmas"))
-      go :: Maybe (Map Char (Int, Int)) -> [Either (Char, Char, Int, String) String] -> Int
-      go Nothing _ = 0
-      go (Just xmas) [] = traceShowId $ product $ traceShowId [b - a + 1 | (a, b) <- snd <$> unMap xmas]
-      go xmas ((Right _) : cs) = go xmas cs
-      go (Just xmas) (Left (c, opC, bound, _) : cs) =
+      expand Nothing _ = 0
+      expand (Just xmas) [] = product [b - a + 1 | (a, b) <- snd <$> unMap xmas]
+      expand xmas ((Right _) : cs) = expand xmas cs
+      expand (Just xmas) (Left (c, opC, bound, _) : cs) =
         let (a, b) = xmas |! c
          in case opC of
-              '<' -> if bound <= a then 0 else go (Just $ xmas |. (c, (a, min b (bound - 1)))) cs
-              '>' -> if bound >= b then 0 else go (Just $ xmas |. (c, (max a (bound + 1), b))) cs
-      follow :: [Either (Char, Char, Int, String) String] -> String -> Int
-      follow conditions "in" = expand conditions
+              '<' -> if bound <= a then 0 else expand (Just $ xmas |. (c, (a, min b (bound - 1)))) cs
+              '>' -> if bound >= b then 0 else expand (Just $ xmas |. (c, (max a (bound + 1), b))) cs
+      follow conditions "in" = expand (Just $ mkMap ((,(1, 4000)) <$> "xmas")) conditions
       follow conditions target = sum [follow (conditions <> (p : (invert <$> ps))) f | (f, p : ps) <- paths |! target]
    in follow [] "A"
 
