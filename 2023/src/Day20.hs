@@ -1,5 +1,7 @@
 module Day20 (part1, part2) where
 
+import Data.Tuple.Extra (thd3)
+
 mkInitialState :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
 mkInitialState g =
   let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
@@ -96,6 +98,9 @@ part1 =
     & traceShowId
     & uncurry (*)
 
+findCycle :: (Ord a) => [a] -> [a]
+findCycle xs = uhead . uhead $ [cs | n <- [1 .. length xs], let cs = chunksOf n xs, length (nub cs) == 1]
+
 part2 :: Int
 part2 =
   $(input 20)
@@ -109,16 +114,40 @@ part2 =
                )
        )
     -- & pushUntil
+    -- & ( \g ->
+    --       ( first
+    --           ( \name ->
+    --               let h = nameToHistory 10000 g name
+    --                   pairs = zip [0 ..] $ zip h (drop 1 h)
+    --                   changes = [p | p@(i, (a, b)) <- pairs, a /= b]
+    --                   getDiffs ((i, _) : (j, _) : rest) = (i, j, j - i) : getDiffs rest
+    --                   getDiffs _ = []
+    --                   diffs = getDiffs changes
+    --               in (name, diffs)
+    --           )
+    --       )
+    --         <$> requirements g ("rx", False)
+    --   )
+    -- & traceShowId
+    -- & fmap (first (findCycle . fmap thd3 . snd))
+    -- & traceShowId
+    -- & length
     & ( \g ->
           ( first
               ( \name ->
                   let h = nameToHistory 10000 g name
                       pairs = zip [0 ..] $ zip h (drop 1 h)
                       changes = [p | p@(i, (a, b)) <- pairs, a /= b]
-                   in (name, changes)
+                      getDiffs ((i, _) : (j, _) : rest) = (i, j) : getDiffs rest
+                      getDiffs _ = []
+                      diffs = getDiffs changes
+                   in (name, diffs)
               )
           )
             <$> requirements g ("rx", False)
       )
+    -- was about to speed up button pushing and then meybe merge cycles (but this cant exceed the cap)
+    & traceShowId
+    & fmap (first (findCycle . fmap thd3 . snd))
     & traceShowId
     & length
