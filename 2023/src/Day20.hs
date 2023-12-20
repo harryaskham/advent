@@ -15,6 +15,10 @@ pushButton :: Int -> Map String [String] -> (Int, Int, [Map String (Map String B
 pushButton n g =
   let (low, high, ss, satisfied) = iterate (onePass g) (mkInitialState g) !! n in (n + low, high, reverse ss, satisfied)
 
+pushButton' :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
+pushButton' n g =
+  let (low, high, ss, satisfied) = iterate (onePass' g) (mkInitialState g) !! n in (n + low, high, reverse ss, satisfied)
+
 onePass :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
 onePass g st = go st (mkSeq [("button", "broadcaster", False)])
   where
@@ -54,11 +58,50 @@ onePass g st = go st (mkSeq [("button", "broadcaster", False)])
             Nothing -> stack
             Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts, isJust (targets t)]
 
+onePass' :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
+onePass' g st = go st (mkSeq [("button", "broadcaster", False)])
+  where
+    targets :: String -> Maybe ([String], String)
+    targets name =
+      -- traceShow (name) $
+      case mapMaybe (\n -> (,n) <$> (g |? n)) ([id, ('%' :), ('&' :)] <*> pure name) of
+        [] -> Nothing
+        (ts, fullName) : _ -> Just (ts, fullName)
+    go :: (Int, Int, [Map String (Map String Bool, Bool)], Bool) -> Seq (String, String, Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
+    go st Empty = st
+    go (low, high, ss@(s : _), satisfied) (event@(origin, current, incomingSignal) :<| stack) =
+      -- traceShow (st, event) $
+      -- traceShow (event) $
+      let Just (ts, fullName) = targets current
+          (inputs, signal) = s |! fullName
+          inputs' = inputs |. (origin, incomingSignal)
+          signal' = case fullName of
+            "broadcaster" -> Just False
+            ('%' : _) -> if incomingSignal then Nothing else Just (not signal)
+            ('&' : _) -> if all snd (unMap inputs') then Just False else Just True
+          s' = s |~ (fullName, first (const inputs'))
+          st'@(low', high', s'', satisfied') =
+            let satisfied' = satisfied || (("rx" :: String) ∈ (ts :: [String]) && signal' == Just False)
+             in case signal' of
+                  Nothing -> (low, high, [s'], satisfied')
+                  Just False -> (low + length ts, high, [(s' |~ (fullName, second (const False)))], satisfied')
+                  Just True -> (low, high + length ts, [(s' |~ (fullName, second (const True)))], satisfied')
+       in -- traceShow (st', origin, fullName) $
+          -- traceShow (fullName, ts, st') $
+          -- if fullName /= "broadcaster" && origin /= "broadcaster" && not (any (\((c : _), (_, signal)) -> c == '%' && signal) (unMap s''))
+          --   then traceShow "cycle over" $ st'
+          --   else go st' $ case signal' of
+          --     Nothing -> stack
+          --     Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts]
+          go st' $ case signal' of
+            Nothing -> stack
+            Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts, isJust (targets t)]
+
 pushUntil :: Map String [String] -> Int
 pushUntil g = go 0 (mkInitialState g)
   where
     go n (_, _, _, True) = n
-    go n st = traceShow n $ go (n + 1) (onePass g st)
+    go n st = traceShow n $ go (n + 1) (onePass' g st)
 
 nameToHistory :: Int -> Map String [String] -> String -> [Bool]
 nameToHistory n g name = let (_, _, history, _) = pushButton n g in (\h -> snd (h |! name)) <$> history
@@ -101,8 +144,8 @@ part1 =
 findCycle :: (Ord a) => [a] -> [a]
 findCycle xs = uhead . uhead $ [cs | n <- [1 .. length xs], let cs = chunksOf n xs, length (nub cs) == 1]
 
-part2 :: Int
-part2 =
+part2' :: Int
+part2' =
   $(input 20)
     |- ( mkMap
            <$> ( many1
@@ -138,7 +181,7 @@ part2 =
                   let h = nameToHistory 10000 g name
                       pairs = zip [0 ..] $ zip h (drop 1 h)
                       changes = [p | p@(i, (a, b)) <- pairs, a /= b]
-                      getDiffs ((i, _) : (j, _) : rest) = (i, j) : getDiffs rest
+                      getDiffs ((i, _) : (j, _) : rest) = (i, j, j - i) : getDiffs rest
                       getDiffs _ = []
                       diffs = getDiffs changes
                    in (name, diffs)
@@ -151,3 +194,17 @@ part2 =
     & fmap (first (findCycle . fmap thd3 . snd))
     & traceShowId
     & length
+
+part2 :: Int
+part2 =
+  $(input 20)
+    |- ( mkMap
+           <$> ( many1
+                   ( (,)
+                       <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
+                       <*> (many1 alphaNum `sepBy1` string ", " <* eol)
+                   )
+                   <* eof
+               )
+       )
+    & pushUntil
