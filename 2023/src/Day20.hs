@@ -141,14 +141,13 @@ requirements g a = go a (mkSet [])
       | otherwise =
           let seen' = name |-> seen
               modName name = if name == "broadcaster" then name else drop 1 name
-           in traceShow (name, signal) $
-                -- traceShow (name, gR) $
-                case targets name of
-                  Nothing -> (name, signal) : mconcat [go (precursor, signal) seen' | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
-                  Just (_, fullName@('&' : _)) -> mconcat [go (modName precursor, not signal) seen' | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
-                  -- Just (_, fullName@('%' : _)) -> [(fullName, signal)]
-                  Just (_, fullName@('%' : _)) -> if signal then [(name, signal)] else [] -- : mconcat [go (modName precursor, not signal) seen' | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
-                  Just _ -> (name, signal) : []
+           in -- traceShow (name, gR) $
+              case targets name of
+                Nothing -> (name, signal) : mconcat [go (precursor, signal) seen' | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
+                Just (_, fullName@('&' : _)) -> mconcat [go (modName precursor, not signal) seen' | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
+                -- Just (_, fullName@('%' : _)) -> [(fullName, signal)]
+                Just (_, fullName@('%' : _)) -> if signal then [(name, signal)] else [] -- : mconcat [go (modName precursor, not signal) seen' | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
+                Just _ -> (name, signal) : []
 
 part1 :: Int
 part1 =
@@ -164,7 +163,6 @@ part1 =
        )
     & pushButton 1000
     & (\(low, high, _, _) -> (low, high))
-    & traceShowId
     & uncurry (*)
 
 findCycle :: (Ord a) => [a] -> [a]
@@ -237,7 +235,6 @@ part2 =
                   changes = [p | p@(((_, a), (_, b))) <- pairs, a /= b]
                in changes
           )
-            -- <$> (fst <$> traceShowId (requirements g ("&vf", False)))
             <$> ((let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs] in gR |! "vf"))
       )
     & fmap uhead
