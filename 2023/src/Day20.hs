@@ -58,6 +58,9 @@ pushUntil g = go 0 (mkInitialState g)
     go n (_, _, _, True) = n
     go n st = traceShow n $ go (n + 1) (onePass g st)
 
+nameToHistory :: Int -> Map String [String] -> String -> [Bool]
+nameToHistory n g name = let (_, _, history, _) = pushButton n g in (\h -> snd (h |! name)) <$> history
+
 requirements :: Map String [String] -> (String, Bool) -> [(String, Bool)]
 requirements g a = go a
   where
@@ -67,11 +70,14 @@ requirements g a = go a
         [] -> Nothing
         (ts, fullName) : _ -> Just (ts, fullName)
     gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
-    go (name, signal) = case targets name of
-      Nothing -> mconcat [go (precursor, signal) | precursor <- gR |! name]
-      Just (_, fullName@('&' : _)) -> mconcat [go (precursor, not signal) | precursor <- gR |! fullName]
-      Just (_, fullName@('%' : _)) -> goFlipflop (name, signal)
-    goFlipflop (name, signal) = case targets name of {}
+    go ("broadcaster", False) = []
+    go ("broadcaster", True) = error "true broadcaster"
+    go (name, signal) =
+      -- traceShow (name, gR) $
+      case targets name of
+        Nothing -> mconcat [go (precursor, signal) | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
+        Just (_, fullName@('&' : _)) -> mconcat [go (drop 1 precursor, not signal) | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
+        Just (_, fullName@('%' : _)) -> [(fullName, signal)]
 
 part1 :: Int
 part1 =
@@ -91,16 +97,28 @@ part1 =
     & uncurry (*)
 
 part2 :: Int
-part2 = 123
-
--- \$(input 20)
---   |- ( mkMap
---          <$> ( many1
---                  ( (,)
---                      <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
---                      <*> (many1 alphaNum `sepBy1` string ", " <* eol)
---                  )
---                  <* eof
---              )
---      )
---   & pushUntil
+part2 =
+  $(input 20)
+    |- ( mkMap
+           <$> ( many1
+                   ( (,)
+                       <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
+                       <*> (many1 alphaNum `sepBy1` string ", " <* eol)
+                   )
+                   <* eof
+               )
+       )
+    -- & pushUntil
+    & ( \g ->
+          ( first
+              ( \name ->
+                  let h = nameToHistory 10000 g name
+                      pairs = zip [0 ..] $ zip h (drop 1 h)
+                      changes = [p | p@(i, (a, b)) <- pairs, a /= b]
+                   in (name, changes)
+              )
+          )
+            <$> requirements g ("rx", False)
+      )
+    & traceShowId
+    & length
