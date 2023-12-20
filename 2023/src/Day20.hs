@@ -2,20 +2,20 @@ module Day20 (part1, part2) where
 
 import Data.Tuple.Extra (thd3)
 
-mkInitialState :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
+mkInitialState :: Map String [String] -> (Int, Int, [Map String (Map String Bool, [Bool])], Bool)
 mkInitialState g =
   let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
       initialInputs "broadcaster" = mkMap []
       initialInputs ('%' : _) = mkMap []
       initialInputs ('&' : name) = mkMap [(inputName, False) | inputName <- gR |! name]
-      s = mkMap [(name, (initialInputs name, False)) | name <- keys g]
+      s = mkMap [(name, (initialInputs name, [False])) | name <- keys g]
    in (0, 0, [s], False)
 
-pushButton :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
+pushButton :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, [Bool])], Bool)
 pushButton n g =
   let (low, high, ss, satisfied) = iterate (onePass g) (mkInitialState g) !! n in (n + low, high, reverse ss, satisfied)
 
-onePass :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
+onePass :: Map String [String] -> (Int, Int, [Map String (Map String Bool, [Bool])], Bool) -> (Int, Int, [Map String (Map String Bool, [Bool])], Bool)
 onePass g st = go st (mkSeq [("button", "broadcaster", False)])
   where
     targets :: String -> Maybe ([String], String)
@@ -24,13 +24,12 @@ onePass g st = go st (mkSeq [("button", "broadcaster", False)])
       case mapMaybe (\n -> (,n) <$> (g |? n)) ([id, ('%' :), ('&' :)] <*> pure name) of
         [] -> Nothing
         (ts, fullName) : _ -> Just (ts, fullName)
-    go :: (Int, Int, [Map String (Map String Bool, Bool)], Bool) -> Seq (String, String, Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
     go st Empty = st
     go (low, high, ss@(s : _), satisfied) (event@(origin, current, incomingSignal) :<| stack) =
       -- traceShow (st, event) $
       -- traceShow (event) $
       let Just (ts, fullName) = targets current
-          (inputs, signal) = s |! fullName
+          (inputs, signals@(signal:_)) = s |! fullName
           inputs' = inputs |. (origin, incomingSignal)
           signal' = case fullName of
             "broadcaster" -> Just False
@@ -41,8 +40,8 @@ onePass g st = go st (mkSeq [("button", "broadcaster", False)])
             let satisfied' = satisfied || (("rx" :: String) ∈ (ts :: [String]) && signal' == Just False)
              in case signal' of
                   Nothing -> (low, high, s' : ss, satisfied')
-                  Just False -> (low + length ts, high, (s' |~ (fullName, second (const False))) : ss, satisfied')
-                  Just True -> (low, high + length ts, (s' |~ (fullName, second (const True))) : ss, satisfied')
+                  Just False -> (low + length ts, high, (s' |~ (fullName, second ( False:))) : ss, satisfied')
+                  Just True -> (low, high + length ts, (s' |~ (fullName, second (True:))) : ss, satisfied')
        in -- traceShow (st', origin, fullName) $
           -- traceShow (fullName, ts, st') $
           -- if fullName /= "broadcaster" && origin /= "broadcaster" && not (any (\((c : _), (_, signal)) -> c == '%' && signal) (unMap s''))
@@ -54,58 +53,58 @@ onePass g st = go st (mkSeq [("button", "broadcaster", False)])
             Nothing -> stack
             Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts, isJust (targets t)]
 
-pushButton' :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul])
-pushButton' n g =
-  let (low, high, [s], satisfied) = mkInitialState g
-   in iterate (onePass' g) (low, high, [s |. ("rx", (mkMap [], False))], satisfied, Val 1, ([] <$ g) |. ("broadcaster", [Val 1])) !! n
-
-onePass' :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul]) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul])
-onePass' g st = go st (mkSeq [("button", "broadcaster", False)])
-  where
-    gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
-    targets name =
-      case mapMaybe (\n -> (,n) <$> (g |? n)) ([id, ('%' :), ('&' :)] <*> pure name) of
-        [] -> ([], "rx")
-        (ts, fullName) : _ -> (ts, fullName)
-    go :: (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul]) -> Seq (String, String, Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul])
-    go st Empty = st
-    go (low, high, ss@(s : _), satisfied, conditions, allConditions) (event@(origin, current, incomingSignal) :<| stack) =
-      -- traceShow event $
-      let (ts, fullName) = targets current
-          (inputs, signal) = case s |? fullName of
-            Nothing -> (mkMap [], False)
-            Just insig -> insig
-          inputs' = inputs |. (origin, incomingSignal)
-          signal' = case fullName of
-            "broadcaster" -> Just False
-            "rx" -> Nothing
-            ('%' : _) -> if incomingSignal then Nothing else Just (not signal)
-            ('&' : _) -> if all snd (unMap inputs') then Just False else Just True
-          s' = s |~ (fullName, first (const inputs'))
-          st' =
-            let satisfied' = satisfied || (("rx" :: String) ∈ (ts :: [String]) && signal' == Just False)
-                conditions' = case fullName of
-                  "broadcaster" -> Val 1
-                  "rx" -> conditions
-                  '%' : _ -> Dubble conditions
-                  '&' : name -> case gR |? name of
-                    Just fns -> (And (LazyVal <$> fns))
-                    Nothing -> Val 0
-                allConditions' = allConditions |~ (fullName, (conditions :))
-             in case signal' of
-                  Nothing -> (low, high, [s'], satisfied', conditions', allConditions')
-                  Just False -> (low + length ts, high, [(s' |~ (fullName, second (const False)))], satisfied', conditions', allConditions')
-                  Just True -> (low, high + length ts, [(s' |~ (fullName, second (const True)))], satisfied', conditions', allConditions')
-       in -- traceShow (st', origin, fullName) $
-          -- traceShow (fullName, ts, st') $
-          -- if fullName /= "broadcaster" && origin /= "broadcaster" && not (any (\((c : _), (_, signal)) -> c == '%' && signal) (unMap s''))
-          --   then traceShow "cycle over" $ st'
-          --   else go st' $ case signal' of
-          --     Nothing -> stack
-          --     Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts]
-          go st' $ case signal' of
-            Nothing -> stack
-            Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts]
+-- pushButton' :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul])
+-- pushButton' n g =
+  -- let (low, high, [s], satisfied) = mkInitialState g
+   -- in iterate (onePass' g) (low, high, [s |. ("rx", (mkMap [], False))], satisfied, Val 1, ([] <$ g) |. ("broadcaster", [Val 1])) !! n
+--
+-- onePass' :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul]) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul])
+-- onePass' g st = go st (mkSeq [("button", "broadcaster", False)])
+  -- where
+    -- gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
+    -- targets name =
+      -- case mapMaybe (\n -> (,n) <$> (g |? n)) ([id, ('%' :), ('&' :)] <*> pure name) of
+        -- [] -> ([], "rx")
+        -- (ts, fullName) : _ -> (ts, fullName)
+    -- go :: (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul]) -> Seq (String, String, Bool) -> (Int, Int, [Map String (Map String Bool, Bool)], Bool, Buul, Map String [Buul])
+    -- go st Empty = st
+    -- go (low, high, ss@(s : _), satisfied, conditions, allConditions) (event@(origin, current, incomingSignal) :<| stack) =
+      -- -- traceShow event $
+      -- let (ts, fullName) = targets current
+          -- (inputs, signal) = case s |? fullName of
+            -- Nothing -> (mkMap [], False)
+            -- Just insig -> insig
+          -- inputs' = inputs |. (origin, incomingSignal)
+          -- signal' = case fullName of
+            -- "broadcaster" -> Just False
+            -- "rx" -> Nothing
+            -- ('%' : _) -> if incomingSignal then Nothing else Just (not signal)
+            -- ('&' : _) -> if all snd (unMap inputs') then Just False else Just True
+          -- s' = s |~ (fullName, first (const inputs'))
+          -- st' =
+            -- let satisfied' = satisfied || (("rx" :: String) ∈ (ts :: [String]) && signal' == Just False)
+                -- conditions' = case fullName of
+                  -- "broadcaster" -> Val 1
+                  -- "rx" -> conditions
+                  -- '%' : _ -> Dubble conditions
+                  -- '&' : name -> case gR |? name of
+                    -- Just fns -> (And (LazyVal <$> fns))
+                    -- Nothing -> Val 0
+                -- allConditions' = allConditions |~ (fullName, (conditions :))
+             -- in case signal' of
+                  -- Nothing -> (low, high, [s'], satisfied', conditions', allConditions')
+                  -- Just False -> (low + length ts, high, [(s' |~ (fullName, second (const False)))], satisfied', conditions', allConditions')
+                  -- Just True -> (low, high + length ts, [(s' |~ (fullName, second (const True)))], satisfied', conditions', allConditions')
+       -- in -- traceShow (st', origin, fullName) $
+          -- -- traceShow (fullName, ts, st') $
+          -- -- if fullName /= "broadcaster" && origin /= "broadcaster" && not (any (\((c : _), (_, signal)) -> c == '%' && signal) (unMap s''))
+          -- --   then traceShow "cycle over" $ st'
+          -- --   else go st' $ case signal' of
+          -- --     Nothing -> stack
+          -- --     Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts]
+          -- go st' $ case signal' of
+            -- Nothing -> stack
+            -- Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts]
 
 -- pushUntil :: Map String [String] -> Int
 -- pushUntil g = go 0 (mkInitialState g)
@@ -114,7 +113,7 @@ onePass' g st = go st (mkSeq [("button", "broadcaster", False)])
 --     go n st = traceShow n $ go (n + 1) (onePass' g st)
 
 nameToHistory :: Int -> Map String [String] -> String -> [Bool]
-nameToHistory n g name = let (_, _, history, _) = pushButton n g in (\h -> snd (h |! name)) <$> history
+nameToHistory n g name = let (_, _, history, _) = pushButton n g in (\h -> reverse $ snd (h |! name)) =<< history
 
 requirements :: Map String [String] -> (String, Bool) -> [(String, Bool)]
 requirements g a = go a
@@ -126,13 +125,16 @@ requirements g a = go a
         (ts, fullName) : _ -> Just (ts, fullName)
     gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
     go ("broadcaster", False) = []
-    go ("broadcaster", True) = error "true broadcaster"
     go (name, signal) =
       -- traceShow (name, gR) $
       case targets name of
         Nothing -> mconcat [go (precursor, signal) | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
-        Just (_, fullName@('&' : _)) -> mconcat [go (drop 1 precursor, not signal) | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
-        Just (_, fullName@('%' : _)) -> [(fullName, signal)]
+        Just (_, fullName@('&' : _)) ->
+          if not signal
+            then mconcat [go (drop 1 precursor, not signal) | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
+            else []
+        --Just (_, fullName@('%' : _)) -> [(fullName, signal)]
+        Just (_, fullName@('%' : _)) -> mconcat [go (drop 1 precursor, not signal) | precursor <- gR |! dropWhile (∈ ("%&" :: String)) name]
 
 part1 :: Int
 part1 =
@@ -270,19 +272,19 @@ dubble g (Dubble b) = dubble g b
 --               '&' : _ -> go stack' (Not (And (LazyVal <$> gR |! fullName))) (allConditions |~ (fullName, ((Not (And (LazyVal <$> gR |! fullName))) :)))
 --               _ -> go stack' conditions allConditions
 
-part2'' =
-  $(input 20)
-    |- ( mkMap
-           <$> ( many1
-                   ( (,)
-                       <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
-                       <*> (many1 alphaNum `sepBy1` string ", " <* eol)
-                   )
-                   <* eof
-               )
-       )
-    -- & pushUntil
-    -- & lowWhen
-    & pushButton' 3
-    & (\(_, _, _, _, _, allConditions) -> traceShowId $ Or <$> allConditions)
-    & (\g -> eval g (g |! "rx"))
+-- part2'' =
+  -- $(input 20)
+    -- |- ( mkMap
+           -- <$> ( many1
+                   -- ( (,)
+                       -- <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
+                       -- <*> (many1 alphaNum `sepBy1` string ", " <* eol)
+                   -- )
+                   -- <* eof
+               -- )
+       -- )
+    -- -- & pushUntil
+    -- -- & lowWhen
+    -- & pushButton' 3
+    -- & (\(_, _, _, _, _, allConditions) -> traceShowId $ Or <$> allConditions)
+    -- & (\g -> eval g (g |! "rx"))
