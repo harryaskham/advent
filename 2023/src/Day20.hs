@@ -1,6 +1,6 @@
 module Day20 (part1, part2) where
 
-import Data.Tuple.Extra (thd3)
+import Data.Tuple.Extra (fst3, thd3)
 
 mkInitialState :: Map String [String] -> (Int, Int, [Map String (Map String Bool, Bool)], Bool)
 mkInitialState g =
@@ -116,6 +116,9 @@ onePass' g st = go st (mkSeq [("button", "broadcaster", False)])
 nameToHistory :: Int -> Map String [String] -> String -> [Bool]
 nameToHistory n g name = let (_, _, history, _) = pushButton n g in (\h -> snd (h |! name)) <$> history
 
+nameToHistory' :: Int -> Map String [String] -> String -> [Bool]
+nameToHistory' n g name = let (_, _, history, _, _, _) = pushButton' n g in (\h -> uhead $ snd (h |! name)) <$> history
+
 requirements :: Map String [String] -> (String, Bool) -> [(String, Bool)]
 requirements g a = go a
   where
@@ -216,22 +219,26 @@ part2 =
                    <* eof
                )
        )
-      & ( \g ->
-            first
-              ( \name ->
-                  let h = nameToHistory 10000 g name
-                      pairs = zip [0 ..] $ zip h (drop 1 h)
-                      changes = [i | p@(i, (a, b)) <- pairs, a /= b]
-                   in -- getDiffs ((i, _) : (j, _) : rest) = (i, j, j - i) : getDiffs rest
-                      -- getDiffs _ = []
-                      -- diffs = getDiffs changes
-                      uhead changes
-              )
-              <$> (traceShowId $ requirements g ("rx", False))
-        )
-      & traceShowId
-      & fmap fst
-      & foldl1 lcm
+    & ( \g ->
+          first
+            ( \name ->
+                let h = nameToHistory 10000 g name
+                    pairs = zip [0 ..] $ zip h (drop 1 h)
+                    changes = [p | p@(i, (a, b)) <- pairs, a /= b]
+                    getDiffs ((i, _) : (j, _) : rest) = (i, j, j - i) : getDiffs rest
+                    getDiffs _ = []
+                    diffs = getDiffs changes
+                 in diffs
+            )
+            <$> (let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs] in (,True) <$> gR |! "vf")
+      )
+    -- traceShowId $ requirements g ("rx", False))
+    & traceShowId
+    & fmap fst
+    & fmap (fmap fst3)
+    & traceShowId
+    & fmap uhead
+    & foldl1 lcm
 
 data Buul = And [Buul] | Or [Buul] | Val Int | LazyVal String | Dubble Buul deriving (Eq, Ord, Show)
 
