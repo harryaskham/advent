@@ -234,16 +234,14 @@ part2 =
               let h = nameToHistory' 5000 g name
                   --- reqs = let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs] in (,True) <$> gR |! "vf")
                   pairs = zip h (drop 1 h)
-                  changes = traceShowId [p | p@(((_, a), (_, b))) <- pairs, a /= b]
+                  changes = [p | p@(((_, a), (_, b))) <- pairs, a /= b]
                in changes
           )
             -- <$> (fst <$> traceShowId (requirements g ("&vf", False)))
-            <$> (traceShowId (let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs] in gR |! "vf"))
+            <$> ((let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs] in gR |! "vf"))
       )
     & fmap uhead
-    & traceShowId
     & fmap (snd >>> fst >>> (+ 1))
-    & traceShowId
     & product
 
 -- & fmap (uhead)
