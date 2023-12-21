@@ -83,23 +83,26 @@ stepsTo g start target = go (mkSeq [(0, start)]) (mkSet []) (mkSet [])
                       ]
              in go q' seen' steps'
 
+log = False
+
 walk' :: Int -> Grid Char -> IO Int
 walk' n' g' = do
   seenRef <- newIORef (mkMap [] :: Map (Int, Int, Int, Coord2) (Set (Int, Int, Coord2)))
-  nctToCsRef <- newIORef (mkMap [] :: Map (Int, Coord2, Int) (Set (Int, Int, Coord2)))
-  stepsToCacheRef <- newIORef (mkMap [] :: Map Coord2 (Set Int))
+  -- nctToCsRef <- newIORef (mkMap [] :: Map (Int, Coord2, Int) (Set (Int, Int, Coord2)))
+  -- stepsToCacheRef <- newIORef (mkMap [] :: Map Coord2 (Set Int))
   let (w, h) = both (+ 1) (maxXY g')
       start = gridFindOne 'S' g'
       g = g' |. (start, '.')
       local (x, y) = (x `mod` w, y `mod` h)
       get g c = g |! local c
-      go xo yo n c@(x, y)
-        | n < 0 = return (mkSet [])
-        | x < 0 || y < 0 || x >= w || y >= h = do
-            seen <- readIORef seenRef
-            if (n, xo, yo, c) ∈ seen
-              then return (seen |! (n, xo, yo, c))
-              else do
+      go xo yo 0 c = return $ mkSet [(xo, yo, c)]
+      go xo yo n c@(x, y) = do
+        seen <- readIORef seenRef
+        v <- do
+          if
+            | (n, xo, yo, c) ∈ seen -> return (seen |! (n, xo, yo, c))
+            | n < 0 -> return (mkSet [])
+            | x < 0 || y < 0 || x >= w || y >= h -> do
                 let (xo', yo') =
                       if
                         | x < 0 -> (xo - 1, yo)
@@ -111,9 +114,9 @@ walk' n' g' = do
                 -- v <- go xo' yo' (target - n) 0 (local c)
                 -- modifyIORef seenRef (|. ((xo, yo, c), v))
                 -- return v
-                stepsToCache <- readIORef stepsToCacheRef
+                -- stepsToCache <- readIORef stepsToCacheRef
                 let teleportTo = local c
-                --v <-
+                -- v <-
                 --  if g |! teleportTo == '.'
                 --    then do
                 --      allStepsToTeleport <-
@@ -127,25 +130,21 @@ walk' n' g' = do
                 --    else return (mkSet [])
                 -- v <- go 0 0 n teleportTo
                 -- modifyIORef seenRef (|. ((n, xo, yo, c), v))
-                v <- go xo yo  n teleportTo
+                v <- go xo yo n teleportTo
                 -- v <- go xo' yo'  n teleportTo
-                let v' = setMap (\(xo'',yo'',c)->(xo''+xo'-xo,yo''+yo'-yo,c)) v
+                let v' = setMap (\(xo'', yo'', c) -> (xo'' + xo' - xo, yo'' + yo' - yo, c)) v
                 -- let v' = v
-                modifyIORef seenRef (|. ((n, xo', yo', c), v'))
                 return v'
-        | n == 0 = return $ mkSet [(xo, yo, c)]
-        | otherwise = do
-            seen <- readIORef seenRef
-            if (n, xo, yo, c) ∈ seen
-              then return (seen |! (n, xo, yo, c))
-              else do
-                print (n, c, xo, yo)
+            | otherwise -> do
+                when log $ print (n, c, xo, yo)
                 v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
                 modifyIORef seenRef (|. ((n, xo, yo, c), v))
                 return v
+        modifyIORef seenRef (|. ((n, xo, yo, c), v))
+        return v
    in do
         cs <- go 0 0 n' start
-        print cs
+        when log $ print cs
         return $ size cs
 
 part1 :: Int
