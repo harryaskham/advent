@@ -105,7 +105,10 @@ walk' n' g' = do
         seen <- readIORef seenRef
         v <- do
           if
-            | (n, xo, yo, c) ∈ seen -> return (seen |! (n, xo, yo, c))
+            | (n, c) ∈ seen -> do
+                let v = seen |! (n, c)
+                let v' = setMap (\(xo', yo', c) -> (xo + xo', yo + yo' c)) v
+                return v'
             | g `get` c == '#' -> return (mkSet [] :: Set (Int, Int, Coord2))
             | n < 0 -> return (mkSet [])
             | x < 0 || y < 0 || x >= w || y >= h -> do
@@ -141,7 +144,6 @@ walk' n' g' = do
                 v <- go xo' yo' n teleportTo
                 -- v <- go xo' yo'  n teleportTo
                 let v' = setMap (\(xo, yo, c) -> (xo - xDiff, yo - yDiff, c)) v
-                modifyIORef seenRef (|. ((n, xo', yo', teleportTo), v'))
                 return v'
             | otherwise -> do
                 when log $ print (n, c, xo, yo)
@@ -154,7 +156,7 @@ walk' n' g' = do
                 let nexts = [correct c' | c' <- neighborsNoDiags c, g `get` c' == '.']
                 -- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
                 foldl1 (∪) <$> sequence [go xo' yo' (n - 1) c' | (xo', yo', c') <- nexts]
-        modifyIORef seenRef (|. ((n, xo, yo, c), v))
+        when (xo, yo) == (0, 0) $ modifyIORef seenRef (|. ((n, c), v))
         return v
    in do
         cs <- go 0 0 n' start
