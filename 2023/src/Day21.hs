@@ -69,60 +69,78 @@ stepsTo g start target = go (mkSeq [(0, start)]) (mkSet []) (mkSet [])
     get g c = g |! local c
     go Empty seen steps = steps
     go ((n, c) :<| q) seen steps
-      | (n, c) ∈ seen = go q seen steps
+      | c ∈ seen = go q seen steps
       | otherwise =
-          let seen' = ((n, c) |-> seen)
-              steps' = if c == target then n |-> steps else steps
-              q' =
-                q
-                  >< mkSeq
-                    [ (n + 1, local c')
-                      | c' <- neighborsNoDiags c,
-                        g `get` c' == '.'
-                    ]
-           in go q' seen' steps'
+          traceShow (n, c) $
+            let seen' = (c |-> seen)
+                steps' = if c == target then n |-> steps else steps
+                q' =
+                  q
+                    >< mkSeq
+                      [ (n + 1, local c')
+                        | c' <- neighborsNoDiags c,
+                          g `get` c' == '.'
+                      ]
+             in go q' seen' steps'
 
 walk' :: Int -> Grid Char -> IO Int
 walk' n' g' = do
-  seenRef <- newIORef (mkSet [] :: Set (Int, Coord2))
-  nctToCsRef <- newIORef (mkMap [] :: Map (Int, Coord2, Int) [(Int, Coord2)])
+  seenRef <- newIORef (mkMap [] :: Map (Int, Int, Int, Coord2) (Set (Int, Int, Coord2)))
+  nctToCsRef <- newIORef (mkMap [] :: Map (Int, Coord2, Int) (Set (Int, Int, Coord2)))
   stepsToCacheRef <- newIORef (mkMap [] :: Map Coord2 (Set Int))
   let (w, h) = both (+ 1) (maxXY g')
       start = gridFindOne 'S' g'
       g = g' |. (start, '.')
       local (x, y) = (x `mod` w, y `mod` h)
       get g c = g |! local c
-      go target n c@(x, y)
+      go xo yo n c@(x, y)
+        | n < 0 = return (mkSet [])
         | x < 0 || y < 0 || x >= w || y >= h = do
-            print "teleporting"
-            stepsToCache <- readIORef stepsToCacheRef
-            let teleportTo = local c
-            allStepsToTeleport <-
-              if teleportTo ∈ stepsToCache
-                then return (stepsToCache |! teleportTo)
-                else do
-                  let steps = traceShowId $ stepsTo g start teleportTo
-                  modifyIORef stepsToCacheRef (|. (teleportTo, steps))
-                  return steps
-            mconcat <$> sequence [go (target - nSteps) 0 teleportTo | nSteps <- unSet allStepsToTeleport]
-        | n == target = return [(n, c)]
+            seen <- readIORef seenRef
+            if (n, xo, yo, c) ∈ seen
+              then return (seen |! (n, xo, yo, c))
+              else do
+                let (xo', yo') =
+                      if
+                        | x < 0 -> (xo - 1, yo)
+                        | x >= w -> (xo + 1, yo)
+                        | y < 0 -> (xo, yo - 1)
+                        | y >= h -> (xo, y + 1)
+                        | otherwise -> error "wat"
+                -- print $ "teleporting from " <> show (target, n, c) <> " to " <> show (0, target - n, local c)
+                -- v <- go xo' yo' (target - n) 0 (local c)
+                -- modifyIORef seenRef (|. ((xo, yo, c), v))
+                -- return v
+                stepsToCache <- readIORef stepsToCacheRef
+                let teleportTo = local c
+                v <-
+                  if g |! teleportTo == '.'
+                    then do
+                      allStepsToTeleport <-
+                        if teleportTo ∈ stepsToCache
+                          then return (stepsToCache |! teleportTo)
+                          else do
+                            let steps = traceShowId $ stepsTo g start teleportTo
+                            modifyIORef stepsToCacheRef (|. (teleportTo, steps))
+                            return steps
+                      mconcat <$> sequence [go xo' yo' (n - nSteps) teleportTo | nSteps <- unSet allStepsToTeleport]
+                    else return (mkSet [])
+                modifyIORef seenRef (|. ((n, xo, yo, c), v))
+                return v
+        | n == 0 = return $ mkSet [(xo, yo, c)]
         | otherwise = do
-            print (n, target, c)
-            -- seen <- readIORef seenRef
-            -- if (n, c) ∈ seen
-            -- if (n, c, t) ∈ seen
-            --   then return []
-            --   else do
-            --     modifyIORef seenRef (<-| (n, c))
-            --     mconcat <$> sequence [go target (n + 1) c' | c' <- neighborsNoDiags c, g `get` c' /= '#']
-            nctToCs <- readIORef nctToCsRef
-            case nctToCs |? (n, c, target) of
-              Nothing -> do
-                ncs <- mconcat <$> sequence [go target (n + 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
-                modifyIORef nctToCsRef (|. ((n, c, target), ncs))
-                return ncs
-              Just cs -> return cs
-   in size . mkSet <$> go n' 0 start
+            seen <- readIORef seenRef
+            if (n, xo, yo, c) ∈ seen
+              then return (seen |! (n, xo, yo, c))
+              else do
+                print (n, c, xo, yo)
+                v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
+                modifyIORef seenRef (|. ((n, xo, yo, c), v))
+                return v
+   in do
+        cs <- go 0 0 n' start
+        print cs
+        return $ size cs
 
 part1 :: Int
 part1 = walk 64 $(grid input 21)
@@ -133,9 +151,9 @@ part2 :: IO ()
 part2 = do
   print =<< walk' 6 $(grid exampleInput 21)
   print =<< walk' 10 $(grid exampleInput 21)
-  print =<< walk' 50 $(grid exampleInput 21)
-  print =<< walk' 100 $(grid exampleInput 21)
-  print =<< walk' 500 $(grid exampleInput 21)
+  -- print =<< walk' 50 $(grid exampleInput 21)
+  -- print =<< walk' 100 $(grid exampleInput 21)
+  -- print =<< walk' 500 $(grid exampleInput 21)
   return ()
 
 -- walk' 1000 $(grid exampleInput 21)
