@@ -77,8 +77,8 @@ stepsTo g start target = go (mkSeq [(0, start)]) (mkSet []) (mkSet [])
                 q
                   >< mkSeq
                     [ (n + 1, local c')
-                      | g `get` c == '.',
-                        c' <- neighborsNoDiags c
+                      | c' <- neighborsNoDiags c,
+                        g `get` c' == '.'
                     ]
            in go q' seen' steps'
 
