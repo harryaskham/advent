@@ -144,11 +144,27 @@ walk' n' g' = do
                   [ ((xo', yo'), [c])
                     | (xo', yo', c) <- unSet cs
                   ]
-          let goingRight = (\x -> ((x, 0), groups |! (x, 0))) <$> range 0 maxXo
-          let goingDown = (\y -> ((0, y), groups |! (0, y))) <$> range 0 maxYo
-          let goingLeft = (\x -> ((x, 0), groups |! (x, 0))) <$> range 0 minXo
-          let goingUp = (\y -> ((0, y), groups |! (0, y))) <$> range 0 minYo
-          return ()
+          let goingRight = sort $ (\x -> (groups |! (x, 0))) <$> range 0 maxXo
+          let goingDown = sort $ (\y -> (groups |! (0, y))) <$> range 0 maxYo
+          let goingLeft = sort $ (\x -> (groups |! (x, 0))) <$> range 0 minXo
+          let goingUp = sort $ (\y -> (groups |! (0, y))) <$> range 0 minYo
+          when (length goingRight >= 3) do
+            print "right"
+            print $ goingRight !! 1
+            print $ goingRight !! 2
+          when (length goingLeft >= 3) do
+            print "left"
+            print $ goingLeft !! 1
+            print $ goingLeft !! 2
+          when (length goingUp >= 3) do
+            print "up"
+            print $ goingUp !! 1
+            print $ goingUp !! 2
+          when (length goingDown >= 3) do
+            print "down"
+            print $ goingDown !! 1
+            print $ goingDown !! 2
+          when (all (>= 3) $ length <$> [goingRight, goingDown, goingLeft, goingUp]) $ print $ (\x -> x !! 1 == x !! 2) <$> [goingRight, goingDown, goingLeft, goingUp]
         return . fromIntegral $ size cs
 
 -- run until there's no more change in 1 either side
@@ -161,6 +177,14 @@ part1 = walk 64 $(grid input 21)
 
 -- factorize 26501365 = 5x11x481843
 -- part2 = walk' 26501365 $(grid input 21)
+
+-- example: at 21 steps, start filling slot 1
+-- at 24 steps, slot 1 full
+-- at 59 stps, slot 2 full
+
+-- middle empty - repeats at
+
+-- 590104708070703 from outputs - clean up
 part2 :: IO ()
 part2 = do
   hSetBuffering stdout NoBuffering
@@ -169,7 +193,7 @@ part2 = do
   -- forM_ [47 .. 53] (\n -> print n >> (print =<< walk' n $(grid exampleInput 21)))
   let go n last = do
         v <- walk' n $(grid input 21)
-        putStr $ show (v - last) <> " "
+        putStr $ show (n, v, v - last) <> " "
         -- print (n, v - last, v)
         -- putStrLn ""
         go (n + 1) v
