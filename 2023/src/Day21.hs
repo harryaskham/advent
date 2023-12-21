@@ -125,9 +125,14 @@ walk' n' g' = do
                 --            return steps
                 --      mconcat <$> sequence [go xo' yo' (n - nSteps) teleportTo | nSteps <- unSet allStepsToTeleport]
                 --    else return (mkSet [])
-                v <- go xo' yo' n teleportTo
-                modifyIORef seenRef (|. ((n, xo, yo, c), v))
-                return v
+                -- v <- go 0 0 n teleportTo
+                -- modifyIORef seenRef (|. ((n, xo, yo, c), v))
+                v <- go xo yo  n teleportTo
+                -- v <- go xo' yo'  n teleportTo
+                let v' = setMap (\(xo'',yo'',c)->(xo''+xo'-xo,yo''+yo'-yo,c)) v
+                -- let v' = v
+                modifyIORef seenRef (|. ((n, xo', yo', c), v'))
+                return v'
         | n == 0 = return $ mkSet [(xo, yo, c)]
         | otherwise = do
             seen <- readIORef seenRef
@@ -152,7 +157,7 @@ part2 :: IO ()
 part2 = do
   print =<< walk' 6 $(grid exampleInput 21)
   print =<< walk' 10 $(grid exampleInput 21)
-  -- print =<< walk' 50 $(grid exampleInput 21)
+  print =<< walk' 50 $(grid exampleInput 21)
   -- print =<< walk' 100 $(grid exampleInput 21)
   -- print =<< walk' 500 $(grid exampleInput 21)
   return ()
