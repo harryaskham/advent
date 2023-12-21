@@ -131,7 +131,7 @@ walk' n' g' = do
         | otherwise = do
             seen <- readIORef seenRef
             if (n, xo, yo, c) ∈ seen
-              then return (seen |! (n, xo, yo, c))
+              then return (seen |! (n, xo, yo, c) 1)
               else do
                 print (n, c, xo, yo)
                 v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
