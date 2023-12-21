@@ -87,7 +87,7 @@ log = False
 
 walk' :: Int -> Grid Char -> IO Int
 walk' n' g' = do
-  seenRef <- newIORef (mkMap [] :: Map (Int, Int, Int, Coord2) (Set (Int, Int, Coord2)))
+  seenRef <- newIORef (mkMap [])
   -- nctToCsRef <- newIORef (mkMap [] :: Map (Int, Coord2, Int) (Set (Int, Int, Coord2)))
   -- stepsToCacheRef <- newIORef (mkMap [] :: Map Coord2 (Set Int))
   let (w, h) = both (+ 1) (maxXY g')
@@ -95,13 +95,13 @@ walk' n' g' = do
       g = g' |. (start, '.')
       local (x, y) = (x `mod` w, y `mod` h)
       get g c = g |! local c
-      go xo yo 0 c = return $ mkSet [(xo, yo, c)]
+      go xo yo 0 c = return 0 -- return $ mkSet [(xo, yo, c)]
       go xo yo n c@(x, y) = do
         seen <- readIORef seenRef
         v <- do
           if
             | (n, xo, yo, c) ∈ seen -> return (seen |! (n, xo, yo, c))
-            | n < 0 -> return (mkSet [])
+            | n < 0 -> return 0 -- return (mkSet [])
             | x < 0 || y < 0 || x >= w || y >= h -> do
                 let (xo', yo') =
                       if
@@ -132,12 +132,13 @@ walk' n' g' = do
                 -- modifyIORef seenRef (|. ((n, xo, yo, c), v))
                 v <- go xo yo n teleportTo
                 -- v <- go xo' yo'  n teleportTo
-                let v' = setMap (\(xo'', yo'', c) -> (xo'' + xo' - xo, yo'' + yo' - yo, c)) v
-                -- let v' = v
+                -- let v' = setMap (\(xo'', yo'', c) -> (xo'' + xo' - xo, yo'' + yo' - yo, c)) v
+                let v' = v
                 return v'
             | otherwise -> do
                 when log $ print (n, c, xo, yo)
-                v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
+                -- v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
+                v <- sum <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
                 modifyIORef seenRef (|. ((n, xo, yo, c), v))
                 return v
         modifyIORef seenRef (|. ((n, xo, yo, c), v))
