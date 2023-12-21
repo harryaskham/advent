@@ -85,7 +85,7 @@ stepsTo g start target = go (mkSeq [(0, start)]) (mkSet []) (mkSet [])
 
 log = False
 
-walk' :: Int -> Grid Char -> IO Int
+walk' :: Integer -> Grid Char -> IO Integer
 walk' n' g' = do
   seenRef <- newIORef (mkMap [])
   -- nctToCsRef <- newIORef (mkMap [] :: Map (Int, Coord2, Int) (Set (Int, Int, Coord2)))
@@ -95,13 +95,19 @@ walk' n' g' = do
       g = g' |. (start, '.')
       local (x, y) = (x `mod` w, y `mod` h)
       get g c = g |! local c
-      go xo yo 0 c = return 0 -- return $ mkSet [(xo, yo, c)]
+      go xo yo 0 c
+        | c ∈ g && g |! c == '.' = do
+            when log $ print (xo, yo, c)
+            return (mkSet [(xo, yo, c)])
+        | otherwise = return (mkSet [])
+      -- return $ mkSet [(xo, yo, c)]
       go xo yo n c@(x, y) = do
         seen <- readIORef seenRef
         v <- do
           if
             | (n, xo, yo, c) ∈ seen -> return (seen |! (n, xo, yo, c))
-            | n < 0 -> return 0 -- return (mkSet [])
+            | g `get` c == '#' -> return (mkSet [] :: Set (Int, Int, Coord2))
+            | n < 0 -> return (mkSet [])
             | x < 0 || y < 0 || x >= w || y >= h -> do
                 let (xo', yo') =
                       if
@@ -110,12 +116,14 @@ walk' n' g' = do
                         | y < 0 -> (xo, yo - 1)
                         | y >= h -> (xo, y + 1)
                         | otherwise -> error "wat"
-                -- print $ "teleporting from " <> show (target, n, c) <> " to " <> show (0, target - n, local c)
+                let (xDiff, yDiff) = (xo' - xo, yo' - yo)
+
                 -- v <- go xo' yo' (target - n) 0 (local c)
                 -- modifyIORef seenRef (|. ((xo, yo, c), v))
                 -- return v
                 -- stepsToCache <- readIORef stepsToCacheRef
                 let teleportTo = local c
+                when log $ print $ "teleporting from " <> show (n, xo, yo, c) <> " to " <> show (n, xo', yo', teleportTo)
                 -- v <-
                 --  if g |! teleportTo == '.'
                 --    then do
@@ -130,23 +138,28 @@ walk' n' g' = do
                 --    else return (mkSet [])
                 -- v <- go 0 0 n teleportTo
                 -- modifyIORef seenRef (|. ((n, xo, yo, c), v))
-                v <- go xo yo n teleportTo
+                v <- go xo' yo' n teleportTo
                 -- v <- go xo' yo'  n teleportTo
-                -- let v' = setMap (\(xo'', yo'', c) -> (xo'' + xo' - xo, yo'' + yo' - yo, c)) v
-                let v' = v
+                let v' = setMap (\(xo, yo, c) -> (xo - xDiff, yo - yDiff, c)) v
+                modifyIORef seenRef (|. ((n, xo', yo', teleportTo), v'))
                 return v'
             | otherwise -> do
                 when log $ print (n, c, xo, yo)
-                -- v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
-                v <- sum <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
-                modifyIORef seenRef (|. ((n, xo, yo, c), v))
-                return v
+                let correct (x, y)
+                      | x < 0 = (xo - 1, yo, (x + w, y))
+                      | x >= w = (xo + 1, yo, (x - w, y))
+                      | y < 0 = (xo, yo - 1, (x, y + h))
+                      | y >= h = (xo, yo + 1, (x, y - h))
+                      | otherwise = (xo, yo, (x, y))
+                let nexts = [correct c' | c' <- neighborsNoDiags c, g `get` c' == '.']
+                -- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
+                foldl1 (∪) <$> sequence [go xo' yo' (n - 1) c' | (xo', yo', c') <- nexts]
         modifyIORef seenRef (|. ((n, xo, yo, c), v))
         return v
    in do
         cs <- go 0 0 n' start
-        when log $ print cs
-        return $ size cs
+        when log $ print cs >> print ((g |!) <$> [(x, y) | (_, _, (x, y)) <- unSet cs])
+        return . fromIntegral $ size cs
 
 part1 :: Int
 part1 = walk 64 $(grid input 21)
@@ -158,8 +171,8 @@ part2 = do
   print =<< walk' 6 $(grid exampleInput 21)
   print =<< walk' 10 $(grid exampleInput 21)
   print =<< walk' 50 $(grid exampleInput 21)
-  -- print =<< walk' 100 $(grid exampleInput 21)
-  -- print =<< walk' 500 $(grid exampleInput 21)
+  print =<< walk' 100 $(grid exampleInput 21)
+  print =<< walk' 500 $(grid exampleInput 21)
   return ()
 
 -- walk' 1000 $(grid exampleInput 21)
