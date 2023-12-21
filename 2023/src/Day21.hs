@@ -125,13 +125,14 @@ walk' n' g' = do
                             return steps
                       mconcat <$> sequence [go xo' yo' (n - nSteps) teleportTo | nSteps <- unSet allStepsToTeleport]
                     else return (mkSet [])
+                v <- go xo' yo' n c
                 modifyIORef seenRef (|. ((n, xo, yo, c), v))
                 return v
         | n == 0 = return $ mkSet [(xo, yo, c)]
         | otherwise = do
             seen <- readIORef seenRef
             if (n, xo, yo, c) ∈ seen
-              then return (seen |! (n, xo, yo, c) 1)
+              then return (seen |! (n, xo, yo, c))
               else do
                 print (n, c, xo, yo)
                 v <- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
