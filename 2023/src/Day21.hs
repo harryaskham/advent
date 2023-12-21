@@ -113,19 +113,19 @@ walk' n' g' = do
                 -- return v
                 stepsToCache <- readIORef stepsToCacheRef
                 let teleportTo = local c
-                v <-
-                  if g |! teleportTo == '.'
-                    then do
-                      allStepsToTeleport <-
-                        if teleportTo ∈ stepsToCache
-                          then return (stepsToCache |! teleportTo)
-                          else do
-                            let steps = traceShowId $ stepsTo g start teleportTo
-                            modifyIORef stepsToCacheRef (|. (teleportTo, steps))
-                            return steps
-                      mconcat <$> sequence [go xo' yo' (n - nSteps) teleportTo | nSteps <- unSet allStepsToTeleport]
-                    else return (mkSet [])
-                v <- go xo' yo' n c
+                --v <-
+                --  if g |! teleportTo == '.'
+                --    then do
+                --      allStepsToTeleport <-
+                --        if teleportTo ∈ stepsToCache
+                --          then return (stepsToCache |! teleportTo)
+                --          else do
+                --            let steps = traceShowId $ stepsTo g start teleportTo
+                --            modifyIORef stepsToCacheRef (|. (teleportTo, steps))
+                --            return steps
+                --      mconcat <$> sequence [go xo' yo' (n - nSteps) teleportTo | nSteps <- unSet allStepsToTeleport]
+                --    else return (mkSet [])
+                v <- go xo' yo' n teleportTo
                 modifyIORef seenRef (|. ((n, xo, yo, c), v))
                 return v
         | n == 0 = return $ mkSet [(xo, yo, c)]
