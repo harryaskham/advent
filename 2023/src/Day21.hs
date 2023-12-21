@@ -187,6 +187,20 @@ part1 = walk 64 $(grid input 21)
 -- 590104708070703 from outputs - clean up
 part2 :: IO ()
 part2 = do
+  let g = $(grid input 21) :: Grid Char
+  let cs = mkSet (gridFind 'S' g)
+  let spaces = cs ∪ (mkSet $ gridFind '.' g)
+  let mo a = a `mod` 131
+  let go n cs
+        | n == 393 = traceShow "hi" []
+        | n `mod` 131 == 65 = traceShow n $ length cs : go (n + 1) [(x, y) | c <- cs, (x, y) <- neighborsNoDiags c, (mo x, mo y) ∈ spaces]
+        | otherwise = traceShow n $ go (n + 1) [(x, y) | c <- cs, (x, y) <- neighborsNoDiags c, (mo x, mo y) ∈ spaces]
+  let [a, b, c] = traceShowId $ go 0 (unSet cs)
+  let f n a b c = a + n * (b - a + (n - 1) * (c - b - b + a) `div` 2)
+  print ()
+  print $ f (26501365 `div` 131) a b c
+
+{-}
   hSetBuffering stdout NoBuffering
   --  print =<< walk' 6 $(grid exampleInput 21)
   -- print =<< walk' 10 $(grid exampleInput 21)
@@ -215,3 +229,4 @@ part2 = do
 
 -- walk' 1000 $(grid exampleInput 21)
 -- walk' 5000 $(grid exampleInput 21)
+-}
