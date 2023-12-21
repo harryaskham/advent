@@ -69,8 +69,8 @@ walk' n' g' = size $ startEvalMemo (go (0, start))
     get g c = g |! local c
     go (n, c@(x, y))
       | x < 0 || y < 0 || x >= w || y >= h = memo go (n, local c)
-      | n == n' = return $ mkSet [c]
-      | otherwise = foldl1 (∪) <$> sequence [memo go (n + 1, c') | c' <- neighborsNoDiags c, g `get` c' /= '#']
+      | n == n' = return [c]
+      | otherwise = mconcat <$> sequence [memo go (n + 1, c') | c' <- neighborsNoDiags c, g `get` c' /= '#']
 
 part1 :: Int
 part1 = walk 64 $(grid input 21)
