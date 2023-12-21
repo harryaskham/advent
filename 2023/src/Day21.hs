@@ -1,5 +1,8 @@
 module Day21 (part1, part2) where
 
+import Data.List.Extra (groupOn)
+import Data.Tuple.Extra (fst3, snd3)
+
 walk :: Int -> Grid Char -> Int
 walk n g' = size (go n (mkSet [start]))
   where
@@ -105,47 +108,13 @@ walk' n' g' = do
         seen <- readIORef seenRef
         v <- do
           if
-            | (n, c) ∈ seen -> do
-                let v = seen |! (n, c)
-                let v' = setMap (\(xo', yo', c) -> (xo + xo', yo + yo' c)) v
-                return v'
+            | (n, xo, yo, c) ∈ seen -> do
+                -- print "cache hit" >>
+                return (seen |! (n, xo, yo, c))
             | g `get` c == '#' -> return (mkSet [] :: Set (Int, Int, Coord2))
             | n < 0 -> return (mkSet [])
-            | x < 0 || y < 0 || x >= w || y >= h -> do
-                let (xo', yo') =
-                      if
-                        | x < 0 -> (xo - 1, yo)
-                        | x >= w -> (xo + 1, yo)
-                        | y < 0 -> (xo, yo - 1)
-                        | y >= h -> (xo, y + 1)
-                        | otherwise -> error "wat"
-                let (xDiff, yDiff) = (xo' - xo, yo' - yo)
-
-                -- v <- go xo' yo' (target - n) 0 (local c)
-                -- modifyIORef seenRef (|. ((xo, yo, c), v))
-                -- return v
-                -- stepsToCache <- readIORef stepsToCacheRef
-                let teleportTo = local c
-                when log $ print $ "teleporting from " <> show (n, xo, yo, c) <> " to " <> show (n, xo', yo', teleportTo)
-                -- v <-
-                --  if g |! teleportTo == '.'
-                --    then do
-                --      allStepsToTeleport <-
-                --        if teleportTo ∈ stepsToCache
-                --          then return (stepsToCache |! teleportTo)
-                --          else do
-                --            let steps = traceShowId $ stepsTo g start teleportTo
-                --            modifyIORef stepsToCacheRef (|. (teleportTo, steps))
-                --            return steps
-                --      mconcat <$> sequence [go xo' yo' (n - nSteps) teleportTo | nSteps <- unSet allStepsToTeleport]
-                --    else return (mkSet [])
-                -- v <- go 0 0 n teleportTo
-                -- modifyIORef seenRef (|. ((n, xo, yo, c), v))
-                v <- go xo' yo' n teleportTo
-                -- v <- go xo' yo'  n teleportTo
-                let v' = setMap (\(xo, yo, c) -> (xo - xDiff, yo - yDiff, c)) v
-                return v'
             | otherwise -> do
+                -- print "cache miss"
                 when log $ print (n, c, xo, yo)
                 let correct (x, y)
                       | x < 0 = (xo - 1, yo, (x + w, y))
@@ -156,26 +125,69 @@ walk' n' g' = do
                 let nexts = [correct c' | c' <- neighborsNoDiags c, g `get` c' == '.']
                 -- foldl1 (∪) <$> sequence [go xo yo (n - 1) c' | c' <- neighborsNoDiags c, g `get` c' == '.']
                 foldl1 (∪) <$> sequence [go xo' yo' (n - 1) c' | (xo', yo', c') <- nexts]
-        when (xo, yo) == (0, 0) $ modifyIORef seenRef (|. ((n, c), v))
+        modifyIORef seenRef (|. ((n, xo, yo, c), v))
         return v
    in do
         cs <- go 0 0 n' start
-        when log $ print cs >> print ((g |!) <$> [(x, y) | (_, _, (x, y)) <- unSet cs])
+        when True $ do
+          -- print cs
+          -- print ((g |!) <$> [(x, y) | (_, _, (x, y)) <- unSet cs])
+
+          let csl = unSet cs
+          let xos = fst3 <$> csl
+          let yos = snd3 <$> csl
+          let (minXo, maxXo) = (minimum xos, maximum xos)
+          let (minYo, maxYo) = (minimum yos, maximum yos)
+          let groups =
+                mkMapWith
+                  (<>)
+                  [ ((xo', yo'), [c])
+                    | (xo', yo', c) <- unSet cs
+                  ]
+          let goingRight = (\x -> ((x, 0), groups |! (x, 0))) <$> range 0 maxXo
+          let goingDown = (\y -> ((0, y), groups |! (0, y))) <$> range 0 maxYo
+          let goingLeft = (\x -> ((x, 0), groups |! (x, 0))) <$> range 0 minXo
+          let goingUp = (\y -> ((0, y), groups |! (0, y))) <$> range 0 minYo
+          return ()
         return . fromIntegral $ size cs
+
+-- run until there's no more change in 1 either side
 
 part1 :: Int
 part1 = walk 64 $(grid input 21)
+
+-- there will  be an amuont that gives us a cycle
+-- find that then work out the remainder
 
 -- factorize 26501365 = 5x11x481843
 -- part2 = walk' 26501365 $(grid input 21)
 part2 :: IO ()
 part2 = do
-  print =<< walk' 6 $(grid exampleInput 21)
-  print =<< walk' 10 $(grid exampleInput 21)
-  print =<< walk' 50 $(grid exampleInput 21)
-  print =<< walk' 100 $(grid exampleInput 21)
-  print =<< walk' 500 $(grid exampleInput 21)
-  return ()
+  hSetBuffering stdout NoBuffering
+  --  print =<< walk' 6 $(grid exampleInput 21)
+  -- print =<< walk' 10 $(grid exampleInput 21)
+  -- forM_ [47 .. 53] (\n -> print n >> (print =<< walk' n $(grid exampleInput 21)))
+  let go n last = do
+        v <- walk' n $(grid input 21)
+        putStr $ show (v - last) <> " "
+        -- print (n, v - last, v)
+        -- putStrLn ""
+        go (n + 1) v
+
+  go 0 0
+
+  forM_
+    [0 ..]
+    ( \n -> do
+        putStr (show n)
+        putStr ": "
+        v <- walk' n $(grid exampleInput 21)
+        putStr (show v)
+        putStrLn "   "
+    )
+
+-- print =<< walk' 100 $(grid exampleInput 21)
+-- print =<< walk' 500 $(grid exampleInput 21)
 
 -- walk' 1000 $(grid exampleInput 21)
 -- walk' 5000 $(grid exampleInput 21)
