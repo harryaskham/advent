@@ -11,6 +11,8 @@ instance Ix Dir2 where
   index (a, _) c = fromEnum c - fromEnum a
   inRange (a, b) c = c >= a && c <= b
 
+data Dir3 = D3xP | D3xN | D3yP | D3yN | D3zP | D3zN deriving (Show, Eq, Ord, Enum, Bounded)
+
 udlrToDir2 :: Char -> Dir2
 udlrToDir2 'u' = DirUp
 udlrToDir2 'd' = DirDown
@@ -66,6 +68,14 @@ move DirUp n (x, y) = (x, y - n)
 move DirDown n (x, y) = (x, y + n)
 move DirLeft n (x, y) = (x - n, y)
 move DirRight n (x, y) = (x + n, y)
+
+move3 :: Dir3 -> Int -> Coord3 -> Coord3
+move3 D3xP n (x, y, z) = (x + n, y, z)
+move3 D3xN n (x, y, z) = (x - n, y, z)
+move3 D3yP n (x, y, z) = (x, y + n, z)
+move3 D3yN n (x, y, z) = (x, y - n, z)
+move3 D3zP n (x, y, z) = (x, y, z + n)
+move3 D3zN n (x, y, z) = (x, y, z - n)
 
 turnCW :: Dir2 -> Dir2
 turnCW DirUp = DirRight

@@ -46,6 +46,9 @@ foldl1' = L.foldl1'
 foldr1 :: (a -> a -> a) -> [a] -> a
 foldr1 = L.foldr1
 
+delete :: (Eq a) => a -> [a] -> [a]
+delete = L.delete
+
 mkSet :: (Ord a) => [a] -> Set a
 mkSet = S.fromList
 
@@ -57,6 +60,9 @@ unSet = S.toList
 
 (|->) :: (Ord a) => a -> Set a -> Set a
 (|->) = S.insert
+
+(\\\) :: (Ord a) => Set a -> Set a -> Set a
+(\\\) = (S.\\)
 
 class Sizable a where
   size :: a -> Int
