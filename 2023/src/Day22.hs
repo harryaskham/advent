@@ -39,7 +39,7 @@ structure bricks =
 disintegrateOne :: [Brick] -> [Brick]
 disintegrateOne bricks =
   [ brick
-    | let bricks' = freefall bricks,
+    | let bricks' = bricks,
       let (brickRestingOn, restingOnBrick) = structure bricks',
       brick <- bricks',
       brick ∉ restingOnBrick
@@ -52,6 +52,15 @@ disintegrateOne bricks =
           (restingOnBrick |! brick)
   ]
 
+disintegrateAll :: [Brick] -> Int
+disintegrateAll bricks =
+  let (brickRestingOn, restingOnBrick) = structure bricks
+      go fallen Empty = traceShowF size fallen
+      go fallen (brick :<| q)
+        | brick ∉ restingOnBrick = go (brick |-> fallen) q
+        | otherwise = go (brick |-> fallen) (q >< mkSeq [b | b <- unSet (restingOnBrick |! brick), ((brickRestingOn |! b \\\ fallen) == (mkSet []) || (brickRestingOn |! b \\\ fallen) == (mkSet [b]))])
+   in size $ go (mkSet []) . pure <$> (sortOn (thd3 . snd . snd) bricks)
+
 part1 :: Int
 part1 =
   $(input 22)
@@ -62,6 +71,8 @@ part1 =
     & disintegrateOne
     & length
 
+-- 1273 too low
+
 part2 :: Int
 part2 =
   $(input 22)
@@ -70,4 +81,3 @@ part2 =
     & sortOn (thd3 . snd . snd)
     & freefall
     & disintegrateAll
-    & length
