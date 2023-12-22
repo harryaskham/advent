@@ -1,5 +1,6 @@
 module Helper.Collection where
 
+import Control.Lens (element, (.~))
 import Data.Array qualified as A
 import Data.Bimap qualified as BM
 import Data.Char qualified as C
@@ -155,12 +156,15 @@ instance (Eq a) => Intersectable (V.Vector a) where
 
 class Ixable f where
   (!!) :: f a -> Int -> a
+  (!.) :: f a -> (Int, a) -> f a
 
 instance Ixable [] where
   (!!) = (L.!!)
+  l !. (i, a) = l & element i .~ a
 
 instance Ixable V.Vector where
   (!!) = (V.!)
+  v !. (i, a) = v V.// [(i, a)]
 
 class Gettable f k v where
   (|!) :: f k v -> k -> v

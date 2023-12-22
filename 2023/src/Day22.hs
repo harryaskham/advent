@@ -20,11 +20,11 @@ onFloor ((_, _, z), (_, _, z')) = min z z' == 1
 freefall :: [Brick] -> [Brick]
 freefall =
   let go bricks i =
-        let brick = bricks |! i
+        let brick = bricks !! i
          in if onFloor brick || (brick `restingOn`) `any` bricks
               then bricks
-              else bricks |. (i, both (move3 D3zN 1) brick)
-      fallOnce bricks' = snd <$> unMap (foldl' go (mkMap (zip [0 ..] bricks')) [0 .. length bricks' - 1])
+              else bricks !. (i, both (move3 D3zN 1) brick)
+      fallOnce bricks' = unVec $ foldl' go (mkVec bricks') [0 .. length bricks' - 1]
    in iterateFix fallOnce
 
 structure :: [Brick] -> (Map Brick (Set Brick), Map Brick (Set Brick))
