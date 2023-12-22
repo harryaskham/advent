@@ -153,6 +153,15 @@ instance (Eq a) => Intersectable [a] where
 instance (Eq a) => Intersectable (V.Vector a) where
   a ∩ b = mkVec $ L.intersect (V.toList a) (V.toList b)
 
+class Ixable f where
+  (!!) :: f a -> Int -> a
+
+instance Ixable [] where
+  (!!) = (L.!!)
+
+instance Ixable V.Vector where
+  (!!) = (V.!)
+
 class Gettable f k v where
   (|!) :: f k v -> k -> v
 
@@ -283,9 +292,6 @@ nullQ = PQ.null
 
 mkArray :: (A.Ix i) => (i, i) -> [(i, e)] -> A.Array i e
 mkArray = A.array
-
-(!!) :: [a] -> Int -> a
-(!!) = (U.!!)
 
 uhead :: [a] -> a
 uhead = U.head
