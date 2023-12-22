@@ -61,7 +61,7 @@ disintegrateAll bricks =
             iterateFix
               ( \(fallen, bricks) ->
                   let fallen' = setFilter (\brick -> not (onFloor brick) && brickRestingOn |! brick ∖ fallen == (∅)) bricks
-                   in (fallen <> fallen', bricks ∖ fallen')
+                   in (fallen ∪ fallen', bricks ∖ fallen')
               )
               (mkSet [brick], mkSet $ delete brick bricks)
           | brick <- bricks

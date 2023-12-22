@@ -12,6 +12,7 @@ import Data.PQueue.Prio.Min qualified as PQ
 import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Text qualified as T
+import Data.Vector qualified as V
 import Relude.Unsafe qualified as U
 
 class Packable a b where
@@ -49,6 +50,12 @@ foldr1 = L.foldr1
 delete :: (Eq a) => a -> [a] -> [a]
 delete = L.delete
 
+mkVec :: [a] -> V.Vector a
+mkVec = V.fromList
+
+unVec :: V.Vector a -> [a]
+unVec = V.toList
+
 mkSet :: (Ord a) => [a] -> Set a
 mkSet = S.fromList
 
@@ -69,6 +76,9 @@ class Sizable a where
 
 instance Sizable [a] where
   size = L.length
+
+instance Sizable (V.Vector a) where
+  size = V.length
 
 instance Sizable (Set a) where
   size = S.size
@@ -102,6 +112,10 @@ instance (Eq a) => Memberable a [a] where
   (∈) = L.elem
   (∉) = L.notElem
 
+instance (Eq a) => Memberable a (V.Vector a) where
+  (∈) = V.elem
+  (∉) = V.notElem
+
 instance (Ord a) => Memberable a (Map a b) where
   (∈) = M.member
   (∉) = M.notMember
@@ -121,6 +135,9 @@ instance (Ord k) => Unionable (Map k v) where
 instance Unionable [a] where
   (∪) = (L.++)
 
+instance Unionable (V.Vector a) where
+  (∪) = (V.++)
+
 class Intersectable a where
   (∩) :: a -> a -> a
 
@@ -132,6 +149,9 @@ instance (Ord k) => Intersectable (Map k v) where
 
 instance (Eq a) => Intersectable [a] where
   (∩) = L.intersect
+
+instance (Eq a) => Intersectable (V.Vector a) where
+  a ∩ b = mkVec $ L.intersect (V.toList a) (V.toList b)
 
 class Gettable f k v where
   (|!) :: f k v -> k -> v
