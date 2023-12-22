@@ -62,7 +62,9 @@ disintegrateAll bricks =
              \(fallen,bricks) ->
                       let (fallen',bricks') = partitionEithers $ (\brick -> if not (onFloor brick) && brickRestingOn |! brick \\\ fallen == (mkSet []) then Left brick else Right brick) <$> unSet bricks
                        in (fallen <> mkSet fallen', mkSet bricks')) (mkSet [brick],mkSet $ delete brick bricks)) <$> bricks
-   in sum $ size . fst <$> xs
+   in (sum $ size . fst <$> xs) - (length bricks)
+
+      -- go :: (Map Brick (Set Brick), Map Brick (Set Brick)) -> Set Brick -> Seq Brick -> Int
   -- let go _ fallen Empty = size $ traceShowId $ fallen
       -- go s@(brickRestingOn, restingOnBrick) fallen (brick :<| q)
         -- | brick ∉ restingOnBrick = go s (brick |-> fallen) q
