@@ -15,7 +15,7 @@ part2 :: Int
 part2 = do
   let g = $(grid input 21) :: Grid Char
       cs = mkSet (gridFind 'S' g)
-      spaces = cs ∪ (mkSet $ gridFind '.' g)
+      spaces = cs ∪ mkSet (gridFind '.' g)
       go n cs
         | n == 393 = []
         | n `mod` 131 == 65 = size cs : next
