@@ -21,8 +21,7 @@ freefall :: [Brick] -> [Brick]
 freefall =
   let fallOnce :: [Brick] -> [Brick]
       fallOnce bricks' =
-        let go :: Map Int Brick -> Int -> Map Int Brick
-            go bricks i =
+        let go bricks i =
               let brick = bricks |! i
                in if onFloor brick || (brick `restingOn`) `any` bricks
                     then bricks
