@@ -45,15 +45,15 @@ structure bricks =
 
 disintegrateOne :: [Brick] -> Int
 disintegrateOne bricks =
-  length
-    [ brick
-      | let (brickRestingOn, restingOnBrick) = structure bricks,
-        brick <- bricks,
-        brick ∉ restingOnBrick
-          || all
-            (\brick' -> (brick' ∈ brickRestingOn) && (brickRestingOn |! brick' /= mkSet [brick]))
-            (restingOnBrick |! brick)
-    ]
+  let (brickRestingOn, restingOnBrick) = structure bricks
+   in length
+        [ brick
+          | brick <- bricks,
+            brick ∉ restingOnBrick
+              || all
+                ((&&) <$> (∈ brickRestingOn) <*> ((brickRestingOn |!) >>> (/= mkSet [brick])))
+                (restingOnBrick |! brick)
+        ]
 
 disintegrateAll :: [Brick] -> Int
 disintegrateAll bricks =
@@ -63,14 +63,12 @@ disintegrateAll bricks =
             iterateFix
               ( \(fallen, bricks) ->
                   bimap ((fallen <>) . mkSet) mkSet $
-                    partitionEithers $
-                      ( \brick ->
-                          bool
-                            (Right brick)
-                            (Left brick)
-                            (not (onFloor brick) && brickRestingOn |! brick \\\ fallen == (∅))
-                      )
-                        <$> unSet bricks
+                    partitionEithers
+                      [ if not (onFloor brick) && brickRestingOn |! brick \\\ fallen == (∅)
+                          then Left brick
+                          else Right brick
+                        | brick <- unSet bricks
+                      ]
               )
               (mkSet [brick], mkSet $ delete brick bricks)
           | brick <- bricks
