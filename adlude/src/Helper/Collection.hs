@@ -61,8 +61,8 @@ unSet = S.toList
 (|->) :: (Ord a) => a -> Set a -> Set a
 (|->) = S.insert
 
-(\\\) :: (Ord a) => Set a -> Set a -> Set a
-(\\\) = (S.\\)
+(\\) :: (Ord a) => Set a -> Set a -> Set a
+(\\) = (S.\\)
 
 class Sizable a where
   size :: a -> Int
@@ -206,6 +206,9 @@ a ⊅ b = not (a ⊃ b)
 
 setMap :: (Ord b) => (a -> b) -> Set a -> Set b
 setMap = S.map
+
+setFilter :: (a -> Bool) -> Set a -> Set a
+setFilter = S.filter
 
 mkMap :: (Ord k) => [(k, v)] -> Map k v
 mkMap = M.fromList
