@@ -52,14 +52,24 @@ disintegrateOne bricks =
           (restingOnBrick |! brick)
   ]
 
+onFloor (_,((_,_,z),(_,_,z'))) = min z z' == 1
+
+
 disintegrateAll :: [Brick] -> Int
 disintegrateAll bricks =
-  let (brickRestingOn, restingOnBrick) = structure bricks
-      go fallen Empty = traceShowF size fallen
-      go fallen (brick :<| q)
-        | brick ∉ restingOnBrick = go (brick |-> fallen) q
-        | otherwise = go (brick |-> fallen) (q >< mkSeq [b | b <- unSet (restingOnBrick |! brick), ((brickRestingOn |! b \\\ fallen) == (mkSet []) || (brickRestingOn |! b \\\ fallen) == (mkSet [b]))])
-   in size $ go (mkSet []) . pure <$> (sortOn (thd3 . snd . snd) bricks)
+  let (brickRestingOn, restingOnBrick)  = structure bricks
+      xs = (\brick -> iterateFix (
+             \(fallen,bricks) ->
+                      let (fallen',bricks') = partitionEithers $ (\brick -> if not (onFloor brick) && brickRestingOn |! brick \\\ fallen == (mkSet []) then Left brick else Right brick) <$> unSet bricks
+                       in (fallen <> mkSet fallen', mkSet bricks')) (mkSet [brick],mkSet $ delete brick bricks)) <$> bricks
+   in sum $ size . fst <$> xs
+  -- let go _ fallen Empty = size $ traceShowId $ fallen
+      -- go s@(brickRestingOn, restingOnBrick) fallen (brick :<| q)
+        -- | brick ∉ restingOnBrick = go s (brick |-> fallen) q
+        -- | not (onFloor brick) && brickRestingOn |! brick \\\ fallen == (mkSet []) =
+          -- go s (brick |-> fallen) (q >< mkSeq (unSet (restingOnBrick |! brick)))
+        -- | otherwise = traceShow brick $ go s fallen q
+   -- in sum $ (\b->go (structure  bricks) (mkSet []) (mkSeq [b])) <$> (sortOn (thd3 . snd . snd) bricks)
 
 part1 :: Int
 part1 =
@@ -72,6 +82,7 @@ part1 =
     & length
 
 -- 1273 too low
+-- 44329 too high
 
 part2 :: Int
 part2 =
