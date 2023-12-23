@@ -117,34 +117,51 @@ longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
 
 edgeInfo graph =
   mkMapWith (<>) $
-    [ ((a,b),[(size bPath, mkSet $ filter ((>0) . size . (bPath ∩)) dPaths)])
+    [ ((a,b),[(bPath,
+               size bPath,
+               mkSet . fmap thd3 $
+                 filter
+                   (\(a',b',p)->(a,b)/=(a',b') && ((a==a' || b==b' || let i = bPath ∩ p in (a'==b && i /= mkSet [b]) || i /=  (∅))))
+                   allPaths)])-- (p ∈ [(∅), mkSet [b]])) allPaths)])
       | (a, aTo) <- unMap graph,
       (b, bPaths) <- unMap aTo,
-      bPath <- bPaths,
-      (c, cTo) <- unMap graph,
-      (d, dPaths) <- unMap cTo]
-
-lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Maybe Int]
-lazyPaths graph start end = sequence $ startEvalMemo $ go (start, (∅))
+      bPath <- bPaths
+    ]
   where
-    e = edgeInfo graph
-    go (c, es)
+    allPaths = [(a,b,p) | (a, paths) <- unMap graph, (b,ps) <- unMap paths, p <- ps]
+
+maxi [] = Nothing
+maxi xs = Just (maximum xs)
+
+lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Maybe Int
+lazyPaths graph start end =  startEvalMemo $ go (start, (∅), (∅))
+  where
+    e = traceShowF keys $ edgeInfo graph
+    go (c, es, invalid)
       | c == end = return $ Just 0
       | otherwise =
-        traceShow (c, size es) $
-          mconcat . sequence $
+        traceShow ("at",c, es,invalid) $ do
           -- todo take maximum
-            [ (l+) <$$> memo go (b, es ∪ invalid)
-              | ((a,b),ls) <- unMap e,
-                (l,invalid) <- ls,
-                a == c,
-                es ∩ invalid == (∅)
-                --(c', paths) <- maybe [] unMap (graph |? c),
-                --path <- paths,
-                --let s' = s ∪ path \\ mkSet [c'],
-                ---- let p' = c |-> p
-                --(s ∩ path) ∈ [(∅), mkSet [c]]
-            ]
+          -- track taken and invalid
+          lens <- sequence
+                    [ traceShow ("going to",a,b,l,invalid',es) $
+                        (l+) <$$> memo go (b, e |->es, invalid'  ∪ invalid)
+                    | ((a,b),ls) <- unMap e,
+                      (e,l,invalid') <- ls,
+                      a == c || b == c,
+                      traceShow ("testing",a,b,l,e,es) $ True,
+                      traceShowId $ e ∉ es,
+                      traceShowId $ e ∉ invalid,
+                      (traceShowId $ traceShow "crosses any of our edges?" (es ∩ invalid')) == (∅)
+                      -- e ∉ (traceShow ("testing",a,b,l,e,es) $ traceShowId invalid)
+                      -- es ∩ (traceShow ("testing",a,b,l,e,es) $ traceShowId invalid') == (∅)
+                      --(c', paths) <- maybe [] unMap (graph |? c),
+                      --path <- paths,
+                      --let s' = s ∪ path \\ mkSet [c'],
+                      ---- let p' = c |-> p
+                      --(s ∩ path) ∈ [(∅), mkSet [c]]
+                    ]
+          return . maxi $ catMaybes lens
 
 longest :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Set Coord2 -> Maybe (Set Coord2)
 longest graph start end seen =
