@@ -12,7 +12,7 @@ slopePaths ns stopping start end g =
                   mkSeq
                     [ (c', c |-> s)
                       | c' <- move <$> ns (g |! c) <*> pure 1 <*> pure c,
-                        g |? c' ∈ (Just <$> ".<>^v")
+                        g |? c' ∈ (Just <$> (".<>^v" :: String))
                     ]
              in go (q >< q') paths
    in go (mkSeq [(start, (∅))]) []
