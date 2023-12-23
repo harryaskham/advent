@@ -7,13 +7,13 @@ slopePaths ns stopping start end g =
         | c == end = go q (end |-> s : paths)
         | c /= start && stopping c || c ∈ s = go q paths
         | otherwise =
-          let q' =
-                mkSeq
-                  [ (c', c |-> s)
-                    | c' <- move <$> ns (g |! c) <*> pure 1 <*> pure c,
-                      g |? c' ∈ (Just <$> (".<>^v" :: String))
-                  ]
-           in go (q >< q') paths
+            let q' =
+                  mkSeq
+                    [ (c', c |-> s)
+                      | c' <- move <$> ns (g |! c) <*> pure 1 <*> pure c,
+                        g |? c' ∈ (Just <$> (".<>^v" :: String))
+                    ]
+             in go (q >< q') paths
    in go (mkSeq [(start, (∅))]) []
 
 forks :: Grid Char -> Set Coord2
@@ -47,14 +47,14 @@ allPaths graph start end = fromMaybe (-1) $ go start (∅)
       | a == end = Just 0
       | a ∈ seen = Nothing
       | otherwise =
-        case catMaybes
-          [ (-1 + size p +) <$> go b (a |-> seen)
-            | (b, ps) <- unMap (graph |! a),
-              b ∉ seen,
-              p <- ps
-          ] of
-          [] -> Nothing
-          ls -> Just (maximum ls)
+          case catMaybes
+            [ (-1 + size p +) <$> go b (a |-> seen)
+              | (b, ps) <- unMap (graph |! a),
+                b ∉ seen,
+                p <- ps
+            ] of
+            [] -> Nothing
+            ls -> Just (maximum ls)
 
 parts :: (Int, Int)
 parts =
