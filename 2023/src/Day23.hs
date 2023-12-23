@@ -77,22 +77,34 @@ longestPathGraph graph start end allSeen =
         [] -> Nothing
         ps -> Just (maximumOn size ps)
 
-longestPathGraph' :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Set Coord2]
+intersectingEdges graph =
+  [ (a, b)
+    | (a, toA) <- unMap graph,
+      (b, abPaths) <- unMap toA,
+      (c, acPaths) <- unMap toA,
+      abPath <- abPaths,
+      acPath <- acPaths,
+      b /= c,
+      size (abPath ∩ acPath) > 1
+  ]
+
+longestPathGraph' :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Int]
 longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
   where
     go (c, s)
-      | c == end = traceShow (size s) $ return [s]
+      | c == end = traceShow "end" $ return [0]
+      -- \| c ∈ p = return [-1000000000000000]
       | otherwise =
-          traceShow (c, size s) $
-            mconcat
-              <$> traverse
-                (memo go)
-                [ (c', s')
-                  | (c', paths) <- maybe [] unMap (graph |? c),
-                    path <- paths,
-                    let s' = s ∪ path,
-                    (s ∩ path) ∈ [(∅), mkSet [c]]
-                ]
+          -- traceShow (c, size s) $
+          mconcat
+            <$> sequence
+              [ (size path +) <$$> memo go (c', s')
+                | (c', paths) <- maybe [] unMap (graph |? c),
+                  path <- paths,
+                  let s' = s ∪ path,
+                  -- let p' = c |-> p
+                  (s ∩ path) ∈ [(∅), mkSet [c]]
+              ]
 
 longest :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Set Coord2 -> Maybe (Set Coord2)
 longest graph start end seen =
@@ -103,25 +115,25 @@ longest graph start end seen =
     longest' (c, seen)
       | c == end = traceShow "found end" $ return . Just $ c |-> seen
       | otherwise =
-          traceShow (c, size seen) $
-            do
-              longestPaths <-
-                forM
-                  (maybe [] unMap (graph |? c))
-                  ( \(c', paths) ->
-                      forM
-                        paths
-                        ( \path -> do
-                            if seen ∩ path == mkSet [c]
-                              then memo longest' (c', seen ∪ path)
-                              else return Nothing
-                        )
-                  )
-              case catMaybes $ mconcat longestPaths of
-                [] -> return Nothing
-                paths -> return . Just $ maximumOn size paths
+          -- traceShow (c, size seen) $
+          do
+            longestPaths <-
+              forM
+                (maybe [] unMap (graph |? c))
+                ( \(c', paths) ->
+                    forM
+                      paths
+                      ( \path -> do
+                          if seen ∩ path == mkSet [c]
+                            then memo longest' (c', seen ∪ path)
+                            else return Nothing
+                      )
+                )
+            case catMaybes $ mconcat longestPaths of
+              [] -> return Nothing
+              paths -> return . Just $ maximumOn size paths
 
-parts :: (Int, Int)
+parts :: (Int, [Int])
 parts =
   let g = $(grid input 23)
       (maxX, maxY) = maxXY g
@@ -137,10 +149,10 @@ parts =
       --  Just p -> [p]
       -- path' = fromMaybe (∅) (longest graph start end (∅))
       -- paths' = [path']
-      both (subtract 1 . maximum . fmap length) (paths, paths')
+      (subtract 1 . maximum . fmap length $ paths, traceShowId $ longestPathGraph' graph start end)
 
 part1 :: Int
 part1 = fst parts
 
 part2 :: Int
-part2 = snd parts
+part2 = (maximum $ snd parts)
