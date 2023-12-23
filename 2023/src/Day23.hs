@@ -42,21 +42,21 @@ mkGraph g forks =
     ]
 
 allPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Int
-allPaths graph start end = fromMaybe (-1) . startEvalMemo $ go (start, (∅))
+allPaths graph start end = fromMaybe (-1) $ go start (∅)
   where
-    go (a, seen)
-      | a == end = return $ Just 0
-      | otherwise = do
-          lsM <-
-            sequence
-              [ (-1 + size p +) <$$> memo go (b, a |-> seen)
-                | (b, ps) <- unMap (graph |! a),
-                  b ∉ seen,
-                  p <- ps
-              ]
-          case catMaybes lsM of
-            [] -> return Nothing
-            ls -> return (Just (maximum ls))
+    go a seen
+      | a == end = Just 0
+      | a ∈ seen = Nothing
+      | otherwise =
+          let ls =
+                [ (-1 + size p +) <$> go b (a |-> seen)
+                  | (b, ps) <- unMap (graph |! a),
+                    b ∉ seen,
+                    p <- ps
+                ]
+           in case catMaybes ls of
+                [] -> Nothing
+                ls -> Just (maximum ls)
 
 parts :: (Int, Int)
 parts =
