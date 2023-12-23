@@ -154,7 +154,6 @@ longest graph start end seen =
               [] -> return Nothing
               paths -> return . Just $ maximumOn size paths
 
-parts :: (Int, Int)
 parts =
   let g = $(grid input 23)
       (maxX, maxY) = maxXY g
@@ -171,7 +170,7 @@ parts =
       --  Just p -> [p]
       -- path' = fromMaybe (∅) (longest graph start end (∅))
       -- paths' = [path']
-      (subtract 1 . maximum . fmap length $ paths, length <$> traceShowId $ paths')
+      (subtract 1 . maximum . fmap length $ paths, paths')
 
 part1 :: Int
 part1 = fst parts
