@@ -112,14 +112,15 @@ longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
               ]
 
 lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [[Coord2]]
-lazyPaths graph start end = go (start, (∅))
+lazyPaths graph start end = catMaybes . sequence $ go (start, (∅))
   where
     go (c, s)
-      | c == end = []
+      | c == end = Just []
+      | c ∈ s = Nothing
       -- \| c ∈ p = return [-1000000000000000]
       | otherwise =
           mconcat
-            [ (c :) <$> go (c', s')
+            [ (c :) <$$> go (c', s')
               | (c', paths) <- maybe [] unMap (graph |? c),
                 path <- paths,
                 let s' = s ∪ path,
@@ -175,5 +176,4 @@ parts =
 part1 :: Int
 part1 = fst parts
 
-part2 :: Int
 part2 = snd parts
