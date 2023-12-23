@@ -238,6 +238,9 @@ instance GridCell Int where
   toChar = intToDigit
   charMap = BM.empty
 
+instance GridCell Bool where
+  charMap = mkBimap [(True, 'T'), (False, 'F')]
+
 instance GridCell DotHash where
   charMap = BM.fromList [(Dot, '.'), (Hash, '#')]
 

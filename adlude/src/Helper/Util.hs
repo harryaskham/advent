@@ -92,6 +92,11 @@ infixl 5 <$$$>
 (<$$$>) :: (Functor f, Functor g, Functor h) => (a -> b) -> f (g (h a)) -> f (g (h b))
 (<$$$>) = fmap . fmap . fmap
 
+infixl 5 <&&>
+
+(<&&>) :: (Functor f, Functor g) => f (g a) -> (a -> b) -> f (g b)
+(<&&>) = flip (<$$>)
+
 both :: (Bifunctor f) => (a -> b) -> f a a -> f b b
 both f = bimap f f
 
