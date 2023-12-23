@@ -35,6 +35,13 @@ nsewToDir2 'E' = DirRight
 nsewToDir2 'W' = DirLeft
 nsewToDir2 c = error $ "Invalid nsew: " <> show c
 
+fromArrow2 :: Char -> Dir2
+fromArrow2 '^' = DirUp
+fromArrow2 'v' = DirDown
+fromArrow2 '>' = DirRight
+fromArrow2 '<' = DirLeft
+fromArrow2 c = error $ "Invalid arrow: " <> show c
+
 type Coord2 = (Int, Int)
 
 type Coord3 = (Int, Int, Int)
