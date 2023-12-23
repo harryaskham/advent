@@ -383,6 +383,14 @@ prettyM grid = T.pack . intercalate "\n" <$> (fmap toChar <$$> gridLinesM grid)
 pretty :: (Griddable Identity g k a) => g k a -> Text
 pretty = runIdentity . prettyM
 
+convolve :: (Griddable Identity g Coord2 c, Griddable Identity g Coord2 d) => (Int, Int, Int, Int) -> (g Coord2 c -> d) -> g Coord2 c -> g Coord2 d
+convolve (u, d, l, r) f g =
+  mkGrid
+    [ (c, f g')
+      | c@(x', y') <- coords g,
+        let g' = mapCoords (\(x, y) -> (x - x', y - y')) $ filterCoords (\(x, y) -> x >= x' - l && y >= y' - u && x <= x' + r && y <= y' + d) g
+    ]
+
 data Perimeter k = Perimeter
   { pTop :: [k],
     pRight :: [k],
