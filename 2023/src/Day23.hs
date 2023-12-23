@@ -88,6 +88,9 @@ intersectingEdges graph =
       size (abPath ∩ acPath) > 1
   ]
 
+-- edge list of (a, b, path, [intersects with])
+-- lazily output all paths, append as we go, check for dupes
+
 longestPathGraph' :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Int]
 longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
   where
