@@ -91,7 +91,7 @@ intersectingEdges graph =
 -- edge list of (a, b, path, [intersects with])
 -- lazily output all paths, append as we go, check for dupes
 -- not that big a graph, filter all paths
--- only one path between nodes! use this
+-- only one path between nodes! use this - not true
 
 longestPathGraph' :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Int]
 longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
@@ -111,21 +111,39 @@ longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
                   (s ∩ path) ∈ [(∅), mkSet [c]]
               ]
 
-lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [[Coord2]]
-lazyPaths graph start end = catMaybes . sequence $ go (start, (∅))
+-- build a structure which is:
+-- a to b, pth length, and which edges it invalidates
+-- can then build small graphw
+
+edgeInfo graph =
+  mkMapWith (<>) $
+    [ ((a,b),[(size bPath, mkSet $ filter ((>0) . size . (bPath ∩)) dPaths)])
+      | (a, aTo) <- unMap graph,
+      (b, bPaths) <- unMap aTo,
+      bPath <- bPaths,
+      (c, cTo) <- unMap graph,
+      (d, dPaths) <- unMap cTo]
+
+lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Maybe Int]
+lazyPaths graph start end = sequence $ startEvalMemo $ go (start, (∅))
   where
-    go (c, s)
-      | c == end = Just []
-      | c ∈ s = Nothing
-      -- \| c ∈ p = return [-1000000000000000]
+    e = edgeInfo graph
+    go (c, es)
+      | c == end = return $ Just 0
       | otherwise =
-          mconcat
-            [ (c :) <$$> go (c', s')
-              | (c', paths) <- maybe [] unMap (graph |? c),
-                path <- paths,
-                let s' = s ∪ path,
-                -- let p' = c |-> p
-                (s ∩ path) ∈ [(∅), mkSet [c]]
+        traceShow (c, size es) $
+          mconcat . sequence $
+          -- todo take maximum
+            [ (l+) <$$> memo go (b, es ∪ invalid)
+              | ((a,b),ls) <- unMap e,
+                (l,invalid) <- ls,
+                a == c,
+                es ∩ invalid == (∅)
+                --(c', paths) <- maybe [] unMap (graph |? c),
+                --path <- paths,
+                --let s' = s ∪ path \\ mkSet [c'],
+                ---- let p' = c |-> p
+                --(s ∩ path) ∈ [(∅), mkSet [c]]
             ]
 
 longest :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Set Coord2 -> Maybe (Set Coord2)
@@ -156,7 +174,8 @@ longest graph start end seen =
               paths -> return . Just $ maximumOn size paths
 
 parts =
-  let g = $(grid input 23)
+  -- let g = $(grid input 23)
+  let g = $(grid exampleInput 23)
       (maxX, maxY) = maxXY g
       (start, end) = ((1, 0), (maxX - 1, maxY))
       paths = slopePaths (\c -> bool [fromArrow2 c] enumerate (c == '.')) (const False) start end g
