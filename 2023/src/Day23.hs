@@ -90,6 +90,8 @@ intersectingEdges graph =
 
 -- edge list of (a, b, path, [intersects with])
 -- lazily output all paths, append as we go, check for dupes
+-- not that big a graph, filter all paths
+-- only one path between nodes! use this
 
 longestPathGraph' :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [Int]
 longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
@@ -108,6 +110,22 @@ longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
                   -- let p' = c |-> p
                   (s ∩ path) ∈ [(∅), mkSet [c]]
               ]
+
+lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> [[Coord2]]
+lazyPaths graph start end = go (start, (∅))
+  where
+    go (c, s)
+      | c == end = []
+      -- \| c ∈ p = return [-1000000000000000]
+      | otherwise =
+          mconcat
+            [ (c :) <$> go (c', s')
+              | (c', paths) <- maybe [] unMap (graph |? c),
+                path <- paths,
+                let s' = s ∪ path,
+                -- let p' = c |-> p
+                (s ∩ path) ∈ [(∅), mkSet [c]]
+            ]
 
 longest :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Set Coord2 -> Maybe (Set Coord2)
 longest graph start end seen =
@@ -136,7 +154,7 @@ longest graph start end seen =
               [] -> return Nothing
               paths -> return . Just $ maximumOn size paths
 
-parts :: (Int, [Int])
+parts :: (Int, Int)
 parts =
   let g = $(grid input 23)
       (maxX, maxY) = maxXY g
@@ -146,16 +164,17 @@ parts =
       graph = allPaths g (mkSet [start, end] ∪ forks)
       -- path' = longestPathGraph graph start end (∅)
       -- path' = longestPathGraph' graph start end
-      paths' = longestPathGraph' graph start end
+      -- paths' = longestPathGraph' graph start end
+      paths' = lazyPaths graph start end
    in -- paths' = case path' of
       --  Nothing -> []
       --  Just p -> [p]
       -- path' = fromMaybe (∅) (longest graph start end (∅))
       -- paths' = [path']
-      (subtract 1 . maximum . fmap length $ paths, traceShowId $ longestPathGraph' graph start end)
+      (subtract 1 . maximum . fmap length $ paths, length <$> traceShowId $ paths')
 
 part1 :: Int
 part1 = fst parts
 
 part2 :: Int
-part2 = (maximum $ snd parts)
+part2 = snd parts
