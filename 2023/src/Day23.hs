@@ -50,8 +50,7 @@ longestPathGraph :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> 
 longestPathGraph graph start end allSeen =
   -- let -- go :: Seq (Coord2, Set Coord2, Map Coord2 (Map Coord2 [Set Coord2]), [Coord2]) -> Set [Coord2] -> Set [Coord2] -> [Coord2]
   let go Empty paths _ =
-        traceShow ("exhausted q", size <$> paths) $
-          paths
+        traceShow ("exhausted q", size <$> paths) paths
       go ((c, s, graph, nodePath) :<| q) paths seen
         | c == end =
             traceShow (c, "found end with len", size s) $
@@ -82,9 +81,9 @@ intersectingEdges graph =
     | (a, toA) <- unMap graph,
       (b, abPaths) <- unMap toA,
       (c, acPaths) <- unMap toA,
+      b /= c,
       abPath <- abPaths,
       acPath <- acPaths,
-      b /= c,
       size (abPath ∩ acPath) > 1
   ]
 
@@ -117,51 +116,80 @@ longestPathGraph' graph start end = startEvalMemo $ go (start, (∅))
 
 edgeInfo graph =
   mkMapWith (<>) $
-    [ ((a,b),[(bPath,
-               size bPath,
-               mkSet . fmap thd3 $
-                 filter
-                   (\(a',b',p)->(a,b)/=(a',b') && ((a==a' || b==b' || let i = bPath ∩ p in (a'==b && i /= mkSet [b]) || i /=  (∅))))
-                   allPaths)])-- (p ∈ [(∅), mkSet [b]])) allPaths)])
+    [ ( (a, b),
+        [ ( bPath,
+            size bPath,
+            mkSet . fmap thd3 $
+              filter
+                ( \(a', b', p) ->
+                    (a, b) /= (a', b')
+                      && (a, b) /= (b', a')
+                      && ( let i = bPath ∩ p
+                            in (a' == b && i /= mkSet [b]) || (b' == b && i /= mkSet [a]) || i /= (∅)
+                         )
+                )
+                allPaths -- (p ∈ [(∅), mkSet [b]])) allPaths)])
+          )
+        ]
+      )
       | (a, aTo) <- unMap graph,
-      (b, bPaths) <- unMap aTo,
-      bPath <- bPaths
+        (b, bPaths) <- unMap aTo,
+        bPath <- bPaths
     ]
   where
-    allPaths = [(a,b,p) | (a, paths) <- unMap graph, (b,ps) <- unMap paths, p <- ps]
+    allPaths = [traceShow ("allpaths", a, b, p) $ (a, b, p) | (a, paths) <- unMap graph, (b, ps) <- unMap paths, p <- ps]
 
+maxi :: (Ord a) => [a] -> Maybe a
 maxi [] = Nothing
 maxi xs = Just (maximum xs)
 
 lazyPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Maybe Int
-lazyPaths graph start end =  startEvalMemo $ go (start, (∅), (∅))
+lazyPaths graph start end = startEvalMemo $ go (start, (∅), (∅))
   where
-    e = traceShowF keys $ edgeInfo graph
+    e = traceTextLn (pack . intercalate "\n" . fmap show . unMap $ edgeInfo graph) $ edgeInfo graph
     go (c, es, invalid)
       | c == end = return $ Just 0
       | otherwise =
-        traceShow ("at",c, es,invalid) $ do
-          -- todo take maximum
-          -- track taken and invalid
-          lens <- sequence
-                    [ traceShow ("going to",a,b,l,invalid',es) $
-                        (l+) <$$> memo go (b, e |->es, invalid'  ∪ invalid)
-                    | ((a,b),ls) <- unMap e,
-                      (e,l,invalid') <- ls,
-                      a == c || b == c,
-                      traceShow ("testing",a,b,l,e,es) $ True,
-                      traceShowId $ e ∉ es,
-                      traceShowId $ e ∉ invalid,
-                      (traceShowId $ traceShow "crosses any of our edges?" (es ∩ invalid')) == (∅)
-                      -- e ∉ (traceShow ("testing",a,b,l,e,es) $ traceShowId invalid)
-                      -- es ∩ (traceShow ("testing",a,b,l,e,es) $ traceShowId invalid') == (∅)
-                      --(c', paths) <- maybe [] unMap (graph |? c),
-                      --path <- paths,
-                      --let s' = s ∪ path \\ mkSet [c'],
-                      ---- let p' = c |-> p
-                      --(s ∩ path) ∈ [(∅), mkSet [c]]
-                    ]
-          return . maxi $ catMaybes lens
+          traceShow ("at", c, es, invalid) $ do
+            -- todo take maximum
+            -- track taken and invalid
+            lens <-
+              sequence
+                [ traceShow ("going to", a, b, l, invalid', es) $
+                    (l +) <$$> memo go (b, edge |-> es, invalid' ∪ invalid)
+                  | ((a, b), ls) <- unMap e,
+                    a == c || b == c,
+                    (edge, l, invalid') <- ls,
+                    traceShow ("testing", a, b, l, edge, es) True,
+                    traceShowId $ edge ∉ es,
+                    traceShowId $ edge ∉ invalid,
+                    traceShowId (traceShow "crosses any of our edges?" (es ∩ invalid')) == (∅)
+                    -- e ∉ (traceShow ("testing",a,b,l,e,es) $ traceShowId invalid)
+                    -- es ∩ (traceShow ("testing",a,b,l,e,es) $ traceShowId invalid') == (∅)
+                    -- (c', paths) <- maybe [] unMap (graph |? c),
+                    -- path <- paths,
+                    -- let s' = s ∪ path \\ mkSet [c'],
+                    ---- let p' = c |-> p
+                    -- (s ∩ path) ∈ [(∅), mkSet [c]]
+                ]
+            return . maxi $ catMaybes lens
+
+lazyPaths' :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Maybe Int
+lazyPaths' graph start end = startEvalMemo $ go (start, (∅))
+  where
+    go (a, seen)
+      | a == end = return $ Just 0
+      | otherwise =
+          traceShow ("at", a) $ do
+            lens <-
+              sequence
+                [ traceShow ("going to", a, b) $
+                    (-1 + size p +) <$$> memo go (b, a |-> seen)
+                  | (b, ps) <- unMap (graph |! a),
+                    b ∉ seen,
+                    p <- ps
+                ]
+            return . maxi $ catMaybes lens
 
 longest :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Set Coord2 -> Maybe (Set Coord2)
 longest graph start end seen =
@@ -192,7 +220,7 @@ longest graph start end seen =
 
 parts =
   -- let g = $(grid input 23)
-  let g = $(grid exampleInput 23)
+  let g = $(grid input 23)
       (maxX, maxY) = maxXY g
       (start, end) = ((1, 0), (maxX - 1, maxY))
       paths = slopePaths (\c -> bool [fromArrow2 c] enumerate (c == '.')) (const False) start end g
@@ -201,7 +229,7 @@ parts =
       -- path' = longestPathGraph graph start end (∅)
       -- path' = longestPathGraph' graph start end
       -- paths' = longestPathGraph' graph start end
-      paths' = lazyPaths graph start end
+      paths' = lazyPaths' graph start end
    in -- paths' = case path' of
       --  Nothing -> []
       --  Just p -> [p]
