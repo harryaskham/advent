@@ -196,7 +196,7 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
       [ax, ay, az, avx, avy, avz] = makeConstant <$> [ax', ay', az', avx', avy', avz']
       [ax''', ay''', az''', avx''', avy''', avz'''] = makeConstant <$> [ax'', ay'', az'', avx'', avy'', avz'']
       [ax''''', ay''''', az''''', avx''''', avy''''', avz'''''] = makeConstant <$> [ax'''', ay'''', az'''', avx'''', avy'''', avz'''']
-      -- t = makeVariable . SimpleVar $ "t"
+      t = makeVariable . SimpleVar $ "t"
       -- t0 = makeVariable . SimpleVar $ "t0"
       t0 = makeConstant 1
       t1 = makeVariable . SimpleVar $ "t1"
@@ -208,8 +208,8 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
           (zip [2 ..] ins)
           ( \(i, ((sx', sy', sz'), (svx', svy', svz'))) ->
               let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
-                  t = ts !! i
-               in do
+               in -- t = ts !! i
+                  do
                     -- time must be positive
                     -- t - abs t === 0
 
@@ -245,6 +245,8 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
                     -- shouldnt make a diff
                     -- (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
           )
+        t - abs t === 0
+        return (x + y + z)
 
 -- vx === (ax - x) / t0
 -- vy === (ay - y) / t0
