@@ -324,22 +324,66 @@ part1 =
 -- [ go (rest \\ next) (intersectXYZ (pos,vel) next
 -- \| next <- rest
 
+intersect3d ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', avy'', avz'')) =
+  let [ax, ay, az, avx, avy, avz] = makeConstant <$> [ax', ay', az', avx', avy', avz']
+      [ax''', ay''', az''', avx''', avy''', avz'''] = makeConstant <$> [ax'', ay'', az'', avx'', avy'', avz'']
+      t = makeVariable . SimpleVar $ "t"
+   in flip runSolver noDeps $ do
+        ax + t * avx === ax''' + t * avx'''
+        ay + t * avy === ay''' + t * avy'''
+        az + t * avz === az''' + t * avz'''
+        return (t, (avx, avy, avz))
+
+intersect3dFirst (ax', ay', az') ((ax'', ay'', az''), (avx'', avy'', avz'')) =
+  let [ax, ay, az] = makeConstant <$> [ax', ay', az']
+      [ax''', ay''', az''', avx''', avy''', avz'''] = makeConstant <$> [ax'', ay'', az'', avx'', avy'', avz'']
+      t = makeVariable . SimpleVar $ "t"
+      [avx, avy, avz] = makeVariable . SimpleVar <$> ["avx", "avy", "avz"]
+   in flip runSolver noDeps $ do
+        ax + t * avx === ax''' + t * avx'''
+        ay + t * avy === ay''' + t * avy'''
+        az + t * avz === az''' + t * avz'''
+        return (t, (avx, avy, avz))
+
+go :: ((Rational, Rational, Rational), (Rational, Rational, Rational)) -> Rational -> (Rational, Rational, Rational) -> Maybe (Rational, Rational, Rational) -> Set ((Rational, Rational, Rational), (Rational, Rational, Rational)) -> [(((Rational, Rational, Rational), (Rational, Rational, Rational)), Maybe (Rational, Rational, Rational))]
+go firstOne t pos velM rest
+  | rest == mkSet [] = [(firstOne, velM)]
+  | otherwise =
+      let f =
+            case velM of
+              Nothing -> intersect3dFirst pos
+              Just v -> intersect3d (pos, v)
+       in mconcat
+            [ go firstOne (t + t') next (Just vel) (rest \\ (mkSet [next]))
+              | next <- unSet rest,
+                let tE = f next,
+                isRight tE,
+                let Right (t', vel) = tE
+            ]
+
+goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x, y, z), (vx, vy, vz)) <- unSet as]
+
 part2 =
   stones
     & fmap dblStone
-    & ( \ins ->
-          [ solve' (delete a . delete b . delete c $ ins) a b c
-            | -- \| a <- [ins !! 4],
-              -- b <- [ins !! 1],
-              -- c <- [ins !! 2],
-              a <- ins,
-              b <- ins,
-              a /= b,
-              c <- ins,
-              b /= c
-          ]
-      )
-    & partitionEithers
+    & goAll
+
+{-}
+& filter (\((x, y, z), (vx, vy, vz)) -> (x + vx, y + vy, z + vz) /= (21, 14, 12))
+& ( \ins ->
+      [ solve' (delete a . delete b . delete c $ ins) a b c
+        | -- \| a <- [ins !! 4],
+          -- b <- [ins !! 1],
+          -- c <- [ins !! 2],
+          a <- ins,
+          b <- ins,
+          a /= b,
+          c <- ins,
+          b /= c
+      ]
+  )
+& partitionEithers
+-}
 
 -- & fmap traceShowId
 -- & fmap (snd >>> nonlinearEqs)
