@@ -82,6 +82,9 @@ stones =
 -- smashTime NoIntersection = Nothing
 -- smashTime IntersectAt = undefined
 
+-- each is a 4d line, and we are trying to find a 4d line intersecting all
+
+
 part1 :: Int
 part1 =
   stones
