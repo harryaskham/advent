@@ -192,16 +192,17 @@ stones =
 -- solve' :: [((Rational, Rational, Rational), (Rational, Rational, Rational))] -> Either (DepError Rational ()) (Dependencies Rational ())
 -- solve' :: [((Integer, Integer, Integer), (Integer, Integer, Integer))] -> Either (DepError SimpleVar Integer) Integer
 solve' ins =
-  flip runSolver noDeps $ do
-    let [x, y, z, vx, vy, vz] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz"]
-    forM_
-      ins
-      ( \((sx', sy', sz'), (svx', svy', svz')) ->
-          let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
-              t = makeVariable . SimpleVar $ "t"
-           in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
-      )
-    return (x + y + z)
+  let [x, y, z, vx, vy, vz] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz"]
+      (Right (v, d)) = flip runSolver noDeps $ do
+        forM_
+          (zip [0 ..] ins)
+          ( \(i, ((sx', sy', sz'), (svx', svy', svz'))) ->
+              let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
+                  t = makeVariable . SimpleVar $ "t" <> show i
+               in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
+          )
+        return ()
+   in (v, d)
 
 -- sum <$> traverse getValue [x, y, z]
 
