@@ -20,6 +20,7 @@ common common-settings
                         extra,
                         text,
                         containers,
+                        linearEqSolver,
                         unordered-containers,
                         mtl,
                         bimap,
