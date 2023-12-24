@@ -35,7 +35,7 @@ main :: IO ()
 
 -- main = benchEachPart
 
-main = print Day23.part1 >> print Day23.part2
+main = print Day24.part1 >> print Day24.part2
 
 benchOne :: (Show a) => a -> IO ()
 benchOne a = benchMany 1 [("One Thing", putTextLn (show a))]
