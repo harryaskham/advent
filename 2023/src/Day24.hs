@@ -193,11 +193,12 @@ stones =
 -- solve' :: [((Integer, Integer, Integer), (Integer, Integer, Integer))] -> Either (DepError SimpleVar Integer) Integer
 solve' ins =
   flip runSolver noDeps $ do
-    let [x, y, z, vx, vy, vz, t] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz", "t"]
+    let [x, y, z, vx, vy, vz] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz"]
     forM_
       ins
       ( \((sx', sy', sz'), (svx', svy', svz')) ->
           let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
+              t = makeVariable . SimpleVar $ "t"
            in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
       )
     return (x + y + z)
