@@ -191,8 +191,9 @@ stones =
 
 -- solve' :: [((Rational, Rational, Rational), (Rational, Rational, Rational))] -> Either (DepError Rational ()) (Dependencies Rational ())
 -- solve' :: [((Integer, Integer, Integer), (Integer, Integer, Integer))] -> Either (DepError SimpleVar Integer) Integer
-solve' ins =
+solve' ins ((ax',ay',az'),(avx',avy',avz')) =
   let [x, y, z, vx, vy, vz] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz"]
+      [ax, ay, az, avx, avy, avz] = makeConatant <$> [ax', ay', az', avx', avy', avz']
       (Right (v, d)) = flip runSolver noDeps $ do
         forM_
           (zip [0 ..] ins)
@@ -201,7 +202,9 @@ solve' ins =
                   t = makeVariable . SimpleVar $ "t" <> show i
                in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
           )
-        return ()
+        x + vx === a + ax
+        y + vy === a + ay
+        z + vz === a + ay
    in (v, d)
 
 -- sum <$> traverse getValue [x, y, z]
