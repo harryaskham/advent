@@ -191,21 +191,107 @@ stones =
 
 -- solve' :: [((Rational, Rational, Rational), (Rational, Rational, Rational))] -> Either (DepError Rational ()) (Dependencies Rational ())
 -- solve' :: [((Integer, Integer, Integer), (Integer, Integer, Integer))] -> Either (DepError SimpleVar Integer) Integer
-solve' ins ((ax',ay',az'),(avx',avy',avz')) =
+solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', avy'', avz'')) ((ax'''', ay'''', az''''), (avx'''', avy'''', avz'''')) =
   let [x, y, z, vx, vy, vz] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz"]
-      [ax, ay, az, avx, avy, avz] = makeConatant <$> [ax', ay', az', avx', avy', avz']
-      (Right (v, d)) = flip runSolver noDeps $ do
+      [ax, ay, az, avx, avy, avz] = makeConstant <$> [ax', ay', az', avx', avy', avz']
+      [ax''', ay''', az''', avx''', avy''', avz'''] = makeConstant <$> [ax'', ay'', az'', avx'', avy'', avz'']
+      [ax''''', ay''''', az''''', avx''''', avy''''', avz'''''] = makeConstant <$> [ax'''', ay'''', az'''', avx'''', avy'''', avz'''']
+      -- t = makeVariable . SimpleVar $ "t"
+      -- t0 = makeVariable . SimpleVar $ "t0"
+      t0 = makeConstant 1
+      t1 = makeVariable . SimpleVar $ "t1"
+      t2 = makeVariable . SimpleVar $ "t2"
+   in --
+      flip runSolver noDeps $ do
+        let ts = [makeVariable . SimpleVar $ "t" <> show i | i <- [2 ..]]
         forM_
-          (zip [0 ..] ins)
+          (zip [2 ..] ins)
           ( \(i, ((sx', sy', sz'), (svx', svy', svz'))) ->
               let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
-                  t = makeVariable . SimpleVar $ "t" <> show i
-               in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
+                  t = ts !! i
+               in do
+                    -- time must be positive
+                    -- t - abs t === 0
+
+                    -- there  needs to be some t where we intercept
+                    x + t * vx === sx + t * svx
+                    y + t * vy === sy + t * svy
+                    z + t * vz === sz + t * svz
+
+                    -- -- moving from our first point to here should also intercept
+                    -- ax + (t - t0) * vx === sx + t * svx
+                    -- ay + (t - t0) * vy === sy + t * svy
+                    -- ay + (t - t0) * vz === sz + t * svz
+
+                    -- -- similarly from second point
+                    -- ax''' + (t - t1) * vx === sx + t * svx
+                    -- ay''' + (t - t1) * vy === sy + t * svy
+                    -- ay''' + (t - t1) * vz === sz + t * svz
+
+                    -- -- similarly from third point
+                    -- ax''''' + (t - t2) * vx === sx + t * svx
+                    -- ay''''' + (t - t2) * vy === sy + t * svy
+                    -- ay''''' + (t - t2) * vz === sz + t * svz
+
+                    -- shouldnt make a diff
+                    -- (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
           )
-        x + vx === ax + avx
-        y + vy === ay + avy
-        z + vz === az + avy
-   in (v, d)
+        -- vx === (ax - x) / t0
+        -- vy === (ay - y) / t0
+        -- vz === (az - z) / t0
+
+        -- define time as passage of our thrown one
+        -- t0 === (ax - x) / vx
+        t1 === (ax''' - x) / vx
+        t2 === (ax''''' - x) / vx
+
+        -- we smash into the first at t0
+        x + t0 * vx === ax + t0 * avx
+        y + t0 * vy === ay + t0 * avy
+        z + t0 * vz === az + t0 * avz
+
+-- we smash into the second at t1
+-- x + t1 * vx === ax''' + t1 * avx'''
+-- y + t1 * vy === ay''' + t1 * avy'''
+-- z + t1 * vz === az''' + t1 * avz'''
+
+-- we smash into the third at t2
+-- x + t2 * vx === ax''''' + t2 * avx'''''
+-- y + t2 * vy === ay''''' + t2 * avy'''''
+-- z + t2 * vz === az''''' + t2 * avz'''''
+
+-- t0 - abs t0 === 0
+-- t1 - abs t1 === 0
+-- t2 - abs t2 === 0
+
+-- vx === ax''' - ax / (t1 - t0)
+-- vy === ay''' - ay / (t1 - t0)
+-- vz === az''' - az / (t1 - t0)
+-- vx === ax''''' - ax''' / (t2 - t1)
+-- vy === ay''''' - ay''' / (t2 - t1)
+-- vz === az''''' - az''' / (t2 - t1)
+-- vx === ax''''' - ax / (t2 - t0)
+-- vy === ay''''' - ay / (t2 - t0)
+-- vz === az''''' - az / (t2 - t0)
+
+-- -- we are able to cover the distance from the 1st and 2nd collisions
+-- ax''' - ax === (t1 - t0) * vx
+-- ay''' - ay === (t1 - t0) * vy
+-- az''' - az === (t1 - t0) * vz
+
+-- ax + t * vx === ax''' + avx'''
+-- ay + t * vy === ay''' + avy'''
+-- az + t * vz === az''' + avz'''
+-- ax''' + t * vx === ax''''' + avx'''''
+-- ay''' + t * vy === ay''''' + avy'''''
+-- az''' + t * vz === az''''' + avz'''''
+
+-- x + t * vx === ax''' + t * avx'''
+-- y + t * vy === ay''' + t * avy'''
+-- z + t * vz === az''' + t * avz'''
+-- x + t * vx === ax''''' + t * avx'''''
+-- y + t * vy === ay''''' + t * avy'''''
+-- z + t * vz === az''''' + t * avz'''''
 
 -- sum <$> traverse getValue [x, y, z]
 
@@ -221,10 +307,33 @@ part1 =
     & intersections (200000000000000 % 1, 400000000000000 % 1)
     & length
 
+-- we want 24, 13, 10 with -3, 1, 2
+
+-- can do recursive until can solve
+
+-- go rest pos velM =
+-- [ go (rest \\ next) (intersectXYZ (pos,vel) next
+-- \| next <- rest
+
 part2 =
   stones
     & fmap dblStone
-    & (\ins -> solve' ins <$> ins)
+    & ( \ins ->
+          [ solve' (delete a . delete b . delete c $ ins) a b c
+            | -- \| a <- [ins !! 4],
+              -- b <- [ins !! 1],
+              -- c <- [ins !! 2],
+              a <- ins,
+              b <- ins,
+              a /= b,
+              c <- ins,
+              b /= c
+          ]
+      )
+    & partitionEithers
+
+-- & fmap traceShowId
+-- & fmap (snd >>> nonlinearEqs)
 
 -- & fmap toLinear
 -- & intersectReduce
