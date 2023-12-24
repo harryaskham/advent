@@ -202,9 +202,9 @@ solve' ins ((ax',ay',az'),(avx',avy',avz')) =
                   t = makeVariable . SimpleVar $ "t" <> show i
                in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
           )
-        x + vx === a + ax
-        y + vy === a + ay
-        z + vz === a + ay
+        x + vx === ax + avx
+        y + vy === ay + avy
+        z + vz === az + avy
    in (v, d)
 
 -- sum <$> traverse getValue [x, y, z]
@@ -224,7 +224,7 @@ part1 =
 part2 =
   stones
     & fmap dblStone
-    & solve'
+    & (\ins -> solve' ins <$> ins)
 
 -- & fmap toLinear
 -- & intersectReduce
