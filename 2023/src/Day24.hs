@@ -1,7 +1,5 @@
 module Day24 where
 
-import Data.Ratio ((%))
-
 -- {-
 -- t = x'-x/vx-vx'
 -- x'-x/vx-vx' = y'-y/vy-vy'
