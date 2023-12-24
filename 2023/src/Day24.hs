@@ -345,7 +345,7 @@ intersect3dFirst (ax', ay', az') ((ax'', ay'', az''), (avx'', avy'', avz'')) =
         az + t * avz === az''' + t * avz'''
         return (t, (avx, avy, avz))
 
-go :: ((Rational, Rational, Rational), (Rational, Rational, Rational)) -> Rational -> (Rational, Rational, Rational) -> Maybe (Rational, Rational, Rational) -> Set ((Rational, Rational, Rational), (Rational, Rational, Rational)) -> [(((Rational, Rational, Rational), (Rational, Rational, Rational)), Maybe (Rational, Rational, Rational))]
+go :: ((Double, Double, Double), (Double, Double, Double)) -> Double -> (Double, Double, Double) -> Maybe (Double, Double, Double) -> Set ((Double, Double, Double), (Double, Double, Double)) -> [(((Double, Double, Double), (Double, Double, Double)), Maybe (Double, Double, Double))]
 go firstOne t pos velM rest
   | rest == mkSet [] = [(firstOne, velM)]
   | otherwise =
@@ -354,11 +354,13 @@ go firstOne t pos velM rest
               Nothing -> intersect3dFirst pos
               Just v -> intersect3d (pos, v)
        in mconcat
-            [ go firstOne (t + t') next (Just vel) (rest \\ (mkSet [next]))
+            [ go firstOne (t + t'') (fst next) (Just vel') (rest \\ (mkSet [next]))
               | next <- unSet rest,
                 let tE = f next,
                 isRight tE,
-                let Right (t', vel) = tE
+                let Right (t', vel) = tE,
+                let t'' = traceShow t' $ 0,
+                let vel' = traceShow vel $ (0, 0, 0)
             ]
 
 goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x, y, z), (vx, vy, vz)) <- unSet as]
@@ -366,6 +368,7 @@ goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x,
 part2 =
   stones
     & fmap dblStone
+    & mkSet
     & goAll
 
 {-}
