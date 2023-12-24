@@ -1,6 +1,8 @@
 module Day24 where
 
+import Data.Either.Extra (fromEither)
 import Math.LinearEquationSolver
+import Math.MFSolve
 
 -- {-
 -- t = x'-x/vx-vx'
@@ -138,8 +140,8 @@ solve (e, c) (e', c') =
               dzdt = ((z' - z) / dt')
            in Just ([dxdt, dydt, dzdt, dt], -dxdt * x - dydt * y - dzdt * z)
 
-intersectReduce :: [([Rational], Rational)] -> [([Rational], Rational)]
-intersectReduce =
+intersectReduce' :: [([Rational], Rational)] -> [([Rational], Rational)]
+intersectReduce' =
   iterateFix
     ( \surfaces ->
         catMaybes
@@ -148,6 +150,16 @@ intersectReduce =
           ]
     )
 
+intersectReduce :: [([Rational], Rational)] -> [([Rational], Rational)]
+intersectReduce =
+  iterateFix
+    ( \surfaces ->
+        [ traceShowId . unjust $ solve a b
+          | (a, b) <- zip surfaces (drop 1 surfaces)
+        ]
+    )
+
+plane :: (Fractional a1, Fractional a2) => ((a2, a2, a2), (a2, a2, a2)) -> ((a1, a1, a1), (a1, a1, a1)) -> a3
 plane ((x, y, z), (vx, vy, vz)) ((x', y', z'), (vx', vy', vz')) =
   let (mx, my) = (vz / vx, vz / vy)
       (mx', my') = (vz' / vx', vz' / vy')
@@ -168,6 +180,36 @@ stones =
           )
       )
 
+-- actually looking for 6 parameters
+-- duh
+-- so we have
+-- sx + svx * t + sy + svy * t + sz * svz * t = x + vx *t + y * vy *t + z * vz + t
+-- for each stone
+-- so for sx,sy,sz,svx,svy,svz:
+-- sx + sy + sz + t * (svx + svy + szy) = t x + y + z + t ( vx + vy + vz)
+-- or for any stone we say at time t:
+
+-- solve' :: [((Rational, Rational, Rational), (Rational, Rational, Rational))] -> Either (DepError Rational ()) (Dependencies Rational ())
+-- solve' :: [((Integer, Integer, Integer), (Integer, Integer, Integer))] -> Either (DepError SimpleVar Integer) Integer
+solve' ins =
+  flip runSolver noDeps $ do
+    let [x, y, z, vx, vy, vz, t] = map (makeVariable . SimpleVar) ["x", "y", "z", "vx", "vy", "vz", "t"]
+    forM_
+      ins
+      ( \((sx', sy', sz'), (svx', svy', svz')) ->
+          let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
+           in (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
+      )
+    return (x + y + z)
+
+-- sum <$> traverse getValue [x, y, z]
+
+intStone :: ((Rational, Rational, Rational), (Rational, Rational, Rational)) -> ((Integer, Integer, Integer), (Integer, Integer, Integer))
+intStone ((x, y, z), (vx, vy, vz)) = ((round x, round y, round z), (round vx, round vy, round vz))
+
+dblStone :: ((Rational, Rational, Rational), (Rational, Rational, Rational)) -> ((Double, Double, Double), (Double, Double, Double))
+dblStone ((x, y, z), (vx, vy, vz)) = ((fromRational x, fromRational y, fromRational z), (fromRational vx, fromRational vy, fromRational vz))
+
 part1 :: Int
 part1 =
   stones
@@ -176,5 +218,8 @@ part1 =
 
 part2 =
   stones
-    & fmap toLinear
-    & intersectReduce
+    & fmap dblStone
+    & solve'
+
+-- & fmap toLinear
+-- & intersectReduce

@@ -21,6 +21,7 @@ common common-settings
                         text,
                         containers,
                         linearEqSolver,
+                        mfsolve,
                         unordered-containers,
                         mtl,
                         bimap,
