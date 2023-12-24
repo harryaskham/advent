@@ -197,55 +197,71 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
       [ax''', ay''', az''', avx''', avy''', avz'''] = makeConstant <$> [ax'', ay'', az'', avx'', avy'', avz'']
       [ax''''', ay''''', az''''', avx''''', avy''''', avz'''''] = makeConstant <$> [ax'''', ay'''', az'''', avx'''', avy'''', avz'''']
       t = makeVariable . SimpleVar $ "t"
-      -- t0 = makeVariable . SimpleVar $ "t0"
-      t0 = makeConstant 1
+      t0 = makeVariable . SimpleVar $ "t0"
+      -- t0 = makeConstant 1
       t1 = makeVariable . SimpleVar $ "t1"
       t2 = makeVariable . SimpleVar $ "t2"
    in --
       flip runSolver noDeps $ do
-        let ts = [makeVariable . SimpleVar $ "t" <> show i | i <- [2 ..]]
-        forM_
-          (zip [2 ..] ins)
-          ( \(i, ((sx', sy', sz'), (svx', svy', svz'))) ->
-              let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
-               in -- t = ts !! i
-                  do
-                    -- time must be positive
-                    -- t - abs t === 0
+        --let ts = [makeVariable . SimpleVar $ "t" <> show i | i <- [2 ..]]
+        --forM_
+        --  (zip [2 ..] ins)
+        --  ( \(i, ((sx', sy', sz'), (svx', svy', svz'))) ->
+        --      let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
+        --       in -- t = ts !! i
+        --          do
+        --            -- time must be positive
+        --            -- t - abs t === 0
 
-                    -- there  needs to be some t where we intercept
-                    x + t * vx === sx + t * svx
-                    y + t * vy === sy + t * svy
-                    z + t * vz === sz + t * svz
+        --            -- there  needs to be some t where we intercept
+        --            x + t * vx === sx + t * svx
+        --            y + t * vy === sy + t * svy
+        --            z + t * vz === sz + t * svz
 
-                    -- when (i > 2) do
-                    -- let lastT = ts !! (i - 3)
-                    -- let ((sx'', sy'', sz''), (svx'', svy'', svz'')) = ins !! (i - 3)
-                    -- [sx''', sy''', sz''', svx''', svy''', svz'''] = makeConstant <$> [sx'', sy'', sz'', svx'', svy'', svz'']
-                    ---- the distance between the last and this one matches the time it would take us
-                    -- vx * (t - lastT) === (sx + t * svx) - (sx''' + lastT * svx''')
-                    -- vy * (t - lastT) === (sy + t * svy) - (sy''' + lastT * svy''')
-                    -- vz * (t - lastT) === (sz + t * svz) - (sz''' + lastT * svz''')
+        --            -- when (i > 2) do
+        --            -- let lastT = ts !! (i - 3)
+        --            -- let ((sx'', sy'', sz''), (svx'', svy'', svz'')) = ins !! (i - 3)
+        --            -- [sx''', sy''', sz''', svx''', svy''', svz'''] = makeConstant <$> [sx'', sy'', sz'', svx'', svy'', svz'']
+        --            ---- the distance between the last and this one matches the time it would take us
+        --            -- vx * (t - lastT) === (sx + t * svx) - (sx''' + lastT * svx''')
+        --            -- vy * (t - lastT) === (sy + t * svy) - (sy''' + lastT * svy''')
+        --            -- vz * (t - lastT) === (sz + t * svz) - (sz''' + lastT * svz''')
 
-                    -- -- moving from our first point to here should also intercept
-                    -- ax + (t - t0) * vx === sx + t * svx
-                    -- ay + (t - t0) * vy === sy + t * svy
-                    -- ay + (t - t0) * vz === sz + t * svz
+        --            -- -- moving from our first point to here should also intercept
+        --            -- ax + (t - t0) * vx === sx + t * svx
+        --            -- ay + (t - t0) * vy === sy + t * svy
+        --            -- ay + (t - t0) * vz === sz + t * svz
 
-                    -- -- similarly from second point
-                    -- ax''' + (t - t1) * vx === sx + t * svx
-                    -- ay''' + (t - t1) * vy === sy + t * svy
-                    -- ay''' + (t - t1) * vz === sz + t * svz
+        --            -- -- similarly from second point
+        --            -- ax''' + (t - t1) * vx === sx + t * svx
+        --            -- ay''' + (t - t1) * vy === sy + t * svy
+        --            -- ay''' + (t - t1) * vz === sz + t * svz
 
-                    -- -- similarly from third point
-                    -- ax''''' + (t - t2) * vx === sx + t * svx
-                    -- ay''''' + (t - t2) * vy === sy + t * svy
-                    -- ay''''' + (t - t2) * vz === sz + t * svz
+        --            -- -- similarly from third point
+        --            -- ax''''' + (t - t2) * vx === sx + t * svx
+        --            -- ay''''' + (t - t2) * vy === sy + t * svy
+        --            -- ay''''' + (t - t2) * vz === sz + t * svz
 
-                    -- shouldnt make a diff
-                    -- (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
-          )
+        --            -- shouldnt make a diff
+        --            -- (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
+        --  )
         t - abs t === 0
+
+        -- we smash into the first at t0
+        x + t0 * vx === ax + t0 * avx
+        y + t0 * vy === ay + t0 * avy
+        z + t0 * vz === az + t0 * avz
+
+        -- we smash into the second at t1
+        x + t1 * vx === ax''' + t1 * avx'''
+        y + t1 * vy === ay''' + t1 * avy'''
+        z + t1 * vz === az''' + t1 * avz'''
+
+        -- we smash into the third at t2
+        x + t2 * vx === ax''''' + t2 * avx'''''
+        y + t2 * vy === ay''''' + t2 * avy'''''
+        z + t2 * vz === az''''' + t2 * avz'''''
+
         return (x + y + z)
 
 -- vx === (ax - x) / t0
@@ -257,20 +273,6 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
 -- t1 === (ax''' - x) / vx
 -- t2 === (ax''''' - x) / vx
 
----- we smash into the first at t0
--- x + t0 * vx === ax + t0 * avx
--- y + t0 * vy === ay + t0 * avy
--- z + t0 * vz === az + t0 * avz
-
--- we smash into the second at t1
--- x + t1 * vx === ax''' + t1 * avx'''
--- y + t1 * vy === ay''' + t1 * avy'''
--- z + t1 * vz === az''' + t1 * avz'''
-
--- we smash into the third at t2
--- x + t2 * vx === ax''''' + t2 * avx'''''
--- y + t2 * vy === ay''''' + t2 * avy'''''
--- z + t2 * vz === az''''' + t2 * avz'''''
 
 -- t0 - abs t0 === 0
 -- t1 - abs t1 === 0
@@ -372,8 +374,8 @@ part2 =
   stones
     & fmap dblStone
     & ( \ins ->
-          -- [ traceShowId $ solve' (delete a . delete b . delete c $ ins) a b c
-          [ traceShowId $ solve' ins a b c
+          [ traceShowId $ solve' (delete a . delete b . delete c $ ins) a b c
+          -- [ traceShowId $ solve' ins a b c
             | -- \| a <- [ins !! 4],
               -- b <- [ins !! 1],
               -- c <- [ins !! 2],
@@ -384,8 +386,9 @@ part2 =
               b /= c
           ]
       )
-    & take 1
     & partitionEithers
+    & snd
+    & uhead
 
 -- & fmap traceShowId
 -- & fmap (snd >>> nonlinearEqs)
