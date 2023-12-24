@@ -1,8 +1,10 @@
-{ mkDerivation, array, base, benchpress, bimap, bitwise, containers
-, extra, file-embed, fin, hashable, HUnit, lens, lib, linear
-, MissingH, mod, monad-memo, mtl, parsec, pqueue, QuickCheck
-, random, relude, safe, semirings, string-qq, template-haskell
-, text, unordered-containers, utility-ht, vector
+{ mkDerivation, adlude, array, base, base-unicode-symbols
+, benchpress, bimap, bitwise, containers, extra, file-embed, fin
+, hashable, HUnit, lens, lib, linear, linearEqSolver, megaparsec
+, mfsolve, MissingH, mod, monad-memo, mtl, parsec, pqueue
+, QuickCheck, random, relude, replace-megaparsec, safe, semirings
+, string-qq, template-haskell, text, unordered-containers
+, utility-ht, vector
 }:
 mkDerivation {
   pname = "x2023";
@@ -11,22 +13,26 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    array base benchpress bimap bitwise containers extra file-embed fin
-    hashable lens linear MissingH mod monad-memo mtl parsec pqueue
-    random relude safe semirings string-qq template-haskell text
-    unordered-containers utility-ht vector
+    adlude array base base-unicode-symbols benchpress bimap bitwise
+    containers extra file-embed fin hashable lens linear linearEqSolver
+    megaparsec mfsolve MissingH mod monad-memo mtl parsec pqueue random
+    relude replace-megaparsec safe semirings string-qq template-haskell
+    text unordered-containers utility-ht vector
   ];
   executableHaskellDepends = [
-    array base benchpress bimap bitwise containers extra file-embed fin
-    hashable lens linear MissingH mod monad-memo mtl parsec pqueue
-    random relude safe semirings string-qq template-haskell text
-    unordered-containers utility-ht vector
+    adlude array base base-unicode-symbols benchpress bimap bitwise
+    containers extra file-embed fin hashable lens linear linearEqSolver
+    megaparsec mfsolve MissingH mod monad-memo mtl parsec pqueue random
+    relude replace-megaparsec safe semirings string-qq template-haskell
+    text unordered-containers utility-ht vector
   ];
   testHaskellDepends = [
-    array base benchpress bimap bitwise containers extra file-embed fin
-    hashable HUnit lens linear MissingH mod monad-memo mtl parsec
-    pqueue QuickCheck random relude safe semirings string-qq
-    template-haskell text unordered-containers utility-ht vector
+    adlude array base base-unicode-symbols benchpress bimap bitwise
+    containers extra file-embed fin hashable HUnit lens linear
+    linearEqSolver megaparsec mfsolve MissingH mod monad-memo mtl
+    parsec pqueue QuickCheck random relude replace-megaparsec safe
+    semirings string-qq template-haskell text unordered-containers
+    utility-ht vector
   ];
   license = "unknown";
   hydraPlatforms = lib.platforms.none;
