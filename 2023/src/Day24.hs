@@ -218,23 +218,32 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
                     y + t * vy === sy + t * svy
                     z + t * vz === sz + t * svz
 
-                    -- -- moving from our first point to here should also intercept
-                    -- ax + (t - t0) * vx === sx + t * svx
-                    -- ay + (t - t0) * vy === sy + t * svy
-                    -- ay + (t - t0) * vz === sz + t * svz
+                    when (i > 2) do
+                      let lastT = ts !! (i - 3)
+                      let ((sx'', sy'', sz''), (svx'', svy'', svz'')) = ins !! (i - 3)
+                          [sx''', sy''', sz''', svx''', svy''', svz'''] = makeConstant <$> [sx'', sy'', sz'', svx'', svy'', svz'']
+                      -- the distance between the last and this one matches the time it would take us
+                      vx * (t - lastT) === (sx + t * svx) - (sx''' + lastT * svx''')
+                      vy * (t - lastT) === (sy + t * svy) - (sy''' + lastT * svy''')
+                      vz * (t - lastT) === (sz + t * svz) - (sz''' + lastT * svz''')
 
-                    -- -- similarly from second point
-                    -- ax''' + (t - t1) * vx === sx + t * svx
-                    -- ay''' + (t - t1) * vy === sy + t * svy
-                    -- ay''' + (t - t1) * vz === sz + t * svz
+                      -- -- moving from our first point to here should also intercept
+                      -- ax + (t - t0) * vx === sx + t * svx
+                      -- ay + (t - t0) * vy === sy + t * svy
+                      -- ay + (t - t0) * vz === sz + t * svz
 
-                    -- -- similarly from third point
-                    -- ax''''' + (t - t2) * vx === sx + t * svx
-                    -- ay''''' + (t - t2) * vy === sy + t * svy
-                    -- ay''''' + (t - t2) * vz === sz + t * svz
+                      -- -- similarly from second point
+                      -- ax''' + (t - t1) * vx === sx + t * svx
+                      -- ay''' + (t - t1) * vy === sy + t * svy
+                      -- ay''' + (t - t1) * vz === sz + t * svz
 
-                    -- shouldnt make a diff
-                    -- (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
+                      -- -- similarly from third point
+                      -- ax''''' + (t - t2) * vx === sx + t * svx
+                      -- ay''''' + (t - t2) * vy === sy + t * svy
+                      -- ay''''' + (t - t2) * vz === sz + t * svz
+
+                      -- shouldnt make a diff
+                      -- (x + t * vx + y + t * vy + z + t * vz) === (sx + t * svx + sy + t * svy + sz + t * svz)
           )
         -- vx === (ax - x) / t0
         -- vy === (ay - y) / t0
