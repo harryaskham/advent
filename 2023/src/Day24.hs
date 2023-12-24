@@ -24,72 +24,74 @@ x(m-m') = c'-c
 x = c'-c/m-m'
 -}
 
-data Intersection = NoIntersection | IntersectAt (Rational, Rational) | Parallel Rational Rational deriving (Show, Eq, Ord)
+data Intersection = NoIntersection | IntersectAt (Rational, Rational) Rational Rational | Parallel Rational Rational deriving (Show, Eq, Ord)
 
-intersect2d :: (Integer, Integer) -> (Integer, Integer) -> (Integer, Integer) -> (Integer, Integer) -> Intersection
+intersect2d :: (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> Intersection
 intersect2d (x, y) (vx, vy) (x', y') (vx', vy')
-  | m == m' && c == c' = traceShow ((m, c), (m', c')) $ Parallel m c
-  | m == m' = traceShow ((m, c), (m', c')) $ NoIntersection
-  -- \| m - m' == 0 = ParallelNoIntercept m
-  | otherwise = traceShow ((m, c), (m', c'), (ix, iy)) $ IntersectAt (ix, iy)
+  | m == m' && c == c' = Parallel m c
+  | m == m' = NoIntersection
+  | t >= 0 && t' >= 0 = IntersectAt (ix, iy) t t'
+  | otherwise = NoIntersection
   where
-    m = traceShow (x, y, vx, vy, x', y', vx', vy') $ vy % vx
-    c = (fromIntegral y) - (m * fromIntegral x)
-    m' = traceShow (m, c) $ vy' % vx'
-    c' = (fromIntegral y') - (m' * fromIntegral x')
-    ix = traceShow (m', c') $ (c' - c) / (m - m')
+    m = vy / vx
+    c = y - (m * x)
+    m' = vy' / vx'
+    c' = y' - (m' * x')
+    ix = (c' - c) / (m - m')
     iy = m * ix + c
+    t = (ix - x) / vx
+    t' = (ix - x) / vx
 
-inFuture :: (Integer, Integer) -> (Integer, Integer) -> (Rational, Rational) -> Bool
+inFuture :: (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> Bool
 inFuture (x, y) (vx, vy) (ix, iy) =
-  (ix - fromIntegral x) / fromIntegral vx >= 0
-    && (iy - fromIntegral y) / fromIntegral vy >= 0
+  (ix - x) / vx >= 0
+    && (iy - y) / vy >= 0
 
-validIntersection :: (Rational, Rational) -> (Integer, Integer) -> (Integer, Integer) -> Intersection -> Bool
+validIntersection :: (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> Intersection -> Bool
 validIntersection _ _ _ NoIntersection = False
-validIntersection (low, high) (x, y) (vx, vy) (IntersectAt (ix, iy)) =
-  ix >= low && iy >= low && ix <= high && iy <= high && inFuture (x, y) (vx, vy) (ix, iy)
+validIntersection (low, high) (x, y) (vx, vy) (IntersectAt (ix, iy) t t') =
+  ix >= low && iy >= low && ix <= high && iy <= high && inFuture (x, y) (vx, vy) (ix, iy) && t >= 0 && t' >= 0
 validIntersection (low, high) (x, y) (vx, vy) (Parallel m c) =
   let f x = m * x + c
       g y = (y - c) / m
-   in (f low >= low && f low <= high && inFuture (x, y) (vx, vy) (low, f low))
-        || (f high >= low && f high <= high && inFuture (x, y) (vx, vy) (high, f high))
-        || (g low >= low && g low <= high && inFuture (x, y) (vx, vy) (g low, low))
-        || (g high >= low && g high <= high && inFuture (x, y) (vx, vy) (g high, high))
+   in any
+        (\(a, b) -> validIntersection (low, high) (x, y) (vx, vy) (intersect2d (x, y) (vx, vy) (a, b) (0, 0)))
+        [(low, f low), (high, f high), (g low, low), (g high, high)]
 
-intersections :: (Rational, Rational) -> [((Integer, Integer, Integer), (Integer, Integer, Integer))] -> [Intersection]
+intersections :: (Rational, Rational) -> [((Rational, Rational, Rational), (Rational, Rational, Rational))] -> [Intersection]
 intersections lowHigh stones =
   [ i
-    | (((x, y, _), (vx, vy, _)), ((x', y', _), (vx', vy', _))) <-
-        -- [(a, b) | a <- stones, b <- stones, a /= b]
-        triPairs stones,
+    | ((a@(x, y, z), (vx, vy, vz)), (b@(x', y', z'), (vx', vy', vz'))) <- triPairs stones,
       let i = intersect2d (x, y) (vx, vy) (x', y') (vx', vy'),
       validIntersection lowHigh (x, y) (vx, vy) i,
       validIntersection lowHigh (x', y') (vx', vy') i
   ]
 
--- 7129 too low
--- 8773 too low
--- not 21307
--- not 14045
--- not 17599
--- not 17598
-
-part1' =
-  $(exampleInput 24)
-    |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
-          in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
-       )
-    & intersections (7 % 1, 17 % 1)
-    & length
-
-part1 =
+stones :: [((Rational, Rational, Rational), (Rational, Rational, Rational))]
+stones =
   $(input 24)
     |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
+    & fmap
+      ( \((x, y, z), (vx, vy, vz)) ->
+          ( (fromIntegral x, fromIntegral y, fromIntegral z),
+            (fromIntegral vx, fromIntegral vy, fromIntegral vz)
+          )
+      )
+
+-- smashTime :: Intersection -> Maybe Rational
+-- smashTime NoIntersection = Nothing
+-- smashTime IntersectAt = undefined
+
+part1 :: Int
+part1 =
+  stones
     & intersections (200000000000000 % 1, 400000000000000 % 1)
     & length
 
-part2 :: Text
-part2 = "wtf"
+part2 :: Int
+part2 =
+  stones
+    & intersections (-1000000000000000000000000 % 1, 1000000000000000000000000 % 1)
+    & length
