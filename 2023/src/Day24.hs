@@ -169,7 +169,7 @@ plane ((x, y, z), (vx, vy, vz)) ((x', y', z'), (vx', vy', vz')) =
 
 stones :: [((Rational, Rational, Rational), (Rational, Rational, Rational))]
 stones =
-  $(exampleInput 24)
+  $(input 24)
     |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
@@ -368,25 +368,20 @@ goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x,
 part2 =
   stones
     & fmap dblStone
-    & mkSet
-    & goAll
-
-{-}
-& filter (\((x, y, z), (vx, vy, vz)) -> (x + vx, y + vy, z + vz) /= (21, 14, 12))
-& ( \ins ->
-      [ solve' (delete a . delete b . delete c $ ins) a b c
-        | -- \| a <- [ins !! 4],
-          -- b <- [ins !! 1],
-          -- c <- [ins !! 2],
-          a <- ins,
-          b <- ins,
-          a /= b,
-          c <- ins,
-          b /= c
-      ]
-  )
-& partitionEithers
--}
+    & ( \ins ->
+          [ traceShowId $ solve' (delete a . delete b . delete c $ ins) a b c
+            | -- \| a <- [ins !! 4],
+              -- b <- [ins !! 1],
+              -- c <- [ins !! 2],
+              a <- ins,
+              b <- ins,
+              a /= b,
+              c <- ins,
+              b /= c
+          ]
+      )
+    & take 1
+    & partitionEithers
 
 -- & fmap traceShowId
 -- & fmap (snd >>> nonlinearEqs)
