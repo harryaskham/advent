@@ -23,26 +23,29 @@ addAll g =
 
     go _ ((left, right, [_, _, _], []) :<| _) = product (length <$> [left, right])
     go seen ((_, _, failed, []) :<| q) = go (failed |-> seen) q
+    -- go seen ((_, _, failed, []) :<| q) = go seen q
     go seen ((left, right, failed, edge : edges) :<| q)
-      | length failed > 3 = go seen q
+      -- \| length failed > 3 = go seen q
+      -- \| key ∈ seen = go seen q
       | failed ∈ seen = go seen q
       | a ∈ left && b ∈ left || a ∈ right && b ∈ right = go seen' ((left, right, failed, edges) :<| q)
-      | a ∈ left && b ∈ right || a ∈ right && b ∈ left = go seen' (doFail :<| q)
-      | a ∈ left || b ∈ left = go seen' (doFail :<| (a |-> (b |-> left), right, failed, edges) :<| q)
-      | a ∈ right || b ∈ right = go seen' (doFail :<| (left, a |-> (b |-> right), failed, edges) :<| q)
-      | otherwise = go seen' (doFail :<| (a |-> (b |-> left), right, failed, edges) :<| (left, a |-> (b |-> right), failed, edges) :<| q)
+      | a ∈ left && b ∈ right || a ∈ right && b ∈ left = go seen' (doFail q)
+      | a ∈ left || b ∈ left = go seen' (doFail $ (a |-> (b |-> left), right, failed, edges) :<| q)
+      | a ∈ right || b ∈ right = go seen' (doFail $ (left, a |-> (b |-> right), failed, edges) :<| q)
+      | otherwise = go seen' (doFail $ (a |-> (b |-> left), right, failed, edges) :<| (q :|> (left, a |-> (b |-> right), failed, edges)))
       where
         (a, b) =
           traceShow (size left, size right, size failed, size edges) $
             edge
-        key = (left, failed, size edges)
-        doFail = (left, right, (a, b) : failed, edges)
+        doFail = if length failed < 3 then ((left, right, (a, b) : failed, edges) :<|) else id
+        key = (left, right, failed)
+        -- seen' = key |-> seen
         seen' = seen
 
 part1 :: Int
 part1 =
-  -- \$(input 25)
-  $(input 25)
+  $(exampleInput 25)
+    -- \$(input 25)
     |- (let s = count 3 alphaNum in many1 ((,) <$> (s <* string ": ") <*> (s `sepBy` char ' ') <* eol) <* eof)
     & mkMap
     & id
