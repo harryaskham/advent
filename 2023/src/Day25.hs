@@ -19,7 +19,7 @@ addAll g = go $ mkSeq [((∅), (∅), [], [(min a b, max a b) | (a, bs) <- unMap
   where
     go ((left, right, [_,_,_], []) :<| _) =  product (length <$> [left, right])
     go ((_, _, _, []) :<| q) = go q
-    go ((left, right, failed, ((a,b):edges)) :<| q)
+    go ((left, right, failed, (edge:edges)) :<| q)
       | length failed > 3 = go q
       | (a ∈ left && b ∈ left) || (a ∈ right && b ∈ right) = go (q |> (left, right, failed, edges))
       | (a ∈ left && b ∈ right) || ( a ∈ right && b ∈ left ) = go (q |> (left, right, (a,b):failed, edges))
@@ -29,6 +29,8 @@ addAll g = go $ mkSeq [((∅), (∅), [], [(min a b, max a b) | (a, bs) <- unMap
       | b ∈ left = go (q |> (a |->left, right, failed, edges) |> (left, right, (a,b):failed, edges))
       | b ∈ right = go (q |> (left, a|->right, failed, edges) |> (left, right, (a,b):failed, edges))
       | otherwise = go (q |> (a |-> (b|-> left), right, failed, edges) |> (left, a|->(b|->right), failed, edges) |> (left, right, (a,b):failed, edges))
+        where
+          (a,b) = traceShow (edge, left,right,failed) $ edge
 
 
 part1 :: Int
