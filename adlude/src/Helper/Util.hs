@@ -21,6 +21,7 @@ import Helper.Bits (bitsToInt)
 import Helper.Collection
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
 import Relude.Unsafe qualified as U
+import System.IO.Unsafe (unsafePerformIO)
 import Text.Megaparsec (Parsec, Stream, parseMaybe)
 import Text.Megaparsec.Char (digitChar)
 import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, noneOf, oneOf, parse, sepBy, try)
@@ -40,6 +41,9 @@ exampleInputNPath day n = "input/" <> show day <> "_example_" <> show n <> ".txt
 -- If any error occurs, fail.
 readAsIO :: TR.Reader a -> FilePath -> IO [a]
 readAsIO r path = readAs r . decodeUtf8 @Text <$> readFileBS path
+
+(!<<) :: IO a -> a
+(!<<) = unsafePerformIO
 
 readAs :: TR.Reader a -> Text -> [a]
 readAs r text = do
@@ -75,6 +79,7 @@ infixl 5 |-
 
 -- megaparsec helpers
 type MParser :: Type -> Type
+
 type MParser a = Parsec Void String a
 
 parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a
