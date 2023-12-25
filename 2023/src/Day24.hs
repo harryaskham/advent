@@ -379,7 +379,7 @@ part2 = evalZ3 do
   vx <- mkFreshIntVar "vx"
   vy <- mkFreshIntVar "vy"
   vz <- mkFreshIntVar "vz"
-  forM_ (zip [0..] $ take 25 stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
+  forM_ (zip [0..] stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
     x'' <- mkRational x'
     y'' <- mkRational y'
     z'' <- mkRational z'
