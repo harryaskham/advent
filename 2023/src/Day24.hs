@@ -1,7 +1,7 @@
 module Day24 where
 
+import Z3.Monad
 import Data.Either.Extra (fromEither)
-import Math.LinearEquationSolver
 import Math.MFSolve
 
 -- {-
@@ -127,37 +127,37 @@ toLinear ((x, y, z), (vx, vy, vz)) =
 -- hence the first pass gets us all the lines between all endpoints
 -- next pass
 
-solve (e, c) (e', c') =
-  traceShow ((e, c), (e', c')) $
-    case unsafePerformIO $ solveRationalLinearEqsAll Z3 2 [e, e'] [c, c'] of
-      [] -> Nothing
-      [[x, y, z, t], [x', y', z', t']] ->
-        traceShow ("solutions!", (x, y, z, t), (x', y', z', t')) $
-          let dt = t' - t
-              dt' = if dt == 0 then 1 else dt
-              dxdt = ((x' - x) / dt')
-              dydt = ((y' - y) / dt')
-              dzdt = ((z' - z) / dt')
-           in Just ([dxdt, dydt, dzdt, dt], -dxdt * x - dydt * y - dzdt * z)
+--solve (e, c) (e', c') =
+--  traceShow ((e, c), (e', c')) $
+--    case unsafePerformIO $ solveRationalLinearEqsAll Z3 2 [e, e'] [c, c'] of
+--      [] -> Nothing
+--      [[x, y, z, t], [x', y', z', t']] ->
+--        traceShow ("solutions!", (x, y, z, t), (x', y', z', t')) $
+--          let dt = t' - t
+--              dt' = if dt == 0 then 1 else dt
+--              dxdt = ((x' - x) / dt')
+--              dydt = ((y' - y) / dt')
+--              dzdt = ((z' - z) / dt')
+--           in Just ([dxdt, dydt, dzdt, dt], -dxdt * x - dydt * y - dzdt * z)
 
-intersectReduce' :: [([Rational], Rational)] -> [([Rational], Rational)]
-intersectReduce' =
-  iterateFix
-    ( \surfaces ->
-        catMaybes
-          [ traceShowId $ solve a b
-            | (a, b) <- triPairs surfaces
-          ]
-    )
-
-intersectReduce :: [([Rational], Rational)] -> [([Rational], Rational)]
-intersectReduce =
-  iterateFix
-    ( \surfaces ->
-        [ traceShowId . unjust $ solve a b
-          | (a, b) <- zip surfaces (drop 1 surfaces)
-        ]
-    )
+--intersectReduce' :: [([Rational], Rational)] -> [([Rational], Rational)]
+--intersectReduce' =
+--  iterateFix
+--    ( \surfaces ->
+--        catMaybes
+--          [ traceShowId $ solve a b
+--            | (a, b) <- triPairs surfaces
+--          ]
+--    )
+--
+--intersectReduce :: [([Rational], Rational)] -> [([Rational], Rational)]
+--intersectReduce =
+--  iterateFix
+--    ( \surfaces ->
+--        [ traceShowId . unjust $ solve a b
+--          | (a, b) <- zip surfaces (drop 1 surfaces)
+--        ]
+--    )
 
 plane :: (Fractional a1, Fractional a2) => ((a2, a2, a2), (a2, a2, a2)) -> ((a1, a1, a1), (a1, a1, a1)) -> a3
 plane ((x, y, z), (vx, vy, vz)) ((x', y', z'), (vx', vy', vz')) =
@@ -169,6 +169,7 @@ plane ((x, y, z), (vx, vy, vz)) ((x', y', z'), (vx', vy', vz')) =
 
 stones :: [((Rational, Rational, Rational), (Rational, Rational, Rational))]
 stones =
+  -- \$(input 24)
   $(input 24)
     |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
@@ -369,7 +370,37 @@ go firstOne t pos velM rest
 
 goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x, y, z), (vx, vy, vz)) <- unSet as]
 
-part2 =
+        -- unsafePerformIO $ evalZ3 (do
+part2 :: IO Integer
+part2 = evalZ3 do
+  x <- mkFreshIntVar "x"
+  y <- mkFreshIntVar "y"
+  z <- mkFreshIntVar "z"
+  vx <- mkFreshIntVar "vx"
+  vy <- mkFreshIntVar "vy"
+  vz <- mkFreshIntVar "vz"
+  forM_ (zip [0..] $ take 25 stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
+    x'' <- mkRational x'
+    y'' <- mkRational y'
+    z'' <- mkRational z'
+    vx'' <- mkRational vx'
+    vy'' <- mkRational vy'
+    vz'' <- mkRational vz'
+    t <- mkFreshRealVar ("t" <> show i)
+    zero <- mkRealNum 0
+    assert =<< mkGe t zero
+    sequence [
+      do
+        b <- mkMul [t, v]
+        b' <- mkMul [t, v']
+        a <- mkAdd [p, b]
+        a' <- mkAdd [p', b']
+        assert =<< mkEq a a'
+      | (p, v, p', v') <- [(x, vx, x'', vx''), (y, vy, y'', vy''), (z, vz, z'', vz'')]])
+  (_, Just v) <- withModel (\m -> sum . catMaybes <$> mapM (evalInt m) [x,y,z])
+  return v
+
+part2' =
   stones
     & fmap dblStone
     & ( \ins ->

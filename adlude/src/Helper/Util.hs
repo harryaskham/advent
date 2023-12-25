@@ -248,6 +248,9 @@ adjustMany f ks m = foldl' (flip (M.adjust f)) m ks
 swapMap :: (Ord b) => M.Map a b -> M.Map b a
 swapMap = M.fromList . fmap swap . M.toList
 
+swapMapList :: (Ord b) => M.Map a [b] -> M.Map b [a]
+swapMapList m = M.fromListWith (<>) [(b, [a]) | (a, bs) <- M.toList m, b <- bs]
+
 swapMapCollect :: (Ord b) => M.Map a b -> M.Map b [a]
 swapMapCollect = M.fromListWith (<>) . fmap (second pure . swap) . M.toList
 
@@ -284,6 +287,9 @@ pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
 triPairs :: [a] -> [(a, a)]
 triPairs as = [(a, b) | (i, a) <- zip [0 .. length as - 2] as, (j, b) <- zip [0 ..] as, j > i]
+
+triTriples :: [a] -> [(a, a, a)]
+triTriples as = [(a, b, c) | (i, a) <- zip [0 .. length as - 3] as, (j, b) <- zip [0 .. length as - 2] as, j > i, (k, c) <- zip [0 ..] as, k > j]
 
 -- Early terminating search for n items in a thing
 nSameIn :: (Ord a) => Int -> [a] -> Maybe a
