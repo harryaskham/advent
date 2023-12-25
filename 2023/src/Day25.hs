@@ -1,5 +1,12 @@
 module Day25 (part1, part2) where
 
+traverseWithout abc g = go (∅) (mkSeq (take 1 (keys g)))
+  where
+    go seen Empty = size seen
+    go seen (a :<| q)
+      | a ∈ seen = go seen q
+      | otherwise = go (a |-> seen) (q >< mkSeq ([b | b <- fromMaybe [] $ g |? a, (a, b) ∉ abc, (b, a) ∉ abc]))
+
 cliquesWithout :: (String, String) -> (String, String) -> (String, String) -> Map String [String] -> [[String]]
 cliquesWithout a b c g = go (mkSet (keys g)) [] [] (mkSeq []) (mkSet [])
   where
@@ -17,11 +24,12 @@ cliquesWithout a b c g = go (mkSet (keys g)) [] [] (mkSeq []) (mkSet [])
 addAll :: Map String [String] -> Int
 addAll g =
   let edges = nub [(min a b, max a b) | (a, bs) <- unMap g, b <- bs]
-   in go (∅) (mkSeq [(mkSet [a, b], mkSet [c, d], [], delete (a, b) . delete (c, d) $ edges) | ((a, b), (c, d)) <- triPairs edges, a /= c && a /= d && b /= c && b /= d])
+   in -- in go (∅) (mkSeq [(mkSet [], mkSet [], [(a, b), (c, d)], delete (a, b) . delete (c, d) $ edges) | (a, b) <- edges, (c, d) <- edges, a /= c && a /= d && b /= c && b /= d])
+      go (∅) (mkSeq [((∅), (∅), [], edges)])
   where
-    -- in go (∅) (mkSeq [((∅), (∅), [e], delete e edges) | e <- triTriples edges])
-
-    go _ ((left, right, [_, _, _], []) :<| _) = product (length <$> [left, right])
+    go seen ((left, right, failed@[_, _, _], []) :<| q)
+      | left == (∅) || right == (∅) = go (failed |-> seen) q
+      | otherwise = product (length <$> [left, right])
     go seen ((_, _, failed, []) :<| q) = go (failed |-> seen) q
     -- go seen ((_, _, failed, []) :<| q) = go seen q
     go seen ((left, right, failed, edge : edges) :<| q)
@@ -30,17 +38,44 @@ addAll g =
       | failed ∈ seen = go seen q
       | a ∈ left && b ∈ left || a ∈ right && b ∈ right = go seen' ((left, right, failed, edges) :<| q)
       | a ∈ left && b ∈ right || a ∈ right && b ∈ left = go seen' (doFail q)
-      | a ∈ left || b ∈ left = go seen' (doFail $ (a |-> (b |-> left), right, failed, edges) :<| q)
-      | a ∈ right || b ∈ right = go seen' (doFail $ (left, a |-> (b |-> right), failed, edges) :<| q)
+      | a ∈ left || b ∈ left = go seen' (doFail $ q :|> (a |-> (b |-> left), right, failed, edges))
+      | a ∈ right || b ∈ right = go seen' (doFail $ q :|> (left, a |-> (b |-> right), failed, edges))
       | otherwise = go seen' (doFail $ (a |-> (b |-> left), right, failed, edges) :<| (q :|> (left, a |-> (b |-> right), failed, edges)))
       where
         (a, b) =
           traceShow (size left, size right, size failed, size edges) $
             edge
         doFail = if length failed < 3 then ((left, right, (a, b) : failed, edges) :<|) else id
-        key = (left, right, failed)
-        -- seen' = key |-> seen
         seen' = seen
+
+findTriple :: [(String, String)] -> Int
+findTriple edges =
+  traceShow (length edges) $
+    uhead $
+      catMaybes [go (traceShow (i, j, k) $ mkSet [a, b, c]) (mkSet edges) | (i, a) <- zip [0 ..] edges, (j, b) <- zip [0 ..] edges, (k, c) <- zip [0 ..] edges, i /= j && j /= k && k /= i]
+  where
+    go :: Set (String, String) -> Set (String, String) -> Maybe Int
+    go without edges =
+      let f Nothing = Nothing
+          f (Just (l, r)) =
+            foldl'
+              ( \(Just (l, r)) (a, b) ->
+                  if
+                      | (a, b) ∈ without -> Just (l, r)
+                      | a ∈ l && b ∈ l || a ∈ r && b ∈ r -> Just (l, r)
+                      | a ∈ l && b ∈ r || a ∈ r && b ∈ l -> Nothing
+                      | a ∈ l || b ∈ l -> Just ((a |-> (b |-> l)), r)
+                      | a ∈ r || b ∈ r -> Just (l, (a |-> (b |-> r)))
+                      | otherwise -> Just (l, r)
+              )
+              (Just (l, r))
+              edges
+          lrM = iterateFix f (Just ((∅), (∅)))
+       in case lrM of
+            Nothing -> Nothing
+            Just (left, right) -> if left == (∅) || right == (∅) then Nothing else Just (size left * size right)
+
+-- u can remove anything thta is connected to things
 
 part1 :: Int
 part1 =
@@ -51,14 +86,21 @@ part1 =
     & id
     &&& swapMapList
     & uncurry (unionWith (<>))
+    & traceShowId
+    -- & (\g -> nub [(min a b, max a b) | (a, bs) <- unMap g, b <- bs])
+    -- & findTriple
     & addAll
 
 -- & ( \g -> uhead do
---       (a, b, c) <- triTriples $ nub [(min a b, max a b) | (a, bs) <- unMap g, b <- bs]
---       guard $ a /= b && b /= c && c /= a
---       let cliques = cliquesWithout a b c g
---       guard $ traceShowId (length cliques) == 2
---       return $ product (length <$> cliques)
+--       let edges = nub [(min a b, max a b) | (a, bs) <- unMap g, b <- bs]
+--       (i, a) <- zip [0 ..] edges
+--       (j, b) <- zip [0 ..] edges
+--       (k, c) <- zip [0 ..] edges
+--       traceShow (i, j, k) $ guard $ a /= b && b /= c && c /= a
+--       -- let cliques = cliquesWithout a b c g
+--       let n = traverseWithout [a, b, c] g
+--       guard $ traceShowId n /= size g
+--       return $ n * (size g - n)
 --   )
 
 part2 :: Text
