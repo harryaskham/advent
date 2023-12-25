@@ -15,22 +15,27 @@ cliquesWithout a b c g = go (mkSet (keys g)) [] [] (mkSeq []) (mkSet [])
        in go (remaining \\ mkSet [here]) (here : current) cliques (q >< mkSeq theres) seen'
 
 addAll :: Map String [String] -> Int
-addAll g = go $ mkSeq [((∅), (∅), [], [(min a b, max a b) | (a, bs) <- unMap g, b <- bs])]
+addAll g = go (∅) (mkSeq [((∅), (∅), [], nub [(min a b, max a b) | (a, bs) <- unMap g, b <- bs])])
   where
-    go ((left, right, [_,_,_], []) :<| _) =  product (length <$> [left, right])
-    go ((_, _, _, []) :<| q) = go q
-    go ((left, right, failed, (edge:edges)) :<| q)
-      | length failed > 3 = go q
-      | (a ∈ left && b ∈ left) || (a ∈ right && b ∈ right) = go (q |> (left, right, failed, edges))
-      | (a ∈ left && b ∈ right) || ( a ∈ right && b ∈ left ) = go (q |> (left, right, (a,b):failed, edges))
-      | (a ∈ left && b ∈ right) || (a ∈ right && b ∈ left) = go (q |> (left, right, (a,b):failed, edges))
-      | a ∈ left = go (q |> (b |->left, right, failed, edges) |> (left, right, (a,b):failed, edges))
-      | a ∈ right = go (q |> (left, b|->right, failed, edges) |> (left, right, (a,b):failed, edges))
-      | b ∈ left = go (q |> (a |->left, right, failed, edges) |> (left, right, (a,b):failed, edges))
-      | b ∈ right = go (q |> (left, a|->right, failed, edges) |> (left, right, (a,b):failed, edges))
-      | otherwise = go (q |> (a |-> (b|-> left), right, failed, edges) |> (left, a|->(b|->right), failed, edges) |> (left, right, (a,b):failed, edges))
+    go seen ((left, right, [_,_,_], []) :<| q)
+      | size left > 0 && size right > 0 = product (length <$> [left, right])
+      | otherwise = go seen q
+    go seen ((_, _, _, []) :<| q) = go seen q
+    go seen ((left, right, failed, (edge:edges)) :<| q)
+      | length failed > 3 = go seen q
+      | key ∈ seen = go seen q
+      | (a ∈ left && b ∈ left) || (a ∈ right && b ∈ right) = go seen' (q |> (left, right, failed, edges))
+      | (a ∈ left && b ∈ right) || ( a ∈ right && b ∈ left ) = go seen' (q |> (left, right, (a,b):failed, edges))
+      | a ∈ left = go seen' (q |> (b |->left, right, failed, edges) |> (left, right, (a,b):failed, edges))
+      | a ∈ right = go seen' (q |> (left, b|->right, failed, edges) |> (left, right, (a,b):failed, edges))
+      | b ∈ left = go seen' (q |> (a |->left, right, failed, edges) |> (left, right, (a,b):failed, edges))
+      | b ∈ right = go seen' (q |> (left, a|->right, failed, edges) |> (left, right, (a,b):failed, edges))
+      | otherwise = go seen' (q |> (a |-> (b|-> left), right, failed, edges) |> (left, a|->(b|->right), failed, edges) |> (left, right, (a,b):failed, edges))
         where
-          (a,b) = traceShow (edge, left,right,failed) $ edge
+          (a,b) = traceShow (edge, size left, size right,failed,size edges) $ edge
+          key = (left,failed,size edges)
+          seen' = key |-> seen
+
 
 
 part1 :: Int
