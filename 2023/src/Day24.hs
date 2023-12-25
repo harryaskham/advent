@@ -370,34 +370,37 @@ go firstOne t pos velM rest
 
 goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x, y, z), (vx, vy, vz)) <- unSet as]
 
-part2 = unsafePerformIO $ evalZ3 (do
-  x <- mkFreshIntVar "x"
-  y <- mkFreshIntVar "y"
-  z <- mkFreshIntVar "z"
-  vx <- mkFreshIntVar "vx"
-  vy <- mkFreshIntVar "vy"
-  vz <- mkFreshIntVar "vz"
-  forM_ (zip [0..] stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
-    x' <- mkRational x'
-    y' <- mkRational y'
-    z' <- mkRational z'
-    vx' <- mkRational vx'
-    vy' <- mkRational vy'
-    vz' <- mkRational vz'
-    t <- mkFreshRealVar ("t" <> show i)
-    zero <- mkRealNum 0
-    assert =<< mkGe t zero
-    assert =<< mkAnd =<< sequence
-      [ do
-          b <- mkMul [t, v]
-          b' <- mkMul [t, v']
-          a <- mkAdd [p, b]
-          a' <- mkAdd [p', b']
-          mkEq a a'
-        | (p, v, p', v') <- [(x, vx, x', vx'), (y, vy, y', vy'), (z, vz, z', vz')]
-      ])
-  withModel (\m -> catMaybes <$> mapM (evalInt m) [x,y,z])
-  )
+part2 =
+  let (r,vM) =
+        unsafePerformIO $ evalZ3 (do
+          x <- mkFreshIntVar "x"
+          y <- mkFreshIntVar "y"
+          z <- mkFreshIntVar "z"
+          vx <- mkFreshIntVar "vx"
+          vy <- mkFreshIntVar "vy"
+          vz <- mkFreshIntVar "vz"
+          forM_ (zip [0..] stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
+            x' <- mkRational x'
+            y' <- mkRational y'
+            z' <- mkRational z'
+            vx' <- mkRational vx'
+            vy' <- mkRational vy'
+            vz' <- mkRational vz'
+            t <- mkFreshRealVar ("t" <> show i)
+            zero <- mkRealNum 0
+            assert =<< mkGe t zero
+            assert =<< mkAnd =<< sequence
+              [ do
+                  b <- mkMul [t, v]
+                  b' <- mkMul [t, v']
+                  a <- mkAdd [p, b]
+                  a' <- mkAdd [p', b']
+                  mkEq a a'
+                | (p, v, p', v') <- [(x, vx, x', vx'), (y, vy, y', vy'), (z, vz, z', vz')]
+              ])
+          withModel (\m -> catMaybes <$> mapM (evalInt m) [x,y,z])
+          ) 
+  in (r,unjust vM)
 
 part2' =
   stones
