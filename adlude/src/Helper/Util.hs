@@ -25,6 +25,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Text.Megaparsec (Parsec, Stream, parseMaybe)
 import Text.Megaparsec.Char (digitChar)
 import Text.ParserCombinators.Parsec (Parser, char, count, eof, many1, noneOf, oneOf, parse, sepBy, try)
+import Z3.Monad hiding (mkMap)
 
 -- Input parsing
 
@@ -44,6 +45,9 @@ readAsIO r path = readAs r . decodeUtf8 @Text <$> readFileBS path
 
 (!<<) :: IO a -> a
 (!<<) = unsafePerformIO
+
+z3 :: Z3 a -> a
+z3 = unsafePerformIO . evalZ3
 
 readAs :: TR.Reader a -> Text -> [a]
 readAs r text = do

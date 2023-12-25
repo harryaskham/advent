@@ -1,7 +1,5 @@
 module Day24 where
 
-import Z3.Monad
-
 data Intersection
   = NoIntersection
   | IntersectAt (Rational, Rational) Rational Rational
@@ -63,7 +61,7 @@ part1 =
     & length
 
 part2 :: Integer
-part2 = (evalZ3 do
+part2 = z3 do
   [x, y, z, vx, vy, vz] <- traverse mkFreshRealVar ["x", "y", "z", "vx", "vy", "vz"]
   let toConst ((x, y, z), (vx, vy, vz)) = traverse (mkRealNum . fromRational) [x, y, z, vx, vy, vz]
   forM_
@@ -81,4 +79,4 @@ part2 = (evalZ3 do
           ]
     )
   (_, Just v) <- withModel (\m -> sum . catMaybes <$> mapM (evalReal m) [x, y, z])
-  return (round v)) (!<<)
+  return (round v)

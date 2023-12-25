@@ -11,6 +11,7 @@ common common-settings
                         parsec,
                         megaparsec,
                         replace-megaparsec,
+                        z3,
                         vector,
                         array,
                         extra,
