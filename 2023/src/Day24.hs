@@ -52,15 +52,9 @@ intersections lowHigh stones =
 stones :: [((Rational, Rational, Rational), (Rational, Rational, Rational))]
 stones =
   $(input 24)
-    |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
+    |- ( let c3 = toTuple3 <$> count 3 ((fromIntegral <$> number) <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
-    & fmap
-      ( \((x, y, z), (vx, vy, vz)) ->
-          ( (fromIntegral x, fromIntegral y, fromIntegral z),
-            (fromIntegral vx, fromIntegral vy, fromIntegral vz)
-          )
-      )
 
 part1 :: Int
 part1 =
