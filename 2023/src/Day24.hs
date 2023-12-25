@@ -64,9 +64,8 @@ part2 = z3 do
   forM_
     (zip [0 ..] stones)
     ( \(i, stone) -> do
-        [x', y', z', vx', vy', vz'] <- toConst stone
         t <- mkFreshRealVar ("t" <> show i)
-        assert =<< mkGe t =<< mkRealNum 0
+        [x', y', z', vx', vy', vz'] <- toConst stone
         sequence
           [ do
               a <- mkAdd =<< ((p :) . pure) <$> mkMul [t, v]
@@ -75,5 +74,4 @@ part2 = z3 do
             | (p, v, p', v') <- [(x, vx, x', vx'), (y, vy, y', vy'), (z, vz, z', vz')]
           ]
     )
-  (_, Just v) <- withModel (\m -> sum . catMaybes <$> mapM (evalReal m) [x, y, z])
-  return (round v)
+  round . unjust . snd <$> withModel (\m -> sum . catMaybes <$> mapM (evalReal m) [x, y, z])
