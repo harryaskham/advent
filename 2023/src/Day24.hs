@@ -169,6 +169,7 @@ plane ((x, y, z), (vx, vy, vz)) ((x', y', z'), (vx', vy', vz')) =
 
 stones :: [((Rational, Rational, Rational), (Rational, Rational, Rational))]
 stones =
+  -- \$(input 24)
   $(input 24)
     |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
@@ -371,7 +372,7 @@ go firstOne t pos velM rest
 goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x, y, z), (vx, vy, vz)) <- unSet as]
 
         -- unsafePerformIO $ evalZ3 (do
-part2 :: IO (Result, Maybe Integer)
+part2 :: IO Integer
 part2 = evalZ3 do
   x <- mkFreshIntVar "x"
   y <- mkFreshIntVar "y"
@@ -379,7 +380,7 @@ part2 = evalZ3 do
   vx <- mkFreshIntVar "vx"
   vy <- mkFreshIntVar "vy"
   vz <- mkFreshIntVar "vz"
-  forM_ (zip [0..] stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
+  forM_ (zip [0..] $ take 25 stones) (\(i, ((x', y', z'), (vx', vy', vz'))) -> do
     x'' <- mkRational x'
     y'' <- mkRational y'
     z'' <- mkRational z'
@@ -397,7 +398,8 @@ part2 = evalZ3 do
         a' <- mkAdd [p', b']
         assert =<< mkEq a a'
       | (p, v, p', v') <- [(x, vx, x'', vx''), (y, vy, y'', vy''), (z, vz, z'', vz'')]])
-  withModel (\m -> sum . catMaybes <$> mapM (evalInt m) [x,y,z])
+  (_, Just v) <- withModel (\m -> sum . catMaybes <$> mapM (evalInt m) [x,y,z])
+  return v
 
 part2' =
   stones
