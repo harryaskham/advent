@@ -203,8 +203,8 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
       t2 = makeVariable . SimpleVar $ "t2"
    in --
       flip runSolver noDeps $ do
-        --let ts = [makeVariable . SimpleVar $ "t" <> show i | i <- [2 ..]]
-        --forM_
+        -- let ts = [makeVariable . SimpleVar $ "t" <> show i | i <- [2 ..]]
+        -- forM_
         --  (zip [2 ..] ins)
         --  ( \(i, ((sx', sy', sz'), (svx', svy', svz'))) ->
         --      let [sx, sy, sz, svx, svy, svz] = makeConstant <$> [sx', sy', sz', svx', svy', svz']
@@ -272,7 +272,6 @@ solve' ins ((ax', ay', az'), (avx', avy', avz')) ((ax'', ay'', az''), (avx'', av
 ---- t0 === (ax - x) / vx
 -- t1 === (ax''' - x) / vx
 -- t2 === (ax''''' - x) / vx
-
 
 -- t0 - abs t0 === 0
 -- t1 - abs t1 === 0
@@ -375,8 +374,8 @@ part2 =
     & fmap dblStone
     & ( \ins ->
           [ traceShowId $ solve' (delete a . delete b . delete c $ ins) a b c
-          -- [ traceShowId $ solve' ins a b c
-            | -- \| a <- [ins !! 4],
+            | -- [ traceShowId $ solve' ins a b c
+              -- \| a <- [ins !! 4],
               -- b <- [ins !! 1],
               -- c <- [ins !! 2],
               a <- ins,
@@ -388,7 +387,8 @@ part2 =
       )
     & partitionEithers
     & snd
-    & uhead
+    & fmap snd
+    & fmap knownVars
 
 -- & fmap traceShowId
 -- & fmap (snd >>> nonlinearEqs)
