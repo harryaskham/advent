@@ -23,4 +23,4 @@ import Helper.Util as X hiding (count)
 import Relude as X hiding (many, optional, (<|>))
 import System.IO.Unsafe as X
 import Text.ParserCombinators.Parsec as X hiding (State)
-import Z3.Monad as X hiding (mkMap)
+import Z3.Monad as X hiding (local, mkMap)

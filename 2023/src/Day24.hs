@@ -4,7 +4,6 @@ data Intersection
   = NoIntersection
   | IntersectAt (Rational, Rational) Rational Rational
   | Parallel Rational Rational
-  deriving (Show, Eq, Ord)
 
 intersect2d :: (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> Intersection
 intersect2d (x, y) (vx, vy) (x', y') (vx', vy')
@@ -23,9 +22,7 @@ intersect2d (x, y) (vx, vy) (x', y') (vx', vy')
     t' = (ix - x) / vx
 
 inFuture :: (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> Bool
-inFuture (x, y) (vx, vy) (ix, iy) =
-  (ix - x) / vx >= 0
-    && (iy - y) / vy >= 0
+inFuture (x, y) (vx, vy) (ix, iy) = (ix - x) / vx >= 0 && (iy - y) / vy >= 0
 
 validIntersection :: (Rational, Rational) -> (Rational, Rational) -> (Rational, Rational) -> Intersection -> Bool
 validIntersection _ _ _ NoIntersection = False
@@ -41,7 +38,7 @@ validIntersection (low, high) (x, y) (vx, vy) (Parallel m c) =
 intersections :: (Rational, Rational) -> [((Rational, Rational, Rational), (Rational, Rational, Rational))] -> [Intersection]
 intersections lowHigh stones =
   [ i
-    | ((a@(x, y, z), (vx, vy, vz)), (b@(x', y', z'), (vx', vy', vz'))) <- triPairs stones,
+    | (((x, y, _), (vx, vy, _)), ((x', y', _), (vx', vy', _))) <- triPairs stones,
       let i = intersect2d (x, y) (vx, vy) (x', y') (vx', vy'),
       validIntersection lowHigh (x, y) (vx, vy) i,
       validIntersection lowHigh (x', y') (vx', vy') i
