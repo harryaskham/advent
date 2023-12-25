@@ -169,8 +169,7 @@ plane ((x, y, z), (vx, vy, vz)) ((x', y', z'), (vx', vy', vz')) =
 
 stones :: [((Rational, Rational, Rational), (Rational, Rational, Rational))]
 stones =
-  -- \$(input 24)
-  $(input 24)
+  $(exampleInput 24)
     |- ( let c3 = toTuple3 <$> count 3 (number <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
@@ -372,7 +371,8 @@ goAll as = [go a 1 (x + vx, y + vy, z + vz) Nothing (as \\ (mkSet [a])) | a@((x,
 
         -- unsafePerformIO $ evalZ3 (do
 part2 :: IO Integer
-part2 = evalZ3 do
+part2 = evalZ3With Nothing (stdOpts +? opt "trace" True)do
+--part2 = evalZ3 do
   x <- mkFreshIntVar "x"
   y <- mkFreshIntVar "y"
   z <- mkFreshIntVar "z"
