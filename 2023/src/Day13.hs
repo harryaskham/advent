@@ -20,7 +20,7 @@ reflectsSmudged :: Grid DotHash -> Set (Either ℤ' ℤ')
 reflectsSmudged g =
   setFilter
     (∉ reflects g)
-    (⋃ [reflects (g |~ (c, bool Dot Hash . (== Dot))) | c <- coords g] ⁻)
+    ((⋃ [reflects (g |~ (c, bool Dot Hash . (== Dot))) | c <- coords g]) ⁻)
 
 solve :: (Grid DotHash -> [Either ℤ' ℤ']) -> [Grid DotHash] -> ℤ'
 solve f = concatMap f >>> partitionEithers >>> both sum >>> second (* 100) >>> uncurry (+)
