@@ -329,8 +329,11 @@ instance (A.Ix i) => Modifiable A.Array i e where
     | i ∈ a = a A.// [(i, f (a |! i))]
     | otherwise = a
 
-(∅) :: Set a
-(∅) = S.empty
+(∅) :: Monoid a => a
+(∅) = mempty
+
+(⊕) :: Monoid a => a -> a -> a
+(⊕) = mappend
 
 (∖) :: (Ord a) => Set a -> Set a -> Set a
 (∖) = S.difference
