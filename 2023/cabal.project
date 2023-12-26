@@ -7,5 +7,3 @@ package z3
   extra-include-dirs: /Users/askham/.nix-profile/include
   extra-lib-dirs: /home/harry/.nix-profile/lib
   extra-include-dirs: /home/harry/.nix-profile/include
-  extra-lib-dirs: /nix/store/2ls00sjj92yv8hi6g342mapm6kiflrhm-z3-4.8.17-lib/lib
-  extra-include-dirs: /nix/store/5dgmzxmkjhzka8wg5r0rd566n7wx3jgr-z3-4.8.17-dev/include
