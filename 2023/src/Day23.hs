@@ -36,7 +36,7 @@ mkGraph :: Grid Char -> Set Coord2 -> Map Coord2 (Map Coord2 [Set Coord2])
 mkGraph g forks =
   fmap (mkMapWith (<>)) . mkMapWith (<>) . mconcat $
     [ [(start, [(end, [path])]), (end, [(start, [path])])]
-      | (start, end) <- triPairs (forks ->>),
+      | (start, end) <- triPairs forks,
         path <- slopePaths (const enumerate) (∈ forks) start end g
     ]
 

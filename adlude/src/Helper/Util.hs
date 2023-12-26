@@ -83,7 +83,6 @@ infixl 5 |-
 
 -- megaparsec helpers
 type MParser :: Type -> Type
-
 type MParser a = Parsec Void String a
 
 parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a
@@ -294,11 +293,8 @@ pairs [] = []
 pairs [_] = []
 pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
-triPairs :: [a] -> [(a, a)]
-triPairs as = [(a, b) | (i, a) <- zip [0 .. length as - 2] as, (j, b) <- zip [0 ..] as, j > i]
-
-triTriples :: [a] -> [(a, a, a)]
-triTriples as = [(a, b, c) | (i, a) <- zip [0 .. length as - 3] as, (j, b) <- zip [0 .. length as - 2] as, j > i, (k, c) <- zip [0 ..] as, k > j]
+triPairs :: (Unable (t a) a) => t a -> [(a, a)]
+triPairs as' = let as = un as' in [(a, b) | (i, a) <- zip [0 .. length as - 2] as, (j, b) <- zip [0 ..] as, j > i]
 
 -- Early terminating search for n items in a thing
 nSameIn :: (Ord a) => Int -> [a] -> Maybe a

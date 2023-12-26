@@ -33,49 +33,73 @@ instance (Ord k) => MkWithable Map k v where
   mkWith = M.fromListWith
 
 class Mkable a b where
-  mk :: a -> b
+  mk :: [a] -> b
 
-(<<-) :: (Mkable a b) => a -> b
+(<<-) :: (Mkable a b) => [a] -> b
 (<<-) = mk
 
-instance Mkable [a] (V.Vector a) where
+instance Mkable a [a] where
+  mk = id
+
+instance Mkable a (V.Vector a) where
   mk = mkVec
 
-instance (Ord a) => Mkable [a] (Set a) where
+instance (Ord a) => Mkable a (Set a) where
   mk = mkSet
 
-instance (Ord a) => Mkable [(a, b)] (Map a b) where
+instance (Ord a) => Mkable (a, b) (Map a b) where
   mk = mkMap
 
-instance Mkable [a] (Seq a) where
+instance Mkable a (Seq a) where
   mk = mkSeq
 
-instance (Ord a) => Mkable [(a, b)] (PQ.MinPQueue a b) where
+instance (Ord a) => Mkable (a, b) (PQ.MinPQueue a b) where
   mk = mkMinQ
 
-instance (Ord a, Ord b) => Mkable [(a, b)] (BM.Bimap a b) where
+instance (Ord a, Ord b) => Mkable (a, b) (BM.Bimap a b) where
   mk = mkBimap
 
 class Unable a b where
-  un :: a -> b
+  un :: a -> [b]
 
-(->>) :: (Unable a b) => a -> b
+(->>) :: (Unable a b) => a -> [b]
 (->>) = un
 
-instance Unable (V.Vector a) [a] where
+instance Unable [a] a where
+  un = id
+
+instance Unable (V.Vector a) a where
   un = unVec
 
-instance Unable (Set a) [a] where
+instance Unable (Set a) a where
   un = unSet
 
-instance Unable (Map a b) [(a, b)] where
+instance Unable (Map a b) (a, b) where
   un = unMap
 
-instance Unable (Seq a) [a] where
+instance Unable (Seq a) a where
   un = unSeq
 
-instance Unable (BM.Bimap a b) [(a, b)] where
+instance Unable (BM.Bimap a b) (a, b) where
   un = unBimap
+
+instance {-# OVERLAPPABLE #-} (Mkable a b, Unable b c, Mkable c d) => Mkable a d where
+  mk a = (mk ((un ((mk a) :: b)) :: [c]) :: d)
+
+class Convable a c where
+  conv :: a -> c
+
+instance {-# INCOHERENT #-} (Unable a b) => Convable a [b] where
+  conv = un
+
+instance {-# INCOHERENT #-} (Mkable a b) => Convable [a] b where
+  conv = mk
+
+instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
+  conv a = conv ((conv a) :: b)
+
+(<->) :: (Convable a c) => a -> c
+(<->) = conv
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn

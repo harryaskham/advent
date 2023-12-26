@@ -47,14 +47,14 @@ enclosed g path outside =
         | c ∈ (seen <> path) = go seen cs
         | c ∈ outside = (seen, (∅))
         | otherwise =
-          let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ∈ g]
-           in go (c |-> seen) (cs >< mk ns)
+            let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ∈ g]
+             in go (c |-> seen) (cs >< mkSeq ns)
       goAll _ es [] = es
       goAll seen es (start : starts)
         | start ∈ seen = goAll seen es starts
         | otherwise =
-          let (seen', es') = go (∅) ([start] <<-)
-           in goAll (seen ∪ seen') (es ∪ es') starts
+            let (seen', es') = go (∅) ([start] <<-)
+             in goAll (seen ∪ seen') (es ∪ es') starts
    in goAll (∅) (∅) [c | c <- coords g, c ∉ path]
 
 part1 :: Int
