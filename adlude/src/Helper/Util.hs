@@ -83,6 +83,7 @@ infixl 5 |-
 
 -- megaparsec helpers
 type MParser :: Type -> Type
+
 type MParser a = Parsec Void String a
 
 parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a
@@ -108,6 +109,11 @@ infixl 5 <&&>
 both :: (Bifunctor f) => (a -> b) -> f a a -> f b b
 both f = bimap f f
 
+infixl 5 <$-$>
+
+(<$-$>) :: (Bifunctor f) => (a -> b, c -> d) -> f a c -> f b d
+(f, g) <$-$> a = bimap f g a
+
 same :: (Eq a) => (a, a) -> Bool
 same = uncurry (==)
 
@@ -124,7 +130,7 @@ iterateFix f a
 cycleGet :: (Ord a) => Int -> [a] -> a
 cycleGet n as =
   let go i (a : as) seen at
-        | a ∈ seen = let (s, l) = (seen |! a, i - seen |! a) in at |! (s + ((n - s) `mod` l))
+        | a ∈ seen = let (s, l) = (seen |! a, i - seen |! a) in at |! (s + (n - s) `mod` l)
         | otherwise = go (i + 1) as (seen |. (a, i)) (at |. (i, a))
    in go 0 as (mkMap []) (mkMap [])
 
