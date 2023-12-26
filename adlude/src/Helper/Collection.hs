@@ -92,6 +92,9 @@ instance Unable Seq where
 class Convable a c where
   co :: a -> c
 
+instance {-# INCOHERENT #-} (Unable f) => Convable a [a] where
+  co = pure
+
 instance {-# INCOHERENT #-} (Unable f) => Convable (f a) [a] where
   co = un
 
