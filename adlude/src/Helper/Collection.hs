@@ -24,6 +24,49 @@ instance Packable String T.Text where
   pack = T.pack
   unpack = T.unpack
 
+class Mkable v a where
+  mk :: [v] -> a
+  (<<-) :: [v] -> a
+  (<<-) = mk
+
+instance Mkable a [a] where
+  mk = id
+
+instance Mkable a (V.Vector a) where
+  mk = mkVec
+
+instance Ord a => Mkable a (Set a) where
+  mk = mkSet
+
+instance Ord a => Mkable (a,b) (Map a b) where
+  mk = mkMap
+
+instance Ord a => Mkable a (Seq a) where
+  mk = mkSeq
+
+instance Ord a => Mkable (a,b) (PQ.MinPQueue a b) where
+  mk = mkMinQ
+
+class Unable a b where
+  un :: a -> [b]
+  (->>) :: a -> [b]
+  (->>) = un
+
+instance Unable [a] a where
+  un = id
+
+instance Unable (V.Vector a) a where
+  un = unVec
+
+instance Unable (Set a) a where
+  un = unSet
+
+instance Unable (Map a b) (a,b) where
+  un = unMap
+
+instance Unable (Seq a) a where
+  un = unSeq
+
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn
 

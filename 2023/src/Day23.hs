@@ -8,7 +8,7 @@ slopePaths ns stopping start end g =
         | c /= start && stopping c || c ∈ s = go q paths
         | otherwise =
             let q' =
-                  mkSeq
+                  mk
                     [ (c', c |-> s)
                       | c' <- move <$> ns (g |! c) <*> pure 1 <*> pure c,
                         g |? c' ∈ (Just <$> (".<>^v" :: String))
@@ -18,7 +18,7 @@ slopePaths ns stopping start end g =
 
 forks :: Grid Char -> Set Coord2
 forks =
-  mkSet
+  mk
     . gridFind True
     . convolve
       (1, 1, 1, 1)
@@ -36,7 +36,7 @@ mkGraph :: Grid Char -> Set Coord2 -> Map Coord2 (Map Coord2 [Set Coord2])
 mkGraph g forks =
   fmap (mkMapWith (<>)) . mkMapWith (<>) . mconcat $
     [ [(start, [(end, [path])]), (end, [(start, [path])])]
-      | (start, end) <- triPairs (unSet forks),
+      | (start, end) <- triPairs (forks ->>),
         path <- slopePaths (const enumerate) (∈ forks) start end g
     ]
 
@@ -61,7 +61,7 @@ parts =
   let g = $(grid input 23)
       (start, end) = ((1, 0), first (subtract 1) (maxXY g))
       paths = slopePaths (\c -> bool [fromArrow2 c] enumerate (c == '.')) (const False) start end g
-      graph = mkGraph g (mkSet [start, end] ∪ forks g)
+      graph = mkGraph g (mk [start, end] ∪ forks g)
    in (subtract 1 . maximum . fmap length $ paths, allPaths graph start end)
 
 part1 :: Int
