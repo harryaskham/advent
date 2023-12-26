@@ -9,7 +9,6 @@ extra-source-files: input/*
 common common-settings
     build-depends:      base,
                         adlude,
-                        base-unicode-symbols,
                         relude,
                         pqueue,
                         parsec,
@@ -20,8 +19,6 @@ common common-settings
                         extra,
                         text,
                         containers,
-                        mfsolve,
-                        z3,
                         unordered-containers,
                         mtl,
                         bimap,
@@ -46,8 +43,6 @@ common common-settings
                         adlude (Adlude as Prelude),
                         adlude,
                         relude
-                        -- relude (Relude as Prelude),
-                        -- relude
     default-extensions: OverloadedStrings,
                         TupleSections,
                         LambdaCase,
