@@ -4,7 +4,7 @@ line :: Parser (String, [Int])
 line = (,) <$> (many1 (oneOf ".#?") <* string " ") <*> (number `sepBy` string ",")
 
 ways :: (String, [Int]) -> Memo (String, [Int]) Int Int
-ways (ss, []) = return (bool 0 1 (all (∈ mkSet ".?") ss))
+ways (ss, []) = return (bool 0 1 (all (∈ (".?" :: String)) ss))
 ways (ss, c : cs) =
   treverse
     sum
