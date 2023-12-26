@@ -32,74 +32,80 @@ class MkWithable f k v where
 instance (Ord k) => MkWithable Map k v where
   mkWith = M.fromListWith
 
-class Mkable a b where
-  mk :: [a] -> b
+class Mkable f where
+  mk :: [a] -> f a
 
-(<<-) :: (Mkable a b) => [a] -> b
+(<<-) :: (Mkable f) => [a] -> f a
 (<<-) = mk
 
-instance Mkable a [a] where
+instance Mkable [] where
   mk = id
 
-instance Mkable a (V.Vector a) where
+instance Mkable V.Vector where
   mk = mkVec
 
-instance (Ord a) => Mkable a (Set a) where
-  mk = mkSet
+-- instance (Ord a) => Mkable (a, b) (Map a b) where
+--   mk = mkMap
 
-instance (Ord a) => Mkable (a, b) (Map a b) where
-  mk = mkMap
-
-instance Mkable a (Seq a) where
+instance Mkable Seq where
   mk = mkSeq
 
-instance (Ord a) => Mkable (a, b) (PQ.MinPQueue a b) where
-  mk = mkMinQ
+-- instance (Ord a) => Mkable (a, b) (PQ.MinPQueue a b) where
+--   mk = mkMinQ
 
-instance (Ord a, Ord b) => Mkable (a, b) (BM.Bimap a b) where
-  mk = mkBimap
+-- instance (Ord a, Ord b) => Mkable (a, b) (BM.Bimap a b) where
+--   mk = mkBimap
 
-class Unable a b where
-  un :: a -> [b]
+class MkableOrd f where
+  mkOrd :: (Ord a) => [a] -> f a
 
-(->>) :: (Unable a b) => a -> [b]
+instance MkableOrd Set where
+  mkOrd = mkSet
+
+instance (Mkable f) => MkableOrd f where
+  mkOrd = mk
+
+class Unable f where
+  un :: f a -> [a]
+
+(->>) :: (Unable f) => f a -> [a]
 (->>) = un
 
-instance Unable [a] a where
+instance Unable [] where
   un = id
 
-instance Unable (V.Vector a) a where
+instance Unable V.Vector where
   un = unVec
 
-instance Unable (Set a) a where
+instance Unable Set where
   un = unSet
 
-instance Unable (Map a b) (a, b) where
-  un = unMap
+-- instance Unable (Map a b) (a, b) where
+--  un = unMap
 
-instance Unable (Seq a) a where
+instance Unable Seq where
   un = unSeq
 
-instance Unable (BM.Bimap a b) (a, b) where
-  un = unBimap
-
-instance {-# OVERLAPPABLE #-} (Mkable a b, Unable b c, Mkable c d) => Mkable a d where
-  mk a = (mk ((un ((mk a) :: b)) :: [c]) :: d)
+-- instance Unable (BM.Bimap a b) (a, b) where
+--  un = unBimap
 
 class Convable a c where
-  conv :: a -> c
+  co :: a -> c
 
-instance {-# INCOHERENT #-} (Unable a b) => Convable a [b] where
-  conv = un
+instance {-# INCOHERENT #-} (Unable f) => Convable (f a) [a] where
+  co = un
 
-instance {-# INCOHERENT #-} (Mkable a b) => Convable [a] b where
-  conv = mk
+instance {-# INCOHERENT #-} (Ord a) => Convable [a] (Set a) where
+  co = mkSet
+
+instance (Mkable f) => Convable [a] (f a) where
+  co = mk
 
 instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
-  conv a = conv ((conv a) :: b)
+  co a = co ((co a) :: b)
 
 (<->) :: (Convable a c) => a -> c
-(<->) = conv
+(<->) = co
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn

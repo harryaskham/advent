@@ -6,7 +6,7 @@ walk n g' = size (go n (mkSet [start]))
     start = gridFindOne 'S' g'
     g = g' |. (start, '.')
     go 0 cs = cs
-    go n cs = go (n - 1) (setFilter (\c -> g |? c == Just '.') . setConcatMap (mk . neighborsNoDiags) $ cs)
+    go n cs = go (n - 1) (setFilter (\c -> g |? c == Just '.') . setConcatMap (co . neighborsNoDiags) $ cs)
 
 part1 :: Int
 part1 = walk 64 $(grid input 21)

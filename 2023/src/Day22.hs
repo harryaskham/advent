@@ -30,7 +30,7 @@ freefall bricks =
 structure :: Vector Brick -> (Map Brick (Set Brick), Map Brick (Set Brick))
 structure bricks =
   let m f =
-        mk
+        co
           <$> mkWith
             (<>)
             ( unVec
@@ -65,7 +65,7 @@ disintegrateAll bricks =
                   let fallen' = setFilter (\brick -> not (onFloor brick) && brickRestingOn |! brick ∖ fallen == (∅)) bricks
                    in (fallen ∪ fallen', bricks ∖ fallen')
               )
-              (mk [brick], ((bricks ->>) <->))
+              (([brick] <->), (co (un bricks)))
           | brick <- bricks
         ]
 

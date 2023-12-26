@@ -293,7 +293,7 @@ pairs [] = []
 pairs [_] = []
 pairs (a : b : cs) = (a, b) : pairs (b : cs)
 
-triPairs :: (Unable (t a) a) => t a -> [(a, a)]
+triPairs :: (Unable t) => t a -> [(a, a)]
 triPairs as' = let as = un as' in [(a, b) | (i, a) <- zip [0 .. length as - 2] as, (j, b) <- zip [0 ..] as, j > i]
 
 -- Early terminating search for n items in a thing

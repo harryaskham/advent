@@ -18,7 +18,7 @@ slopePaths ns stopping start end g =
 
 forks :: Grid Char -> Set Coord2
 forks =
-  mk
+  co
     . gridFind True
     . convolve
       (1, 1, 1, 1)
@@ -61,7 +61,7 @@ parts =
   let g = $(grid input 23)
       (start, end) = ((1, 0), first (subtract 1) (maxXY g))
       paths = slopePaths (\c -> bool [fromArrow2 c] enumerate (c == '.')) (const False) start end g
-      graph = mkGraph g (mk [start, end] ∪ forks g)
+      graph = mkGraph g (co [start, end] ∪ forks g)
    in (subtract 1 . maximum . fmap length $ paths, allPaths graph start end)
 
 part1 :: Int

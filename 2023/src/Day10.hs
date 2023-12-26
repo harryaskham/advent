@@ -63,7 +63,7 @@ part1 = $(grid input 10) & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (
 part2 :: Int
 part2 =
   $(grid input 10)
-    & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first mk)))
+    & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first co)))
     & uncurry both
     & both (bool id (const (∅)) . (((0, 0) :: Coord2) ∈) &&& id >>> uncurry ($))
     & uncurry (∪)
