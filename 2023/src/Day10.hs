@@ -47,14 +47,14 @@ enclosed g path outside =
         | c ∈ (seen <> path) = go seen cs
         | c ∈ outside = (seen, (∅))
         | otherwise =
-            let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ∈ g]
-             in go (c |-> seen) (cs >< mkSeq ns)
+          let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ∈ g]
+           in go (c |-> seen) (cs >< mk ns)
       goAll _ es [] = es
       goAll seen es (start : starts)
         | start ∈ seen = goAll seen es starts
         | otherwise =
-            let (seen', es') = go (∅) (mkSeq [start])
-             in goAll (seen ∪ seen') (es ∪ es') starts
+          let (seen', es') = go (∅) ([start] <<-)
+           in goAll (seen ∪ seen') (es ∪ es') starts
    in goAll (∅) (∅) [c | c <- coords g, c ∉ path]
 
 part1 :: Int
@@ -63,7 +63,7 @@ part1 = $(grid input 10) & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (
 part2 :: Int
 part2 =
   $(grid input 10)
-    & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first mkSet)))
+    & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first mk)))
     & uncurry both
     & both (bool id (const (∅)) . (((0, 0) :: Coord2) ∈) &&& id >>> uncurry ($))
     & uncurry (∪)
