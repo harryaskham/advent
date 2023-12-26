@@ -26,10 +26,10 @@ instance Packable String T.Text where
   pack = T.pack
   unpack = T.unpack
 
-class MkWithable f k v where
-  mkWith :: (v -> v -> v) -> [(k, v)] -> f k v
+class MkWithable f where
+  mkWith :: (Ord k) => (v -> v -> v) -> [(k, v)] -> f k v
 
-instance (Ord k) => MkWithable Map k v where
+instance MkWithable Map where
   mkWith = M.fromListWith
 
 class Mkable f where
@@ -44,26 +44,23 @@ instance Mkable [] where
 instance Mkable V.Vector where
   mk = mkVec
 
--- instance (Ord a) => Mkable (a, b) (Map a b) where
---   mk = mkMap
-
 instance Mkable Seq where
   mk = mkSeq
 
--- instance (Ord a) => Mkable (a, b) (PQ.MinPQueue a b) where
---   mk = mkMinQ
+class MkableKey f where
+  mkKey :: (Ord k) => [(k, v)] -> f k v
 
--- instance (Ord a, Ord b) => Mkable (a, b) (BM.Bimap a b) where
---   mk = mkBimap
+instance MkableKey Map where
+  mkKey = mkMap
+
+instance MkableKey PQ.MinPQueue where
+  mkKey = mkMinQ
 
 class MkableOrd f where
   mkOrd :: (Ord a) => [a] -> f a
 
 instance MkableOrd Set where
   mkOrd = mkSet
-
-instance (Mkable f) => MkableOrd f where
-  mkOrd = mk
 
 class Unable f where
   un :: f a -> [a]
@@ -86,32 +83,53 @@ instance Unable (Map k) where
 instance Unable Seq where
   un = unSeq
 
--- instance Unable (BM.Bimap a b) (a, b) where
---  un = unBimap
+class UnableKey f where
+  unKey :: f k v -> [(k, v)]
+
+instance UnableKey Map where
+  unKey = unMap
+
+instance UnableKey BM.Bimap where
+  unKey = unBimap
 
 class Convable a c where
   co :: a -> c
 
-instance {-# INCOHERENT #-} (Unable f) => Convable a [a] where
+instance (Convable a b, Convable c d) => Convable (a, c) (b, d) where
+  co (a, c) = (co a, co c)
+
+instance {-# INCOHERENT #-} Convable a [a] where
   co = pure
 
-instance {-# INCOHERENT #-} (Unable f) => Convable (f a) [a] where
-  co = un
+instance {-# INCOHERENT #-} (Unable f, Convable [a] b) => Convable (f a) b where
+  co = co . un
 
-instance {-# INCOHERENT #-} (Unable f, Mkable g) => Convable (f a) (g a) where
-  co = mk . un
-
-instance {-# INCOHERENT #-} (Ord a) => Convable [a] (Set a) where
-  co = mkSet
+instance {-# INCOHERENT #-} (Ord b, Convable a [b]) => Convable a (Set b) where
+  co = mkOrd . co
 
 instance {-# INCOHERENT #-} (Ord k) => Convable [(k, v)] (Map k v) where
   co = mkMap
 
-instance {-# INCOHERENT #-} Convable (Map k v) [(k, v)] where
+instance {-# INCOHERENT #-} (Unable f) => Convable (f a) [a] where
+  co = un
+
+instance {-# INCOHERENT #-} (UnableKey f) => Convable (f k v) [(k, v)] where
+  co = unKey
+
+instance {-# OVERLAPPING #-} (Ord a) => Convable [a] (Set a) where
+  co = mkSet
+
+instance {-# INCOHERENT #-} (Convable a [b], Mkable f) => Convable a (f b) where
+  co = mk . co
+
+instance {-# OVERLAPPING #-} Convable (Map k v) [(k, v)] where
   co = unMap
 
-instance (Mkable f) => Convable [a] (f a) where
+instance {-# INCOHERENT #-} (Mkable f) => Convable [a] (f a) where
   co = mk
+
+instance {-# INCOHERENT #-} (MkableKey f, Ord k) => Convable [(k, v)] (f k v) where
+  co = mkKey
 
 instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
   co a = co ((co a) :: b)

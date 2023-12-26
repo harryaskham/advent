@@ -51,7 +51,7 @@ disintegrateOne bricks =
           | brick <- bricks,
             brick ∉ restingOnBrick
               || all
-                ((&&) <$> (∈ brickRestingOn) <*> ((brickRestingOn |!) >>> (/= mkSet [brick])))
+                ((&&) <$> (∈ brickRestingOn) <*> ((brickRestingOn |!) >>> (/= co [brick])))
                 (restingOnBrick |! brick)
         ]
 
@@ -65,7 +65,7 @@ disintegrateAll bricks =
                   let fallen' = setFilter (\brick -> not (onFloor brick) && brickRestingOn |! brick ∖ fallen == (∅)) bricks
                    in (fallen ∪ fallen', bricks ∖ fallen')
               )
-              ((brick <->), ((bricks ->>) <->))
+              (co ([brick], bricks))
           | brick <- bricks
         ]
 
