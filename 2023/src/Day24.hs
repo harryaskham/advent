@@ -1,4 +1,4 @@
-module Day24 where
+module Day24 (part1, part2) where
 
 data Intersection
   = NoIntersection
