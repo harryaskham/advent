@@ -237,8 +237,15 @@ instance (Ord a) => Memberable a (Map a b) where
 instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
 
+data Filler = Filler
+
+(⁻) :: (Filler -> a) -> a
+(⁻) f = f Filler
+
 class Unionable a where
   (∪) :: a -> a -> a
+  (⋃) :: Foldable f => Filler -> f a -> a
+  Filler ⋃ xs = F.foldl1 (∪) xs
 
 instance (Ord a) => Unionable (Set a) where
   (∪) = S.union
@@ -254,6 +261,8 @@ instance Unionable (V.Vector a) where
 
 class Intersectable a where
   (∩) :: a -> a -> a
+  (⋂) :: Foldable f => Filler -> f a -> a
+  Filler ⋂ xs = F.foldl1 (∩) xs
 
 instance (Ord a) => Intersectable (Set a) where
   (∩) = S.intersection
