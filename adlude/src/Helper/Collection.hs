@@ -1,20 +1,20 @@
 module Helper.Collection where
 
 import Control.Lens (element, (.~))
-import Data.Array qualified as A
-import Data.Bimap qualified as BM
-import Data.Char qualified as C
-import Data.Foldable qualified as F
-import Data.List qualified as L
-import Data.List.Extra qualified as LE
-import Data.List.Split qualified as LS
-import Data.Map.Strict qualified as M
-import Data.PQueue.Prio.Min qualified as PQ
-import Data.Sequence qualified as SQ
-import Data.Set qualified as S
-import Data.Text qualified as T
-import Data.Vector qualified as V
-import Relude.Unsafe qualified as U
+import qualified Data.Array as A
+import qualified Data.Bimap as BM
+import qualified Data.Char as C
+import qualified Data.Foldable as F
+import qualified Data.List as L
+import qualified Data.List.Extra as LE
+import qualified Data.List.Split as LS
+import qualified Data.Map.Strict as M
+import qualified Data.PQueue.Prio.Min as PQ
+import qualified Data.Sequence as SQ
+import qualified Data.Set as S
+import qualified Data.Text as T
+import qualified Data.Vector as V
+import qualified Relude.Unsafe as U
 
 class Packable a b where
   pack :: a -> b
@@ -38,14 +38,17 @@ instance Mkable a (V.Vector a) where
 instance Ord a => Mkable a (Set a) where
   mk = mkSet
 
-instance Ord a => Mkable (a,b) (Map a b) where
+instance Ord a => Mkable (a, b) (Map a b) where
   mk = mkMap
 
 instance Ord a => Mkable a (Seq a) where
   mk = mkSeq
 
-instance Ord a => Mkable (a,b) (PQ.MinPQueue a b) where
+instance Ord a => Mkable (a, b) (PQ.MinPQueue a b) where
   mk = mkMinQ
+
+instance (Ord a, Ord b) => Mkable (a, b) (BM.Bimap a b) where
+  mk = mkBimap
 
 class Unable a b where
   un :: a -> [b]
@@ -61,11 +64,14 @@ instance Unable (V.Vector a) a where
 instance Unable (Set a) a where
   un = unSet
 
-instance Unable (Map a b) (a,b) where
+instance Unable (Map a b) (a, b) where
   un = unMap
 
 instance Unable (Seq a) a where
   un = unSeq
+
+instance Unable (BM.Bimap a b) (a, b) where
+  un = unBimap
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn
@@ -283,6 +289,12 @@ a ⊅ b = not (a ⊃ b)
 setMap :: (Ord b) => (a -> b) -> Set a -> Set b
 setMap = S.map
 
+setConcat :: (Ord a) => Set (Set a) -> Set a
+setConcat = S.unions . S.toList
+
+setConcatMap :: (Ord b) => (a -> Set b) -> Set a -> Set b
+setConcatMap f s = setConcat $ setMap f s
+
 setFilter :: (a -> Bool) -> Set a -> Set a
 setFilter = S.filter
 
@@ -306,6 +318,9 @@ m |/ k = M.delete k m
 
 mkBimap :: (Ord a, Ord b) => [(a, b)] -> BM.Bimap a b
 mkBimap = BM.fromList
+
+unBimap :: BM.Bimap a b -> [(a, b)]
+unBimap = BM.toList
 
 mkSeq :: [a] -> Seq a
 mkSeq = SQ.fromList
