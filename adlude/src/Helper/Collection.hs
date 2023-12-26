@@ -29,27 +29,28 @@ instance Packable String T.Text where
 class MkWithable f k v where
   mkWith :: (v -> v -> v) -> [(k, v)] -> f k v
 
-instance Ord k => MkWithable Map k v where
+instance (Ord k) => MkWithable Map k v where
   mkWith = M.fromListWith
 
-class Mkable v a where
-  mk :: v -> a
-  (<<-) :: v -> a
-  (<<-) = mk
+class Mkable a b where
+  mk :: a -> b
+
+(<<-) :: (Mkable a b) => a -> b
+(<<-) = mk
 
 instance Mkable [a] (V.Vector a) where
   mk = mkVec
 
-instance Ord a => Mkable [a] (Set a) where
+instance (Ord a) => Mkable [a] (Set a) where
   mk = mkSet
 
-instance Ord a => Mkable [(a, b)] (Map a b) where
+instance (Ord a) => Mkable [(a, b)] (Map a b) where
   mk = mkMap
 
-instance Ord a => Mkable [a] (Seq a) where
+instance Mkable [a] (Seq a) where
   mk = mkSeq
 
-instance Ord a => Mkable [(a, b)] (PQ.MinPQueue a b) where
+instance (Ord a) => Mkable [(a, b)] (PQ.MinPQueue a b) where
   mk = mkMinQ
 
 instance (Ord a, Ord b) => Mkable [(a, b)] (BM.Bimap a b) where
@@ -57,8 +58,9 @@ instance (Ord a, Ord b) => Mkable [(a, b)] (BM.Bimap a b) where
 
 class Unable a b where
   un :: a -> b
-  (->>) :: a -> b
-  (->>) = un
+
+(->>) :: (Unable a b) => a -> b
+(->>) = un
 
 instance Unable (V.Vector a) [a] where
   un = unVec
@@ -74,15 +76,6 @@ instance Unable (Seq a) [a] where
 
 instance Unable (BM.Bimap a b) [(a, b)] where
   un = unBimap
-
-instance (forall a b c. Unable a b, Mkable b c) => Unable a c where
-  un = un . mk
-
--- instance (Unable a b, Mkable b c) => Mkable a c where
---   mk a = mk (un a :: b)
---
--- instance (Mkable a b, Unable b c) => Unable a c where
---   un a = un (mk a :: b)
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn

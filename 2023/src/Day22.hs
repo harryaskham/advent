@@ -20,7 +20,7 @@ onFloor ((_, _, z), (_, _, z')) = min z z' == 1
 freefall :: Vector Brick -> Vector Brick
 freefall bricks =
   let go bricks i =
-        let brick = bricks |! i
+        let brick = bricks !! i
          in if onFloor brick || (brick `restingOn`) `any` bricks
               then bricks
               else bricks !. (i, both (move3 D3zN 1) brick)
@@ -33,7 +33,7 @@ structure bricks =
         mk
           <$> mkWith
             (<>)
-            ( un
+            ( unVec
                 [ (brick, [brick'])
                   | brick <- bricks,
                     brick' <- bricks,
@@ -65,7 +65,7 @@ disintegrateAll bricks =
                   let fallen' = setFilter (\brick -> not (onFloor brick) && brickRestingOn |! brick ∖ fallen == (∅)) bricks
                    in (fallen ∪ fallen', bricks ∖ fallen')
               )
-              (mkSet [brick], mkSet bricks)
+              (mk [brick], mkSet . unVec $ bricks)
           | brick <- bricks
         ]
 
@@ -74,6 +74,7 @@ fallen =
   $(input 22)
     |- (toTuple2 <$$> (toTuple3 <$$$> many1 (((number `sepBy1` char ',') `sepBy1` char '~') <* eol) <* eof))
     & sortOn (thd3 . snd)
+    & mkVec
     & freefall
 
 part1 :: Int
