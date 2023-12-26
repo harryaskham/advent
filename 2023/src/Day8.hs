@@ -17,7 +17,7 @@ parser =
                 <* eof
             )
 
-travel :: (String -> Bool) -> String -> String -> Map String (String, String) -> [Int]
+travel :: (String -> Bool) -> String -> String -> Map String (String, String) -> [ℤ']
 travel p s lr' g = go (cycle lr') 0 s
   where
     go (d : lr) n c
@@ -28,14 +28,14 @@ travel p s lr' g = go (cycle lr') 0 s
           'L' -> go lr (n + 1) (fst $ g |! c)
           'R' -> go lr (n + 1) (snd $ g |! c)
 
-part1 :: Int
+part1 :: ℤ'
 part1 =
   $(input 8)
     |- parser
     & uncurry (travel (== "ZZZ") "AAA")
     & uhead
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   $(input 8)
     |- parser

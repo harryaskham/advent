@@ -8,13 +8,13 @@ asMany = do
 asOne :: Parser (Double, Double)
 asOne = asMany <&> (unzip >>> both (fmap (round >>> show) >>> mconcat >>> uread))
 
-ways :: (Double, Double) -> Int
+ways :: (Double, Double) -> ℤ'
 ways (t, d) =
   let f pm = ((-t `pm` sqrt (t ** 2 - 4 * d)) / (-2))
    in ceiling (f (+)) - floor (f (-)) - 1
 
-part1 :: Int
+part1 :: ℤ'
 part1 = $(input 6) |- asMany & fmap ways & product
 
-part2 :: Int
+part2 :: ℤ'
 part2 = $(input 6) |- asOne & ways

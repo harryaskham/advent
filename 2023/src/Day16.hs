@@ -1,6 +1,6 @@
 module Day16 (part1, part2) where
 
-energized :: Grid Char -> (Coord2, Dir2) -> Int
+energized :: Grid Char -> (Coord2, Dir2) -> ℤ'
 energized g start =
   let go seen Empty = size (setMap fst seen)
       go seen ((c, d) :<| q)
@@ -16,10 +16,10 @@ energized g start =
              in go ((c, d) |-> seen) (q >< co [(move d 1 c, d) | d <- ds])
    in go (∅) (co [start])
 
-part1 :: Int
+part1 :: ℤ'
 part1 = energized $(grid input 16) ((0, 0), DirRight)
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   let g = $(grid input 16)
    in maximum [energized g (c, d) | d <- enumerate, c <- perimeter g `pFrom` d]

@@ -1,6 +1,6 @@
 module Day21 (part1, part2) where
 
-walk :: Int -> Grid Char -> Int
+walk :: ℤ' -> Grid Char -> ℤ'
 walk n g' = size (go n (mkSet [start]))
   where
     start = gridFindOne 'S' g'
@@ -8,10 +8,10 @@ walk n g' = size (go n (mkSet [start]))
     go 0 cs = cs
     go n cs = go (n - 1) (setFilter (\c -> g |? c == Just '.') . setConcatMap (co . neighborsNoDiags) $ cs)
 
-part1 :: Int
+part1 :: ℤ'
 part1 = walk 64 $(grid input 21)
 
-part2 :: Int
+part2 :: ℤ'
 part2 = do
   let g = $(grid input 21) :: Grid Char
       cs = mkSet (gridFind 'S' g)

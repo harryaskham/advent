@@ -27,7 +27,7 @@ instance Ord JCard where
 
 data Hand = High | Pair | TwoPair | Three | FullHouse | Four | Five deriving (Eq, Ord, Bounded, Enum)
 
-data HandBid = HandBid [Card] Int deriving (Eq)
+data HandBid = HandBid [Card] ℤ' deriving (Eq)
 
 instance Ord HandBid where
   h@(HandBid cs _) <= h'@(HandBid cs' _) = (getHand h, cs) <= (getHand h', cs')
@@ -92,7 +92,7 @@ instance HasHand JHand where
       nj = fromMaybe 0 $ counts |? CJ
 
 class HasBid a where
-  getBid :: a -> Int
+  getBid :: a -> ℤ'
 
 instance HasBid HandBid where
   getBid (HandBid _ bid) = bid
@@ -100,13 +100,13 @@ instance HasBid HandBid where
 instance HasBid JHand where
   getBid (JHand rh) = getBid rh
 
-parser :: (Ord a, HasBid a) => (([Card], Int) -> a) -> Parser Int
+parser :: (Ord a, HasBid a) => (([Card], ℤ') -> a) -> Parser ℤ'
 parser h = do
   cardsBids <- many1 ((,) <$> (charToCard <$$> (count 5 (oneOf "23456789TJKQA") <* string " ")) <*> (number <* eol)) <* eof
   return . sum . fmap (\(r, b) -> r * getBid b) $ zip [1 ..] . sort $ h <$> cardsBids
 
-part1 :: Int
+part1 :: ℤ'
 part1 = $(input 7) |- parser (uncurry HandBid)
 
-part2 :: Int
+part2 :: ℤ'
 part2 = $(input 7) |- parser (JHand . uncurry HandBid)

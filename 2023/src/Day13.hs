@@ -1,6 +1,6 @@
 module Day13 (part1, part2) where
 
-reflects :: Grid DotHash -> Set (Either Int Int)
+reflects :: Grid DotHash -> Set (Either ℤ' ℤ')
 reflects g' =
   co
     [ f i
@@ -16,17 +16,17 @@ reflects g' =
           & uncurry (==)
     ]
 
-reflectsSmudged :: Grid DotHash -> Set (Either Int Int)
+reflectsSmudged :: Grid DotHash -> Set (Either ℤ' ℤ')
 reflectsSmudged g =
   setFilter
     (∉ reflects g)
     (foldl1 (∪) $ reflects <$> [g |~ (c, bool Dot Hash . (== Dot)) | c <- coords g])
 
-solve :: (Grid DotHash -> [Either Int Int]) -> [Grid DotHash] -> Int
+solve :: (Grid DotHash -> [Either ℤ' ℤ']) -> [Grid DotHash] -> ℤ'
 solve f = concatMap f >>> partitionEithers >>> both sum >>> second (* 100) >>> uncurry (+)
 
-part1 :: Int
+part1 :: ℤ'
 part1 = solve (co . reflects) $(grids input 13)
 
-part2 :: Int
+part2 :: ℤ'
 part2 = solve (co . reflectsSmudged) $(grids input 13)

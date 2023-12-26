@@ -9,7 +9,7 @@ instance GridCell Cell where
         <> [(Digit i, i) | i <- ['0' .. '9']]
         <> [(Mark c, c) | c <- "!@#$%^&*()-=/+"]
 
-getNumbers :: Grid Cell -> [(Int, [Coord2])]
+getNumbers :: Grid Cell -> [(ℤ', [Coord2])]
 getNumbers g = go 0 0 "" []
   where
     (maxX, maxY) = maxXY g
@@ -31,7 +31,7 @@ isMark :: Cell -> Bool
 isMark (Mark _) = True
 isMark _ = False
 
-part1 :: Int
+part1 :: ℤ'
 part1 =
   $(grid input 3)
     & ( \g ->
@@ -41,7 +41,7 @@ part1 =
     & fmap fst
     & sum
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   $(grid input 3)
     & ( \g ->

@@ -1,6 +1,6 @@
 module Day17 (part1, part2) where
 
-minimizeHeatLoss :: (Int -> Bool) -> (Int -> Bool) -> Grid Int -> Int
+minimizeHeatLoss :: (ℤ' -> Bool) -> (ℤ' -> Bool) -> Grid ℤ' -> ℤ'
 minimizeHeatLoss turnP noTurnP g =
   let target = maxXY g
       go cache q
@@ -18,8 +18,8 @@ minimizeHeatLoss turnP noTurnP g =
             ]
    in go (mkMap []) (mkMinQ [(0, (0, ((0, 0), 0, d))) | d <- [DirDown, DirRight]])
 
-part1 :: Int
+part1 :: ℤ'
 part1 = $(grid input 17) & minimizeHeatLoss (const True) (< 3)
 
-part2 :: Int
+part2 :: ℤ'
 part2 = $(grid input 17) & minimizeHeatLoss (>= 4) (< 10)

@@ -1,12 +1,12 @@
 module Day15 (part1, part2) where
 
-hash :: String -> Int
+hash :: String -> ℤ'
 hash = foldl' (\n c -> (n + ord c) * 17 `mod` 256) 0
 
-part1 :: Int
+part1 :: ℤ'
 part1 = $(input 15) |- csv & fmap hash & sum
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   let op = (,) <$> many1 alphaNum <*> ((,) <$> char '=' <*> number <|> (,) <$> char '-' <*> pure 0)
       run m o = m |~ (hash (fst o), runOp o)

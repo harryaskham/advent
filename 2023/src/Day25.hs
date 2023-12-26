@@ -1,6 +1,6 @@
 module Day25 (part1, part2) where
 
-traverseWithout :: [(String, String)] -> Map String [String] -> Int
+traverseWithout :: [(String, String)] -> Map String [String] -> ℤ'
 traverseWithout abc g = go (∅) (co (take 1 (keys g)))
   where
     go seen Empty = size seen
@@ -8,7 +8,7 @@ traverseWithout abc g = go (∅) (co (take 1 (keys g)))
       | a ∈ seen = go seen q
       | otherwise = go (a |-> seen) $ q >< [b | b <- co (fromMaybe [] $ g |? a), (a, b) ∉ abc, (b, a) ∉ abc]
 
-part1 :: Int
+part1 :: ℤ'
 part1 =
   $(input 25)
     |- (let s = count 3 alphaNum in many1 ((,) <$> (s <* string ": ") <*> (s `sepBy` char ' ') <* eol) <* eof)

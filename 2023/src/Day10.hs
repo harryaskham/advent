@@ -57,10 +57,10 @@ enclosed g path outside =
              in goAll (seen ∪ seen') (es ∪ es') starts
    in goAll (∅) (∅) [c | c <- coords g, c ∉ path]
 
-part1 :: Int
+part1 :: ℤ'
 part1 = $(grid input 10) & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (`div` 2))
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   $(grid input 10)
     & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first co)))

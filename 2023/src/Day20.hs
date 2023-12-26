@@ -1,6 +1,6 @@
 module Day20 (part1, part2) where
 
-mkInitialState :: Map String [String] -> (Int, Int, [Map String (Map String Bool, [(Int, Bool)])], Bool)
+mkInitialState :: Map String [String] -> (ℤ', ℤ', [Map String (Map String Bool, [(ℤ', Bool)])], Bool)
 mkInitialState g =
   let gR = mkMapWith (<>) [(v, [k]) | (k, vs) <- unMap g, v <- vs]
       initialInputs "broadcaster" = mkMap []
@@ -9,14 +9,14 @@ mkInitialState g =
       s = mkMap [(name, (initialInputs name, [(0, False)])) | name <- keys g]
    in (0, 0, [s], False)
 
-pushButton :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, [(Int, Bool)])], Bool)
+pushButton :: ℤ' -> Map String [String] -> (ℤ', ℤ', [Map String (Map String Bool, [(ℤ', Bool)])], Bool)
 pushButton n' g =
   let go n st
         | n == n' = st
         | otherwise = go (n + 1) (onePass n g st)
    in let (low, high, ss, satisfied) = go 0 (mkInitialState g) in (n' + low, high, reverse ss, satisfied)
 
-onePass :: Int -> Map String [String] -> (Int, Int, [Map String (Map String Bool, [(Int, Bool)])], Bool) -> (Int, Int, [Map String (Map String Bool, [(Int, Bool)])], Bool)
+onePass :: ℤ' -> Map String [String] -> (ℤ', ℤ', [Map String (Map String Bool, [(ℤ', Bool)])], Bool) -> (ℤ', ℤ', [Map String (Map String Bool, [(ℤ', Bool)])], Bool)
 onePass n g st = go st (mkSeq [("button", "broadcaster", False)])
   where
     targets :: String -> Maybe ([String], String)
@@ -44,12 +44,12 @@ onePass n g st = go st (mkSeq [("button", "broadcaster", False)])
             Nothing -> stack
             Just signalToSend -> stack >< mkSeq [(fullName, t, signalToSend) | t <- ts, isJust (targets t)]
 
-nameToHistory :: Int -> Map String [String] -> String -> [(Int, Bool)]
+nameToHistory :: ℤ' -> Map String [String] -> String -> [(ℤ', Bool)]
 nameToHistory n g name = let (_, _, history, _) = pushButton n g in reverse $ ulast history `get` name
   where
     get h n = snd . uhead $ mapMaybe (h |?) ([id, ('%' :), ('&' :)] <*> pure n)
 
-stateChanges :: Map String [String] -> [[((Int, Bool), (Int, Bool))]]
+stateChanges :: Map String [String] -> [[((ℤ', Bool), (ℤ', Bool))]]
 stateChanges g =
   ( \name ->
       let h = nameToHistory 5000 g name
@@ -71,14 +71,14 @@ circuit =
                )
        )
 
-part1 :: Int
+part1 :: ℤ'
 part1 =
   circuit
     & pushButton 1000
     & (\(low, high, _, _) -> (low, high))
     & uncurry (*)
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   circuit
     & stateChanges

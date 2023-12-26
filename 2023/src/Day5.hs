@@ -1,6 +1,6 @@
 module Day5 (part1, part2) where
 
-parser :: Parser ([Integer], [Integer], [(Integer -> Integer, Integer -> Integer)])
+parser :: Parser ([ℤ], [ℤ], [(ℤ -> ℤ, ℤ -> ℤ)])
 parser = do
   seeds <- string "seeds: " *> (number `sepBy1` string " ") <* (eol >> eol)
   (mappings, destinations) <- unzip <$> (mapping `sepBy1` eol) <* eof
@@ -31,14 +31,14 @@ parser = do
                     )
       return (forwardBackward, destinations)
 
-part1 :: Integer
+part1 :: ℤ
 part1 =
   $(input 5)
     |- parser
     & (\(seeds, _, mappings) -> flip (foldl' (flip fst)) mappings <$> seeds)
     & minimum
 
-part2 :: Integer
+part2 :: ℤ
 part2 =
   $(input 5)
     |- parser

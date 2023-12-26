@@ -43,7 +43,7 @@ structure bricks =
             )
    in both m (restingOn, flip restingOn)
 
-disintegrateOne :: Vector Brick -> Int
+disintegrateOne :: Vector Brick -> ℤ'
 disintegrateOne bricks =
   let (brickRestingOn, restingOnBrick) = structure bricks
    in size
@@ -55,7 +55,7 @@ disintegrateOne bricks =
                 (restingOnBrick |! brick)
         ]
 
-disintegrateAll :: Vector Brick -> Int
+disintegrateAll :: Vector Brick -> ℤ'
 disintegrateAll bricks =
   let brickRestingOn = fst $ structure bricks
    in sum
@@ -77,8 +77,8 @@ fallen =
     & mkVec
     & freefall
 
-part1 :: Int
+part1 :: ℤ'
 part1 = disintegrateOne fallen
 
-part2 :: Int
+part2 :: ℤ'
 part2 = disintegrateAll fallen

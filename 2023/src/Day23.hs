@@ -40,7 +40,7 @@ mkGraph g forks =
         path <- slopePaths (const enumerate) (∈ forks) start end g
     ]
 
-allPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> Int
+allPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> ℤ'
 allPaths graph start end = fromMaybe (-1) $ go start (∅)
   where
     go a seen
@@ -56,7 +56,7 @@ allPaths graph start end = fromMaybe (-1) $ go start (∅)
             [] -> Nothing
             ls -> Just (maximum ls)
 
-parts :: (Int, Int)
+parts :: (ℤ', ℤ')
 parts =
   let g = $(grid input 23)
       (start, end) = ((1, 0), first (subtract 1) (maxXY g))
@@ -64,8 +64,8 @@ parts =
       graph = mkGraph g (co [start, end] ∪ forks g)
    in (subtract 1 . maximum . fmap length $ paths, allPaths graph start end)
 
-part1 :: Int
+part1 :: ℤ'
 part1 = fst parts
 
-part2 :: Int
+part2 :: ℤ'
 part2 = snd parts

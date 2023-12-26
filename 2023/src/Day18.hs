@@ -1,6 +1,6 @@
 module Day18 (part1, part2) where
 
-solve :: (((Dir2, Int), (Dir2, Int)) -> (Dir2, Int)) -> Int
+solve :: (((Dir2, ℤ'), (Dir2, ℤ')) -> (Dir2, ℤ')) -> ℤ'
 solve f =
   $(input 18)
     |- ( f
@@ -22,14 +22,14 @@ solve f =
        )
     & pick (0, 0) 0 0
 
-pick :: (Int, Int) -> Int -> Int -> [(Dir2, Int)] -> Int
+pick :: (ℤ', ℤ') -> ℤ' -> ℤ' -> [(Dir2, ℤ')] -> ℤ'
 pick _ p a [] = a + (p `div` 2) + 1
 pick (x, y) p a ((d, l) : rest) =
   let (x', y') = move d l (x, y)
    in pick (x', y') (p + l) (a + x' * (y' - y)) rest
 
-part1 :: Int
+part1 :: ℤ'
 part1 = solve fst
 
-part2 :: Int
+part2 :: ℤ'
 part2 = solve snd
