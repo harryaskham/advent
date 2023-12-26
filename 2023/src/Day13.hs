@@ -23,10 +23,10 @@ reflectsSmudged g =
     ((⋃ [reflects (g |~ (c, bool Dot Hash . (== Dot))) | c <- coords g]) ⁻)
 
 solve :: (Grid DotHash -> [Either ℤ' ℤ']) -> [Grid DotHash] -> ℤ'
-solve f = concatMap f >>> partitionEithers >>> both sum >>> second (* 100) >>> uncurry (+)
+solve f = co >>> concatMap f >>> partitionEithers >>> both sum >>> second (* 100) >>> uncurry (+)
 
 part1 :: ℤ'
-part1 = solve (co . reflects) $(grids input 13)
+part1 = solve reflects $(grids input 13)
 
 part2 :: ℤ'
-part2 = solve (co . reflectsSmudged) $(grids input 13)
+part2 = solve reflectsSmudged $(grids input 13)
