@@ -1,16 +1,16 @@
 module Day24 (part1, part2) where
 
-data ℤ'ersection
-  = Noℤ'ersection
-  | ℤ'ersectAt (ℚ, ℚ) ℚ ℚ
+data Intersection
+  = NoIntersection
+  | IntersectAt (ℚ, ℚ) ℚ ℚ
   | Parallel ℚ ℚ
 
-intersect2d :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> ℤ'ersection
+intersect2d :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> Intersection
 intersect2d (x, y) (vx, vy) (x', y') (vx', vy')
   | m == m' && c == c' = Parallel m c
-  | m == m' = Noℤ'ersection
-  | t >= 0 && t' >= 0 = ℤ'ersectAt (ix, iy) t t'
-  | otherwise = Noℤ'ersection
+  | m == m' = NoIntersection
+  | t >= 0 && t' >= 0 = IntersectAt (ix, iy) t t'
+  | otherwise = NoIntersection
   where
     m = vy / vx
     c = y - (m * x)
@@ -24,30 +24,30 @@ intersect2d (x, y) (vx, vy) (x', y') (vx', vy')
 inFuture :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> Bool
 inFuture (x, y) (vx, vy) (ix, iy) = (ix - x) / vx >= 0 && (iy - y) / vy >= 0
 
-validℤ'ersection :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> ℤ'ersection -> Bool
-validℤ'ersection _ _ _ Noℤ'ersection = False
-validℤ'ersection (low, high) (x, y) (vx, vy) (ℤ'ersectAt (ix, iy) t t') =
+validIntersection :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> Intersection -> Bool
+validIntersection _ _ _ NoIntersection = False
+validIntersection (low, high) (x, y) (vx, vy) (IntersectAt (ix, iy) t t') =
   ix >= low && iy >= low && ix <= high && iy <= high && inFuture (x, y) (vx, vy) (ix, iy) && t >= 0 && t' >= 0
-validℤ'ersection (low, high) (x, y) (vx, vy) (Parallel m c) =
+validIntersection (low, high) (x, y) (vx, vy) (Parallel m c) =
   let f x = m * x + c
       g y = (y - c) / m
    in any
-        (\(a, b) -> validℤ'ersection (low, high) (x, y) (vx, vy) (intersect2d (x, y) (vx, vy) (a, b) (0, 0)))
+        (\(a, b) -> validIntersection (low, high) (x, y) (vx, vy) (intersect2d (x, y) (vx, vy) (a, b) (0, 0)))
         [(low, f low), (high, f high), (g low, low), (g high, high)]
 
-intersections :: (ℚ, ℚ) -> [((ℚ, ℚ, ℚ), (ℚ, ℚ, ℚ))] -> [ℤ'ersection]
+intersections :: (ℚ, ℚ) -> [((ℚ, ℚ, ℚ), (ℚ, ℚ, ℚ))] -> [Intersection]
 intersections lowHigh stones =
   [ i
     | (((x, y, _), (vx, vy, _)), ((x', y', _), (vx', vy', _))) <- triPairs stones,
       let i = intersect2d (x, y) (vx, vy) (x', y') (vx', vy'),
-      validℤ'ersection lowHigh (x, y) (vx, vy) i,
-      validℤ'ersection lowHigh (x', y') (vx', vy') i
+      validIntersection lowHigh (x, y) (vx, vy) i,
+      validIntersection lowHigh (x', y') (vx', vy') i
   ]
 
 stones :: [((ℚ, ℚ, ℚ), (ℚ, ℚ, ℚ))]
 stones =
   $(input 24)
-    |- ( let c3 = toTuple3 <$> count 3 ((fromℤ'egral <$> number) <* optional (char ',' >> many (char ' ')))
+    |- ( let c3 = toTuple3 <$> count 3 ((fromIntegral <$> number) <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
 
@@ -60,7 +60,7 @@ part1 =
 part2 :: ℤ
 part2 = z3 do
   [x, y, z, vx, vy, vz] <- traverse mkFreshRealVar ["x", "y", "z", "vx", "vy", "vz"]
-  let toConst ((x, y, z), (vx, vy, vz)) = traverse (mkRealNum . fromℚ) [x, y, z, vx, vy, vz]
+  let toConst ((x, y, z), (vx, vy, vz)) = traverse (mkRealNum . fromRational) [x, y, z, vx, vy, vz]
   forM_
     (zip [0 ..] stones)
     ( \(i, stone) -> do
