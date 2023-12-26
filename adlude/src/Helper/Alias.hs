@@ -6,6 +6,8 @@ type ℤ' = Int
 
 type ℤ = Integer
 
+type ℕ = Natural
+
 type ℚ = Rational
 
 type ℝ = Double
