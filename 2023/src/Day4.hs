@@ -1,6 +1,6 @@
 module Day4 (part1, part2) where
 
-parser :: Parser [(Int, [Int], [Int])]
+parser :: Parser [(ℤ', [ℤ'], [ℤ'])]
 parser = many1 (line <* eol) <* eof
   where
     gap = many $ string " "
@@ -10,14 +10,14 @@ parser = many1 (line <* eol) <* eof
       bs <- number `sepBy1` gap
       return (i, as, bs)
 
-part1 :: Int
+part1 :: ℤ'
 part1 =
   $(input 4)
     & parseWith parser
     & fmap (\(_, as, bs) -> 2 ^ size (as ∩ bs) `div` 2)
     & sum
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
   $(input 4)
     |- parser
