@@ -17,34 +17,36 @@ restingOn ((x, y, z), (x', y', z')) ((x'', y'', z''), (x''', y''', z''')) =
 onFloor :: Brick -> Bool
 onFloor ((_, _, z), (_, _, z')) = min z z' == 1
 
-freefall :: [Brick] -> [Brick]
+freefall :: Vector Brick -> Vector Brick
 freefall bricks =
   let go bricks i =
-        let brick = bricks !! i
+        let brick = bricks |! i
          in if onFloor brick || (brick `restingOn`) `any` bricks
               then bricks
               else bricks !. (i, both (move3 D3zN 1) brick)
-      fallOnce bricks' =  foldl' go bricks' [0 .. length bricks' - 1]
-   in unVec $ iterateFix fallOnce (mkVec bricks)
+      fallOnce bricks' = foldl' go bricks' [0 .. length bricks' - 1]
+   in iterateFix fallOnce bricks
 
-structure :: [Brick] -> (Map Brick (Set Brick), Map Brick (Set Brick))
+structure :: Vector Brick -> (Map Brick (Set Brick), Map Brick (Set Brick))
 structure bricks =
-  let mk f =
-        mkSet
-          <$> mkMapWith
+  let m f =
+        mk
+          <$> mkWith
             (<>)
-            [ (brick, [brick'])
-              | brick <- bricks,
-                brick' <- bricks,
-                brick /= brick',
-                brick `f` brick'
-            ]
-   in both mk (restingOn, flip restingOn)
+            ( un
+                [ (brick, [brick'])
+                  | brick <- bricks,
+                    brick' <- bricks,
+                    brick /= brick',
+                    brick `f` brick'
+                ]
+            )
+   in both m (restingOn, flip restingOn)
 
-disintegrateOne :: [Brick] -> Int
+disintegrateOne :: Vector Brick -> Int
 disintegrateOne bricks =
   let (brickRestingOn, restingOnBrick) = structure bricks
-   in length
+   in size
         [ brick
           | brick <- bricks,
             brick ∉ restingOnBrick
@@ -53,7 +55,7 @@ disintegrateOne bricks =
                 (restingOnBrick |! brick)
         ]
 
-disintegrateAll :: [Brick] -> Int
+disintegrateAll :: Vector Brick -> Int
 disintegrateAll bricks =
   let brickRestingOn = fst $ structure bricks
    in sum
@@ -67,7 +69,7 @@ disintegrateAll bricks =
           | brick <- bricks
         ]
 
-fallen :: [Brick]
+fallen :: Vector Brick
 fallen =
   $(input 22)
     |- (toTuple2 <$$> (toTuple3 <$$$> many1 (((number `sepBy1` char ',') `sepBy1` char '~') <* eol) <* eof))

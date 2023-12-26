@@ -47,6 +47,7 @@ common common-settings
                         TupleSections,
                         LambdaCase,
                         MultiWayIf,
+                        MonadComprehensions,
                         BlockArguments,
                         ImportQualifiedPost,
                         EmptyCase,

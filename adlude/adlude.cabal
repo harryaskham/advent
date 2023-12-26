@@ -45,6 +45,8 @@ common common-settings
     default-extensions: OverloadedStrings,
                         TupleSections,
                         LambdaCase,
+                        MonadComprehensions,
+                        AllowAmbiguousTypes,
                         MultiWayIf,
                         BlockArguments,
                         ImportQualifiedPost,

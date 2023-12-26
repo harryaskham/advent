@@ -13,6 +13,7 @@ import Data.PQueue.Prio.Min (deleteFindMin)
 import Data.Ratio as X
 import Data.Sequence (Seq (..))
 import Data.Tuple.Extra as X (fst3, snd3, thd3)
+import Data.Vector as X (Vector)
 import Helper.Bits as X
 import Helper.Collection as X
 import Helper.Coord as X

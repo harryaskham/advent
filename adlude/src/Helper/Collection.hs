@@ -1,20 +1,22 @@
+{-# LANGUAGE QuantifiedConstraints #-}
+
 module Helper.Collection where
 
 import Control.Lens (element, (.~))
-import qualified Data.Array as A
-import qualified Data.Bimap as BM
-import qualified Data.Char as C
-import qualified Data.Foldable as F
-import qualified Data.List as L
-import qualified Data.List.Extra as LE
-import qualified Data.List.Split as LS
-import qualified Data.Map.Strict as M
-import qualified Data.PQueue.Prio.Min as PQ
-import qualified Data.Sequence as SQ
-import qualified Data.Set as S
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import qualified Relude.Unsafe as U
+import Data.Array qualified as A
+import Data.Bimap qualified as BM
+import Data.Char qualified as C
+import Data.Foldable qualified as F
+import Data.List qualified as L
+import Data.List.Extra qualified as LE
+import Data.List.Split qualified as LS
+import Data.Map.Strict qualified as M
+import Data.PQueue.Prio.Min qualified as PQ
+import Data.Sequence qualified as SQ
+import Data.Set qualified as S
+import Data.Text qualified as T
+import Data.Vector qualified as V
+import Relude.Unsafe qualified as U
 
 class Packable a b where
   pack :: a -> b
@@ -24,54 +26,63 @@ instance Packable String T.Text where
   pack = T.pack
   unpack = T.unpack
 
+class MkWithable f k v where
+  mkWith :: (v -> v -> v) -> [(k, v)] -> f k v
+
+instance Ord k => MkWithable Map k v where
+  mkWith = M.fromListWith
+
 class Mkable v a where
-  mk :: [v] -> a
-  (<<-) :: [v] -> a
+  mk :: v -> a
+  (<<-) :: v -> a
   (<<-) = mk
 
-instance Mkable a [a] where
-  mk = id
-
-instance Mkable a (V.Vector a) where
+instance Mkable [a] (V.Vector a) where
   mk = mkVec
 
-instance Ord a => Mkable a (Set a) where
+instance Ord a => Mkable [a] (Set a) where
   mk = mkSet
 
-instance Ord a => Mkable (a, b) (Map a b) where
+instance Ord a => Mkable [(a, b)] (Map a b) where
   mk = mkMap
 
-instance Ord a => Mkable a (Seq a) where
+instance Ord a => Mkable [a] (Seq a) where
   mk = mkSeq
 
-instance Ord a => Mkable (a, b) (PQ.MinPQueue a b) where
+instance Ord a => Mkable [(a, b)] (PQ.MinPQueue a b) where
   mk = mkMinQ
 
-instance (Ord a, Ord b) => Mkable (a, b) (BM.Bimap a b) where
+instance (Ord a, Ord b) => Mkable [(a, b)] (BM.Bimap a b) where
   mk = mkBimap
 
 class Unable a b where
-  un :: a -> [b]
-  (->>) :: a -> [b]
+  un :: a -> b
+  (->>) :: a -> b
   (->>) = un
 
-instance Unable [a] a where
-  un = id
-
-instance Unable (V.Vector a) a where
+instance Unable (V.Vector a) [a] where
   un = unVec
 
-instance Unable (Set a) a where
+instance Unable (Set a) [a] where
   un = unSet
 
-instance Unable (Map a b) (a, b) where
+instance Unable (Map a b) [(a, b)] where
   un = unMap
 
-instance Unable (Seq a) a where
+instance Unable (Seq a) [a] where
   un = unSeq
 
-instance Unable (BM.Bimap a b) (a, b) where
+instance Unable (BM.Bimap a b) [(a, b)] where
   un = unBimap
+
+instance (forall a b c. Unable a b, Mkable b c) => Unable a c where
+  un = un . mk
+
+-- instance (Unable a b, Mkable b c) => Mkable a c where
+--   mk a = mk (un a :: b)
+--
+-- instance (Mkable a b, Unable b c) => Unable a c where
+--   un a = un (mk a :: b)
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn
