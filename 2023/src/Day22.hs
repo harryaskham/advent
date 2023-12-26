@@ -65,7 +65,7 @@ disintegrateAll bricks =
                   let fallen' = setFilter (\brick -> not (onFloor brick) && brickRestingOn |! brick ∖ fallen == (∅)) bricks
                    in (fallen ∪ fallen', bricks ∖ fallen')
               )
-              (([brick] <->), (co (un bricks)))
+              (([brick] <->), co (un bricks))
           | brick <- bricks
         ]
 

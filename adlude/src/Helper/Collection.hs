@@ -80,8 +80,8 @@ instance Unable V.Vector where
 instance Unable Set where
   un = unSet
 
--- instance Unable (Map a b) (a, b) where
---  un = unMap
+instance Unable (Map k) where
+  un = fmap snd . unMap
 
 instance Unable Seq where
   un = unSeq
@@ -95,8 +95,17 @@ class Convable a c where
 instance {-# INCOHERENT #-} (Unable f) => Convable (f a) [a] where
   co = un
 
+instance {-# INCOHERENT #-} (Unable f, Mkable g) => Convable (f a) (g a) where
+  co = mk . un
+
 instance {-# INCOHERENT #-} (Ord a) => Convable [a] (Set a) where
   co = mkSet
+
+instance {-# INCOHERENT #-} (Ord k) => Convable [(k, v)] (Map k v) where
+  co = mkMap
+
+instance {-# INCOHERENT #-} Convable (Map k v) [(k, v)] where
+  co = unMap
 
 instance (Mkable f) => Convable [a] (f a) where
   co = mk
