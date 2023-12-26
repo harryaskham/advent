@@ -30,7 +30,7 @@ runAllDays =
             Just
               ( AppE
                   (VarE 'show)
-                  (VarE (mkName $ concat ["Day", show d, ".part", show p]))
+                  (VarE (mkName $ concat (["Day", show d, ".part", show p] :: [String])))
               )
           ]
     )

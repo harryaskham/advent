@@ -28,7 +28,7 @@ part2 =
                     c = fromMaybe 0 $ m |? i
                  in foldl' (flip (adjust (+ c))) m [i + 1 .. i + n]
             )
-            (mkMap [(i, 1) | (i, _, _) <- cards])
+            (co [(i, 1) | (i, _, _) <- cards])
             cards
       )
     & unMap

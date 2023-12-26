@@ -61,25 +61,25 @@ instance (Semiring a, Bits a) => Bits [a] where
 
   bit i = one : replicate i zero
 
-  popCount xs = length [i | i <- [0 .. length xs - 1], testBit xs i]
+  popCount xs = length [i | i <- ([0 .. length xs - 1] :: [Int]), testBit xs i]
 
-bitsToInt :: Bits a => a -> Integer
+bitsToInt :: (Bits a) => a -> Integer
 bitsToInt bs =
-  sum $ (\i -> if testBit bs (bitSize bs - i - 1) then 2 ^ i else 0) <$> [0 .. bitSize bs - 1]
+  sum $ (\i -> if testBit bs (bitSize bs - i - 1) then 2 ^ i else 0) <$> ([0 .. bitSize bs - 1] :: [Int])
 
-zeroCount :: Bits a => a -> Int
+zeroCount :: (Bits a) => a -> Int
 zeroCount bs = bitSize bs - popCount bs
 
 -- True if true is the most common bit, False otherwise
 -- Biases towards True in a tiebreak
-mostCommonBit :: Bits a => a -> Bool
+mostCommonBit :: (Bits a) => a -> Bool
 mostCommonBit bs
   | popCount bs == zeroCount bs = True
   | otherwise = popCount bs > zeroCount bs
 
 -- False if false is the most common bit, True otherwise
 -- Biases towards False in a tiebreak
-leastCommonBit :: Bits a => a -> Bool
+leastCommonBit :: (Bits a) => a -> Bool
 leastCommonBit bs
   | popCount bs == zeroCount bs = False
   | otherwise = popCount bs < zeroCount bs
