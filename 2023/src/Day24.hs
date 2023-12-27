@@ -51,9 +51,6 @@ stones =
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
 
-intStones :: [((ℤ, ℤ, ℤ), (ℤ, ℤ, ℤ))]
-intStones = (\((x,y,z),(vx,vy,vz)) -> ((round x,round y,round z),(round vx,round vy,round vz))) <$> stones
-
 part1 :: ℤ'
 part1 =
   stones
@@ -63,9 +60,9 @@ part1 =
 part2 :: ℤ
 part2 = z3 do
   [x, y, z, vx, vy, vz] <- traverse mkFreshIntVar ["x", "y", "z", "vx", "vy", "vz"]
-  let toConst ((x, y, z), (vx, vy, vz)) = traverse mkIntNum [x, y, z, vx, vy, vz]
+  let toConst ((x, y, z), (vx, vy, vz)) = traverse (mkIntNum . round) [x, y, z, vx, vy, vz]
   forM_
-    (zip [0 ..] intStones)
+    (zip [0 ..] stones)
     ( \(i, stone) -> do
         t <- mkFreshIntVar ("t" <> show i)
         [x', y', z', vx', vy', vz'] <- toConst stone
