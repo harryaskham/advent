@@ -43,7 +43,7 @@ totalAccepted fs =
       invert (Left (c, '>', n, next)) = Left (c, '<', n + 1, next)
       invert c = c
       expand Nothing _ = 0
-      expand (Just xmas) [] = product [b - a + 1 | (a, b) <- snd <$> unMap xmas]
+      expand (Just xmas) [] = 1 ∏ [b - a + 1 | (a, b) <- snd <$> unMap xmas]
       expand xmas ((Right _) : cs) = expand xmas cs
       expand (Just xmas) (Left (c, opC, bound, _) : cs) =
         let (a, b) = xmas |! c
@@ -51,7 +51,7 @@ totalAccepted fs =
               '<' -> if bound <= a then 0 else expand (Just $ xmas |. (c, (a, min b (bound - 1)))) cs
               '>' -> if bound >= b then 0 else expand (Just $ xmas |. (c, (max a (bound + 1), b))) cs
       follow conditions "in" = expand (Just $ mkMap ((,(1, 4000)) <$> "xmas")) conditions
-      follow conditions target = sum [follow (conditions <> (p : (invert <$> ps))) f | (f, p : ps) <- paths |! target]
+      follow conditions target = 1 ∑ [follow (conditions <> (p : (invert <$> ps))) f | (f, p : ps) <- paths |! target]
    in follow [] "A"
 
 part1 :: ℤ'

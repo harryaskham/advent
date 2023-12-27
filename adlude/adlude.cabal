@@ -63,6 +63,7 @@ common common-settings
                         DeriveGeneric,
                         PostfixOperators,
                         DeriveLift,
+                        UnicodeSyntax,
                         DeriveTraversable,
                         DerivingStrategies,
                         GeneralizedNewtypeDeriving,

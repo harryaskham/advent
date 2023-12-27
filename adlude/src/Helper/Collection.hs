@@ -238,16 +238,24 @@ instance (Ord a) => Memberable a (Map a b) where
 instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
 
-data Filler = Filler
+-- filler for prefix ops
+λ :: ()
+λ = ()
 
-(⁻) :: UnaryOp a -> a
-(⁻) f = f Filler
+(⁻) :: UnaryPrefixOp a -> a
+(⁻) f = f ()
 
-type UnaryOp a = Filler -> a
+type UnaryPrefixOp f = (∀ u. u -> f)
+
+(∑) :: (Foldable f, Num a) => a -> f a -> a
+n ∑ xs = n * (F.foldl' (+) 0 xs)
+
+(∏) :: (Foldable f, Num a) => a -> f a -> a
+n ∏ xs = n * (F.foldl' (*) 1 xs)
 
 class Unionable a where
   (∪) :: a -> a -> a
-  (⋃) :: Foldable f => UnaryOp (f a -> a)
+  (⋃) :: Foldable f => UnaryPrefixOp (f a -> a)
   (⋃) = const $ F.foldl1 (∪)
 
 instance (Ord a) => Unionable (Set a) where
@@ -264,7 +272,7 @@ instance Unionable (V.Vector a) where
 
 class Intersectable a where
   (∩) :: a -> a -> a
-  (⋂) :: Foldable f => UnaryOp (f a -> a)
+  (⋂) :: Foldable f => UnaryPrefixOp (f a -> a)
   (⋂) = const $ F.foldl1 (∩)
 
 instance (Ord a) => Intersectable (Set a) where
@@ -356,12 +364,6 @@ instance (forall a. Semigroup (g a), forall a. Convable (f a) (g a)) => ConvMono
 
 instance (forall a. Semigroup (h a), forall a. Convable (f a) (h a), forall a. Convable (g a) (h a)) => ConvMonoid f g h where
   a <⊕> b = co a <> co b
-
---instance (Monoid a, Mkable a) => ConvMonoid a [b] a where
---  a <⊕> b = a <> mk b
---
---instance (Monoid b, Mkable b) => ConvMonoid [a] b b where
---  a <⊕> b = mk a <> b
 
 (∖) :: (Ord a) => Set a -> Set a -> Set a
 (∖) = S.difference
