@@ -7,6 +7,7 @@ import Data.Array qualified as A
 import Data.Bimap qualified as BM
 import Data.Char qualified as C
 import Data.Foldable qualified as F
+import Data.IntMap.Strict qualified as IM
 import Data.List qualified as L
 import Data.List.Extra qualified as LE
 import Data.List.Split qualified as LS
@@ -289,6 +290,10 @@ instance Ixable [] where
 instance Ixable V.Vector where
   (!!) = (V.!)
   v !. (i, a) = v V.// [(i, a)]
+
+instance Ixable IntMap where
+  (!!) = (IM.!)
+  m !. (i, a) = IM.insert i a m
 
 class Gettable f k v where
   (|!) :: f k v -> k -> v
