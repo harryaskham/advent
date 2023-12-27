@@ -27,16 +27,13 @@ instance Packable String T.Text where
   unpack = T.unpack
 
 class MkWithable f where
-  mkWith :: (Ord k) => (v -> v -> v) -> [(k, v)] -> f k v
+  mkWith :: (Ord k, Unable t) => (v -> v -> v) -> t (k, v) -> f k v
 
 instance MkWithable Map where
-  mkWith = M.fromListWith
+  mkWith f xs = M.fromListWith f (un xs)
 
 class Mkable f where
   mk :: [a] -> f a
-
-(<<-) :: (Mkable f) => [a] -> f a
-(<<-) = mk
 
 instance Mkable [] where
   mk = id
@@ -64,9 +61,6 @@ instance MkableOrd Set where
 
 class Unable f where
   un :: f a -> [a]
-
-(->>) :: (Unable f) => f a -> [a]
-(->>) = un
 
 instance Unable [] where
   un = id
@@ -134,8 +128,14 @@ instance {-# INCOHERENT #-} (MkableKey f, Ord k) => Convable [(k, v)] (f k v) wh
 instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
   co a = co ((co a) :: b)
 
-(<->) :: (Convable a c) => a -> c
-(<->) = co
+(⚟⚞) :: (Convable a c) => a -> c
+(⚟⚞) = co
+
+(⚟) :: (Unable f) => f a -> [a]
+(⚟) = un
+
+(⚞) :: (Mkable f) => [a] -> f a
+(⚞) = mk
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn
@@ -332,8 +332,29 @@ instance (A.Ix i) => Modifiable A.Array i e where
 (∅) :: Monoid a => a
 (∅) = mempty
 
-(⊕) :: Monoid a => a -> a -> a
-(⊕) = mappend
+class ConvMonoidLeft f g where
+  (<⊕) :: f a -> g a -> f a
+
+class ConvMonoidRight f g  where
+  (⊕>) :: f a -> g a -> g a
+
+class ConvMonoid f g h where
+  (<⊕>) :: f a -> g a -> h a
+
+instance (forall a. Semigroup (f a), forall a. Convable (g a) (f a)) => ConvMonoidLeft f g where
+  a <⊕ b = a <> co b
+
+instance (forall a. Semigroup (g a), forall a. Convable (f a) (g a)) => ConvMonoidRight f g where
+  a ⊕> b = co a <> b
+
+instance (forall a. Semigroup (h a), forall a. Convable (f a) (h a), forall a. Convable (g a) (h a)) => ConvMonoid f g h where
+  a <⊕> b = co a <> co b
+
+--instance (Monoid a, Mkable a) => ConvMonoid a [b] a where
+--  a <⊕> b = a <> mk b
+--
+--instance (Monoid b, Mkable b) => ConvMonoid [a] b b where
+--  a <⊕> b = mk a <> b
 
 (∖) :: (Ord a) => Set a -> Set a -> Set a
 (∖) = S.difference

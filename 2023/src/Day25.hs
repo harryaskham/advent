@@ -1,12 +1,12 @@
 module Day25 (part1, part2) where
 
 traverseWithout :: [(String, String)] -> Map String [String] -> ℤ'
-traverseWithout abc g = go (∅) (co (take 1 (keys g)))
+traverseWithout abc g = go (∅) (take 1 (keys g) ⚞)
   where
     go seen Empty = size seen
     go seen (a :<| q)
       | a ∈ seen = go seen q
-      | otherwise = go (a |-> seen) $ q >< [b | b <- co (fromMaybe [] $ g |? a), (a, b) ∉ abc, (b, a) ∉ abc]
+      | otherwise = go (a |-> seen) (q <⊕ [b | b <- fromMaybe [] $ g |? a, (a, b) ∉ abc, (b, a) ∉ abc])
 
 part1 :: ℤ'
 part1 =

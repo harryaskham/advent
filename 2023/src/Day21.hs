@@ -26,7 +26,7 @@ part2 = do
               (n + 1)
               ( mkSet
                   [ (x, y)
-                    | c <- (cs ->>),
+                    | c <- (cs ⚟),
                       (x, y) <- neighborsNoDiags c,
                       (mod x 131, mod y 131) ∈ spaces
                   ]

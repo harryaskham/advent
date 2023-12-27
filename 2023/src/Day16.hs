@@ -13,8 +13,8 @@ energized g start =
                     '|' -> bool [d] [DirUp, DirDown] (d ∈ [DirLeft, DirRight])
                     '/' -> [d & bool turnCW turnCCW (d ∈ [DirLeft, DirRight])]
                     '\\' -> [d & bool turnCW turnCCW (d ∈ [DirUp, DirDown])]
-             in go ((c, d) |-> seen) (q >< co [(move d 1 c, d) | d <- ds])
-   in go (∅) (co [start])
+             in go ((c, d) |-> seen) (q <⊕ [(move d 1 c, d) | d <- ds])
+   in go (∅) ([start] ⚞)
 
 part1 :: ℤ'
 part1 = energized $(grid input 16) ((0, 0), DirRight)

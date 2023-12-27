@@ -29,18 +29,17 @@ freefall bricks =
 
 structure :: Vector Brick -> (Map Brick (Set Brick), Map Brick (Set Brick))
 structure bricks =
-  let m f =
-        co
-          <$> mkWith
-            (<>)
-            ( unVec
-                [ (brick, [brick'])
-                  | brick <- bricks,
-                    brick' <- bricks,
-                    brick /= brick',
-                    brick `f` brick'
-                ]
-            )
+  let m :: (Brick -> Brick -> Bool) -> Map Brick (Set Brick)
+      m f =
+        mkWith
+          (∪)
+          ( [ (brick, co [brick'])
+              | brick <- bricks,
+                brick' <- bricks,
+                brick /= brick',
+                brick `f` brick'
+            ]
+          )
    in both m (restingOn, flip restingOn)
 
 disintegrateOne :: Vector Brick -> ℤ'
