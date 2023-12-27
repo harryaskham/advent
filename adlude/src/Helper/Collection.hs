@@ -128,14 +128,14 @@ instance {-# INCOHERENT #-} (MkableKey f, Ord k) => Convable [(k, v)] (f k v) wh
 instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
   co a = co ((co a) :: b)
 
-(⚟⚞) :: (Convable a c) => a -> c
-(⚟⚞) = co
+(⊏⊐) :: (Convable a c) => a -> c
+(⊏⊐) = co
 
-(⚟) :: (Unable f) => f a -> [a]
-(⚟) = un
+(⊏) :: (Unable f) => f a -> [a]
+(⊏) = un
 
-(⚞) :: (Mkable f) => [a] -> f a
-(⚞) = mk
+(⊐) :: (Mkable f) => [a] -> f a
+(⊐) = mk
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn
@@ -335,7 +335,7 @@ instance (A.Ix i) => Modifiable A.Array i e where
 class ConvMonoidLeft f g where
   (<⊕) :: f a -> g a -> f a
 
-class ConvMonoidRight f g  where
+class ConvMonoidRight f g where
   (⊕>) :: f a -> g a -> g a
 
 class ConvMonoid f g h where
