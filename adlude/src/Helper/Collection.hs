@@ -247,11 +247,11 @@ instance (A.Ix i) => Memberable i (A.Array i e) where
 
 type UnaryPrefixOp f = (∀ u. u -> f)
 
-(∑) :: (Foldable f, Num a) => a -> f a -> a
-n ∑ xs = n * (F.foldl' (+) 0 xs)
+(∑) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
+_ ∑ xs = F.foldl' (+) 0 xs
 
-(∏) :: (Foldable f, Num a) => a -> f a -> a
-n ∏ xs = n * (F.foldl' (*) 1 xs)
+(∏) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
+_ ∏ xs = F.foldl' (*) 1 xs
 
 class Unionable a where
   (∪) :: a -> a -> a

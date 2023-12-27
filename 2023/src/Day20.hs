@@ -83,4 +83,4 @@ part2 =
   circuit
     & stateChanges
     & fmap ((snd >>> fst >>> (+ 1)) . uhead)
-    & product
+    & (λ ∏)

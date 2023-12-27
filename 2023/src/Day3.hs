@@ -39,7 +39,7 @@ part1 =
             & filter (\(_, cs) -> any isMark $ catMaybes [g ||? c | c <- cs])
       )
     & fmap fst
-    & sum
+    & (λ ∑)
 
 part2 :: ℤ'
 part2 =
@@ -50,7 +50,7 @@ part2 =
       )
     & foldl1' (unionWith (<>))
     & mapFilter ((== 2) . length)
-    & fmap product
+    & fmap (λ ∏)
     & unMap
     & fmap snd
-    & sum
+    & (λ ∑)
