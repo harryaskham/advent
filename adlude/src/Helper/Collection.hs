@@ -126,7 +126,7 @@ instance {-# INCOHERENT #-} (MkableKey f, Ord k) => Convable [(k, v)] (f k v) wh
   co = mkKey
 
 instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
-  co a = co ((co a) :: b)
+  co a = co (co a :: b)
 
 (⊏⊐) :: (Convable a c) => a -> c
 (⊏⊐) = co
@@ -239,13 +239,15 @@ instance (A.Ix i) => Memberable i (A.Array i e) where
 
 data Filler = Filler
 
-(⁻) :: (Filler -> a) -> a
+(⁻) :: UnaryOp a -> a
 (⁻) f = f Filler
+
+type UnaryOp a = Filler -> a
 
 class Unionable a where
   (∪) :: a -> a -> a
-  (⋃) :: Foldable f => Filler -> f a -> a
-  Filler ⋃ xs = F.foldl1 (∪) xs
+  (⋃) :: Foldable f => UnaryOp (f a -> a)
+  (⋃) = const $ F.foldl1 (∪)
 
 instance (Ord a) => Unionable (Set a) where
   (∪) = S.union
@@ -261,8 +263,8 @@ instance Unionable (V.Vector a) where
 
 class Intersectable a where
   (∩) :: a -> a -> a
-  (⋂) :: Foldable f => Filler -> f a -> a
-  Filler ⋂ xs = F.foldl1 (∩) xs
+  (⋂) :: Foldable f => UnaryOp (f a -> a)
+  (⋂) = const $ F.foldl1 (∩)
 
 instance (Ord a) => Intersectable (Set a) where
   (∩) = S.intersection
