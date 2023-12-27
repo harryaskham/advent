@@ -27,10 +27,10 @@ instance Packable String T.Text where
   unpack = T.unpack
 
 class MkWithable f where
-  mkWith :: (Ord k) => (v -> v -> v) -> [(k, v)] -> f k v
+  mkWith :: (Ord k, Unable t) => (v -> v -> v) -> t (k, v) -> f k v
 
 instance MkWithable Map where
-  mkWith = M.fromListWith
+  mkWith f xs = M.fromListWith f (un xs)
 
 class Mkable f where
   mk :: [a] -> f a
@@ -332,17 +332,29 @@ instance (A.Ix i) => Modifiable A.Array i e where
 (∅) :: Monoid a => a
 (∅) = mempty
 
-class ConvMonoidLeft a b where
-  (<⊕) :: a -> b -> a
+class ConvMonoidLeft f g where
+  (<⊕) :: f a -> g a -> f a
 
-class ConvMonoidRight a b where
-  (⊕>) :: a -> b -> b
+class ConvMonoidRight f g  where
+  (⊕>) :: f a -> g a -> g a
 
-instance (Monoid a, Convable b a) => ConvMonoidLeft a b where
+class ConvMonoid f g h where
+  (<⊕>) :: f a -> g a -> h a
+
+instance (forall a. Semigroup (f a), forall a. Convable (g a) (f a)) => ConvMonoidLeft f g where
   a <⊕ b = a <> co b
 
-instance (Monoid b, Convable a b) => ConvMonoidRight a b where
+instance (forall a. Semigroup (g a), forall a. Convable (f a) (g a)) => ConvMonoidRight f g where
   a ⊕> b = co a <> b
+
+instance (forall a. Semigroup (h a), forall a. Convable (f a) (h a), forall a. Convable (g a) (h a)) => ConvMonoid f g h where
+  a <⊕> b = co a <> co b
+
+--instance (Monoid a, Mkable a) => ConvMonoid a [b] a where
+--  a <⊕> b = a <> mk b
+--
+--instance (Monoid b, Mkable b) => ConvMonoid [a] b b where
+--  a <⊕> b = mk a <> b
 
 (∖) :: (Ord a) => Set a -> Set a -> Set a
 (∖) = S.difference
