@@ -51,6 +51,9 @@ stones =
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
 
+intStones :: [((ℤ, ℤ, ℤ), (ℤ, ℤ, ℤ))]
+intStones = (\((x,y,z),(vx,vy,vz)) -> ((round x,round y,round z),(round vx,round vy,round vz))) <$> stones
+
 part1 :: ℤ'
 part1 =
   stones
@@ -59,12 +62,12 @@ part1 =
 
 part2 :: ℤ
 part2 = z3 do
-  [x, y, z, vx, vy, vz] <- traverse mkFreshRealVar ["x", "y", "z", "vx", "vy", "vz"]
-  let toConst ((x, y, z), (vx, vy, vz)) = traverse (mkRealNum . fromRational) [x, y, z, vx, vy, vz]
+  [x, y, z, vx, vy, vz] <- traverse mkFreshIntVar ["x", "y", "z", "vx", "vy", "vz"]
+  let toConst ((x, y, z), (vx, vy, vz)) = traverse mkIntNum [x, y, z, vx, vy, vz]
   forM_
-    (zip [0 ..] stones)
+    (zip [0 ..] intStones)
     ( \(i, stone) -> do
-        t <- mkFreshRealVar ("t" <> show i)
+        t <- mkFreshIntVar ("t" <> show i)
         [x', y', z', vx', vy', vz'] <- toConst stone
         sequence
           [ do
@@ -74,4 +77,4 @@ part2 = z3 do
             | (p, v, p', v') <- [(x, vx, x', vx'), (y, vy, y', vy'), (z, vz, z', vz')]
           ]
     )
-  round . unjust . snd <$> withModel (\m -> sum . catMaybes <$> mapM (evalReal m) [x, y, z])
+  unjust . snd <$> withModel (\m -> sum . catMaybes <$> mapM (evalInt m) [x, y, z])
