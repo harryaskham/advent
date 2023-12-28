@@ -1,39 +1,19 @@
 module Day13 (part1, part2) where
 
 reflects :: STUArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))
-reflects g' = do
-  v <- r270 <$> variantsM g'
-  co . concat
-    <$> forM
-      [(Left, g'), (Right, v)]
-      ( \(f, g) -> do
-          (maxX, maxY) <- maxXYM g
-          ixs <-
-            filterM
-              ( \i -> do
-                  let w = min i (maxX - i + 1)
-                  l <- sequence [g <||!> (x, y) | x <- [i - w .. i - 1], y <- [0 .. maxY]]
-                  r <- sequence [g <||!> (x, y) | x <- reverse [i .. i + w - 1], y <- [0 .. maxY]]
-                  return $ l == r
-              )
-              [1 .. maxX]
-          return $ f <$> ixs
-      )
+reflects g = do
+  (maxX, maxY) <- maxXYM g
+  let b m0 m1 i = let w = min i (m0 - i + 1) in (([i-w..i-1],  [0..m1]), ([i+w-1,i+w-2..i],[0..m1]))
+  (⊏⊐) <$> fst <$$>
+    filterM
+      (snd >>> bothM (\(xr, yr) -> sequence [g <||!> (x, y) | x <- xr, y <- yr]) >>> fmap (uncurry (==)))
+      [(f i, s (b m0 m1 i)) | (f, (m0, m1), s, ir) <- [(Left, (maxX, maxY), id, [1..maxX]), (Right, (maxY, maxX), both swap, [1..maxY])] , i <- ir]
 
 reflectsSmudged :: STUArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))
 reflectsSmudged g = do
-  cs <- coordsM g
-  traceShowM (length cs)
-  rs <- reflects g
-  let toggle g cM =
-        case cM of
-          Nothing -> return ()
-          Just c -> void $ g <||~> (c, bool '.' '#' . (== '.'))
-  rs' <- forM (pairs (Nothing : (Just <$> cs))) $ \(last, c) -> do
-    toggle g last
-    toggle g c
-    reflects g
-  return $ setFilter (∉ rs) (λ ⋃ rs')
+  let toggle g c = void $ g <||~> (c, bool '.' '#' . (== '.'))
+  rs' <- traverse (\c -> toggle g c *> reflects g <* toggle g c) =<< coordsM g
+  (setFilter <$> ((∌) <$> reflects g)) <*> pure (λ ⋃  rs')
 
 solve :: (STUArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))) -> ST s [STUArrayGrid s Char] -> ST s ℤ'
 solve f gsM = do

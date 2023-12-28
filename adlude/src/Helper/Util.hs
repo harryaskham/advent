@@ -3,6 +3,7 @@
 
 module Helper.Util where
 
+import Data.Bitraversable
 import Control.Arrow (Arrow ((***)))
 import Control.Lens ((^.))
 import Control.Monad (filterM)
@@ -17,7 +18,6 @@ import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
 import Data.Tuple.HT (uncurry3)
 import Data.Type.Nat (Nat (S), Nat9)
-import Extra (firstM, secondM)
 import Helper.Bits (bitsToInt)
 import Helper.Collection
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
@@ -110,11 +110,11 @@ infixl 5 <&&>
 both :: (Bifunctor f) => (a -> b) -> f a a -> f b b
 both f = bimap f f
 
+bothM :: (Bitraversable f, Monad m) => (a -> m b) -> f a a -> m (f b b)
+bothM f = bitraverse f f
+
 same :: (Eq a) => (a, a) -> Bool
 same = uncurry (==)
-
-bimapM :: Monad m => (a -> m c) -> (b -> m d) -> (a, b) -> m (c, d)
-bimapM f g = firstM f >=> secondM g
 
 treverse :: (Traversable t, Monad f) => (t a -> b) -> t (f a) -> f b
 treverse f = fmap f . sequence

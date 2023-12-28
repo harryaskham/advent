@@ -138,11 +138,17 @@ instance {-# OVERLAPPABLE #-} (Convable a b, Convable b c) => Convable a c where
 (⊏⊐) :: (Convable a c) => a -> c
 (⊏⊐) = co
 
+infixl 1 ⊏⊐
+
 (⊏) :: (Unable f) => f a -> [a]
 (⊏) = un
 
+infixl 1 ⊏
+
 (⊐) :: (Mkable f) => [a] -> f a
 (⊐) = mk
+
+infixl 1 ⊐
 
 splitOn :: String -> String -> [String]
 splitOn = LS.splitOn
