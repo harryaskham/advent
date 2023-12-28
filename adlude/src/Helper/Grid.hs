@@ -285,7 +285,9 @@ instance (GridCell a) => Griddable (ST s) (STVectorGrid' s) Coord2 a where
     let minY = minimum (snd . fst <$> cs)
     let maxY = maximum (snd . fst <$> cs)
     vs <- STV.replicateM (maxY - minY + 1) $ STV.new (maxX - minX + 1)
-    return $ STVectorGrid vs
+    let g = STVectorGrid vs
+    forM_ cs (\(c, a) -> gridSetM a c g)
+    return g
   unGridM (STVectorGrid g) = do
     maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
     let maxY = STV.length g - 1
