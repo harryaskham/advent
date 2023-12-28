@@ -18,7 +18,7 @@ reflectsSmudged g = do
 solve :: (STUArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))) -> ST s [STUArrayGrid s Char] -> ST s ℤ'
 solve f gsM = do
   gs <- gsM
-  uncurry (+) . second (* 100) . both (λ ∑) . partitionEithers . concatMap co <$> traverse f gs
+  fmap (uncurry (+) . second (* 100) . both (λ ∑) . partitionEithers . concatMap co) . traverse f $ gs
 
 part1 :: ℤ'
 part1 = runST $ solve reflects $ $(gridsM input 13)
