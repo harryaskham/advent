@@ -33,9 +33,9 @@ main :: IO ()
 
 -- main = benchOne (Day17.part1, Day17.part2)
 
-main = benchEachPart
+-- main = benchEachPart
 
--- main = print Day24.part2
+main = print Day24.part1 >> print Day24.part2
 
 
 benchOne :: (Show a) => a -> IO ()

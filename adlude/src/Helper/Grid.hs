@@ -7,6 +7,7 @@ import Control.Monad.ST (ST, runST)
 import Data.Array (assocs)
 import Data.Array.IO (IOArray, getBounds, readArray)
 import Data.Array.MArray (MArray, getAssocs, newArray, newArray_, writeArray)
+import Data.Array.ST qualified as STA
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Fin (Fin)
@@ -216,6 +217,33 @@ instance (GridCell a) => Griddable IO ArrayGrid' Coord2 a where
       return g
   maxXYM (ArrayGrid g) = snd <$> getBounds g
   minXYM (ArrayGrid g) = fst <$> getBounds g
+
+newtype STUArrayGrid' s k a = STUArrayGrid (STA.STUArray s k a) deriving (Eq)
+
+type STUArrayGrid s a = STUArrayGrid' s Coord2 a
+
+instance (GridCell a, MArray (STA.STUArray s) a (ST s)) => Griddable (ST s) (STUArrayGrid' s) Coord2 a where
+  mkGridM cs =
+    STUArrayGrid <$> do
+      a <- newArray_ (minimum (fst <$> cs), maximum (fst <$> cs))
+      forM_ cs (uncurry $ writeArray a)
+      return a
+  unGridM (STUArrayGrid g) = getAssocs g
+  gridGetMaybeM c@(x, y) (STUArrayGrid g) = do
+    ((ax, ay), (bx, by)) <- getBounds g
+    if x < ax || y < ay || x > bx || y > by then return Nothing else Just <$> gridGetM c (STUArrayGrid g)
+  gridGetM c (STUArrayGrid g) = readArray g c
+  gridSetM a c (STUArrayGrid g) =
+    STUArrayGrid <$> do
+      writeArray g c a
+      return g
+  gridModifyM f c (STUArrayGrid g) =
+    STUArrayGrid <$> do
+      a <- readArray g c
+      writeArray g c (f a)
+      return g
+  maxXYM (STUArrayGrid g) = snd <$> getBounds g
+  minXYM (STUArrayGrid g) = fst <$> getBounds g
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic

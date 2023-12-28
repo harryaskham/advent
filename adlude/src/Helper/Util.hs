@@ -17,6 +17,7 @@ import Data.Text.Read qualified as TR
 import Data.Tuple.Extra (swap)
 import Data.Tuple.HT (uncurry3)
 import Data.Type.Nat (Nat (S), Nat9)
+import Extra (firstM, secondM)
 import Helper.Bits (bitsToInt)
 import Helper.Collection
 import Linear.V3 (R1 (_x), R2 (_y), R3 (_z), V3 (..))
@@ -111,6 +112,9 @@ both f = bimap f f
 
 same :: (Eq a) => (a, a) -> Bool
 same = uncurry (==)
+
+bimapM :: Monad m => (a -> m c) -> (b -> m d) -> (a, b) -> m (c, d)
+bimapM f g = firstM f >=> secondM g
 
 treverse :: (Traversable t, Monad f) => (t a -> b) -> t (f a) -> f b
 treverse f = fmap f . sequence
