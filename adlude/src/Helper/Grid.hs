@@ -16,6 +16,7 @@ import Data.List.Extra (groupOn)
 import Data.Map.Strict qualified as M
 import Data.Text qualified as T
 import Data.Vector qualified as V
+import Data.Vector.Mutable qualified as STV
 import Helper.Collection
 import Helper.Coord
 import Helper.Tracers
@@ -271,6 +272,46 @@ instance (GridCell a, MArray (STA.STArray s) a (ST s)) => Griddable (ST s) (STAr
       return g
   maxXYM (STArrayGrid g) = snd <$> getBounds g
   minXYM (STArrayGrid g) = fst <$> getBounds g
+
+data STVectorGrid' s k a = STVectorGrid (STV.STVector s (STV.STVector s a))
+
+type STVectorGrid s a = STVectorGrid' s Coord2 a
+
+-- TODO: support negative / sparse coords
+instance (GridCell a) => Griddable (ST s) (STVectorGrid' s) Coord2 a where
+  mkGridM cs = do
+    let minX = minimum (fst . fst <$> cs)
+    let maxX = maximum (fst . fst <$> cs)
+    let minY = minimum (snd . fst <$> cs)
+    let maxY = maximum (snd . fst <$> cs)
+    vs <- STV.replicateM (maxY - minY + 1) $ STV.new (maxX - minX + 1)
+    return $ STVectorGrid vs
+  unGridM (STVectorGrid g) = do
+    maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
+    let maxY = STV.length g - 1
+    sequence
+      [ ((x, y),) <$> ((g `STV.read` y) >>= (`STV.read` x))
+        | (x, y) <- [(x, y) | y <- [0 .. maxY], x <- [0 .. maxX]]
+      ]
+  gridGetMaybeM c@(x, y) (STVectorGrid g) = do
+    maxX <- STV.length <$> STV.read g 0
+    let maxY = STV.length g
+    if x > maxX || y > maxY || x < 0 || y < 0 then return Nothing else Just <$> gridGetM c (STVectorGrid g)
+  gridGetM (x, y) (STVectorGrid g) = (g `STV.read` y) >>= (`STV.read` x)
+  gridSetM a (x, y) grid@(STVectorGrid g) = do
+    row <- g `STV.read` y
+    STV.write row x a
+    return grid
+  gridModifyM f (x, y) grid@(STVectorGrid g) = do
+    row <- g `STV.read` y
+    STV.modify row f x
+    return grid
+
+  maxXYM (STVectorGrid g) = do
+    maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
+    let maxY = STV.length g - 1
+    return (maxX, maxY)
+  minXYM (STVectorGrid g) = return (0, 0)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
