@@ -23,6 +23,7 @@ common common-settings
                         LambdaCase,
                         MultiWayIf,
                         MonadComprehensions,
+                        UnicodeSyntax,
                         BlockArguments,
                         ImportQualifiedPost,
                         EmptyCase,
