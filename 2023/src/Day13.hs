@@ -3,19 +3,21 @@ module Day13 (part1, part2) where
 reflects :: STUArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))
 reflects g' = do
   v <- r270 <$> variantsM g'
-  co . catMaybes . concat
+  co . concat
     <$> forM
       [(Left, g'), (Right, v)]
       ( \(f, g) -> do
           (maxX, maxY) <- maxXYM g
-          anyM
-            ( \i -> do
-                let w = min i (maxX - i + 1)
-                l <- sequence [g <||!> (x, y) | x <- [i - w .. i - 1], y <- [0 .. maxY]]
-                r <- sequence [g <||!> (x, y) | x <- reverse [i .. i + w - 1], y <- [0 .. maxY]]
-                return if l == r then Just (f i) else Nothing
-            )
-            [1 .. maxX]
+          ixs <-
+            filterM
+              ( \i -> do
+                  let w = min i (maxX - i + 1)
+                  l <- sequence [g <||!> (x, y) | x <- [i - w .. i - 1], y <- [0 .. maxY]]
+                  r <- sequence [g <||!> (x, y) | x <- reverse [i .. i + w - 1], y <- [0 .. maxY]]
+                  return $ l == r
+              )
+              [1 .. maxX]
+          return $ f <$> ixs
       )
 
 reflectsSmudged :: STUArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))
