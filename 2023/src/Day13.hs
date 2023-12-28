@@ -12,14 +12,7 @@ reflects g = do
 reflectsSmudged :: STArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))
 reflectsSmudged g = do
   let toggle c g = g <||~> (c, bool '.' '#' . (== '.'))
-  rs' <-
-    traverse
-      ( \c -> do
-          g' <- toggle c g
-          r <- reflects g'
-          toggle c g $> r
-      )
-      =<< coordsM g
+  rs' <- traverse (\c -> (toggle c g >>= reflects) <* toggle c g) =<< coordsM g
   (setFilter <$> ((∌) <$> reflects g)) <*> pure (λ ⋃ rs')
 
 solve :: (STArrayGrid s Char -> ST s (Set (Either ℤ' ℤ'))) -> ST s [STArrayGrid s Char] -> ST s ℤ'
