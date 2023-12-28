@@ -53,7 +53,7 @@ enclosed g path outside =
       goAll seen es (start : starts)
         | start ∈ seen = goAll seen es starts
         | otherwise =
-            let (seen', es') = go (∅) ([start]⊐)
+            let (seen', es') = go (∅) ([start] ⊐)
              in goAll (seen ∪ seen') (es ∪ es') starts
    in goAll (∅) (∅) [c | c <- coords g, c ∉ path]
 

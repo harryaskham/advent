@@ -193,7 +193,7 @@ instance (GridCell a) => Griddable Identity VectorGrid' Coord2 a where
 
 newtype ArrayGrid' k a = ArrayGrid (IOArray k a) deriving (Eq)
 
-type ArrayGrid a = ArrayGrid' Coord2
+type ArrayGrid a = ArrayGrid' Coord2 a
 
 instance (GridCell a) => Griddable IO ArrayGrid' Coord2 a where
   mkGridM cs =
@@ -244,6 +244,33 @@ instance (GridCell a, MArray (STA.STUArray s) a (ST s)) => Griddable (ST s) (STU
       return g
   maxXYM (STUArrayGrid g) = snd <$> getBounds g
   minXYM (STUArrayGrid g) = fst <$> getBounds g
+
+newtype STArrayGrid' s k a = STArrayGrid (STA.STArray s k a) deriving (Eq)
+
+type STArrayGrid s a = STArrayGrid' s Coord2 a
+
+instance (GridCell a, MArray (STA.STArray s) a (ST s)) => Griddable (ST s) (STArrayGrid' s) Coord2 a where
+  mkGridM cs =
+    STArrayGrid <$> do
+      a <- newArray_ (minimum (fst <$> cs), maximum (fst <$> cs))
+      forM_ cs (uncurry $ writeArray a)
+      return a
+  unGridM (STArrayGrid g) = getAssocs g
+  gridGetMaybeM c@(x, y) (STArrayGrid g) = do
+    ((ax, ay), (bx, by)) <- getBounds g
+    if x < ax || y < ay || x > bx || y > by then return Nothing else Just <$> gridGetM c (STArrayGrid g)
+  gridGetM c (STArrayGrid g) = readArray g c
+  gridSetM a c (STArrayGrid g) =
+    STArrayGrid <$> do
+      writeArray g c a
+      return g
+  gridModifyM f c (STArrayGrid g) =
+    STArrayGrid <$> do
+      a <- readArray g c
+      writeArray g c (f a)
+      return g
+  maxXYM (STArrayGrid g) = snd <$> getBounds g
+  minXYM (STArrayGrid g) = fst <$> getBounds g
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
