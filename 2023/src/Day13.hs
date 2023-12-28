@@ -6,16 +6,21 @@ reflects g' = do
   co . catMaybes . concat <$> forM
     [(Left, g'), (Right, v)]
     ( \(f, g) -> do
-        maxX <- fst <$> maxXYM g
+        (maxX, maxY) <- maxXYM g
         forM
           [1 .. maxX]
           ( \i -> do
               let w = min i (maxX - i + 1)
-              (l, r) <- partitionCoordsM (< (i, 0)) g
-              (l', r') <- bimapM (cropXM (i - w) i) (mapCoordsM (first (subtract i)) >=> cropXM 0 w ) (l, r)
-              (l'', r'') <- sortT2OnM (fmap length . coordsM) (l', r')
-              rV <- v0 <$> variantsM r''
-              return $ if l'' == rV then Just (f i) else Nothing
+                  rc (x, y) = (i + w - x, y)
+                  xs f = sequence [g <||!> f (x, y) | x <- [0 .. w - 1], y <- [0 .. maxY]]
+              l <- xs id
+              r <- xs rc
+              return if l == r then Just (f i) else Nothing
+              -- (l, r) <- partitionCoordsM (< (i, 0)) g
+              -- (l', r') <- bimapM (cropXM (i - w) i) (mapCoordsM (first (subtract i)) >=> cropXM 0 w ) (l, r)
+              -- (l'', r'') <- sortT2OnM (fmap length . coordsM) (l', r')
+              -- rV <- v0 <$> variantsM r''
+              -- return $ if l'' == rV then Just (f i) else Nothing
           )
     )
 
