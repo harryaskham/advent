@@ -12,9 +12,8 @@ reflects g' = do
           ( \i -> do
               let w = min i (maxX - i + 1)
                   rc (x, y) = (i + w - x, y)
-                  xs f = sequence [g <||!> f (x, y) | x <- [0 .. w - 1], y <- [0 .. maxY]]
-              l <- xs id
-              r <- xs rc
+              l <- sequence [g <||!> (x, y) | x <- [0 .. w - 1], y <- [0 .. maxY]]
+              r <- sequence [g <||!> (x, y) | x <- reverse [w .. w +i- 1], y <- [0 .. maxY]]
               return if l == r then Just (f i) else Nothing
               -- (l, r) <- partitionCoordsM (< (i, 0)) g
               -- (l', r') <- bimapM (cropXM (i - w) i) (mapCoordsM (first (subtract i)) >=> cropXM 0 w ) (l, r)
