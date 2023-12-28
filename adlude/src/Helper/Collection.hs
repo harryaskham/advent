@@ -5,6 +5,8 @@ module Helper.Collection where
 import Control.Lens (element, (.~))
 import Data.Array qualified as A
 import Data.Bimap qualified as BM
+import Data.ByteString.Lazy as BL (ByteString)
+import Data.ByteString.Lazy.Char8 as CL8 (pack, unpack)
 import Data.Char qualified as C
 import Data.Foldable qualified as F
 import Data.IntMap.Strict qualified as IM
@@ -18,8 +20,6 @@ import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import Relude.Unsafe qualified as U
-import Data.ByteString.Lazy.Char8 as CL8 (pack, unpack)
-import Data.ByteString.Lazy as BL (ByteString)
 
 class Packable a b where
   pack :: a -> b
@@ -257,7 +257,7 @@ instance (A.Ix i) => Memberable i (A.Array i e) where
 (⁻) :: UnaryPrefixOp a -> a
 (⁻) f = f ()
 
-type UnaryPrefixOp f = (∀ u. u -> f)
+type UnaryPrefixOp f = (forall u. u -> f)
 
 (∑) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
 (∑) = const $ F.foldl' (+) 0
@@ -267,7 +267,7 @@ type UnaryPrefixOp f = (∀ u. u -> f)
 
 class Unionable a where
   (∪) :: a -> a -> a
-  (⋃) :: Foldable f => UnaryPrefixOp (f a -> a)
+  (⋃) :: (Foldable f) => UnaryPrefixOp (f a -> a)
   (⋃) = const $ F.foldl1 (∪)
 
 instance (Ord a) => Unionable (Set a) where
@@ -284,7 +284,7 @@ instance Unionable (V.Vector a) where
 
 class Intersectable a where
   (∩) :: a -> a -> a
-  (⋂) :: Foldable f => UnaryPrefixOp (f a -> a)
+  (⋂) :: (Foldable f) => UnaryPrefixOp (f a -> a)
   (⋂) = const $ F.foldl1 (∩)
 
 instance (Ord a) => Intersectable (Set a) where
@@ -356,7 +356,7 @@ instance (A.Ix i) => Modifiable A.Array i e where
     | i ∈ a = a A.// [(i, f (a |! i))]
     | otherwise = a
 
-(∅) :: Monoid a => a
+(∅) :: (Monoid a) => a
 (∅) = mempty
 
 class ConvMonoidLeft f g where
