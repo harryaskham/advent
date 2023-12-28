@@ -8,6 +8,7 @@ common common-settings
     build-depends:      base,
                         relude,
                         pqueue,
+                        bytestring,
                         parsec,
                         megaparsec,
                         replace-megaparsec,

@@ -18,6 +18,8 @@ import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import Relude.Unsafe qualified as U
+import Data.ByteString.Lazy.Char8 as CL8 (pack, unpack)
+import Data.ByteString.Lazy as BL (ByteString)
 
 class Packable a b where
   pack :: a -> b
@@ -26,6 +28,10 @@ class Packable a b where
 instance Packable String T.Text where
   pack = T.pack
   unpack = T.unpack
+
+instance Packable String BL.ByteString where
+  pack = CL8.pack
+  unpack = CL8.unpack
 
 class MkWithable f where
   mkWith :: (Ord k, Unable t) => (v -> v -> v) -> t (k, v) -> f k v
@@ -248,10 +254,10 @@ instance (A.Ix i) => Memberable i (A.Array i e) where
 type UnaryPrefixOp f = (∀ u. u -> f)
 
 (∑) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
-_ ∑ xs = F.foldl' (+) 0 xs
+(∑) = const $ F.foldl' (+) 0
 
 (∏) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
-_ ∏ xs = F.foldl' (*) 1 xs
+(∏) = const $ F.foldl' (*) 1
 
 class Unionable a where
   (∪) :: a -> a -> a

@@ -169,6 +169,12 @@ sortT2On f (a, b)
   | f a <= f b = (a, b)
   | otherwise = (b, a)
 
+sortT2OnM :: (Ord b, Monad m) => (a -> m b) -> (a, a) -> m (a, a)
+sortT2OnM f (a, b) = do
+  fa <- f a
+  fb <- f b
+  return if fa <= fb then (a, b) else (b, a)
+
 toList3 :: (a, a, a) -> [a]
 toList3 (a, b, c) = [a, b, c]
 
