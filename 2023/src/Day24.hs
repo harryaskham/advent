@@ -68,10 +68,10 @@ part2 = z3 do
           traverse (mkRealNum . fromRational) (uncurry (<>) (both toList3 stone))
         sequence
           [ do
-              a <- mkAdd =<< ((p :) . pure) <$> mkMul [t, v]
-              b <- mkAdd =<< ((p' :) . pure) <$> mkMul [t, v']
+              a <- mkAdd . (p :) . pure =<< mkMul [t, v]
+              b <- mkAdd . (p' :) . pure =<< mkMul [t, v']
               assert =<< mkEq a b
             | (p, v, p', v') <- [(x, vx, x', vx'), (y, vy, y', vy'), (z, vz, z', vz')]
           ]
     )
-  round . sum . concat . fmap catMaybes . snd <$> withModel (evalReal >>> forM [x, y, z])
+  round . sum . concatMap catMaybes . snd <$> withModel (evalReal >>> forM [x, y, z])
