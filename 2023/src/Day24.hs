@@ -60,18 +60,18 @@ part1 =
 part2 :: ℤ
 part2 = z3 do
   [x, y, z, vx, vy, vz] <- traverse mkFreshRealVar ["x", "y", "z", "vx", "vy", "vz"]
-  let toConst ((x, y, z), (vx, vy, vz)) = traverse (mkRealNum . fromRational) [x, y, z, vx, vy, vz]
   forM_
     (zip [0 ..] stones)
     ( \(i, stone) -> do
         t <- mkFreshRealVar ("t" <> show i)
-        [x', y', z', vx', vy', vz'] <- toConst stone
+        [x', y', z', vx', vy', vz'] <-
+          traverse (mkRealNum . fromRational) (uncurry (<>) (both toList3 stone))
         sequence
           [ do
-              a <- mkAdd =<< ((p :) . pure) <$> mkMul [t, v]
-              b <- mkAdd =<< ((p' :) . pure) <$> mkMul [t, v']
+              a <- mkAdd . (p :) . pure =<< mkMul [t, v]
+              b <- mkAdd . (p' :) . pure =<< mkMul [t, v']
               assert =<< mkEq a b
             | (p, v, p', v') <- [(x, vx, x', vx'), (y, vy, y', vy'), (z, vz, z', vz')]
           ]
     )
-  round . unjust . snd <$> withModel (\m -> sum . catMaybes <$> mapM (evalReal m) [x, y, z])
+  round . sum . concatMap catMaybes . snd <$> withModel (evalReal >>> forM [x, y, z])

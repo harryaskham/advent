@@ -6,7 +6,7 @@ step d g =
    in foldl' f g (iterCoords (opposite d) g)
 
 load :: VectorGrid Char -> ℤ'
-load g = sum ((1 + (snd (maxXY g)) -) . snd <$> gridFind 'O' g)
+load g = sum ((1 + snd (maxXY g) -) . snd <$> gridFind 'O' g)
 
 part1 :: ℤ'
 part1 = load $ iterateFix (step DirUp) $(grid input 14)
