@@ -11,6 +11,7 @@ import Data.Array.ST qualified as STA
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as BM
 import Data.Fin (Fin)
+import Data.IntMap.Strict qualified as IM
 import Data.List (groupBy)
 import Data.List.Extra (groupOn)
 import Data.Map.Strict qualified as M
@@ -20,7 +21,7 @@ import Data.Vector.Mutable qualified as STV
 import Helper.Collection
 import Helper.Coord
 import Helper.Tracers
-import Helper.Util (Nat10, both, (<$$>))
+import Helper.Util (Nat10, both, bothM, unjust, (<$$>))
 import Relude.Unsafe qualified as U
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -166,6 +167,35 @@ instance (GridCell a) => Griddable Identity Grid' Coord2 a where
   partitionCoordsM f (Grid g) = pure . both Grid $ M.partitionWithKey (\k _ -> f k) g
   gridMemberM c (Grid g) = pure $ M.member c g
 
+newtype IntMapGrid' k a = IntMapGrid (IntMap (IntMap a)) deriving (Eq, Ord, Show)
+
+type IntMapGrid = IntMapGrid' Coord2
+
+instance (GridCell a) => Griddable Identity IntMapGrid' Coord2 a where
+  mkGridM =
+    pure
+      . IntMapGrid
+      . IM.fromList
+      . fmap (\g -> (snd . fst $ uhead g, IM.fromList [(x, c) | ((x, _), c) <- g]))
+      . groupOn (snd . fst)
+      . sortOn (snd . fst)
+  unGridM (IntMapGrid g) = pure $ [((x, y), c) | (y, row) <- IM.toList g, (x, c) <- IM.toList row]
+  gridGetMaybeM (x, y) (IntMapGrid g) = pure $ IM.lookup x =<< IM.lookup y g
+  gridGetM (x, y) g = unjust <$> gridGetMaybeM (x, y) g
+  gridSetM a (x, y) (IntMapGrid g) = pure . IntMapGrid $ IM.adjust (IM.insert x a) y g
+  gridModifyM f (x, y) (IntMapGrid g) = pure . IntMapGrid $ IM.adjust (IM.adjust f x) y g
+  maxXYM (IntMapGrid g) = pure (maximum (IM.keys =<< IM.elems g), maximum $ IM.keys g)
+  minXYM (IntMapGrid g) = pure (minimum (IM.keys =<< IM.elems g), minimum $ IM.keys g)
+  mapCoordsM f (IntMapGrid g) = mkGridM $ [(f (x, y), c) | (y, row) <- IM.toList g, (x, c) <- IM.toList row]
+  filterCoordsM f (IntMapGrid g) = mkGridM $ [((x, y), c) | (y, row) <- IM.toList g, (x, c) <- IM.toList row, f (x, y)]
+  partitionCoordsM f g'@(IntMapGrid g) = do
+    cs <- unGridM g'
+    g'' <- mkGridM cs :: (Identity (Grid a))
+    (l, r) <- partitionCoordsM f g''
+    (l', r') <- bothM unGridM (l, r)
+    bothM mkGridM (l', r')
+  gridMemberM (x, y) g = isJust <$> gridGetMaybeM (x, y) g
+
 newtype VectorGrid' k a = VectorGrid (V.Vector (V.Vector a)) deriving (Eq, Ord, Show)
 
 type VectorGrid = VectorGrid' Coord2
@@ -280,10 +310,10 @@ type STVectorGrid s a = STVectorGrid' s Coord2 a
 -- TODO: support negative / sparse coords
 instance (GridCell a) => Griddable (ST s) (STVectorGrid' s) Coord2 a where
   mkGridM cs = do
-    let minX = minimum (fst . fst <$> cs)
-    let maxX = maximum (fst . fst <$> cs)
-    let minY = minimum (snd . fst <$> cs)
-    let maxY = maximum (snd . fst <$> cs)
+    let xs = fst . fst <$> cs
+    let ys = snd . fst <$> cs
+    let (minX, maxX) = (minimum xs, maximum xs)
+    let (minY, maxY) = (minimum ys, maximum ys)
     vs <- STV.replicateM (maxY - minY + 1) $ STV.new (maxX - minX + 1)
     let g = STVectorGrid vs
     forM_ cs (\(c, a) -> gridSetM a c g)
@@ -314,6 +344,48 @@ instance (GridCell a) => Griddable (ST s) (STVectorGrid' s) Coord2 a where
     let maxY = STV.length g - 1
     return (maxX, maxY)
   minXYM (STVectorGrid g) = return (0, 0)
+
+newtype IOVectorGrid' k a = IOVectorGrid (STV.IOVector (STV.IOVector a))
+
+type IOVectorGrid a = IOVectorGrid' Coord2 a
+
+-- TODO: support negative / sparse coords
+instance (GridCell a) => Griddable IO IOVectorGrid' Coord2 a where
+  mkGridM cs = do
+    let xs = fst . fst <$> cs
+    let ys = snd . fst <$> cs
+    let (minX, maxX) = (minimum xs, maximum xs)
+    let (minY, maxY) = (minimum ys, maximum ys)
+    vs <- STV.replicateM (maxY - minY + 1) $ STV.new (maxX - minX + 1)
+    let g = IOVectorGrid vs
+    forM_ cs (\(c, a) -> gridSetM a c g)
+    return g
+  unGridM (IOVectorGrid g) = do
+    maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
+    let maxY = STV.length g - 1
+    sequence
+      [ ((x, y),) <$> ((g `STV.read` y) >>= (`STV.read` x))
+        | (x, y) <- [(x, y) | y <- [0 .. maxY], x <- [0 .. maxX]]
+      ]
+  gridGetMaybeM c@(x, y) (IOVectorGrid g) = do
+    maxX <- STV.length <$> STV.read g 0
+    let maxY = STV.length g
+    if x > maxX || y > maxY || x < 0 || y < 0 then return Nothing else Just <$> gridGetM c (IOVectorGrid g)
+  gridGetM (x, y) (IOVectorGrid g) = (g `STV.read` y) >>= (`STV.read` x)
+  gridSetM a (x, y) grid@(IOVectorGrid g) = do
+    row <- g `STV.read` y
+    STV.write row x a
+    return grid
+  gridModifyM f (x, y) grid@(IOVectorGrid g) = do
+    row <- g `STV.read` y
+    STV.modify row f x
+    return grid
+
+  maxXYM (IOVectorGrid g) = do
+    maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
+    let maxY = STV.length g - 1
+    return (maxX, maxY)
+  minXYM (IOVectorGrid g) = return (0, 0)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic
