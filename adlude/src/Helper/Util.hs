@@ -3,10 +3,10 @@
 
 module Helper.Util where
 
-import Data.Bitraversable
 import Control.Arrow (Arrow ((***)))
 import Control.Lens ((^.))
 import Control.Monad (filterM)
+import Data.Bitraversable
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as M
 import Data.Monoid (Sum (Sum, getSum))
@@ -174,6 +174,9 @@ sortT2OnM f (a, b) = do
   fa <- f a
   fb <- f b
   return if fa <= fb then (a, b) else (b, a)
+
+toList2 :: (a, a) -> [a]
+toList2 (a, b) = [a, b]
 
 toList3 :: (a, a, a) -> [a]
 toList3 (a, b, c) = [a, b, c]
