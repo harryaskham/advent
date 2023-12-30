@@ -31,7 +31,7 @@ onePass n g st = go st (mkSeq [("button", "broadcaster", False)])
           inputs' = inputs |. (origin, incomingSignal)
           signal' = case fullName of
             "broadcaster" -> Just False
-            ('%' : _) -> if incomingSignal then Nothing else Just (not signal)
+            ('%' : _) -> if incomingSignal then Nothing else Just (λ ¬ signal)
             ('&' : _) -> if all snd (unMap inputs') then Just False else Just True
           s' = s |~ (fullName, first (const inputs'))
           st' =

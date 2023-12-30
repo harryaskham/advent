@@ -250,6 +250,9 @@ instance (Ord a) => Memberable a (Map a b) where
 instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
 
+-- Shim for enabling unary prefix ops that take () as a first argument.
+type UnaryPrefixOp f = (forall u. u -> f)
+
 -- fillers for prefix ops
 λ :: ()
 λ = ()
@@ -260,8 +263,6 @@ instance (A.Ix i) => Memberable i (A.Array i e) where
 
 (¬) :: UnaryPrefixOp (Bool -> Bool)
 (¬) = const not
-
-type UnaryPrefixOp f = (forall u. u -> f)
 
 (∑) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
 (∑) = const $ F.foldl' (+) 0
