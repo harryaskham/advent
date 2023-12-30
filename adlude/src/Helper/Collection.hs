@@ -250,12 +250,16 @@ instance (Ord a) => Memberable a (Map a b) where
 instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
 
--- filler for prefix ops
+-- fillers for prefix ops
 λ :: ()
 λ = ()
 
+-- post-apply a prefix op
 (⁻) :: UnaryPrefixOp a -> a
 (⁻) f = f ()
+
+(¬) :: UnaryPrefixOp (Bool -> Bool)
+(¬) = const not
 
 type UnaryPrefixOp f = (forall u. u -> f)
 
@@ -358,6 +362,9 @@ instance (A.Ix i) => Modifiable A.Array i e where
 
 (∅) :: (Monoid a) => a
 (∅) = mempty
+
+ø :: (Monoid a) => a
+ø = (∅)
 
 class ConvMonoidLeft f g where
   (<⊕) :: f a -> g a -> f a

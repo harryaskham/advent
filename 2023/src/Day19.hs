@@ -36,7 +36,7 @@ totalAccepted fs =
           [ (target (ulast path), [(f, reverse path)])
             | (f, conditionals) <- unMap fs,
               path <- inits conditionals,
-              not (null path),
+              λ ¬ null path,
               all isLeft (uinit path)
           ]
       invert (Left (c, '<', n, next)) = Left (c, '>', n - 1, next)

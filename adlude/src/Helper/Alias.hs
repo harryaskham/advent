@@ -2,6 +2,9 @@ module Helper.Alias where
 
 import Data.Complex (Complex)
 
+(⊥) :: a
+(⊥) = error "Reached ⊥"
+
 type ℤ' = Int
 
 type ℤ = Integer
