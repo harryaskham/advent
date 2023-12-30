@@ -38,14 +38,14 @@ pathOutside g =
               [] -> (path, outside)
               (n : m : _) -> if reverse then go' m else go' n
               (n : _) -> go' n
-   in both (go [start] (∅) Nothing) (False, True)
+   in both (go [start] ø Nothing) (False, True)
 
 enclosed :: Grid Cell -> Set Coord2 -> Set Coord2 -> Set Coord2
 enclosed g path outside =
   let go seen Empty = (seen, seen)
       go seen (c :<| cs)
         | c ∈ (seen <> path) = go seen cs
-        | c ∈ outside = (seen, (∅))
+        | c ∈ outside = (seen, ø)
         | otherwise =
             let ns = [n | n <- neighborsNoDiags c, n ∉ path, n ∈ g]
              in go (c |-> seen) (cs >< mkSeq ns)
@@ -53,9 +53,9 @@ enclosed g path outside =
       goAll seen es (start : starts)
         | start ∈ seen = goAll seen es starts
         | otherwise =
-            let (seen', es') = go (∅) ([start] ⊐)
+            let (seen', es') = go ø ([start] ⊐)
              in goAll (seen ∪ seen') (es ∪ es') starts
-   in goAll (∅) (∅) [c | c <- coords g, c ∉ path]
+   in goAll ø ø [c | c <- coords g, c ∉ path]
 
 part1 :: ℤ'
 part1 = $(grid input 10) & (pathOutside >>> fst . fst >>> length >>> (+ 1) >>> (`div` 2))
@@ -65,6 +65,6 @@ part2 =
   $(grid input 10)
     & ((enclosed >>> uncurry) &&& (pathOutside >>> both (first co)))
     & uncurry both
-    & both (bool id (const (∅)) . (((0, 0) :: Coord2) ∈) &&& id >>> uncurry ($))
+    & both (bool id (const ø) . (((0, 0) :: Coord2) ∈) &&& id >>> uncurry ($))
     & uncurry (∪)
     & size

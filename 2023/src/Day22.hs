@@ -61,7 +61,7 @@ disintegrateAll bricks =
         [ subtract 1 . size . fst $
             iterateFix
               ( \(fallen, bricks) ->
-                  let fallen' = setFilter (\brick -> (λ ¬ onFloor brick) && brickRestingOn |! brick ∖ fallen == (∅)) bricks
+                  let fallen' = setFilter (\brick -> (λ ¬ onFloor brick) && brickRestingOn |! brick ∖ fallen == ø) bricks
                    in (fallen ∪ fallen', bricks ∖ fallen')
               )
               (co ([brick], bricks))

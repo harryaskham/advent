@@ -1,7 +1,7 @@
 module Day25 (part1, part2) where
 
 traverseWithout :: [(String, String)] -> Map String [String] -> ℤ'
-traverseWithout abc g = go (∅) (take 1 (keys g) ⊐)
+traverseWithout abc g = go ø (take 1 (keys g) ⊐)
   where
     go seen Empty = size seen
     go seen (a :<| q)

@@ -14,7 +14,7 @@ slopePaths ns stopping start end g =
                         g |? c' ∈ (Just <$> (".<>^v" :: String))
                     ]
              in go (q >< q') paths
-   in go (mkSeq [(start, (∅))]) []
+   in go (mkSeq [(start, ø)]) []
 
 forks :: Grid Char -> Set Coord2
 forks =
@@ -41,7 +41,7 @@ mkGraph g forks =
     ]
 
 allPaths :: Map Coord2 (Map Coord2 [Set Coord2]) -> Coord2 -> Coord2 -> ℤ'
-allPaths graph start end = fromMaybe (-1) $ go start (∅)
+allPaths graph start end = fromMaybe (-1) $ go start ø
   where
     go a seen
       | a == end = Just 0
