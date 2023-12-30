@@ -251,28 +251,47 @@ instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
 
 -- Shim for enabling unary prefix ops that take () as a first argument.
-type UnaryPrefixOp f = (forall u. u -> f)
+-- TODO: moveto Unary.hs, add typeclasses so that all important things are themselves unary
+-- TODO: can we create suite of ops that all work together?
+-- i.e. an and-op that polymorphically takes either full values or partial
+-- unary applications
+-- or maybe some lazy expression language with :-symb constructors and
+-- a single eval char
+type Unary f = () -> f
 
--- fillers for prefix ops
+-- filler for evaluating prefix ops
 λ :: ()
 λ = ()
 
--- post-apply a prefix op
-(⁻) :: UnaryPrefixOp a -> a
-(⁻) f = f ()
+class IsUnary u a where
+  unary :: u -> a
+  (⁻) :: u -> a
+  (⁻) = unary
 
-(¬) :: UnaryPrefixOp (Bool -> Bool)
-(¬) = const not
+instance IsUnary ((->) () a) a where
+  unary f = f ()
 
-(∑) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
+instance IsUnary a a where
+  unary = id
+
+(¬) :: IsUnary u Bool => Unary (u -> Bool)
+(¬) = const (not . unary)
+
+(∧) :: IsUnary u Bool => u -> u -> Bool
+a ∧ b = unary a && unary b
+
+(∨) :: IsUnary u Bool => u -> u -> Bool
+a ∨ b = unary a || unary b
+
+(∑) :: (Foldable f, Num a) => Unary (f a -> a)
 (∑) = const $ F.foldl' (+) 0
 
-(∏) :: (Foldable f, Num a) => UnaryPrefixOp (f a -> a)
+(∏) :: (Foldable f, Num a) => Unary (f a -> a)
 (∏) = const $ F.foldl' (*) 1
 
 class Unionable a where
   (∪) :: a -> a -> a
-  (⋃) :: (Foldable f) => UnaryPrefixOp (f a -> a)
+  (⋃) :: (Foldable f) => Unary (f a -> a)
   (⋃) = const $ F.foldl1 (∪)
 
 instance (Ord a) => Unionable (Set a) where
@@ -289,7 +308,7 @@ instance Unionable (V.Vector a) where
 
 class Intersectable a where
   (∩) :: a -> a -> a
-  (⋂) :: (Foldable f) => UnaryPrefixOp (f a -> a)
+  (⋂) :: (Foldable f) => Unary (f a -> a)
   (⋂) = const $ F.foldl1 (∩)
 
 instance (Ord a) => Intersectable (Set a) where
