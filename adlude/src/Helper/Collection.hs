@@ -274,14 +274,20 @@ instance IsUnary ((->) () a) a where
 instance IsUnary a a where
   unary = id
 
+mkUnary1 :: IsUnary u a => (a -> b) -> Unary (u -> b)
+mkUnary1 f _ = f . unary
+
+mkUnary2 :: (IsUnary u a, IsUnary v b) => (a -> b -> c) -> Unary (u -> v -> c)
+mkUnary2 f _ u v = f (unary u) (unary v)
+
 (¬) :: IsUnary u Bool => Unary (u -> Bool)
-(¬) = const (not . unary)
+(¬) = mkUnary1 not
 
-(∧) :: IsUnary u Bool => u -> u -> Bool
-a ∧ b = unary a && unary b
+(∧) :: IsUnary u Bool => Unary (u -> u -> Bool)
+(∧) = mkUnary2 (&&)
 
-(∨) :: IsUnary u Bool => u -> u -> Bool
-a ∨ b = unary a || unary b
+(∨) :: IsUnary u Bool => Unary (u -> u -> Bool)
+(∨) = mkUnary2 (||)
 
 (∑) :: (Foldable f, Num a) => Unary (f a -> a)
 (∑) = const $ F.foldl' (+) 0
