@@ -283,11 +283,21 @@ mkUnary2 f _ u v = f (unary u) (unary v)
 (¬) :: IsUnary u Bool => Unary (u -> Bool)
 (¬) = mkUnary1 not
 
+infixr 3 ∧
+
 (∧) :: IsUnary u Bool => Unary (u -> u -> Bool)
 (∧) = mkUnary2 (&&)
 
+infixr 2 ∨
+
 (∨) :: IsUnary u Bool => Unary (u -> u -> Bool)
 (∨) = mkUnary2 (||)
+
+(⋀) :: Foldable t => Unary (t Bool -> Bool)
+_ ⋀ bs = and bs
+
+(⋁) :: Foldable t => Unary (t Bool -> Bool)
+_ ⋁ bs = or bs
 
 (∑) :: (Foldable f, Num a) => Unary (f a -> a)
 (∑) = const $ F.foldl' (+) 0
