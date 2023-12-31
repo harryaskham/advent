@@ -263,16 +263,21 @@ type Unary f = () -> f
 λ :: ()
 λ = ()
 
+abc = flip 
+
 class IsUnary u a where
   unary :: u -> a
   (⁻) :: u -> a
   (⁻) = unary
 
-instance IsUnary ((->) () a) a where
+instance IsUnary (Unary a) a where
   unary f = f ()
 
-instance IsUnary a a where
+instance {-# INCOHERENT #-} IsUnary a a where
   unary = id
+
+instance {-# OVERLAPPABLE #-} (u ~ Unary a, IsUnary u a, Eq a) => Eq u where
+  a == b = (unary a :: a) == (unary b :: a)
 
 mkUnary1 :: IsUnary u a => (a -> b) -> Unary (u -> b)
 mkUnary1 f _ = f . unary
