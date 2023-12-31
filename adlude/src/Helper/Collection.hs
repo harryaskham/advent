@@ -263,7 +263,10 @@ type Unary f = () -> f
 λ :: ()
 λ = ()
 
-abc = flip 
+-- lift a regular value to a unary context
+-- TODO: rename to a glyph
+abc :: a -> Unary a
+abc a () = a
 
 class IsUnary u a where
   unary :: u -> a
