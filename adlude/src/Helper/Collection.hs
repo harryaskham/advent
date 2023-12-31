@@ -264,9 +264,8 @@ type Unary f = () -> f
 λ = ()
 
 -- lift a regular value to a unary context
--- TODO: rename to a glyph
-abc :: a -> Unary a
-abc a () = a
+ꟶ :: a -> Unary a
+ꟶ a () = a
 
 class IsUnary u a where
   unary :: u -> a
