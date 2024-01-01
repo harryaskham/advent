@@ -22,6 +22,7 @@ import Helper.Coord as X
 import Helper.Grid as X
 import Helper.TH as X
 import Helper.Tracers as X
+import Helper.Unary as X
 import Helper.Util as X hiding (count)
 import Relude as X hiding (many, optional, (<|>))
 import System.IO.Unsafe as X

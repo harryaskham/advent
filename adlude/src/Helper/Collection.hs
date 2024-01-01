@@ -19,6 +19,7 @@ import Data.Sequence qualified as SQ
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Vector qualified as V
+import Helper.Unary
 import Relude.Unsafe qualified as U
 
 class Packable a b where
@@ -249,68 +250,6 @@ instance (Ord a) => Memberable a (Map a b) where
 
 instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
-
--- Shim for enabling unary prefix ops that take () as a first argument.
--- TODO: moveto Unary.hs, add typeclasses so that all important things are themselves unary
--- TODO: can we create suite of ops that all work together?
--- i.e. an and-op that polymorphically takes either full values or partial
--- unary applications
--- or maybe some lazy expression language with :-symb constructors and
--- a single eval char
-type Unary f = () -> f
-
--- filler for evaluating prefix ops
-λ :: ()
-λ = ()
-
--- lift a regular value to a unary context
-ꟶ :: a -> Unary a
-ꟶ a () = a
-
-class IsUnary u a where
-  unary :: u -> a
-  (⁻) :: u -> a
-  (⁻) = unary
-
-instance IsUnary (Unary a) a where
-  unary f = f ()
-
-instance {-# INCOHERENT #-} IsUnary a a where
-  unary = id
-
-instance {-# OVERLAPPABLE #-} (u ~ Unary a, IsUnary u a, Eq a) => Eq u where
-  a == b = (unary a :: a) == (unary b :: a)
-
-mkUnary1 :: IsUnary u a => (a -> b) -> Unary (u -> b)
-mkUnary1 f _ = f . unary
-
-mkUnary2 :: (IsUnary u a, IsUnary v b) => (a -> b -> c) -> Unary (u -> v -> c)
-mkUnary2 f _ u v = f (unary u) (unary v)
-
-(¬) :: IsUnary u Bool => Unary (u -> Bool)
-(¬) = mkUnary1 not
-
-infixr 3 ∧
-
-(∧) :: IsUnary u Bool => Unary (u -> u -> Bool)
-(∧) = mkUnary2 (&&)
-
-infixr 2 ∨
-
-(∨) :: IsUnary u Bool => Unary (u -> u -> Bool)
-(∨) = mkUnary2 (||)
-
-(⋀) :: Foldable t => Unary (t Bool -> Bool)
-_ ⋀ bs = and bs
-
-(⋁) :: Foldable t => Unary (t Bool -> Bool)
-_ ⋁ bs = or bs
-
-(∑) :: (Foldable f, Num a) => Unary (f a -> a)
-(∑) = const $ F.foldl' (+) 0
-
-(∏) :: (Foldable f, Num a) => Unary (f a -> a)
-(∏) = const $ F.foldl' (*) 1
 
 class Unionable a where
   (∪) :: a -> a -> a
