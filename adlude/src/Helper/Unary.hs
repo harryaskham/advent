@@ -5,16 +5,18 @@ module Helper.Unary where
 
 import Data.Foldable qualified as F
 
--- Type for enabling unary prefix ops that take () as a first argument.
-type Unary f = () -> f
+data UnaryFiller = UnaryFiller
 
 -- Filler for evaluating prefix ops
-λ :: ()
-λ = ()
+λ :: UnaryFiller
+λ = UnaryFiller
+
+-- Type for enabling unary prefix ops that take () as a first argument.
+type Unary f = UnaryFiller -> f
 
 -- Lift a regular value to a unary context
 ꟶ :: a -> Unary a
-ꟶ a () = a
+ꟶ a UnaryFiller = a
 
 -- Partially applied u which resolves to a
 class IsUnary u a where
@@ -23,7 +25,7 @@ class IsUnary u a where
   (⁻) = unary
 
 instance IsUnary (Unary a) a where
-  unary f = f ()
+  unary f = f UnaryFiller
 
 instance {-# INCOHERENT #-} IsUnary a a where
   unary = id
