@@ -53,6 +53,8 @@ mkUnary1 f _ u = f (unary u)
 mkUnary2 :: (IsUnary u a, IsUnary v b) => (a -> b -> c) -> u -> v -> Unary c
 mkUnary2 f u v _ = f (unary u) (unary v)
 
+infix 9 ¬
+
 (¬) :: IsUnary u Bool => Unary (u -> Bool)
 (¬) = mkUnary1 not
 
@@ -66,14 +68,22 @@ infixr 2 ∨
 (∨) :: IsUnary u Bool => u -> u -> Unary Bool
 (∨) = mkUnary2 (||)
 
+infix 9 ⋀
+
 (⋀) :: (Foldable t, Functor t, IsUnary u Bool) => Unary (t u -> Bool)
 (⋀) _ = and . fmap unary
+
+infix 9 ⋁
 
 (⋁) :: (Foldable t, Functor t, IsUnary u Bool) => Unary (t u -> Bool)
 (⋁) _ = or . fmap unary
 
+infix 9 ∑
+
 (∑) :: (Foldable t, Functor t, Num a, IsUnary u a) => Unary (t u -> a)
 (∑) _ = F.foldl' (+) 0 . fmap unary
+
+infix 9 ∏
 
 (∏) :: (Foldable t, Functor t, Num a, IsUnary u a) => Unary (t u -> a)
 (∏) _ = F.foldl' (*) 1 . fmap unary
@@ -84,14 +94,12 @@ testUnary =
       a = (∏ [2 .. 4 :: Int])
       b :: Bool
       b = a == ɾ 24
-      c :: Unary Int
-      c = (∑ [1 .. 10 :: Int])
-      d :: Bool
-      d = c > ɾ 100
+      c :: Bool
+      c = λ ∑ [1 .. 10 :: Int] > (100 :: Int)
+      d :: Unary Bool
+      d = (¬ c)
       e :: Unary Bool
-      e = (¬ d)
+      e = ɾ b ∨ d
       f :: Unary Bool
-      f = ɾ b ∨ e
-      g :: Unary Bool
-      g = (⋀ [ɾ b, e, f])
-   in ƛ g
+      f = (⋀ [ɾ b, d, e])
+   in ƛ f
