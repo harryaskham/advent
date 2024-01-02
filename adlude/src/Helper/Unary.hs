@@ -1,3 +1,4 @@
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# OPTIONS_GHC -Wno-missing-kind-signatures #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -6,12 +7,11 @@ module Helper.Unary where
 import Data.Foldable qualified as F
 
 -- Filler for evaluating prefix ops
--- Also lifts a value to a unary context
-λ :: a -> Unary a
-λ a _ = a
+λ :: ()
+λ = ()
 
--- Type for enabling unary prefix ops that take () as a first argument.
-type Unary f = forall a. (a -> Unary a) -> f
+-- Type for enabling unary prefix ops that take a placeholder as first argument.
+type Unary a = () -> a
 
 -- Partially applied u which resolves to a
 class IsUnary u a where
