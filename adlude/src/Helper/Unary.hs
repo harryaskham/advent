@@ -6,9 +6,8 @@ module Helper.Unary where
 
 import Data.Foldable qualified as F
 
--- Filler for evaluating prefix ops
-λ :: ()
-λ = ()
+ȣ :: ()
+ȣ = ()
 
 -- Type for enabling unary prefix ops that take a placeholder as first argument.
 type Unary a = () -> a
@@ -26,11 +25,15 @@ class IsUnary u a where
   (⁻) = unary
 
   -- Prefix forcing
-  ƛ :: u -> a
-  ƛ = unary
+  λ :: u -> a
+  λ = unary
+
+  -- Map forcing
+  ƛ :: Functor f => f u -> f a
+  ƛ = fmap unary
 
 instance IsUnary (Unary a) a where
-  unary f = f λ
+  unary f = f ()
 
 instance {-# INCOHERENT #-} IsUnary a a where
   unary = id
@@ -70,23 +73,23 @@ infixr 2 ∨
 
 infix 9 ⋀
 
-(⋀) :: (Foldable t, Functor t, IsUnary u Bool) => Unary (t u -> Bool)
+(⋀) :: (Foldable t, Functor t) => Unary (t Bool -> Bool)
 (⋀) _ = and . fmap unary
 
 infix 9 ⋁
 
-(⋁) :: (Foldable t, Functor t, IsUnary u Bool) => Unary (t u -> Bool)
-(⋁) _ = or . fmap unary
+(⋁) :: (Foldable t, Functor t) => Unary (t Bool -> Bool)
+(⋁) _ = or
 
 infix 9 ∑
 
-(∑) :: (Foldable t, Functor t, Num a, IsUnary u a) => Unary (t u -> a)
-(∑) _ = F.foldl' (+) 0 . fmap unary
+(∑) :: (Foldable t, Functor t, Num a) => Unary (t a -> a)
+(∑) _ = sum
 
 infix 9 ∏
 
-(∏) :: (Foldable t, Functor t, Num a, IsUnary u a) => Unary (t u -> a)
-(∏) _ = F.foldl' (*) 1 . fmap unary
+(∏) :: (Foldable t, Functor t, Num a) => Unary (t a -> a)
+(∏) _ = product
 
 testUnary :: Bool
 testUnary =
@@ -95,11 +98,11 @@ testUnary =
       b :: Bool
       b = a == ɾ 24
       c :: Bool
-      c = λ ∑ [1 .. 10 :: Int] > (100 :: Int)
+      c = λ ((∑ [1 .. 10 :: Int]) > ɾ 100)
       d :: Unary Bool
       d = (¬ c)
       e :: Unary Bool
       e = ɾ b ∨ d
       f :: Unary Bool
-      f = (⋀ [ɾ b, d, e])
-   in ƛ f
+      f = (⋀ ƛ [ɾ b, d, e])
+   in λ f

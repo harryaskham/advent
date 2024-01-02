@@ -13,10 +13,10 @@ reflectsSmudged :: IntMapGrid Char -> Identity (Set (Either ℤ' ℤ'))
 reflectsSmudged g = do
   let toggle c g = g <||~> (c, bool '.' '#' . (== '.'))
   rs' <- traverse (\c -> (toggle c g >>= reflects) <* toggle c g) =<< coordsM g
-  (setFilter <$> ((∌) <$> reflects g)) <*> pure (λ ⋃ rs')
+  (setFilter <$> ((∌) <$> reflects g)) <*> pure (λ (⋃ rs'))
 
 solve :: (IntMapGrid Char -> Identity (Set (Either ℤ' ℤ'))) -> Identity [IntMapGrid Char] -> Identity ℤ'
-solve f = fmap (uncurry (+) . second (* 100) . both (λ ∑) . partitionEithers . concatMap co) . (traverse f =<<)
+solve f = fmap (uncurry (+) . second (* 100) . both sum . partitionEithers . concatMap co) . (traverse f =<<)
 
 part1 :: ℤ'
 part1 = runIdentity $ solve reflects $(gridsM input 13)
