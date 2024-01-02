@@ -1,4 +1,3 @@
-{-# LANGUAGE ImpredicativeTypes #-}
 {-# OPTIONS_GHC -Wno-missing-kind-signatures #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -9,6 +8,10 @@ import Data.Foldable qualified as F
 -- Filler for evaluating prefix ops
 λ :: ()
 λ = ()
+
+-- Lift a value to a unary context.
+ɾ :: a -> Unary a
+ɾ = const
 
 -- Type for enabling unary prefix ops that take a placeholder as first argument.
 type Unary a = () -> a
@@ -27,6 +30,9 @@ instance {-# INCOHERENT #-} IsUnary a a where
 
 instance {-# OVERLAPPABLE #-} (u ~ Unary a, IsUnary u a, Eq a) => Eq u where
   a == b = (unary a :: a) == (unary b :: a)
+
+instance {-# OVERLAPPABLE #-} (u ~ Unary a, IsUnary u a, Ord a) => Ord u where
+  a <= b = (unary a :: a) <= (unary b :: a)
 
 mkUnary1 :: IsUnary u a => (a -> b) -> Unary (u -> b)
 mkUnary1 f _ = f . unary
