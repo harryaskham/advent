@@ -48,8 +48,7 @@ part2 =
           getNumbers g
             & fmap (\(n, cs) -> mkMap [(c, [n]) | c <- cs, let a = g ||? c, a == Just (Mark '*')])
       )
-    & foldl1' (unionWith (<>))
+    & foldl1 (unionWith (<>))
     & mapFilter ((== 2) . length)
     <&> ꛛ
-    & elems
-    & ⵉ
+    & (ⵉ . elems)

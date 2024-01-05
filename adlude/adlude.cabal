@@ -116,5 +116,6 @@ library
                         Helper.Coord
                         Helper.Tracers
                         Helper.Alias
+                        Helper.Braket
                         Helper.Unary
                         Helper.Util
