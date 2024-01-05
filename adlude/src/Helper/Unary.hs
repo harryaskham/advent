@@ -6,6 +6,25 @@ module Helper.Unary where
 
 import Data.Foldable qualified as F
 
+class UnaryApply a b c where
+  (˙) :: a -> b -> c
+
+-- data UnaryUnit = Δ | Γ | Σ | Π | Ω | Φ | Ψ | Ξ | Λ | Θ
+data UnarySum = Σ
+
+instance (Foldable f, Num a) => UnaryApply UnarySum (f a) a where
+  (˙) Σ = sum
+
+data UnaryProduct = Π
+
+instance (Foldable f, Num a) => UnaryApply UnaryProduct (f a) a where
+  (˙) Π = product
+
+data UnaryNot = Ⴈ
+
+instance UnaryApply UnaryNot Bool Bool where
+  (˙) Ⴈ = not
+
 ȣ :: ()
 ȣ = ()
 
@@ -29,7 +48,7 @@ class IsUnary u a where
   λ = unary
 
   -- Map forcing
-  ƛ :: Functor f => f u -> f a
+  ƛ :: (Functor f) => f u -> f a
   ƛ = fmap unary
 
 instance IsUnary (Unary a) a where
@@ -58,23 +77,23 @@ mkUnary2 f u v _ = f (unary u) (unary v)
 
 infix 9 ¬
 
-(¬) :: IsUnary u Bool => Unary (u -> Bool)
+(¬) :: (IsUnary u Bool) => Unary (u -> Bool)
 (¬) = mkUnary1 not
 
 infixr 3 ∧
 
-(∧) :: IsUnary u Bool => u -> u -> Unary Bool
+(∧) :: (IsUnary u Bool) => u -> u -> Unary Bool
 (∧) = mkUnary2 (&&)
 
 infixr 2 ∨
 
-(∨) :: IsUnary u Bool => u -> u -> Unary Bool
+(∨) :: (IsUnary u Bool) => u -> u -> Unary Bool
 (∨) = mkUnary2 (||)
 
 infix 9 ⋀
 
 (⋀) :: (Foldable t, Functor t) => Unary (t Bool -> Bool)
-(⋀) _ = and . fmap unary
+(⋀) _ = and
 
 infix 9 ⋁
 
