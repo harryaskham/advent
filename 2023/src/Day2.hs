@@ -30,7 +30,7 @@ power colors = go colors 0 0 0
     go ((Blue i) : cs) r g b = go cs r g (max i b)
 
 part1 :: ℤ'
-part1 = $(input 2) |- games & filter possibleGame & fmap index & sum
+part1 = $(input 2) ⊢ games & filter possibleGame & fmap index & sum
 
 part2 :: ℤ'
-part2 = $(input 2) |- games & fmap (power . mconcat . cubes) & sum
+part2 = $(input 2) ⊢ games & fmap (power . mconcat . cubes) & sum

@@ -20,7 +20,7 @@ part1 =
 part2 :: ℤ'
 part2 =
   $(input 4)
-    |- parser
+    ⊢ parser
     & ( \cards ->
           foldl'
             ( \m (i, as, bs) ->

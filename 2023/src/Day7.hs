@@ -106,7 +106,7 @@ parser h = do
   return . sum . fmap (\(r, b) -> r * getBid b) $ zip [1 ..] . sort $ h <$> cardsBids
 
 part1 :: ℤ'
-part1 = $(input 7) |- parser (uncurry HandBid)
+part1 = $(input 7) ⊢ parser (uncurry HandBid)
 
 part2 :: ℤ'
-part2 = $(input 7) |- parser (JHand . uncurry HandBid)
+part2 = $(input 7) ⊢ parser (JHand . uncurry HandBid)

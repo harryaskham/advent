@@ -34,14 +34,14 @@ parser = do
 part1 :: ℤ
 part1 =
   $(input 5)
-    |- parser
+    ⊢ parser
     & (\(seeds, _, mappings) -> flip (foldl' (flip fst)) mappings <$> seeds)
     & minimum
 
 part2 :: ℤ
 part2 =
   $(input 5)
-    |- parser
+    ⊢ parser
     & ( \(seeds, destinations, mappings) ->
           let validSeed seed = λ (⋁ [(seed >= a) && (seed < a + b) | [a, b] <- chunksOf 2 seeds])
            in [d | d <- destinations, validSeed (foldr snd d mappings)]

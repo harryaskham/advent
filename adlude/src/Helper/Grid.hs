@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-missing-kind-signatures #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Helper.Grid where
@@ -188,10 +189,10 @@ instance (GridCell a) => Griddable Identity IntMapGrid' Coord2 a where
   minXYM (IntMapGrid g) = pure (minimum (IM.keys =<< IM.elems g), minimum $ IM.keys g)
   mapCoordsM f (IntMapGrid g) = mkGridM $ [(f (x, y), c) | (y, row) <- IM.toList g, (x, c) <- IM.toList row]
   filterCoordsM f (IntMapGrid g) = mkGridM $ [((x, y), c) | (y, row) <- IM.toList g, (x, c) <- IM.toList row, f (x, y)]
-  partitionCoordsM f g'@(IntMapGrid g) = do
-    cs <- unGridM g'
-    g'' <- mkGridM cs :: (Identity (Grid a))
-    (l, r) <- partitionCoordsM f g''
+  partitionCoordsM f g = do
+    cs <- unGridM g
+    g' <- mkGridM cs :: (Identity (Grid a))
+    (l, r) <- partitionCoordsM f g'
     (l', r') <- bothM unGridM (l, r)
     bothM mkGridM (l', r')
   gridMemberM (x, y) g = isJust <$> gridGetMaybeM (x, y) g
@@ -303,7 +304,7 @@ instance (GridCell a, MArray (STA.STArray s) a (ST s)) => Griddable (ST s) (STAr
   maxXYM (STArrayGrid g) = snd <$> getBounds g
   minXYM (STArrayGrid g) = fst <$> getBounds g
 
-data STVectorGrid' s k a = STVectorGrid (STV.STVector s (STV.STVector s a))
+newtype STVectorGrid' s k a = STVectorGrid (STV.STVector s (STV.STVector s a))
 
 type STVectorGrid s a = STVectorGrid' s Coord2 a
 
@@ -343,7 +344,7 @@ instance (GridCell a) => Griddable (ST s) (STVectorGrid' s) Coord2 a where
     maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
     let maxY = STV.length g - 1
     return (maxX, maxY)
-  minXYM (STVectorGrid g) = return (0, 0)
+  minXYM _ = return (0, 0)
 
 newtype IOVectorGrid' k a = IOVectorGrid (STV.IOVector (STV.IOVector a))
 
@@ -385,7 +386,7 @@ instance (GridCell a) => Griddable IO IOVectorGrid' Coord2 a where
     maxX <- (STV.length <$> STV.read g 0) <&> subtract 1
     let maxY = STV.length g - 1
     return (maxX, maxY)
-  minXYM (IOVectorGrid g) = return (0, 0)
+  minXYM _ = return (0, 0)
 
 -- To create a Cell, just supply a Bimap between char and cell
 -- Or, one can override toChar and fromChar where there is some special logic

@@ -16,3 +16,5 @@ type ℚ = Rational
 type ℝ = Double
 
 type ℂ = Complex ℝ
+
+type 𝔹 = Bool

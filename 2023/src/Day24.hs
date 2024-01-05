@@ -47,7 +47,7 @@ intersections lowHigh stones =
 stones :: [((ℚ, ℚ, ℚ), (ℚ, ℚ, ℚ))]
 stones =
   $(input 24)
-    |- ( let c3 = toTuple3 <$> count 3 ((fromIntegral <$> number) <* optional (char ',' >> many (char ' ')))
+    ⊢ ( let c3 = toTuple3 <$> count 3 ((fromIntegral <$> number) <* optional (char ',' >> many (char ' ')))
           in many1 ((,) <$> (c3 <* (string " @" >> many (char ' '))) <*> c3 <* eol) <* eof
        )
 

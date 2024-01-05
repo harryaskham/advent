@@ -80,11 +80,13 @@ parseLinesWith line = parseWith $ many1 (line <* eol) <* eof
 (|-) :: String -> Parser a -> a
 (|-) = flip parseWith
 
+(⊢) :: String -> Parser a -> a
+(⊢) = (|-)
+
 infixl 5 |-
 
 -- megaparsec helpers
 type MParser :: Type -> Type
-
 type MParser a = Parsec Void String a
 
 parserM :: (Stream s, Ord e) => Parsec e s a -> s -> a

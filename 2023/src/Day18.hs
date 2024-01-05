@@ -3,7 +3,7 @@ module Day18 (part1, part2) where
 solve :: (((Dir2, ℤ'), (Dir2, ℤ')) -> (Dir2, ℤ')) -> ℤ'
 solve f =
   $(input 18)
-    |- ( f
+    ⊢ ( f
            <$$> ( many
                     ( (,)
                         <$> ((,) <$> (udlrToDir2 <$> anyChar <* spaces) <*> (number <* spaces))

@@ -4,7 +4,7 @@ hash :: String -> ℤ'
 hash = foldl' (\n c -> (n + ord c) * 17 `mod` 256) 0
 
 part1 :: ℤ'
-part1 = $(input 15) |- csv & fmap hash & sum
+part1 = $(input 15) ⊢ csv & fmap hash & sum
 
 part2 :: ℤ'
 part2 =
@@ -14,4 +14,4 @@ part2 =
       runOp (l, ('-', _)) b@(m, s) = bool b (m |/ l, s >/< l) (l ∈ m)
       power (i, (m, s)) = sum [(i + 1) * slot * (m |! l) | (slot, l) <- zip [1 ..] (unSeq s)]
       boxes = mkMap [(i, (mkMap [], mkSeq [])) | i <- [0 .. 255]]
-   in $(input 15) |- (op `sepBy` char ',') & (foldl' run boxes >>> unMap >>> fmap power >>> sum)
+   in $(input 15) ⊢ (op `sepBy` char ',') & (foldl' run boxes >>> unMap >>> fmap power >>> sum)

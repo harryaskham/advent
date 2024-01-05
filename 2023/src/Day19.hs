@@ -55,7 +55,7 @@ totalAccepted fs =
    in follow [] "A"
 
 part1 :: ℤ'
-part1 = $(input 19) |- parser & first (fst <$$>) & uncurry apply
+part1 = $(input 19) ⊢ parser & first (fst <$$>) & uncurry apply
 
 part2 :: ℤ'
-part2 = $(input 19) |- parser & fst & (snd <$$>) & totalAccepted
+part2 = $(input 19) ⊢ parser & fst & (snd <$$>) & totalAccepted

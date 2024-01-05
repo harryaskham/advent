@@ -61,7 +61,7 @@ stateChanges g =
 circuit :: Map String [String]
 circuit =
   $(input 20)
-    |- ( mkMap
+    ⊢ ( mkMap
            <$> ( many1
                    ( (,)
                        <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")

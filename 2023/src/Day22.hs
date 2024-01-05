@@ -71,7 +71,7 @@ disintegrateAll bricks =
 fallen :: Vector Brick
 fallen =
   $(input 22)
-    |- (toTuple2 <$$> (toTuple3 <$$$> many1 (((number `sepBy1` char ',') `sepBy1` char '~') <* eol) <* eof))
+    ⊢ (toTuple2 <$$> (toTuple3 <$$$> many1 (((number `sepBy1` char ',') `sepBy1` char '~') <* eol) <* eof))
     & sortOn (thd3 . snd)
     & mkVec
     & freefall

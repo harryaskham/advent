@@ -14,7 +14,7 @@ ways (t, d) =
    in ceiling (f (+)) - floor (f (-)) - 1
 
 part1 :: ℤ'
-part1 = $(input 6) |- asMany & fmap ways & (ȣ ∏)
+part1 = $(input 6) ⊢ asMany & fmap ways & (ȣ ∏)
 
 part2 :: ℤ'
-part2 = $(input 6) |- asOne & ways
+part2 = $(input 6) ⊢ asOne & ways

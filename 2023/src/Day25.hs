@@ -11,7 +11,7 @@ traverseWithout abc g = go ø (take 1 (keys g) ⊐)
 part1 :: ℤ'
 part1 =
   $(input 25)
-    |- (let s = count 3 alphaNum in many1 ((,) <$> (s <* string ": ") <*> (s `sepBy` char ' ') <* eol) <* eof)
+    ⊢ (let s = count 3 alphaNum in many1 ((,) <$> (s <* string ": ") <*> (s `sepBy` char ' ') <* eol) <* eof)
     & mkMap
     & (id &&& swapMapList)
     & uncurry (unionWith (<>))
