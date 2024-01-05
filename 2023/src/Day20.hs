@@ -31,7 +31,7 @@ onePass n g st = go st (mkSeq [("button", "broadcaster", False)])
           inputs' = inputs |. (origin, incomingSignal)
           signal' = case fullName of
             "broadcaster" -> Just False
-            ('%' : _) -> if incomingSignal then Nothing else Just (λ (¬ signal))
+            ('%' : _) -> if incomingSignal then Nothing else Just (ⴈ signal)
             ('&' : _) -> if all snd (unMap inputs') then Just False else Just True
           s' = s |~ (fullName, first (const inputs'))
           st' =
@@ -62,14 +62,14 @@ circuit :: Map String [String]
 circuit =
   $(input 20)
     ⊢ ( mkMap
-           <$> ( many1
-                   ( (,)
-                       <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
-                       <*> (many1 alphaNum `sepBy1` string ", " <* eol)
-                   )
-                   <* eof
-               )
-       )
+          <$> ( many1
+                  ( (,)
+                      <$> (many1 (oneOf "%&" <|> alphaNum) <* string " -> ")
+                      <*> (many1 alphaNum `sepBy1` string ", " <* eol)
+                  )
+                  <* eof
+              )
+      )
 
 part1 :: ℤ'
 part1 =
@@ -83,4 +83,4 @@ part2 =
   circuit
     & stateChanges
     & fmap ((snd >>> fst >>> (+ 1)) . uhead)
-    & (ȣ ∏)
+    & (Π ˙)

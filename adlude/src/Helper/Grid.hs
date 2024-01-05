@@ -22,6 +22,7 @@ import Data.Vector.Mutable qualified as STV
 import Helper.Collection
 import Helper.Coord
 import Helper.Tracers
+import Helper.Unary
 import Helper.Util (Nat10, both, bothM, unjust, (<$$>))
 import Relude.Unsafe qualified as U
 import System.IO.Unsafe (unsafePerformIO)

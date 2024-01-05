@@ -6,24 +6,66 @@ module Helper.Unary where
 
 import Data.Foldable qualified as F
 
+-- A class that enables application of datatypes
 class UnaryApply a b c where
   (˙) :: a -> b -> c
 
--- data UnaryUnit = Δ | Γ | Σ | Π | Ω | Φ | Ψ | Ξ | Λ | Θ
-data UnarySum = Σ
+-- Intersections
 
-instance (Foldable f, Num a) => UnaryApply UnarySum (f a) a where
+class Intersectable a where
+  (∩) :: a -> a -> a
+  (⋂) :: (Foldable f) => Unary (f a -> a)
+  (⋂) = const $ F.foldl1 (∩)
+
+data UnaryIntersect = Ⴖ
+
+instance (Foldable f, Intersectable a) => UnaryApply UnaryIntersect (f a) a where
+  (˙) Ⴖ = F.foldl1 (∩)
+
+-- Unions
+
+class Unionable a where
+  (∪) :: a -> a -> a
+  (⋃) :: (Foldable f) => Unary (f a -> a)
+  (⋃) = const $ F.foldl1 (∪)
+
+data UnaryUnion = Ս
+
+instance (Foldable f, Unionable a) => UnaryApply UnaryUnion (f a) a where
+  (˙) Ս = F.foldl1 (∪)
+
+-- N-ary boolean operations
+
+data UnaryFoldNum = Σ | Π
+
+instance (Foldable f, Num a) => UnaryApply UnaryFoldNum (f a) a where
   (˙) Σ = sum
-
-data UnaryProduct = Π
-
-instance (Foldable f, Num a) => UnaryApply UnaryProduct (f a) a where
   (˙) Π = product
+
+ⵉ :: forall a (f :: Type -> Type). (Foldable f, Num a) => f a -> a
+ⵉ = sum
+
+ꛛ :: forall a (f :: Type -> Type). (Foldable f, Num a) => f a -> a
+ꛛ = product
+
+-- Negation
 
 data UnaryNot = Ⴈ
 
 instance UnaryApply UnaryNot Bool Bool where
   (˙) Ⴈ = not
+
+ⴈ :: Bool -> Bool
+ⴈ = not
+
+-- Unary forcing
+
+data UnaryForce = Λ
+
+instance UnaryApply UnaryForce (Unary a) a where
+  (˙) Λ = ($ ())
+
+-- Below here: experimental use of operators in prefix mode using a placeholder on the left side.
 
 ȣ :: ()
 ȣ = ()
@@ -46,10 +88,6 @@ class IsUnary u a where
   -- Prefix forcing
   λ :: u -> a
   λ = unary
-
-  -- Map forcing
-  ƛ :: (Functor f) => f u -> f a
-  ƛ = fmap unary
 
 instance IsUnary (Unary a) a where
   unary f = f ()
@@ -123,5 +161,5 @@ testUnary =
       e :: Unary Bool
       e = ɾ b ∨ d
       f :: Unary Bool
-      f = (⋀ ƛ [ɾ b, d, e])
+      f = (⋀ fmap λ [ɾ b, d, e])
    in λ f

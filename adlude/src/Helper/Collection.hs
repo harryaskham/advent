@@ -251,11 +251,6 @@ instance (Ord a) => Memberable a (Map a b) where
 instance (A.Ix i) => Memberable i (A.Array i e) where
   i ∈ a = A.inRange (A.bounds a) i
 
-class Unionable a where
-  (∪) :: a -> a -> a
-  (⋃) :: (Foldable f) => Unary (f a -> a)
-  (⋃) = const $ F.foldl1 (∪)
-
 instance (Ord a) => Unionable (Set a) where
   (∪) = S.union
 
@@ -267,11 +262,6 @@ instance Unionable [a] where
 
 instance Unionable (V.Vector a) where
   (∪) = (V.++)
-
-class Intersectable a where
-  (∩) :: a -> a -> a
-  (⋂) :: (Foldable f) => Unary (f a -> a)
-  (⋂) = const $ F.foldl1 (∩)
 
 instance (Ord a) => Intersectable (Set a) where
   (∩) = S.intersection
