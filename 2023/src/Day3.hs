@@ -27,7 +27,7 @@ getNumbers g = go 0 0 "" []
                 (s@(_ : _), cs@(_ : _)) -> (uread s, nub cs) : go (x + 1) y "" []
                 _ -> go (x + 1) y "" []
 
-isMark :: Cell -> Bool
+isMark :: Cell -> 𝔹
 isMark (Mark _) = True
 isMark _ = False
 

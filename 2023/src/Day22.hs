@@ -2,19 +2,19 @@ module Day22 (part1, part2) where
 
 type Brick = (Coord3, Coord3)
 
-overlapping :: (Ord a) => (a, a) -> (a, a) -> Bool
+overlapping :: (Ord a) => (a, a) -> (a, a) -> 𝔹
 overlapping (a', b') (c', d') =
   let (a, b) = (min a' b', max a' b')
       (c, d) = (min c' d', max c' d')
    in a <= d && b >= c
 
-restingOn :: Brick -> Brick -> Bool
+restingOn :: Brick -> Brick -> 𝔹
 restingOn ((x, y, z), (x', y', z')) ((x'', y'', z''), (x''', y''', z''')) =
   min z z' == max z'' z''' + 1
     && overlapping (x, x') (x'', x''')
     && overlapping (y, y') (y'', y''')
 
-onFloor :: Brick -> Bool
+onFloor :: Brick -> 𝔹
 onFloor ((_, _, z), (_, _, z')) = min z z' == 1
 
 freefall :: Vector Brick -> Vector Brick
@@ -29,7 +29,7 @@ freefall bricks =
 
 structure :: Vector Brick -> (Map Brick (Set Brick), Map Brick (Set Brick))
 structure bricks =
-  let m :: (Brick -> Brick -> Bool) -> Map Brick (Set Brick)
+  let m :: (Brick -> Brick -> 𝔹) -> Map Brick (Set Brick)
       m f =
         mkWith
           (∪)

@@ -1,6 +1,6 @@
 module Day17 (part1, part2) where
 
-minimizeHeatLoss :: (ℤ' -> Bool) -> (ℤ' -> Bool) -> Grid ℤ' -> ℤ'
+minimizeHeatLoss :: (ℤ' -> 𝔹) -> (ℤ' -> 𝔹) -> Grid ℤ' -> ℤ'
 minimizeHeatLoss turnP noTurnP g =
   let target = maxXY g
       go cache q

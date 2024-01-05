@@ -17,7 +17,7 @@ parser =
                 <* eof
             )
 
-travel :: (String -> Bool) -> String -> String -> Map String (String, String) -> [ℤ']
+travel :: (String -> 𝔹) -> String -> String -> Map String (String, String) -> [ℤ']
 travel p s lr' g = go (cycle lr') 0 s
   where
     go (d : lr) n c

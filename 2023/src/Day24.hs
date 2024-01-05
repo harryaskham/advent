@@ -21,10 +21,10 @@ intersect2d (x, y) (vx, vy) (x', y') (vx', vy')
     t = (ix - x) / vx
     t' = (ix - x) / vx
 
-inFuture :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> Bool
+inFuture :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> 𝔹
 inFuture (x, y) (vx, vy) (ix, iy) = (ix - x) / vx >= 0 && (iy - y) / vy >= 0
 
-validIntersection :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> Intersection -> Bool
+validIntersection :: (ℚ, ℚ) -> (ℚ, ℚ) -> (ℚ, ℚ) -> Intersection -> 𝔹
 validIntersection _ _ _ NoIntersection = False
 validIntersection (low, high) (x, y) (vx, vy) (IntersectAt (ix, iy) t t') =
   ix >= low && iy >= low && ix <= high && iy <= high && inFuture (x, y) (vx, vy) (ix, iy) && t >= 0 && t' >= 0

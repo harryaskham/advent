@@ -1,6 +1,6 @@
 module Day23 (part1, part2) where
 
-slopePaths :: (Char -> [Dir2]) -> (Coord2 -> Bool) -> Coord2 -> Coord2 -> Grid Char -> [Set Coord2]
+slopePaths :: (Char -> [Dir2]) -> (Coord2 -> 𝔹) -> Coord2 -> Coord2 -> Grid Char -> [Set Coord2]
 slopePaths ns stopping start end g =
   let go Empty paths = paths
       go ((c, s) :<| q) paths

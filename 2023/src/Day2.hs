@@ -14,7 +14,7 @@ games = game `sepBy1` eol <* eof
       i <- string "Game " *> number <* string ": "
       Game i <$> (color `sepBy1` string ", ") `sepBy1` string "; "
 
-possibleGame :: Game -> Bool
+possibleGame :: Game -> 𝔹
 possibleGame = all (all possibleColor) . cubes
   where
     possibleColor (Red i) = i <= 12
