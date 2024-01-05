@@ -59,6 +59,7 @@ common common-settings
                         UndecidableInstances,
                         QuasiQuotes,
                         NamedFieldPuns,
+                        TypeOperators,
                         DeriveFoldable,
                         DeriveFunctor,
                         DeriveGeneric,

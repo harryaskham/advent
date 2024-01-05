@@ -1,4 +1,5 @@
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Helper.Collection where
 

@@ -44,5 +44,5 @@ part2 =
             | s <- [s | (s, _) <- unMap g, s !! 2 == 'A']
           ]
       )
-    & fmap uhead
+    <&> uhead
     & foldl1 lcm

@@ -38,7 +38,7 @@ instance (Foldable f, Unionable a) => UnaryApply UnaryUnion (f a) a where
 
 data UnaryFoldNum = Σ | Π
 
-instance (Foldable f, Num a) => UnaryApply UnaryFoldNum (f a) a where
+instance forall a (f :: Type -> Type). (Foldable f, Num a) => UnaryApply UnaryFoldNum (f a) a where
   (˙) Σ = sum
   (˙) Π = product
 
@@ -57,6 +57,20 @@ instance UnaryApply UnaryNot Bool Bool where
 
 ⴈ :: Bool -> Bool
 ⴈ = not
+
+-- Folding
+
+data UnaryFold a b = Ł (b -> a -> b) b | Ɍ (a -> b -> b) b
+
+instance forall a b (f :: Type -> Type). (Foldable f) => UnaryApply (UnaryFold a b) (f a) b where
+  (˙) (Ł f b) = F.foldl' f b
+  (˙) (Ɍ f b) = F.foldr f b
+
+data UnaryFold1 a = Ŀ (a -> a -> a) | Ṛ (a -> a -> a)
+
+instance forall a (f :: Type -> Type). (Foldable f) => UnaryApply (UnaryFold1 a) (f a) a where
+  (˙) (Ŀ f) = F.foldl1 f
+  (˙) (Ṛ f) = F.foldr1 f
 
 -- Unary forcing
 

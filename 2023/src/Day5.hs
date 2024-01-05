@@ -44,6 +44,6 @@ part2 =
     ⊢ parser
     & ( \(seeds, destinations, mappings) ->
           let validSeed seed = λ (⋁ [(seed >= a) && (seed < a + b) | [a, b] <- chunksOf 2 seeds])
-           in [d | d <- destinations, validSeed (foldr snd d mappings)]
+           in [d | d <- destinations, validSeed $ Ɍ ($) d ˙ (snd <$> mappings)]
       )
     & minimum
