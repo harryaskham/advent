@@ -1,20 +1,22 @@
-init:
+
+pre-init:
 	git mv year-template.cabal "x$(YEAR).cabal"  # EXCLUDE
 	find . -type f | xargs sed -i "" "/EXCLUDE/ ! s/year-template/x$(YEAR)/g"  # EXCLUDE
-    hpack
+
+hpack:
+	hpack
+
+gen-hie:
 	gen-hie . > hie.yaml
+
+init: pre-init hpack gen-hie
+	echo "Init complete."
 
 copy-day-666:
 	echo "Copy Day666.hs over other days? (destructive)" && read ans && [ $${ans:-N} = y ];
 	for i in $$(seq 1 25); do \
 		sed "s/666/$$i/g" src/Day666.hs > src/Day$$i.hs; \
 	done
-
-gen-hie: hpack
-	gen-hie . > hie.yaml
-
-hpack:
-	hpack
 
 run: hpack gen-hie
 	cabal v2-run year-template

@@ -16,6 +16,7 @@ dependencies:
       - (Quaalude as Prelude)
   - relude
   - benchpress
+  - HUnit
 
 internal-libraries:
   year-template-lib:
