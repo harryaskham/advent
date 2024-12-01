@@ -1,10 +1,10 @@
 module Day1 (part1, part2) where
 
 lists :: ([Int], [Int])
-lists = $(input 1) |-.. twoOf (spaceTabs `surrounding` number @Int) & unzip
+lists = $(input 1) |-.. twoOf (spaceTabs `surrounding` number) & unzip
 
 part1 :: Int
-part1 = ⵉ (sort `both` lists &+> (abs .) . (-))
+part1 = ⵉ (sort `both` lists &+> diff)
 
 part2 :: Int
 part2 = ⵉ (countMap `second` lists &<@> ((*) &.& (flip (|?) .>. (? 0))))
