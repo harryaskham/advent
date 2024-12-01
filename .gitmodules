@@ -1,0 +1,3 @@
+[submodule "year-template/lib/quaalude"]
+	path = year-template/lib/quaalude
+	url = git@github.com:harryaskham/quaalude.git
