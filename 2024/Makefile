@@ -42,7 +42,7 @@ run-cmd: pre-run
 	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl x2024"
 	--watch src \
 	--watch input \
-	--watch lib/quaalude \
+	--watch lib \
 	--restart-glob '**/package.yaml' \
 	--restart-glob 'input/**' \
 	--poll 1s
