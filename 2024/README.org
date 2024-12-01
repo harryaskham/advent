@@ -1,25 +1,25 @@
-#+TITLE: Advent of Code year-template Solutions
+#+TITLE: Advent of Code x2024 Solutions
 
 * Instantiating Template
 - copy this directory as e.g. ~2024~
 - inside this directory run ~make init~
 
 * Running
-- To run with Cabal, ~hpack && cabal run year-template~
+- To run with Cabal, ~hpack && cabal run x2024~
   - or ~make run~
 - REPL with ~hpack && cabal v2-repl~
   - or ~make repl~
 - Or, inside a ~nix-shell~:
-  - Run with e.g. ~cabal --enable-nix run year-template~
+  - Run with e.g. ~cabal --enable-nix run x2024~
   - REPL with ~cabal --enable-nix v2-repl~
-- To build and run with Nix manually, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/year-template~
+- To build and run with Nix manually, ~cabal2nix . > default.nix && nix-build release.nix && result/bin/x2024~
 
 * Testing
 - Tests are set up to validate the results of each day against example input and true input.
 - ~cabal test~ will run the contents of ~test/TestSuite.hs~
 
 * Adding New Modules
-- For every new module added, ~year-template.cabal~ needs updating.
+- For every new module added, ~x2024.cabal~ needs updating.
 - We also need to run ~gen-hie . > hie.yaml~ for HLS to pick the new modules up.
 - Finally, to have Nix pick up new modules, we need:
   - ~cabal2nix . > default.nix && ~cabal2nix --shell ./. >shell.nix~

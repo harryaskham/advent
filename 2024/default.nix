@@ -5,7 +5,7 @@
 , text, unordered-containers, utility-ht, vector
 }:
 mkDerivation {
-  pname = "year-template";
+  pname = "x2024";
   version = "0.1.0.0";
   src = ./.;
   isLibrary = true;

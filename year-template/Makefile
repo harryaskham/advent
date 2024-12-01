@@ -1,7 +1,7 @@
 
 pre-init:
 	git mv year-template.cabal "x$$(date +%Y).cabal"  # EXCLUDE
-	find . -type f | xargs sed -i "" "/EXCLUDE/ ! s/year-template/x$$(date +%Y)/g"  # EXCLUDE
+	find . -type f | xargs sed -i /EXCLUDE/! s/year-template/x$$(date +%Y)/g"  # EXCLUDE
 
 hpack:
 	hpack

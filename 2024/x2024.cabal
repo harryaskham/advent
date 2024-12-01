@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 
-name:           year-template
+name:           x2024
 version:        0.1.0.0
 homepage:       https://github.com/harryaskham/advent#readme
 bug-reports:    https://github.com/harryaskham/advent/issues
@@ -16,7 +16,7 @@ source-repository head
   type: git
   location: https://github.com/harryaskham/advent
 
-library year-template-lib
+library x2024-lib
   exposed-modules:
       Day1
       Day10
@@ -45,9 +45,9 @@ library year-template-lib
       Day8
       Day9
   other-modules:
-      Paths_year_template
+      Paths_x2024
   autogen-modules:
-      Paths_year_template
+      Paths_x2024
   hs-source-dirs:
       src
   default-extensions:
@@ -120,12 +120,12 @@ library year-template-lib
     , quaalude (Quaalude as Prelude)
   default-language: Haskell2010
 
-executable year-template
+executable x2024
   main-is: Main.hs
   other-modules:
-      Paths_year_template
+      Paths_x2024
   autogen-modules:
-      Paths_year_template
+      Paths_x2024
   hs-source-dirs:
       app
   default-extensions:
@@ -192,20 +192,20 @@ executable year-template
     , benchpress
     , quaalude
     , relude
-    , year-template-lib
+    , x2024-lib
   mixins:
       base hiding (Prelude)
     , quaalude hiding (Quaalude)
     , quaalude (Quaalude as Prelude)
   default-language: Haskell2010
 
-test-suite test-year-template
+test-suite test-x2024
   type: exitcode-stdio-1.0
   main-is: TestSuite.hs
   other-modules:
-      Paths_year_template
+      Paths_x2024
   autogen-modules:
-      Paths_year_template
+      Paths_x2024
   hs-source-dirs:
       test
   default-extensions:
@@ -272,7 +272,7 @@ test-suite test-year-template
     , benchpress
     , quaalude
     , relude
-    , year-template-lib
+    , x2024-lib
   mixins:
       base hiding (Prelude)
     , quaalude hiding (Quaalude)

@@ -1,4 +1,4 @@
-name: year-template
+name: x2024
 version: 0.1.0.0
 github: harryaskham/advent
 author: "Harry Askham"
@@ -19,19 +19,19 @@ dependencies:
   - HUnit
 
 internal-libraries:
-  year-template-lib:
+  x2024-lib:
     source-dirs: src
 
 executable:
   dependencies:
-    - year-template-lib
+    - x2024-lib
   source-dirs: app
   main: Main.hs
 
 tests:
-  test-year-template:
+  test-x2024:
     dependencies:
-      - year-template-lib
+      - x2024-lib
     main: TestSuite.hs
     source-dirs: test
 
