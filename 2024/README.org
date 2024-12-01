@@ -2,7 +2,6 @@
 
 * Instantiating Template
 - copy this directory as e.g. ~2024~
-  - Re-instantiate submodules in ~lib~
 - inside this directory run ~make init~
 
 * Running

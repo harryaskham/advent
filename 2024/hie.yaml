@@ -1,0 +1,13 @@
+cradle:
+  cabal:
+    - path: "./lib/quaalude/src"
+      component: "lib:quaalude"
+
+    - path: "./src"
+      component: "year-template:lib:year-template-lib"
+
+    - path: "./app/Main.hs"
+      component: "year-template:exe:year-template"
+
+    - path: "./test"
+      component: "year-template:test:test-year-template"

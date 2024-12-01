@@ -1,0 +1,280 @@
+cabal-version: 2.0
+
+-- This file has been generated from package.yaml by hpack version 0.36.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           year-template
+version:        0.1.0.0
+homepage:       https://github.com/harryaskham/advent#readme
+bug-reports:    https://github.com/harryaskham/advent/issues
+author:         Harry Askham
+maintainer:     harryaskham@gmail.com
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/harryaskham/advent
+
+library year-template-lib
+  exposed-modules:
+      Day1
+      Day10
+      Day11
+      Day12
+      Day13
+      Day14
+      Day15
+      Day16
+      Day17
+      Day18
+      Day19
+      Day2
+      Day20
+      Day21
+      Day22
+      Day23
+      Day24
+      Day25
+      Day3
+      Day4
+      Day5
+      Day6
+      Day666
+      Day7
+      Day8
+      Day9
+  other-modules:
+      Paths_year_template
+  autogen-modules:
+      Paths_year_template
+  hs-source-dirs:
+      src
+  default-extensions:
+      OverloadedStrings
+      OverloadedLabels
+      TupleSections
+      ViewPatterns
+      StandaloneKindSignatures
+      DerivingVia
+      LambdaCase
+      MultiWayIf
+      QuantifiedConstraints
+      ConstraintKinds
+      MonadComprehensions
+      UnicodeSyntax
+      BlockArguments
+      ImportQualifiedPost
+      EmptyCase
+      StarIsType
+      PostfixOperators
+      FlexibleContexts
+      FlexibleInstances
+      InstanceSigs
+      MultiParamTypeClasses
+      UndecidableInstances
+      QuasiQuotes
+      NamedFieldPuns
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveAnyClass
+      DeriveTraversable
+      DerivingStrategies
+      GeneralizedNewtypeDeriving
+      StandaloneDeriving
+      ScopedTypeVariables
+      RankNTypes
+      TypeApplications
+      TypeOperators
+      TypeFamilies
+      ApplicativeDo
+      DefaultSignatures
+      PatternSynonyms
+      ExistentialQuantification
+      FunctionalDependencies
+      GADTs
+      DataKinds
+      PolyKinds
+      StrictData
+      TemplateHaskell
+      RecordWildCards
+      NamedWildCards
+      PartialTypeSignatures
+      AllowAmbiguousTypes
+      ImpredicativeTypes
+      UndecidableSuperClasses
+      DeriveDataTypeable
+      LiberalTypeSynonyms
+  ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
+  build-depends:
+      HUnit
+    , base ==4.19.0.0
+    , benchpress
+    , quaalude
+    , relude
+  mixins:
+      base hiding (Prelude)
+    , quaalude hiding (Quaalude)
+    , quaalude (Quaalude as Prelude)
+  default-language: Haskell2010
+
+executable year-template
+  main-is: Main.hs
+  other-modules:
+      Paths_year_template
+  autogen-modules:
+      Paths_year_template
+  hs-source-dirs:
+      app
+  default-extensions:
+      OverloadedStrings
+      OverloadedLabels
+      TupleSections
+      ViewPatterns
+      StandaloneKindSignatures
+      DerivingVia
+      LambdaCase
+      MultiWayIf
+      QuantifiedConstraints
+      ConstraintKinds
+      MonadComprehensions
+      UnicodeSyntax
+      BlockArguments
+      ImportQualifiedPost
+      EmptyCase
+      StarIsType
+      PostfixOperators
+      FlexibleContexts
+      FlexibleInstances
+      InstanceSigs
+      MultiParamTypeClasses
+      UndecidableInstances
+      QuasiQuotes
+      NamedFieldPuns
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveAnyClass
+      DeriveTraversable
+      DerivingStrategies
+      GeneralizedNewtypeDeriving
+      StandaloneDeriving
+      ScopedTypeVariables
+      RankNTypes
+      TypeApplications
+      TypeOperators
+      TypeFamilies
+      ApplicativeDo
+      DefaultSignatures
+      PatternSynonyms
+      ExistentialQuantification
+      FunctionalDependencies
+      GADTs
+      DataKinds
+      PolyKinds
+      StrictData
+      TemplateHaskell
+      RecordWildCards
+      NamedWildCards
+      PartialTypeSignatures
+      AllowAmbiguousTypes
+      ImpredicativeTypes
+      UndecidableSuperClasses
+      DeriveDataTypeable
+      LiberalTypeSynonyms
+  ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
+  build-depends:
+      HUnit
+    , base ==4.19.0.0
+    , benchpress
+    , quaalude
+    , relude
+    , year-template-lib
+  mixins:
+      base hiding (Prelude)
+    , quaalude hiding (Quaalude)
+    , quaalude (Quaalude as Prelude)
+  default-language: Haskell2010
+
+test-suite test-year-template
+  type: exitcode-stdio-1.0
+  main-is: TestSuite.hs
+  other-modules:
+      Paths_year_template
+  autogen-modules:
+      Paths_year_template
+  hs-source-dirs:
+      test
+  default-extensions:
+      OverloadedStrings
+      OverloadedLabels
+      TupleSections
+      ViewPatterns
+      StandaloneKindSignatures
+      DerivingVia
+      LambdaCase
+      MultiWayIf
+      QuantifiedConstraints
+      ConstraintKinds
+      MonadComprehensions
+      UnicodeSyntax
+      BlockArguments
+      ImportQualifiedPost
+      EmptyCase
+      StarIsType
+      PostfixOperators
+      FlexibleContexts
+      FlexibleInstances
+      InstanceSigs
+      MultiParamTypeClasses
+      UndecidableInstances
+      QuasiQuotes
+      NamedFieldPuns
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveAnyClass
+      DeriveTraversable
+      DerivingStrategies
+      GeneralizedNewtypeDeriving
+      StandaloneDeriving
+      ScopedTypeVariables
+      RankNTypes
+      TypeApplications
+      TypeOperators
+      TypeFamilies
+      ApplicativeDo
+      DefaultSignatures
+      PatternSynonyms
+      ExistentialQuantification
+      FunctionalDependencies
+      GADTs
+      DataKinds
+      PolyKinds
+      StrictData
+      TemplateHaskell
+      RecordWildCards
+      NamedWildCards
+      PartialTypeSignatures
+      AllowAmbiguousTypes
+      ImpredicativeTypes
+      UndecidableSuperClasses
+      DeriveDataTypeable
+      LiberalTypeSynonyms
+  ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
+  build-depends:
+      HUnit
+    , base ==4.19.0.0
+    , benchpress
+    , quaalude
+    , relude
+    , year-template-lib
+  mixins:
+      base hiding (Prelude)
+    , quaalude hiding (Quaalude)
+    , quaalude (Quaalude as Prelude)
+  default-language: Haskell2010
