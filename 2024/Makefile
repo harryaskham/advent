@@ -37,8 +37,8 @@ testwatch: pre-run
 	--restart-glob '**/package.yaml' \
 	--poll 1s
 
-run: pre-run
-	ghciwatch --test-ghci Day$(DAY).part$(PART) \
+run-cmd: pre-run
+	ghciwatch --test-ghci $(CMD)
 	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl x2024"
 	--watch src \
 	--watch input \
@@ -47,8 +47,14 @@ run: pre-run
 	--restart-glob 'input/**' \
 	--poll 1s
 
+run-part:
+	make CMD="Day$(DAY).part$(PART)" run-cmd
+
 part1:
-	make DAY=$$(date +%-d) PART=1 run
+	make DAY=$$(date +%-d) PART=1 run-part
 
 part2:
-	make DAY=$$(date +%-d) PART=2 run
+	make DAY=$$(date +%-d) PART=2 run-part
+
+today:
+	make CMD="\"print Day$$(date +%-d).part1 >> print Day$$(date +%-d).part2\"" run-cmd
