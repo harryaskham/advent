@@ -15,8 +15,8 @@ dependencies:
       - hiding (Quaalude)
       - (Quaalude as Prelude)
   - relude
-  - benchpress
-  - HUnit
+  - hspec
+  - vector
 
 internal-libraries:
   year-template-lib:
@@ -32,7 +32,7 @@ tests:
   test-year-template:
     dependencies:
       - year-template-lib
-    main: TestSuite.hs
+    main: Spec.hs
     source-dirs: test
 
 default-extensions:
