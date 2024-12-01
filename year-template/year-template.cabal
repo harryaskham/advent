@@ -109,11 +109,11 @@ library year-template-lib
       LiberalTypeSynonyms
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
-      HUnit
-    , base ==4.19.0.0
-    , benchpress
+      base ==4.19.0.0
+    , hspec
     , quaalude
     , relude
+    , vector
   mixins:
       base hiding (Prelude)
     , quaalude hiding (Quaalude)
@@ -187,11 +187,11 @@ executable year-template
       LiberalTypeSynonyms
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
-      HUnit
-    , base ==4.19.0.0
-    , benchpress
+      base ==4.19.0.0
+    , hspec
     , quaalude
     , relude
+    , vector
     , year-template-lib
   mixins:
       base hiding (Prelude)
@@ -201,7 +201,7 @@ executable year-template
 
 test-suite test-year-template
   type: exitcode-stdio-1.0
-  main-is: TestSuite.hs
+  main-is: Spec.hs
   other-modules:
       Paths_year_template
   autogen-modules:
@@ -267,11 +267,11 @@ test-suite test-year-template
       LiberalTypeSynonyms
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
-      HUnit
-    , base ==4.19.0.0
-    , benchpress
+      base ==4.19.0.0
+    , hspec
     , quaalude
     , relude
+    , vector
     , year-template-lib
   mixins:
       base hiding (Prelude)
