@@ -4,15 +4,10 @@ lists :: ([Int], [Int])
 lists = $(input 1) |-.. twoOf (spaceTabs `surrounding` number @Int) & unzip
 
 part1 :: Int
-part1 =
-  lists
-    & both sort
-    & uncurry (zipWith ((abs .) . (-)))
-    & sum
+part1 = sum $ sort `both` lists &+> (abs .) . (-)
 
 part2 :: Int
 part2 =
-  lists
-    & second countMap
+  second countMap lists
     &<@> (bicomp . ((*) &&& ((? 0) .<. flip (|?))))
     & sum
