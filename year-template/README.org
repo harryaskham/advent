@@ -2,7 +2,7 @@
 
 * Instantiating Template
 - copy this directory as e.g. ~2024~
-- inside this directory run ~make YEAR=2024 init~
+- inside this directory run ~make init~
 
 * Running
 - To run with Cabal, ~hpack && cabal run year-template~
