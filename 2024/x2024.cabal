@@ -109,9 +109,9 @@ library x2024-lib
       LiberalTypeSynonyms
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
-      HUnit
-    , base ==4.19.0.0
+      base ==4.19.0.0
     , benchpress
+    , hspec
     , quaalude
     , relude
   mixins:
@@ -187,9 +187,9 @@ executable x2024
       LiberalTypeSynonyms
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
-      HUnit
-    , base ==4.19.0.0
+      base ==4.19.0.0
     , benchpress
+    , hspec
     , quaalude
     , relude
     , x2024-lib
@@ -201,8 +201,9 @@ executable x2024
 
 test-suite test-x2024
   type: exitcode-stdio-1.0
-  main-is: TestSuite.hs
+  main-is: Spec.hs
   other-modules:
+      TestSuite
       Paths_x2024
   autogen-modules:
       Paths_x2024
@@ -267,9 +268,9 @@ test-suite test-x2024
       LiberalTypeSynonyms
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
-      HUnit
-    , base ==4.19.0.0
+      base ==4.19.0.0
     , benchpress
+    , hspec
     , quaalude
     , relude
     , x2024-lib

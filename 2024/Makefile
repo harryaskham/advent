@@ -18,11 +18,22 @@ copy-day-666:
 		sed "s/666/$$i/g" src/Day666.hs > src/Day$$i.hs; \
 	done
 
-run: hpack gen-hie
+pre-run: hpack gen-hie
+
+run: pre-run
 	cabal v2-run x2024
 
-repl: hpack gen-hie
+repl: pre-run
 	cabal v2-repl
 
-test: hpack gen-hie
+test: pre-run
 	cabal v2-test
+
+testwatch: pre-run
+	ghciwatch --test-ghci TestSuite.main \
+	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2024"
+	--watch src \
+	--watch input \
+	--watch test \
+	--restart-glob '**/package.yaml' \
+	--poll 1s

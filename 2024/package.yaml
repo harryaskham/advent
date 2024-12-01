@@ -16,7 +16,7 @@ dependencies:
       - (Quaalude as Prelude)
   - relude
   - benchpress
-  - HUnit
+  - hspec
 
 internal-libraries:
   x2024-lib:
@@ -32,7 +32,7 @@ tests:
   test-x2024:
     dependencies:
       - x2024-lib
-    main: TestSuite.hs
+    main: Spec.hs
     source-dirs: test
 
 default-extensions:
