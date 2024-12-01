@@ -15,6 +15,24 @@ dependencies:
       - hiding (Quaalude)
       - (Quaalude as Prelude)
   - relude
+  - benchpress
+
+internal-libraries:
+  year-template-lib:
+    source-dirs: src
+
+executable:
+  dependencies:
+    - year-template-lib
+  source-dirs: app
+  main: Main.hs
+
+tests:
+  test-year-template:
+    dependencies:
+      - year-template-lib
+    main: TestSuite.hs
+    source-dirs: test
 
 default-extensions:
   - OverloadedStrings
@@ -107,14 +125,3 @@ ghc-options:
   - -Wno-prepositive-qualified-module
   - -Wno-missing-role-annotations
   - -Wno-operator-whitespace
-
-library:
-  source-dirs: src
-
-executable:
-  source-dirs: app
-
-tests:
-  test-main:
-    main: TestSuite.hs
-    source-dirs: test

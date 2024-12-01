@@ -16,7 +16,7 @@ source-repository head
   type: git
   location: https://github.com/harryaskham/advent
 
-library
+library year-template-lib
   exposed-modules:
       Day1
       Day10
@@ -44,12 +44,6 @@ library
       Day7
       Day8
       Day9
-      Helper.Bits
-      Helper.Coord
-      Helper.Grid
-      Helper.TH
-      Helper.Tracers
-      Helper.Util
   other-modules:
       Paths_year_template
   autogen-modules:
@@ -116,6 +110,7 @@ library
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
       base ==4.19.0.0
+    , benchpress
     , quaalude
     , relude
   mixins:
@@ -125,8 +120,8 @@ library
   default-language: Haskell2010
 
 executable year-template
+  main-is: Main.hs
   other-modules:
-      Main
       Paths_year_template
   autogen-modules:
       Paths_year_template
@@ -192,15 +187,17 @@ executable year-template
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
       base ==4.19.0.0
+    , benchpress
     , quaalude
     , relude
+    , year-template-lib
   mixins:
       base hiding (Prelude)
     , quaalude hiding (Quaalude)
     , quaalude (Quaalude as Prelude)
   default-language: Haskell2010
 
-test-suite test-main
+test-suite test-year-template
   type: exitcode-stdio-1.0
   main-is: TestSuite.hs
   other-modules:
@@ -269,8 +266,10 @@ test-suite test-main
   ghc-options: -fprint-potential-instances -Weverything -Wno-unrecognised-warning-flags -Wno-star-is-type -Wno-missing-signatures -Wno-orphans -Wno-implicit-prelude -Wno-unused-imports -Wno-unused-packages -Wno-missing-kind-signatures -Wno-missing-poly-kind-signatures -Wno-term-variable-capture -Wno-missing-export-lists -Wno-missing-deriving-strategies -Wno-missing-safe-haskell-mode -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-deriving-defaults -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-prepositive-qualified-module -Wno-missing-role-annotations -Wno-operator-whitespace
   build-depends:
       base ==4.19.0.0
+    , benchpress
     , quaalude
     , relude
+    , year-template-lib
   mixins:
       base hiding (Prelude)
     , quaalude hiding (Quaalude)

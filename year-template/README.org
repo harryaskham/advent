@@ -1,13 +1,14 @@
 #+TITLE: Advent of Code year-template Solutions
 
 * Instantiating Template
-- copy this directory as e.g. ~2022~
-- replace ~year-template.cabal~ with e.g. ~x2022.cabal~
-- Run e.g. ~find . -type f | xargs sed -i "" "s/year-template/x2022/g"~
+- copy this directory as e.g. ~2024~
+- inside this directory run ~make YEAR=2024 init~
 
 * Running
-- To run with Cabal, ~cabal run year-template~
-- REPL with ~cabal v2-repl~
+- To run with Cabal, ~hpack && cabal run year-template~
+  - or ~make run~
+- REPL with ~hpack && cabal v2-repl~
+  - or ~make repl~
 - Or, inside a ~nix-shell~:
   - Run with e.g. ~cabal --enable-nix run year-template~
   - REPL with ~cabal --enable-nix v2-repl~
@@ -27,7 +28,7 @@
 Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
 
 * Templating
-~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run e.g. ~for i in {1..25}; do sed "s/666/$i/g" src/Day666.hs > src/Day$i.hs; done; cabal v2-run year-template~.
+~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run ~make copy-day-666~
 
 * Inputs
 Inputs are stored in ~inputs~ and we use ~TemplateHaskell~ to embed them at compile time, to avoid unneccessary ~IO~ in the solutions.
