@@ -30,7 +30,7 @@ test: pre-run
 	cabal v2-test
 
 testwatch: pre-run
-	ghciwatch --test-ghci TestSuite.main \
+	ghciwatch --test-ghci Spec.main \
 	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2024"
 	--watch src \
 	--watch input \

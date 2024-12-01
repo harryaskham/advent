@@ -114,6 +114,7 @@ library x2024-lib
     , hspec
     , quaalude
     , relude
+    , vector
   mixins:
       base hiding (Prelude)
     , quaalude hiding (Quaalude)
@@ -192,6 +193,7 @@ executable x2024
     , hspec
     , quaalude
     , relude
+    , vector
     , x2024-lib
   mixins:
       base hiding (Prelude)
@@ -203,7 +205,6 @@ test-suite test-x2024
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      TestSuite
       Paths_x2024
   autogen-modules:
       Paths_x2024
@@ -273,6 +274,7 @@ test-suite test-x2024
     , hspec
     , quaalude
     , relude
+    , vector
     , x2024-lib
   mixins:
       base hiding (Prelude)

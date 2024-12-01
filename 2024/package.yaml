@@ -17,6 +17,7 @@ dependencies:
   - relude
   - benchpress
   - hspec
+  - vector
 
 internal-libraries:
   x2024-lib:
