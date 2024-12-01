@@ -19,7 +19,7 @@ copy-day-666:
 
 pre-run: hpack gen-hie
 
-run: pre-run
+run-all: pre-run
 	cabal v2-run x2024
 
 repl: pre-run
@@ -36,3 +36,19 @@ testwatch: pre-run
 	--watch test \
 	--restart-glob '**/package.yaml' \
 	--poll 1s
+
+run: pre-run
+	ghciwatch --test-ghci Day$(DAY).part$(PART) \
+	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl x2024"
+	--watch src \
+	--watch input \
+	--watch lib/quaalude \
+	--restart-glob '**/package.yaml' \
+	--restart-glob 'input/**' \
+	--poll 1s
+
+part1:
+	make DAY=$$(date +%-d) PART=1 run
+
+part2:
+	make DAY=$$(date +%-d) PART=2 run

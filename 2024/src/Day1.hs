@@ -1,32 +1,20 @@
 module Day1 (part1, part2) where
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+import Control.Arrow ((***))
 
--- line :: Parser Int
--- line = number
+lists :: ([Int], [Int])
+lists = $(input 1) |-.. twoOf (spaceTabs `surrounding` number @Int) & unzip
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
+part1 :: Int
 part1 =
-  $(input 1)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+  lists
+    & both sort
+    & uncurry (zipWith ((abs .) . (-)))
+    & sum
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  lists
+    & second countMap
+    &<@> (bicomp . ((*) &&& ((? 0) .<. flip (|?))))
+    & sum
