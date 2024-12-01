@@ -1,7 +1,5 @@
 module Day1 (part1, part2) where
 
-import Control.Arrow ((***))
-
 lists :: ([Int], [Int])
 lists = $(input 1) |-.. twoOf (spaceTabs `surrounding` number @Int) & unzip
 
