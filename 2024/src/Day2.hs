@@ -1,32 +1,22 @@
 module Day2 (part1, part2) where
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+import Text.Parsec.Combinator
 
--- line :: Parser Int
--- line = number
+safe :: 𝔹 -> Parser (Sum ℤ')
+safe skip = go skip []
+  where
+    go skip levels =
+      try (go skip . (: levels) =<< level levels)
+        <|> (guard skip >> try (level [] >> go False levels))
+        <|> (lookAhead eof $> Sum 1)
+    level [] = wordOf $ number @ℤ'
+    level ls = do
+      l <- level []
+      let (d : ds) = diffs (l : ls)
+      l <$ guard (all ((`elem` [1, 2, 3]) . (* sgn d)) (d : ds))
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+part1 :: ℤ'
+part1 = $(input 2) |-<> safe False
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
-part1 =
-  $(input 2)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+part2 :: ℤ'
+part2 = $(input 2) |-<> safe True

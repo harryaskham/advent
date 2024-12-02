@@ -18,6 +18,7 @@ dependencies:
   - benchpress
   - hspec
   - vector
+  - parsec
 
 internal-libraries:
   x2024-lib:

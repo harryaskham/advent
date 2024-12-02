@@ -56,5 +56,8 @@ part1:
 part2:
 	make DAY=$$(date +%-d) PART=2 run-part
 
+day:
+	make CMD="\"print Day$(DAY).part1 >> print Day$(DAY).part2\"" run-cmd
+
 today:
-	make CMD="\"print Day$$(date +%-d).part1 >> print Day$$(date +%-d).part2\"" run-cmd
+	make DAY="$$(date +%-d)" day
