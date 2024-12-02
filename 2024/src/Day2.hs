@@ -1,11 +1,11 @@
 module Day2 (part1, part2) where
 
-safe :: 𝔹 -> [ℤ'] -> Parser (Sum ℤ')
+safe :: 𝔹 -> [ℤ'] -> Parser (Σ' ℤ')
 safe skip ls =
   trying
     [ safe skip . (: ls) =<< level ls,
       guard skip >> try (level [] >> safe False ls),
-      succeed (Sum 1)
+      succeed (Σ' 1)
     ]
   where
     level [] = wordOf $ number @ℤ'
