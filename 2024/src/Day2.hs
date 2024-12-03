@@ -1,6 +1,6 @@
 module Day2 (part1, part2) where
 
-safe :: 𝔹 -> [ℤ₆₄] -> Parser (Σ ℤ₆₄)
+safe :: 𝔹 -> [ℤ] -> Parser (Σ ℤ)
 safe skip ls =
   trying
     [ succeed (Σ 1),
@@ -11,8 +11,8 @@ safe skip ls =
         safe skip lss
     ]
 
-part1 :: ℤ₆₄
+part1 :: ℤ
 part1 = $(input 2) |-<..> safe False []
 
-part2 :: ℤ₆₄
+part2 :: ℤ
 part2 = $(input 2) |-<..> safe True []
