@@ -12,7 +12,7 @@ safe skip ls =
     ]
 
 part1 :: ℤ₆₄
-part1 = $(input 2) |-<> safe False []
+part1 = $(input 2) |-<..> safe False []
 
 part2 :: ℤ₆₄
-part2 = $(input 2) |-<> safe True []
+part2 = $(input 2) |-<..> safe True []

@@ -1,32 +1,19 @@
 module Day3 (part1, part2) where
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+muls :: 𝔹 -> 𝔹 -> Parser [Σ [Π ℤ₆₄]]
+muls dont on =
+  let mul True = Σ `hom` cargs #mul (number .*. number .*. HNil)
+      mul False = mul True $> Σ [Π 0]
+   in trying
+        [ cfunc_ #do *> muls dont True,
+          cfunc_ #don't *> muls dont dont,
+          (:) <$> mul on <*> muls dont on,
+          anyChar >> muls dont on,
+          pure []
+        ]
 
--- line :: Parser Int
--- line = number
+part1 :: ℤ₆₄
+part1 = $(input 3) |-<> muls True True
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
-part1 =
-  $(input 3)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+part2 :: ℤ₆₄
+part2 = $(input 3) |-<> muls False True
