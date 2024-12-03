@@ -2,7 +2,7 @@ module Day3 (part1, part2) where
 
 muls :: 𝔹 -> 𝔹 -> Parser [Σ [Π ℤ₆₄]]
 muls dont on =
-  let mul True = Σ `hom` cargs #mul (hdup number)
+  let mul True = hom Σ $ cargs #mul (hdup number)
       mul False = mul True $> Σ [Π 0]
    in trying
         [ cfunc_ #do *> muls dont True,
