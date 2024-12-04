@@ -1,6 +1,7 @@
 module Day4 (part1, part2) where
 
-occurrences :: forall n. ((MakeVariadicConcat n Text (Σ ℤ)) => MakeVariadicF n Text (Σ ℤ))
+-- occurrences :: forall n. ((MakeVariadicConcat n Text (Σ ℤ)) => MakeVariadicF n Text (Σ ℤ))
+occurrences :: forall n. (VarC n Text (Σ ℤ)) => Var n (Text *-> Σ ℤ)
 occurrences = makeVariadicConcat @n $ \kernel ->
   cells
     |=< convolveWith ((Σ . bool @ℤ 0 1) .<. x_x)
