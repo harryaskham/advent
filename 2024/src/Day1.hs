@@ -7,4 +7,4 @@ part1 :: ℤ
 part1 = Σ ˙ sort `both` lists ⤊ diff
 
 part2 :: ℤ
-part2 = Σ ˙ counts <$> lists &<@> (*) <.> (? 0) .<. (⇄ (|?))
+part2 = Σ ˙ counts <$> lists &<@> (*) <.> ((⇄ (|?)) .>. (? 0))

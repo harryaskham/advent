@@ -23,6 +23,7 @@ import Day3 qualified
 import Day4 qualified
 import Day5 qualified
 import Day6 qualified
+import Day666 qualified
 import Day7 qualified
 import Day8 qualified
 import Day9 qualified
