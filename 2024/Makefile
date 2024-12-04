@@ -13,7 +13,7 @@ init: pre-init hpack gen-hie
 
 copy-day-666:
 	echo "Copy Day666.hs over other days? (destructive)" && read ans && [ $${ans:-N} = y ];
-	for i in $$(seq 1 25); do \
+	for i in $$(seq $(FROM) $(TO)); do \
 		sed "s/666/$$i/g" src/Day666.hs > src/Day$$i.hs; \
 	done
 

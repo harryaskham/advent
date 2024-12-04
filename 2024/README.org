@@ -28,7 +28,7 @@
 Generate profiling stats with ~cabal v2-run --enable-profiling exes --  +RTS -p~
 
 * Templating
-~Day666.hs~ contains a template for each day. To edit this and copy it to days 1 through 25, run ~make copy-day-666~
+~Day666.hs~ contains a template for each day. To edit this and copy it to days n through 25, run ~make FROM=n TO=25 copy-day-666~
 
 * Inputs
 Inputs are stored in ~inputs~ and we use ~TemplateHaskell~ to embed them at compile time, to avoid unneccessary ~IO~ in the solutions.
