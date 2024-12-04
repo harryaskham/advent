@@ -1,26 +1,30 @@
 module Day4 (part1, part2) where
 
-occurrences :: [Text] -> ℤ
-occurrences kernels =
+occurrences :: forall n. ((MakeVariadicConcat n Text (Σ ℤ)) => ComposeNF ([Σ ℤ] -> Σ ℤ) (MakeVariadicF n Text (Σ ℤ)))
+occurrences = makeVariadicConcat @n $ \kernel ->
   cells
-    |=< convolveWith ((Σ . bool (0 :: Integer) 1) .<. wildEq '_')
-    <$> (rotations . readGrid =<< kernels)
-    <*> [readGrid @HashGrid' $(input 4)]
+    |=< convolveWith ((Σ . bool @ℤ 0 1) .<. x_x)
+    <$> rotations (readGrid kernel)
+    <*> [readGrid @HashGrid' $(exampleInput 4)]
 
-part1 :: ℤ
+part1 :: Σ ℤ
 part1 =
-  occurrences
-    [ "XMAS",
-      [txt|X___
+  ( occurrences @2
+      ([txt|XMAS|] :: Text)
+      ( [txt|X___
            _M__
            __A_
-           ___S|]
-    ]
+           ___S|] ::
+          Text
+      )
+  )
 
-part2 :: ℤ
+part2 :: Σ ℤ
 part2 =
-  occurrences
-    [ [txt|M_S
+  ( occurrences @1
+      ( [txt|M_S
            _A_
-           M_S|]
-    ]
+           M_S|] ::
+          Text
+      )
+  )
