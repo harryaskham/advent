@@ -13,7 +13,7 @@ muls dont on =
         ]
 
 part1 :: ℤ
-part1 = $(input 3) |-<> muls True True
+part1 = $(input 3) |-<.> muls True True
 
 part2 :: ℤ
-part2 = $(input 3) |-<> muls False True
+part2 = $(input 3) |-<.> muls False True
