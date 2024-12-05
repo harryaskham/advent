@@ -1,14 +1,33 @@
-module Day5 (part1, part2) where
+module Day5 where
 
-part1 :: Text
-part1 =
+inp :: ((Map Integer [Integer], Map Integer [Integer]), [[Integer]])
+inp =
   $(input 5)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+    |- ( (,)
+           <$> ( (both (mkMapWith (<>) . fmap (second pure)) . second (fmap swap) . dup)
+                   <$> ((many1 ((,) <$> (number @Integer <* char '|') <*> (number @Integer <* eol))) <* eol)
+               )
+           <*> (many1 ((number @Integer `sepBy1` char ',') <* eol))
+       )
 
-part2 :: Text
-part2 = "Part 2"
+mkCompare :: (Map Integer [Integer], Map Integer [Integer]) -> Integer -> Integer -> Ordering
+mkCompare (lt, gt) a b
+  | a == b = EQ
+  | (a `elem` (gt |? b ? [a])) && (b `elem` (lt |? a ? [b])) = LT
+  | otherwise = GT
+
+part1 :: Integer
+part1 =
+  inp
+    & ( \(rules, orders) ->
+          zipWith (\a b -> bool 0 (middle a) (a == b)) orders (sortBy (mkCompare rules) <$> orders)
+      )
+    & sum
+
+part2 :: Integer
+part2 =
+  inp
+    & ( \(rules, orders) ->
+          zipWith (\a b -> bool (middle b) 0 (a == b)) orders (sortBy (mkCompare rules) <$> orders)
+      )
+    & sum
