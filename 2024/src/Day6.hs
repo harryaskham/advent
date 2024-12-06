@@ -1,6 +1,6 @@
 module Day6 (part1, part2) where
 
-walk :: Grid Char -> Ѓ (Set Coord2) (?)
+walk :: Grid Char -> Ѓ (Set (ℤ₆₄ × ℤ₆₄)) (?)
 walk g = go (∅) def =<< (gridFindOne '^' g)
   where
     go seen d c
@@ -9,13 +9,11 @@ walk g = go (∅) def =<< (gridFindOne '^' g)
       | g |? move d 1 c == Just '#' = go seen (turnCW d) c
       | otherwise = go ((c, d) |-> seen) d (move d 1 c)
 
-part1 :: Maybe ℤ
+part1 :: Ѓ ℤ (?)
 part1 = size <$> walk (readGrid $(input 6))
 
 part2 :: Ѓ ℤ (?)
 part2 =
   let g = readGrid $(input 6)
-   in foldl'
-        (((as @ℤ . isNothing . walk . (g ||.) . (,'#')) >>>) . (+))
-        (-1)
-        <$> (unSet <$> walk g)
+      walk' = (((as @ℤ . isNothing . walk . (g ||.) . (,'#')) >>>) . (+))
+   in foldl' walk' (-1) <$> (unSet <$> walk g)
