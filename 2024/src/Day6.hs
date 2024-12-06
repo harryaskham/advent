@@ -9,13 +9,13 @@ walk g = go (∅) def =<< (gridFindOne '^' g)
       | g |? move d 1 c == Just '#' = go seen (turnCW d) c
       | otherwise = go ((c, d) |-> seen) d (move d 1 c)
 
-part1 :: Maybe Int
+part1 :: Maybe ℤ
 part1 = size <$> walk (readGrid $(input 6))
 
-part2 :: Ѓ Int (?)
+part2 :: Ѓ ℤ (?)
 part2 =
   let g = readGrid $(input 6)
    in foldl'
-        (((bool 0 1 . isNothing . walk . (g ||.) . (,'#')) >>>) . (+))
+        (((as @ℤ . isNothing . walk . (g ||.) . (,'#')) >>>) . (+))
         (-1)
         <$> (unSet <$> walk g)
