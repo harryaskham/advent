@@ -5,7 +5,7 @@ occurrences = variadicat @n $ \kernel ->
   cells
     |=< convolveWith (Σ . as @ℤ .<. x_x)
     <$> rotations (readGrid kernel)
-    <*> [readGrid @HashGrid' $(input 4)]
+    <*> [readGrid @HashGrid' $(aoc 4)]
 
 part1 :: Σ ℤ
 part1 =

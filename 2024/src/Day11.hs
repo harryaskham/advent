@@ -2,7 +2,7 @@ module Day11 (part1, part2) where
 
 part1 :: Text
 part1 =
-  $(input 11)
+  $(aoc 11)
     -- & readAs (signed decimal)
     -- & parseWith parser
     -- & parseLinesWith line

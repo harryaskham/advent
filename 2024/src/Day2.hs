@@ -12,7 +12,7 @@ safe skip ls =
     ]
 
 part1 :: ℤ
-part1 = $(input 2) |-<..> safe False []
+part1 = $(aoc 2) |-<..> safe False []
 
 part2 :: ℤ
-part2 = $(input 2) |-<..> safe True []
+part2 = $(aoc 2) |-<..> safe True []

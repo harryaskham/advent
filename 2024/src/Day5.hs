@@ -2,7 +2,7 @@ module Day5 (part1, part2) where
 
 parts :: (Σ ℤ, Σ ℤ)
 parts =
-  $(input 5) |-<> do
+  $(aoc 5) |-<> do
     order :: Map ℤ [ℤ] <- mapcat "|" number number <* eol
     let cmp = bool GT LT .<. (⇄ ((? True) .<. ((. (order |?)) . (<$>) . (∈))))
     linesOf (csvOf (number @ℤ))
