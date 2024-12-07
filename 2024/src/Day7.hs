@@ -10,9 +10,9 @@ sat ops = do
   return $ if t `elem` ts then Σ t else Σ 0
 
 part1 :: Σ ℤ
-part1 = $(aoc 7) |-<..?!> (sat [(+), (*)])
+part1 = $(aoc 7) |-<..?!> sat [(+), (*)]
 
 part2 :: Σ ℤ
-part2 = $(aoc 7) |-<..?!> (sat [(+), (*), (||)])
-  where
-    a || b = (show a <> show b) |- number
+part2 =
+  let a || b = number -| show a <> show b
+   in $(aoc 7) |-<..?!> sat [(+), (*), (||)]
