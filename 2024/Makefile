@@ -30,6 +30,7 @@ test: pre-run
 	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2024"
 	--watch src \
 	--watch input \
+	--watch input/examples \
 	--watch test \
 	--restart-glob '**/package.yaml' \
 	--poll 1s
@@ -39,6 +40,7 @@ run-cmd: pre-run
 	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl x2024"
 	--watch src \
 	--watch input \
+	--watch input/examples \
 	--watch lib \
 	--restart-glob '**/package.yaml' \
 	--restart-glob 'input/**' \

@@ -1,12 +1,18 @@
 module Day7 (part1, part2) where
 
-part1 :: Integer
-part1 =
-  let sat x y z =
-        trying [
-          lookAhead eol >> guard (y == z) $> x, sat x (y - a) <$> number, sat x (y `div` a) <$> number]
-   in $(aocxn 7 1) |-<> (sat <$> (number <* string ": ") <*> wordOf number
+sat :: [ℤ -> ℤ -> ℤ] -> Parser (Σ ℤ)
+sat ops = do
+  t <- (number @ℤ) <* string ": "
+  xs <- many1 (wordOf (number @ℤ)) <* eof
+  let f s (x : xs) = mconcat [f (s `op` x) xs | op <- ops]
+      f s [] = [s]
+  let ts = f 0 xs
+  return $ if t `elem` ts then Σ t else Σ 0
 
+part1 :: Σ ℤ
+part1 = $(aoc 7) |-<..?!> (sat [(+), (*)])
 
-part2 :: Text
-part2 = "Part 2"
+part2 :: Σ ℤ
+part2 = $(aoc 7) |-<..?!> (sat [(+), (*), (||)])
+  where
+    a || b = (show a <> show b) |- number
