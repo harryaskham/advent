@@ -2,21 +2,14 @@ module Day8 (part1, part2) where
 
 antinodes :: ℤ -> ℤ -> Map Char [ℤ × ℤ] -> [ℤ × ℤ]
 antinodes l u =
-  nub ∘ (>>= ((>>= (\(a, b) -> bool [b + (i, i) ⋅ (b - a) | i <- [l .. u]] [] (a ≡ b))) ∘ uncurry cartesian ∘ dup)) ∘ values ∘ (|/ '.')
+  let nodes (a, b) = (a ≡ b) ??? [b + (i, i) ⋅ (b - a) | i <- [l .. u]] $ []
+   in nub ∘ (>>= (>>= nodes) ∘ join cartesian) ∘ values ∘ (|/ '.')
 
-solve l u g =
-  dup g
-    & ((∋) &<$>& (antinodes l u ∘ co @(Grid' (ℤ × ℤ) Char) @(Map Char [ℤ × ℤ])))
-    & filter (≡ True)
-    & size
+step :: ℤ -> ℤ -> Grid' (ℤ × ℤ) Char -> Σ ℤ
+step l u = (as @(Σ ℤ) .<. (∋)) &<$>& (antinodes l u ∘ co) <>∘ dup
 
-part1 :: ℤ
-part1 =
-  readGrid @Grid' @(ℤ × ℤ) @Char $(aoc 8)
-    & solve 1 1
+part1 :: Σ ℤ
+part1 = step 1 1 $ readGrid $(aoc 8)
 
--- 946 too low
-part2 :: ℤ
-part2 =
-  readGrid @Grid' @(ℤ × ℤ) @Char $(aoc 8)
-    & (\g -> solve 0 (max $@ maxXY g))
+part2 :: Σ ℤ
+part2 = step 0 ∘ (max $@) ∘ maxXY $$@ readGrid $(aoc 8)
