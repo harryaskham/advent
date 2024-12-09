@@ -1,6 +1,6 @@
 cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.36.1.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -114,6 +114,7 @@ library x2024-lib
     , hspec
     , parsec
     , quaalude
+    , range-set-list
     , relude
     , vector
   mixins:
@@ -194,6 +195,7 @@ executable x2024
     , hspec
     , parsec
     , quaalude
+    , range-set-list
     , relude
     , vector
     , x2024-lib
@@ -276,6 +278,7 @@ test-suite test-x2024
     , hspec
     , parsec
     , quaalude
+    , range-set-list
     , relude
     , vector
     , x2024-lib

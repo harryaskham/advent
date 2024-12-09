@@ -19,6 +19,7 @@ dependencies:
   - hspec
   - vector
   - parsec
+  - range-set-list
 
 internal-libraries:
   x2024-lib:
