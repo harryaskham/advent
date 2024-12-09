@@ -6,9 +6,18 @@ import Data.Map.Strict qualified as M
 import Data.RangeSet.Map qualified as RM
 import Data.Set qualified as S
 import Text.Show
-import Prelude hiding (empty, filter, insert, insertRange, lookup, member, show, values, (<|>))
+import Prelude hiding (empty, insert, insertRange, lookup, member, show, values, (<|>))
 
 data Taggedℤ a = Taggedℤ {tagℤ :: a, valueℤ :: ℤ}
+
+type family CarryF a where
+  CarryF (Taggedℤ a) = a
+
+class Carry a where
+  carry :: a -> CarryF a
+
+instance Carry (Taggedℤ a) where
+  carry = tagℤ
 
 instance (Show a) => Show (Taggedℤ a) where
   show (Taggedℤ i n) = show i
@@ -21,6 +30,15 @@ instance Ord (Taggedℤ a) where
 
 instance Hashable (Taggedℤ a) where
   hashWithSalt s = hashWithSalt s ∘ valueℤ
+
+instance (Num a) => Num (Taggedℤ a) where
+  Taggedℤ i a + Taggedℤ _ b = Taggedℤ i (a + b)
+  Taggedℤ i a - Taggedℤ _ b = Taggedℤ i (a - b)
+  Taggedℤ i a * Taggedℤ _ b = Taggedℤ i (a * b)
+  negate (Taggedℤ i a) = Taggedℤ i (negate a)
+  abs (Taggedℤ i a) = Taggedℤ i (abs a)
+  signum (Taggedℤ i a) = Taggedℤ i (signum a)
+  fromInteger n = Taggedℤ 0 n
 
 instance (Num a, Eq a) => Enum (Taggedℤ a) where
   succ (Taggedℤ i n) = Taggedℤ i (succ n)
@@ -48,9 +66,10 @@ class RangeMap m a | m -> a where
   isRangeEmpty :: (a, a) -> m -> Bool
   lookup :: a -> m -> a
   lookupM :: a -> m -> Maybe a
-  filter :: (a -> Bool) -> m -> m
-  values :: m -> [a]
   ranges :: m -> [(a, a)]
+  rangeFor :: (Carry a) => (CarryF a) -> m -> (a, a)
+  without :: (Carry a) => (CarryF a) -> m -> m
+  slot :: a -> (a, a) -> m -> Maybe (a, a)
 
 instance (Ord a, Enum a) => RangeMap (RM.RSet a) a where
   empty = RM.empty
@@ -62,9 +81,10 @@ instance (Ord a, Enum a) => RangeMap (RM.RSet a) a where
      in RM.null m''
   lookup k m = unjust $ RM.lookupGE k m
   lookupM = RM.lookupGE
-  filter = undefined
-  values = undefined
   ranges = undefined
+  rangeFor = undefined
+  without = undefined
+  slot = undefined
 
 instance (Hashable a, Enum a) => RangeMap (HashMap a a) a where
   empty = HM.empty
@@ -73,9 +93,10 @@ instance (Hashable a, Enum a) => RangeMap (HashMap a a) a where
   isRangeEmpty (a, b) m = all isNothing (lookupM <$> enumFromTo a b <*> pure m)
   lookup k m = unjust $ HM.lookup k m
   lookupM = HM.lookup
-  filter = HM.filter
-  values = HM.keys
   ranges = undefined
+  rangeFor = undefined
+  without = undefined
+  slot = undefined
 
 data RangeMap' a = RangeMap' (Map (a, a) a) (Map a (a, a))
 
@@ -91,10 +112,11 @@ instance (Ord a) => RangeMap (RangeMap' a) a where
   isRangeEmpty (a, b) m = undefined
   lookup k m = undefined
   lookupM = undefined
-  filter = undefined
-  values = undefined
+  rangeFor = undefined
+  without = undefined
+  slot = undefined
 
-data RangeSet a = RangeSet (Set (a, a))
+data RangeSet a = RangeSet (Set (a, a)) (Map (CarryF a) (a, a))
 
 overlap :: (Ord a) => (a, a) -> (a, a) -> Bool
 overlap (a, b) (c, d) = b ≥ c ∧ a ≤ d
@@ -102,18 +124,31 @@ overlap (a, b) (c, d) = b ≥ c ∧ a ≤ d
 contains :: (Ord a) => a -> (a, a) -> Bool
 contains a (b, c) = overlap (a, a) (b, c)
 
-instance (Ord a, Enum a) => RangeMap (RangeSet a) a where
-  empty = RangeSet S.empty
-  member a (RangeSet s) = mkSet [True] ≡ S.map (\(r0, r1) -> a ≥ r0 ∧ a ≤ r1) s
-  insertRange r (RangeSet s) = RangeSet (r |-> s)
+inside :: (Ord a) => (a, a) -> (a, a) -> Bool
+inside (a, b) c = contains a c ∧ contains b c
+
+instance (Ord a, Enum a, Num a, Carry a, Ord (CarryF a)) => RangeMap (RangeSet a) a where
+  empty = RangeSet S.empty M.empty
+  member a rs@(RangeSet s m) = carry a ∈ m
+  insertRange (a, b) (RangeSet s m) = RangeSet ((a, b) |-> s) (m |. (carry a, (a, b)))
   isRangeEmpty a m = all (≡ False) [overlap a r | r <- ranges m]
   lookup a m = unjust $ lookupM a m
   lookupM a m = case [r | r <- ranges m, contains a r] of
     [] -> Nothing
     ((r0, _) : _) -> Just r0
-  filter f (RangeSet s) = RangeSet (S.filter (\(a, _) -> f a) s)
-  values rs = enumFromTo =<<@ ranges rs
-  ranges (RangeSet s) = unSet s
+  ranges (RangeSet s m) = unSet s
+  rangeFor a (RangeSet s m) = m |! a
+  without i (RangeSet s m) = let r = m |! i in RangeSet (s |\ r) (m |\ i)
+  slot n bounds@(r0, r1) m
+    | r1 - r0 + 1 < n = Nothing
+    | otherwise =
+        case sort (ranges m) of
+          [] -> Just (r0, r0 + n - 1)
+          [(a, b)] -> if a >= n then Just (0, n - 1) else Just (b + 1, b + n)
+          rs@((a0, b) : _) ->
+            let gaps = (0, a0 - 1) : [(b + 1, c - 1) | ((a, b), (c, d)) <- zip rs (drop 1 rs)]
+                fits = nonEmpty [(a, a + n - 1) | gap@(a, b) <- gaps, gap `inside` bounds, let placed = (a, a + n - 1), placed `inside` gap]
+             in head <$> fits
 
 showRange :: (RangeMap m a, Enum a, Show a) => (a, a) -> m -> Text
 showRange (a, b) m = mconcat [(tshow <$> lookupM i m) ? "." | i <- [a .. b]]
@@ -156,41 +191,26 @@ part2 =
       freeOcc = ('0' : $(aoc 9)) |- many (twoOf (fromIntegral ∘ digitToInt <$> digit))
       fileSizes = mkMap $ zip [0 ..] (snd <$> freeOcc)
       bound = sum ((+) <$@> freeOcc) - 1
-      (occRM, _) =
+      scoreRange (Taggedℤ i a, Taggedℤ _ b) = i ⋅ (triangular b - triangular (a - 1))
+      (occRM, _, occScore) =
         foldl'
-          ( \(rm, address) (i, (free, occ)) ->
-              let rm' = insertRange (Taggedℤ i (address + free), Taggedℤ i (address + free + occ - 1)) rm
-               in (rm', address + free + occ)
+          ( \(rm, address, rmScore) (i, (free, occ)) ->
+              let r = (Taggedℤ i (address + free), Taggedℤ i (address + free + occ - 1))
+               in (insertRange r rm, address + free + occ, rmScore + scoreRange r)
           )
-          -- (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0)
-          (empty @(RangeSet (Taggedℤ ℤ)), 0)
+          (empty @(RangeSet (Taggedℤ ℤ)), 0, 0)
           (zip [0 ..] freeOcc)
-      filledRM =
+      (filledRM, filledScore) =
         foldl'
-          ( \rm (i, occ) ->
-              traceShow i $
-                let ibound = minimum (valueℤ <$> (values (filter ((≡ i) ∘ tagℤ) rm))) - 1
-                    fits =
-                      [ range
-                        | start <- [0 .. ibound],
-                          let range = (Taggedℤ i start, Taggedℤ i (start + occ - 1)),
-                          isRangeEmpty range rm
-                      ]
-                 in case fits of
-                      [] -> rm
-                      (range : _) -> insertRange range (filter ((≢ i) ∘ tagℤ) rm)
+          ( \(rm, rmScore) (i, occ) ->
+              traceShow (i, rmScore) $
+                let ir@(ilb, _) = rangeFor i rm
+                 in case slot (Taggedℤ 0 occ) (0, pred ilb) rm of
+                      Nothing -> (rm, rmScore)
+                      Just (Taggedℤ _ a, Taggedℤ _ b) ->
+                        let r = (Taggedℤ i a, Taggedℤ i b)
+                         in (insertRange r . without i $ rm, rmScore + scoreRange r - scoreRange ir)
           )
-          occRM
+          (occRM, occScore)
           (reverse (zip [0 ..] (snd <$> freeOcc)))
-      defragged [] _ = 0
-      defragged (di : dis) seenBlocks =
-        traceShow (length dis) $
-          case lookupM (Taggedℤ 0 di) filledRM of
-            Nothing -> defragged dis seenBlocks
-            Just (Taggedℤ i addr) ->
-              if (seenBlocks |! i) ≡ (fileSizes |! i)
-                then 0
-                else di ⋅ i + defragged dis (seenBlocks |~ (i, (+ 1)))
-   in traceShow (showRange (Taggedℤ 0 0, Taggedℤ 0 bound) filledRM) $
-        traceShow (showRange (Taggedℤ 0 0, Taggedℤ 0 bound) occRM) $
-          defragged [0 .. bound] (const 0 <$> fileSizes)
+   in filledScore
