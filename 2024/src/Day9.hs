@@ -4,6 +4,7 @@ import Control.Applicative ((<|>))
 import Data.HashMap.Strict qualified as HM
 import Data.Map.Strict qualified as M
 import Data.RangeSet.Map qualified as RM
+import Data.Set qualified as S
 import Text.Show
 import Prelude hiding (empty, filter, insert, insertRange, lookup, member, show, values, (<|>))
 
@@ -93,17 +94,39 @@ instance (Ord a) => RangeMap (RangeMap' a) a where
   filter = undefined
   values = undefined
 
+data RangeSet a = RangeSet (Set (a, a))
+
+overlap :: (Ord a) => (a, a) -> (a, a) -> Bool
+overlap (a, b) (c, d) = b ≥ c ∧ a ≤ d
+
+contains :: (Ord a) => a -> (a, a) -> Bool
+contains a (b, c) = overlap (a, a) (b, c)
+
+instance (Ord a, Enum a) => RangeMap (RangeSet a) a where
+  empty = RangeSet S.empty
+  member a (RangeSet s) = mkSet [True] ≡ S.map (\(r0, r1) -> a ≥ r0 ∧ a ≤ r1) s
+  insertRange r (RangeSet s) = RangeSet (r |-> s)
+  isRangeEmpty a m = all (≡ False) [overlap a r | r <- ranges m]
+  lookup a m = unjust $ lookupM a m
+  lookupM a m = case [r | r <- ranges m, contains a r] of
+    [] -> Nothing
+    ((r0, _) : _) -> Just r0
+  filter f (RangeSet s) = RangeSet (S.filter (\(a, _) -> f a) s)
+  values rs = enumFromTo =<<@ ranges rs
+  ranges (RangeSet s) = unSet s
+
 showRange :: (RangeMap m a, Enum a, Show a) => (a, a) -> m -> Text
 showRange (a, b) m = mconcat [(tshow <$> lookupM i m) ? "." | i <- [a .. b]]
 
 part1 :: ℤ
 part1 =
   let freeOcc :: [(ℤ, ℤ)]
-      freeOcc = ('0' : $(aoc 9)) |- many (twoOf (fromIntegral ∘ digitToInt <$> digit))
+      freeOcc = ('0' : $(aocx 9)) |- many (twoOf (fromIntegral ∘ digitToInt <$> digit))
       (fillFrom, _) =
         foldl'
           (\(rm, address) (i, (free, occ)) -> (insertRange (Taggedℤ i address, Taggedℤ i (address + occ - 1)) rm, address + occ))
-          (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0)
+          (empty @(RangeSet (Taggedℤ ℤ)), 0)
+          -- (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0)
           (reverse (zip [0 ..] freeOcc))
       (occRM, _, _) =
         foldl'
@@ -116,15 +139,15 @@ part1 =
                       )
                       (insertRange (Taggedℤ i (address + free), Taggedℤ i (address + free + occ - 1)) rm)
                       [0 .. free - 1]
-               in (rm', address + free + occ, nFilled + free)
+               in traceShow (showRange (Taggedℤ 0 0, Taggedℤ 0 50) rm') $ (rm', address + free + occ, nFilled + free)
           )
-          (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0, 0)
+          -- (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0, 0)
+          (empty @(RangeSet (Taggedℤ ℤ)), 0, 0)
           (zip [0 ..] freeOcc)
       defragged [] = 0
       defragged (di : dis) =
-        traceShow (length dis) $
-          let Taggedℤ i addr = lookup (Taggedℤ 0 di) occRM
-           in di ⋅ i + defragged dis
+        let Taggedℤ i addr = lookup (Taggedℤ 0 di) occRM
+         in di ⋅ i + defragged dis
    in defragged [0 .. sum (snd <$> freeOcc) - 1]
 
 part2 :: ℤ
@@ -139,7 +162,8 @@ part2 =
               let rm' = insertRange (Taggedℤ i (address + free), Taggedℤ i (address + free + occ - 1)) rm
                in (rm', address + free + occ)
           )
-          (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0)
+          -- (empty @(HashMap (Taggedℤ ℤ) (Taggedℤ ℤ)), 0)
+          (empty @(RangeSet (Taggedℤ ℤ)), 0)
           (zip [0 ..] freeOcc)
       filledRM =
         foldl'
