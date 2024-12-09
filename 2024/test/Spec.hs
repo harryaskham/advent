@@ -57,7 +57,7 @@ main = hspec $ do
     it "computes Part 2" $ Day8.part2 `shouldBe` (Σ 951)
   describe "Day 9" do
     it "computes Part 1" $ Day9.part1 `shouldBe` 6430446922192
-    it "computes Part 2" $ Day9.part2 `shouldBe` "Part 2"
+    it "computes Part 2" $ Day9.part2 `shouldBe` 6460170593016
   describe "Day 666" do
     it "computes Part 1" $ Day666.part1 `shouldBe` "Part 1"
     it "computes Part 2" $ Day666.part2 `shouldBe` "Part 2"
