@@ -6,7 +6,7 @@ trails skip g c =
       go (c :<| cs) seen nines
         | skip ∧ c ∈ seen = go cs seen nines
         | g |! c ≡ 9 = go cs (c |-> seen) (c : nines)
-        | otherwise = go (cs >< (neighbors @4 c g |-?-> uphill)) (c |-> seen) nines
+        | otherwise = go (cs >< (neighs @4 c g |-?-> uphill)) (c |-> seen) nines
       go _ _ nines = nines
    in go (mk₁ c) ø ø
 
