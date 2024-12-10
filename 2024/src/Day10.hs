@@ -1,14 +1,16 @@
 module Day10 (part1, part2) where
 
-part1 :: Text
+hike :: ℤ² ℕ₁₀ -> (ℤ × ℤ) -> [Σ ℤ]
+hike g = (⊥)
+
+part1 :: Σ ℤ
 part1 =
-  $(aoc 10)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+  ( ( (readGrid @Grid' @(ℤ × ℤ) @ℕ₁₀ $(aocx 10))
+        & dup
+        & (hike &=<<& (|?> (0 :: ℕ₁₀)))
+    )
+      <>!
+  )
 
 part2 :: Text
 part2 = "Part 2"
