@@ -3,7 +3,7 @@ module Day9 (part1, part2) where
 defragment :: ([(ℤ, (ℤ, ℤ))] -> [(ℤ, (ℤ, ℤ))]) -> ℤ
 defragment by =
   ('0' : $(aoc 9))
-    |- many (twoOf (as ∘ digitToInt <$> digit))
+    |- many (twoOf (as @ℤ ∘ digitToInt <$> digit))
     & (..#)
     & foldl'
       ( \(ends, files, start) (i, (free, full)) ->
@@ -13,15 +13,13 @@ defragment by =
           )
       )
       (ø, ø, 0)
-    & ( \(ends, files, _) ->
-          foldl'
-            ( \(ends, score) (i, r) ->
-                second
-                  ((+ score) ∘ (⋅ i) ∘ ((-) $@) ∘ (triangular <:>) ∘ second (subtract 1) ∘ swap)
-                  (place r ends)
-            )
-            (ends, 0)
-            (by files)
+    & tupdrop @1 @(MinQ ℤ ℤ, [(ℤ, (ℤ, ℤ))], ℤ)
+    & (bimap (,0) by)
+    &@ foldl'
+      ( \(ends, score) (i, r) ->
+          second
+            ((+ score) ∘ (⋅ i) ∘ ((-) $@) ∘ (triangular <:>) ∘ second (subtract 1) ∘ swap)
+            (place r ends)
       )
     & snd
   where
