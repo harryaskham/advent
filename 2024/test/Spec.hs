@@ -70,7 +70,7 @@ spec = do
     it "computes Part 2" $ Day11.part2 `shouldBe` 218817038947400
   describe "Day 12" do
     it "computes Part 1" $ Day12.part1 `shouldBe` 1456082
-    it "computes Part 2" $ Day12.part2 `shouldBe` "Part 2"
+    it "computes Part 2" $ Day12.part2 `shouldBe` 872382
   describe "Day 666" do
     it "computes Part 1" $ Day666.part1 `shouldBe` "Part 1"
     it "computes Part 2" $ Day666.part2 `shouldBe` "Part 2"
