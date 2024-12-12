@@ -1,6 +1,6 @@
 module Day10 (part1, part2) where
 
-trails :: 𝔹 -> ℤ² ℕ₁₀ -> (ℤ × ℤ) -> [ℤ × ℤ]
+trails :: 𝔹 -> G ℤ² ℕ₁₀ -> ℤ² -> [ℤ²]
 trails skip g c =
   let above c n = g |! n ≡ g |! c + 1
       go (c :<| cs) seen nines
@@ -10,7 +10,7 @@ trails skip g c =
       go _ _ nines = nines
    in go (mk₁ c) ø ø
 
-hike :: ([ℤ × ℤ] -> [ℤ × ℤ]) -> 𝔹 -> Σ ℤ
+hike :: ([ℤ²] -> [ℤ²]) -> 𝔹 -> Σ ℤ
 hike f skip = (readGrid $(aoc 10) ⥢ (((Σ ∘ size ∘ f) ∘<∘ trails skip) &<$>& (|?> (0 :: ℕ₁₀))) <>!)
 
 part1 :: Σ ℤ

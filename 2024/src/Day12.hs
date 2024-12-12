@@ -1,6 +1,6 @@
 module Day12 (part1, part2) where
 
-region :: ℤ² Char -> (ℤ × ℤ) -> (Set (ℤ × ℤ), ℤ, ℤ, ℤ)
+region :: G ℤ² Char -> ℤ² -> (Set ℤ², ℤ, ℤ, ℤ)
 region g c =
   let go r Empty segs area perim = (r, area, perim, sides segs)
       go r (((∈ r) -> True) :<| cs) segs area perim = go r cs segs area perim
@@ -15,7 +15,7 @@ region g c =
           (1, 0) -> groupBy (\(x, y) (x', y') -> x ≡ x' ∧ diff y y' ≡ 1) (sort cs)
    in go ø (mk₁ c) ø 0 0
 
-prices :: ℤ² Char -> (ℤ, ℤ)
+prices :: G ℤ² Char -> ℤ²
 prices g =
   let go (null -> True) ps = ps
       go cs ps =
