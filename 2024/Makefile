@@ -27,7 +27,8 @@ repl: pre-run
 
 test: pre-run
 	ghciwatch --test-ghci Spec.main \
-	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2024"
+	--command "cabal v2-repl test-x2024" \
+	--after-startup-ghci '$(AFTER_STARTUP_GHCI)' \
 	--watch src \
 	--watch input \
 	--watch input/examples \
@@ -35,9 +36,12 @@ test: pre-run
 	--restart-glob '**/package.yaml' \
 	--poll 1s
 
+test-today: pre-run
+	make AFTER_STARTUP_GHCI=":set args \"--match=/Day $$(date +%-d)/\"" test
+
 run-cmd: pre-run
-	ghciwatch --test-ghci $(CMD)
-	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl x2024"
+	ghciwatch --test-ghci $(CMD) \
+	--enable-eval \
 	--watch src \
 	--watch input \
 	--watch input/examples \

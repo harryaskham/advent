@@ -29,8 +29,12 @@ import Day8 qualified
 import Day9 qualified
 import Test.Hspec
 
-main :: IO ()
-main = hspec $ do
+-- $> import Test.Hspec  -- May be necessary for some setups.
+
+-- $> hspec spec
+
+spec :: Spec
+spec = do
   describe "Day 1" do
     it "computes Part 1" $ Day1.part1 `shouldBe` 1941353
     it "computes Part 2" $ Day1.part2 `shouldBe` 22539317
@@ -64,6 +68,12 @@ main = hspec $ do
   describe "Day 11" do
     it "computes Part 1" $ Day11.part1 `shouldBe` 183484
     it "computes Part 2" $ Day11.part2 `shouldBe` 218817038947400
+  describe "Day 12" do
+    it "computes Part 1" $ Day12.part1 `shouldBe` 1456082
+    it "computes Part 2" $ Day12.part2 `shouldBe` "Part 2"
   describe "Day 666" do
     it "computes Part 1" $ Day666.part1 `shouldBe` "Part 1"
     it "computes Part 2" $ Day666.part2 `shouldBe` "Part 2"
+
+main :: IO ()
+main = hspec spec
