@@ -1,31 +1,32 @@
 module Day13 where
 
-sgd :: [ℤ] -> Σ ℤ
-sgd [ax', ay', bx', by', px', py'] = f 0 (0, 0)
+descend :: ℝ -> ℝ² -> [ℝ] -> Σ ℤ
+descend last (a, b) claw@[ax, ay, bx, by, px, py]
+  | l ≡ last = 0
+  | p (as @ℤ² (a, b)) ≡ as @ℤ² (px, py) = as @(Σ ℤ) (3 ⋅ a) + as @(Σ ℤ) b
+  | otherwise = descend l (a - (da / ax), b - (db / bx)) claw
   where
-    [ax, ay, bx, by, px, py] = fromIntegral <$> [ax', ay', bx', by', px', py']
-    p (a, b) = (a ⋅ ax' + b ⋅ bx', a ⋅ ay' + b ⋅ by')
-    loss (a, b) = (a ⋅ ax + b ⋅ bx - px) ** 2 + (a ⋅ ay + b ⋅ by - py) ** 2 + 3 * a + b
+    p (a, b) = (a ⋅ as @ℤ ax + b ⋅ as @ℤ bx, a ⋅ as @ℤ ay + b ⋅ as @ℤ by)
+    (dx, dy) = (\a b -> a ⋅ ax + b ⋅ bx - px, \a b -> a ⋅ ay + b ⋅ by - py)
+    loss (a, b) = (dx a b) ** 2 + (dy a b) ** 2 + 3 * a + b
     grad (a, b) =
-      ( 2 ⋅ (ax ⋅ (a ⋅ ax + b ⋅ bx - px) + ay ⋅ (a ⋅ ay + b ⋅ by - py)) + 3,
-        2 ⋅ (bx ⋅ (a ⋅ ax + b ⋅ bx - px) + by ⋅ (a ⋅ ay + b ⋅ by - py)) + 1
+      ( 2 ⋅ (ax ⋅ (dx a b) + ay ⋅ (dy a b)) + 3,
+        2 ⋅ (bx ⋅ (dx a b) + by ⋅ (dy a b)) + 1
       )
-    f last (a, b)
-      | l ≡ last = 0
-      | p (a', b') ≡ (px', py') = Σ (3 ⋅ a' + b')
-      | otherwise = f l (a - (da / ax), b - (db / bx))
-      where
-        l = loss (a, b)
-        lr = 0.001
-        (da', db') = grad (a, b)
-        (da, db) = (lr ⋅ da', lr ⋅ db')
-        (a', b') = (round a, round b)
+    l = loss (a, b)
+    (da, db) = both (* 0.001) (grad (a, b))
 
-claws :: [[ℤ]]
-claws = $(aoc 13) |-..<> numbers @ℤ & chunksOf 6
+claws :: [[ℝ]]
+claws = $(aoc 13) |-..<> numbers & chunksOf 6
 
 part1 :: Σ ℤ
-part1 = (claws <&> sgd <>!)
+part1 = (claws <&> descend 0 (0, 0) <>!)
 
 part2 :: Σ ℤ
-part2 = (claws & mapped ∘ traversed ∘ indices (∈ [4 :: ℤ₆₄, 5]) %~ (+ 10000000000000) <&> sgd <>!)
+part2 =
+  ( claws
+      & (mapped ∘ traversed ∘ indices (∈ [4 :: ℤ₆₄, 5]))
+      +~ 10000000000000
+      <&> descend 0 (0, 0)
+      <>!
+  )
