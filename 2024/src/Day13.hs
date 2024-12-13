@@ -22,10 +22,10 @@ sgd [ax', ay', bx', by', px', py'] = f 0 (0, 0)
         (a', b') = (round a, round b)
 
 claws :: [[ℤ]]
-claws = chunksOf 6 $ $(aoc 13) |-..<> numbers @ℤ
+claws = $(aoc 13) |-..<> numbers @ℤ & chunksOf 6
 
 part1 :: Σ ℤ
 part1 = (claws <&> sgd <>!)
 
 part2 :: Σ ℤ
-part2 = ((claws & mapped ∘ traversed ∘ indices (∈ [4 :: ℤ₆₄, 5]) %~ (+ 10000000000000)) <&> sgd <>!)
+part2 = (claws & mapped ∘ traversed ∘ indices (∈ [4 :: ℤ₆₄, 5]) %~ (+ 10000000000000) <&> sgd <>!)
