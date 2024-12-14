@@ -20,6 +20,7 @@ dependencies:
   - vector
   - parsec
   - range-set-list
+  - ansi-terminal
 
 internal-libraries:
   x2024-lib:
