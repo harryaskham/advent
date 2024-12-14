@@ -1,4 +1,4 @@
-module Day13 where
+module Day13 (part1, part2) where
 
 descend :: ℝ -> ℝ² -> [ℝ] -> Σ ℤ
 descend last (a, b) claw@[ax, ay, bx, by, px, py]

@@ -13,7 +13,7 @@ defragment by =
           )
       )
       (ø, ø, 0)
-    & tupdrop @1 @(MinQ ℤ ℤ, [(ℤ, (ℤ, ℤ))], ℤ)
+    & (\(a, b, _) -> (a, b))
     & (bimap (,0) by)
     &@ foldl'
       ( \(ends, score) (i, r) ->

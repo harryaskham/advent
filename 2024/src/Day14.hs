@@ -1,14 +1,12 @@
 module Day14 (part1, part2) where
 
-part1 :: Text
-part1 =
-  $(aoc 14)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+dims :: ℤ²
+dims = (101, 103)
 
-part2 :: Text
-part2 = "Part 2"
+robots :: [ℤ⁴]
+robots = $(aocx 14) |-. tuples @4 (numbers @ℤ)
+
+part1 = robots
+
+part2 :: ℤ
+part2 = 0
