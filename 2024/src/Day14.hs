@@ -1,65 +1,48 @@
 module Day14 (part1, part2) where
 
-import Data.Text qualified as T
-import System.Console.ANSI
-import System.IO (stdout)
+(dims@(w, h), robots) :: (ℤ², [ℤ⁴]) = ((101, 103), $(aoc 14) |-. tuples @4 (numbers @ℤ))
 
-robots :: (ℤ², [ℤ⁴])
-robots = ((101, 103), $(aoc 14) |-. tuples @4 (numbers @ℤ))
-
-xrobots :: (ℤ², [ℤ⁴])
-xrobots = ((11, 7), $(aocx 14) |-. tuples @4 (numbers @ℤ))
-
-step :: ℤ² -> ℤ⁴ -> ℤ⁴
-step (w, h) (x, y, vx, vy) = ((x + vx) `mod` w, (y + vy) `mod` h, vx, vy)
-
-rev :: ℤ² -> ℤ⁴ -> ℤ⁴
-rev (w, h) (x, y, vx, vy) = ((x - vx) `mod` w, (y - vy) `mod` h, vx, vy)
+step :: ℤ⁴ -> ℤ⁴
+step (x, y, vx, vy) = ((x + vx) `mod` w, (y + vy) `mod` h, vx, vy)
 
 part1 :: ℤ
 part1 =
-  let (dims@(w, h), rs) = robots
-      (xmid, ymid) = both (`div` 2) dims
-      moved = foldl' (\rs _ -> step dims <$> rs) rs [1 .. 100]
-      xys = traceShowId $ (\(x, y, _, _) -> (x, y)) <$> moved
-      nonmids = [(x, y) | (x, y) <- xys, x ≢ xmid, y ≢ ymid]
-      (ul, ur, dl, dr) =
-        foldl'
-          ( \(ul, ur, dl, dr) p@(x, y) ->
-              case (x < xmid, y < ymid) of
-                (True, True) -> (p : ul, ur, dl, dr)
-                (True, False) -> (ul, ur, p : dl, dr)
-                (False, True) -> (ul, p : ur, dl, dr)
-                (False, False) -> (ul, ur, dl, p : dr)
-          )
-          ([], [], [], [])
-          nonmids
-   in product (size <$> [ul, ur, dl, dr])
+  product $
+    foldl'
+      ( \[ul, ur, dl, dr] p@(x, y) ->
+          case (x < w `div` 2, y < h `div` 2) of
+            (True, True) -> [ul + 1, ur, dl, dr]
+            (True, False) -> [ul, ur, dl + 1, dr]
+            (False, True) -> [ul, ur + 1, dl, dr]
+            (False, False) -> [ul, ur, dl, dr + 1]
+      )
+      [0, 0, 0, 0]
+      [ (x, y)
+        | (x, y, _, _) <- foldl' (\rs _ -> step <$> rs) robots [1 .. 100],
+          (∧) $@ bimap (x ≢) (y ≢) (both (`div` 2) dims)
+      ]
 
-showRobots :: ℤ² -> [ℤ⁴] -> Text
-showRobots (w, h) rs =
-  let (g :: G ℤ² ℕ₁₀) = mkGrid [((x, y), (0 :: ℕ₁₀)) | x <- [0 .. w - 1], y <- [0 .. h - 1]]
-      g' = foldl' (\g (x, y, _, _) -> g ||~ ((x, y), (+ 1))) g rs
-   in T.replace "0" " " (pretty g')
+findTree :: ℝ -> Map ℤ ℝ -> ℝ -> ℝ -> ℤ -> [ℤ⁴] -> ℤ
+findTree threshold q qn kl n rs =
+  let kl' = kl0 q qn rs
+   in if diff kl kl' >= threshold
+        then n
+        else findTree threshold q qn kl' (n + 1) (step <$> rs)
 
-findTree :: ℤ -> ℤ² -> [ℤ⁴] -> IO ℤ
-findTree n dims rs = do
-  clearScreen
-  putTextLn $ "step " <> tshow n
-  let s = showRobots dims rs
-  if "1111111111111111111111111111111" `T.isInfixOf` s
-    then do
-      putTextLn s
-      c <- getLine
-      case T.unpack c of
-        "p" -> findTree (n - 1) dims (rev dims <$> rs)
-        ('p' : ns) -> let n' = ns |- number in findTree (n - n') dims (foldl' (\rs _ -> rev dims <$> rs) rs [0 .. n' - 1])
-        ('f' : ns) -> let n' = ns |- number in findTree (n + n') dims (foldl' (\rs _ -> step dims <$> rs) rs [0 .. n' - 1])
-        _ -> findTree (n + 1) dims (step dims <$> rs)
-    else findTree (n + 1) dims (step dims <$> rs)
+kl0 :: Map ℤ ℝ -> ℝ -> [ℤ⁴] -> ℝ
+kl0 q qn rs =
+  let p = as @ℝ @ℤ <$> counts [x + y | (x, y, _, _) <- rs]
+      pn = as @ℝ $ length rs
+   in sum
+        [ kl px pn qx qn + kl qx qn px pn
+          | (d, px) <- unMap p,
+            let qx = q |! d,
+            qx ≢ 0,
+            let kl ax an bx bn = (ax / an) ⋅ logBase (exp 1) (bn ⋅ ax / an ⋅ bx)
+        ]
 
-part2 :: IO ℤ
-part2 = do
-  stdoutSupportsANSI <- hNowSupportsANSI stdout
-  let (dims, rs) = robots
-  findTree 0 dims rs
+part2 :: ℤ
+part2 =
+  let q = as @ℝ @ℤ <$> counts [x + y | x <- [0 .. w - 1], y <- [0 .. h - 1]]
+      qn = w ⋅ h
+   in findTree 0.6 q (qn & as @ℝ) (kl0 q (qn & as @ℝ) robots) 0 robots
