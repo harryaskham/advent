@@ -6,8 +6,8 @@ walk g = go (∅) def =<< (gridFindOne '^' g)
     go seen d c
       | (c, d) ∈ seen = Nothing
       | c ∉ g = Just $ setMap fst seen
-      | g |? move d 1 c == Just '#' = go seen (turnCW d) c
-      | otherwise = go ((c, d) |-> seen) d (move d 1 c)
+      | g |? move @ℤ₆₄ d 1 c == Just '#' = go seen (turnCW d) c
+      | otherwise = go ((c, d) |-> seen) d (move @ℤ₆₄ d 1 c)
 
 part1 :: Ѓ ℤ (?)
 part1 = size <$> walk $(grid 6)
