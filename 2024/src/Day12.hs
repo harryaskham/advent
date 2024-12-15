@@ -23,4 +23,4 @@ prices g =
          in go (cs \\ r) (bimap (+ area ⋅ perim) (+ area ⋅ sides) ps)
    in go (mk $ coords g) (0, 0)
 
-(part1, part2) :: (ℤ, ℤ) = prices (readGrid $(aoc 12))
+(part1, part2) :: (ℤ, ℤ) = prices $(grid 12)

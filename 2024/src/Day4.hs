@@ -1,11 +1,11 @@
 module Day4 (part1, part2) where
 
 occurrences :: forall n. n -*=| Text |=*-> Σ ℤ
-occurrences = variadicat @n $ \kernel ->
+occurrences = variadicat @n @Text $ \kernel ->
   cells
     |=< convolveWith (Σ . as @ℤ .<. x_x)
     <$> rotations (readGrid kernel)
-    <*> [readGrid @HashGrid' $(aoc 4)]
+    <*> pure ($(grid 4) :: HashGrid' (ℤ₆₄, ℤ₆₄) Char)
 
 part1 :: Σ ℤ
 part1 =

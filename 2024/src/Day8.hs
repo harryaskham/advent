@@ -9,7 +9,7 @@ step :: ℤ -> ℤ -> Grid' (ℤ × ℤ) Char -> Σ ℤ
 step l u = ((as @(Σ ℤ) .<. (∋)) &<$>& (antinodes l u ∘ co)) <>∘ dup
 
 part1 :: Σ ℤ
-part1 = step 1 1 $ readGrid $(aoc 8)
+part1 = step 1 1 $ $(grid 8)
 
 part2 :: Σ ℤ
-part2 = step 0 ∘ (max $@) ∘ maxXY $$@ readGrid $(aoc 8)
+part2 = step 0 ∘ (max $@) ∘ maxXY $$@ $(grid 8)

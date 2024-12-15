@@ -11,7 +11,7 @@ trails skip g c =
    in go (mk₁ c) ø ø
 
 hike :: ([ℤ²] -> [ℤ²]) -> 𝔹 -> Σ ℤ
-hike f skip = (readGrid $(aoc 10) ⥢ (((Σ ∘ size ∘ f) ∘<∘ trails skip) &<$>& (|?> (0 :: ℕ₁₀))) <>!)
+hike f skip = ($(grid 10) ⥢ (((Σ ∘ size ∘ f) ∘<∘ trails skip) &<$>& (|?> (0 :: ℕ₁₀))) <>!)
 
 part1 :: Σ ℤ
 part1 = hike nub True

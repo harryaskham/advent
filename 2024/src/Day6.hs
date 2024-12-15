@@ -10,10 +10,10 @@ walk g = go (∅) def =<< (gridFindOne '^' g)
       | otherwise = go ((c, d) |-> seen) d (move d 1 c)
 
 part1 :: Ѓ ℤ (?)
-part1 = size <$> walk (readGrid $(aoc 6))
+part1 = size <$> walk $(grid 6)
 
 part2 :: Ѓ ℤ (?)
 part2 =
-  let g = readGrid $(aoc 6)
+  let g = $(grid 6)
       walk' = (((as @ℤ . isNothing . walk . (g ||.) . (,'#')) >>>) . (+))
    in foldl' walk' (-1) <$> (unSet <$> walk g)
