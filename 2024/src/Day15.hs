@@ -8,20 +8,19 @@ instance GridCell C where
 gps :: ℤ² -> Σ ℤ
 gps (x, y) = Σ (100 ⋅ y + x)
 
-step :: ℤ² -> [Dir²] -> G ℤ² C -> G ℤ² C
-step _ [] g = g
-step robot (dir : dirs) g
-  | g |! robot' ≡ W = step robot dirs g
-  | g |! robot' ≡ S = step robot' dirs g
-  | otherwise =
-      case push [robot] of
-        Just moves -> step robot' dirs (foldl' (&) g moves)
-        Nothing -> step robot dirs g
+step :: [Dir²] -> ℤ² -> G ℤ² C -> G ℤ² C
+step [] _ g = g
+step (dir : dirs) robot g =
+  case (g |! robot', push [robot]) of
+    (W, _) -> step dirs robot g
+    (S, _) -> step dirs robot' g
+    (_, Just moves) -> step dirs robot' (foldl' (&) g moves)
+    _ -> step dirs robot g
   where
     robot' = move @ℤ dir 1 robot
     push cs =
       let cs' = move @ℤ dir 1 <$> cs
-          movs = flip $ foldl' (\g c -> g ||. (c, S) ||. (move @ℤ dir 1 c, g |! c))
+          movs = flip $ foldl' (\g c -> g |. (c, S) |. (move @ℤ dir 1 c, g |! c))
           affected =
             nub $
               mconcat $
@@ -61,7 +60,7 @@ sim f o =
                  <$> (f <$> (readGrid @G @ℤ² @C <$> manyOf "#.O@\n"))
                  <*> (fromArrow2 <$$> (mconcat <$> (linesOf (manyOf "<>^v") <* eof)))
              )
-   in (step (g |!> R) dirs g |?> o <&> gps <>!)
+   in (step dirs (g |!> R) g |?> o <&> gps <>!)
 
 part1 :: Σ ℤ
 part1 = sim id O
