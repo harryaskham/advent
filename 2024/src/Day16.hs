@@ -37,7 +37,7 @@ paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø)) [] ø
         n
         (manhattan c end)
         (maximum (0 : [turnDiff d facing | d <- c `goingTo` end]))
-    go cap ((est, (c, facing, n, path)) :<! q) paths (seen :: Map (ℤ², Dir²) ℤ)
+    go cap ((c, facing, n, path) :<!! q) paths (seen :: Map (ℤ², Dir²) ℤ)
       | n > cap = (cap, size (foldl1 (∪) paths))
       | c ≡ end = go n q ((end |-> path) : paths) (seen |. ((c, facing), n))
       | (c, facing) ∈ seen ∧ seen |! (c, facing) ≢ n = go cap q paths seen
