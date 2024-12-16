@@ -9,7 +9,7 @@ part1 :: ℤ
 part1 =
   product $
     foldl'
-      ( \[ul, ur, dl, dr] p@(x, y) ->
+      ( \[ul, ur, dl, dr] (x, y) ->
           case (x < w `div` 2, y < h `div` 2) of
             (True, True) -> [ul + 1, ur, dl, dr]
             (True, False) -> [ul, ur, dl + 1, dr]

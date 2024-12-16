@@ -3,7 +3,7 @@ module Day15 (part1, part2) where
 data C = W | S | O | R | OL | OR deriving (Eq, Show, Ord)
 
 instance GridCell C where
-  cell = [(W, '#'), (S, '.'), (O, 'O'), (R, '@'), (OL, '['), (OR, ']')]
+  cs = [(W, '#'), (S, '.'), (O, 'O'), (R, '@'), (OL, '['), (OR, ']')]
 
 gps :: ℤ² -> Σ ℤ
 gps (x, y) = Σ (100 ⋅ y + x)
@@ -60,7 +60,7 @@ sim f o =
   let (g, dirs) =
         $(aoc 15)
           |- ( (,)
-                 <$> (f <$> (readGrid @G @ℤ² @C <$> manyOf "#.O@\n"))
+                 <$> (f <$> (readGrid @G @ℤ² @C ∘ pack <$> manyOf "#.O@\n"))
                  <*> (fromArrow2 <$$> (mconcat <$> (linesOf (manyOf "<>^v") <* eof)))
              )
    in (step dirs (g |!> R) g |?> o <&> gps <>!)
