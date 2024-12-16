@@ -15,7 +15,7 @@ blink (Mℤ n (Dec s))
 
 blinks :: ℤ -> ℤ
 blinks n =
-  $(aocx 11)
+  $(aoc 11)
     |- (mk <$> wordsOf (Mℤ n ∘ mkS ∘ mk <$> many1 nat₁₀))
     & (size ∘ join ∘ run ∘ traverse blink)
 
