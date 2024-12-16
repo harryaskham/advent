@@ -3,7 +3,7 @@ module Day13 (part1, part2) where
 descend :: ℝ -> ℝ² -> [ℝ] -> Σ ℤ
 descend last (a, b) claw@[ax, ay, bx, by, px, py]
   | l ≡ last = 0
-  | p (as @ℤ² (a, b)) ≡ as @ℤ² (px, py) = as @(Σ ℤ) (3 ⋅ a) + as @(Σ ℤ) b
+  | p (as @ℤ² (a, b)) ≡ as @ℤ² (px, py) = Σ (3 ⋅ (as @ℤ a) + (as @ℤ b))
   | otherwise = descend l (a - (da / ax), b - (db / bx)) claw
   where
     p (a, b) = (a ⋅ as @ℤ ax + b ⋅ as @ℤ bx, a ⋅ as @ℤ ay + b ⋅ as @ℤ by)
