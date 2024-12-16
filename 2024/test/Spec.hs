@@ -44,18 +44,18 @@ spec = do
   describe "Day 3" do
     it "computes Part 1" $ Day3.part1 `shouldBe` 182780583
     it "computes Part 2" $ Day3.part2 `shouldBe` 90772405
-  -- describe "Day 4" do
-  --  it "computes Part 1" $ Day4.part1 `shouldBe` 2573
-  --  it "computes Part 2" $ Day4.part2 `shouldBe` 1850
+  describe "Day 4" do
+    it "computes Part 1" $ Day4.part1 `shouldBe` 2573
+    it "computes Part 2" $ Day4.part2 `shouldBe` 1850
   describe "Day 5" do
-    it "computes Part 1" $ Day5.part1 `shouldBe` (Σ 4462)
-    it "computes Part 2" $ Day5.part2 `shouldBe` (Σ 6767)
+    it "computes Part 1" $ Day5.part1 `shouldBe` (4462)
+    it "computes Part 2" $ Day5.part2 `shouldBe` (6767)
   describe "Day 6" do
     it "computes Part 1" $ Day6.part1 `shouldBe` (Just 5095)
-  -- it "computes Part 2" $ Day6.part2 `shouldBe` (Just 1933)
+    it "computes Part 2" $ Day6.part2 `shouldBe` (Just 1933)
   describe "Day 7" do
     it "computes Part 1" $ Day7.part1 `shouldBe` (Σ 4998764814652)
-  -- it "computes Part 2" $ Day7.part2 `shouldBe` (Σ 37598910447546)
+    it "computes Part 2" $ Day7.part2 `shouldBe` (Σ 37598910447546)
   describe "Day 8" do
     it "computes Part 1" $ Day8.part1 `shouldBe` (Σ 254)
     it "computes Part 2" $ Day8.part2 `shouldBe` (Σ 951)

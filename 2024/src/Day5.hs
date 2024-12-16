@@ -1,17 +1,20 @@
 module Day5 (part1, part2) where
 
-parts :: (Σ ℤ, Σ ℤ)
-parts =
-  $(aoc 5) |-<> do
-    order :: Map ℤ [ℤ] <- mapcat "|" number number <* eol
-    let cmp = bool GT LT .<. (⇄ ((? True) .<. ((. (order |?)) . (<$>) . (∈))))
-    linesOf (csvOf (number @ℤ))
-      <&> (⤊ (\(a, b) -> bool (Σ a, Σ 0) (Σ 0, Σ b)))
-      . (⥢ (bimap (uncurry zip . both (<&> middle)) (⤊ (==))))
-      . (⥢ (second (<&> sortBy cmp)))
+(rules, orders) :: (Map ℤ [ℤ], [[ℤ]]) =
+  $(aoc 5)
+    |- ( (,)
+           <$> (mapcat "|" number number <* eol)
+           <*> (many1 ((number @ℤ `sepBy1` char ',') <* eol))
+       )
 
-part1 :: Σ ℤ
-part1 = fst parts
+mkCompare :: Map ℤ [ℤ] -> ℤ -> ℤ -> Ordering
+mkCompare lt a b
+  | a == b = EQ
+  | b ∈ (lt |? a ? [b]) = LT
+  | otherwise = GT
 
-part2 :: Σ ℤ
-part2 = snd parts
+solve f = sum (zipWith (\a b -> bool 0 (middle a) (a == b)) orders (sortBy (mkCompare rules) <$> orders))
+
+part1 = solve bool
+
+part2 = solve (\a b c -> bool b a c)
