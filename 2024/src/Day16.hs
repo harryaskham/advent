@@ -31,35 +31,25 @@ graph g = go (mk₁ (g |!> Start)) ø
 paths :: ℤ² -> ℤ² -> Map ℤ² (Map ℤ² (Dir², Set ℤ²)) -> (ℤ, ℤ)
 paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø)) [] ø
   where
+    score n x t = n + x + 1000 ⋅ t
     h (c, facing, n, _) =
-      sum
-        [ n,
-          manhattan c end,
-          1000 ⋅ maximum (0 : [turnDiff d facing | d <- c `goingTo` end])
-        ]
-    go cap ((est, (c, facing, n, path)) :<! q) paths (gseen :: Map (ℤ², Dir²) ℤ)
+      score
+        n
+        (manhattan c end)
+        (maximum (0 : [turnDiff d facing | d <- c `goingTo` end]))
+    go cap ((est, (c, facing, n, path)) :<! q) paths (seen :: Map (ℤ², Dir²) ℤ)
       | n > cap = (cap, size (foldl1 (∪) paths))
-      | c ≡ end = go n q ((end |-> path) : paths) (gseen |. ((c, facing), n))
-      | (c, facing) ∈ gseen ∧ gseen |! (c, facing) ≢ n = go cap q paths gseen
+      | c ≡ end = go n q ((end |-> path) : paths) (seen |. ((c, facing), n))
+      | (c, facing) ∈ seen ∧ seen |! (c, facing) ≢ n = go cap q paths seen
       | otherwise =
-          go
-            cap
-            ( foldl'
-                ( \q (c', (facing', path')) ->
-                    qInsert
-                      h
-                      ( c',
-                        facing',
-                        n + size path' + 1000 ⋅ (turnDiff facing facing'),
-                        path' ∪ path
-                      )
-                      q
+          let st (c', (facing', path')) =
+                ( c',
+                  facing',
+                  score n (size path') (turnDiff facing facing'),
+                  path' ∪ path
                 )
-                q
-                (unMap (gr |! c))
-            )
-            paths
-            (gseen |. ((c, facing), n))
+              ins q next = qInsert h (st next) q
+           in go cap (foldl' ins q (unMap (gr |! c))) paths (seen |. ((c, facing), n))
 
 (part1, part2) :: (ℤ, ℤ) =
   let (g :: G ℤ² C) = $(grid 16)
