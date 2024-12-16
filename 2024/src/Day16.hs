@@ -29,18 +29,17 @@ graph g = go (mk₁ (g |!> Start)) ø
            in go (q >< mk (fst <$> nodes)) (gr |. (c, mkMap nodes))
 
 paths :: ℤ² -> ℤ² -> Map ℤ² (Map ℤ² (Dir², Set ℤ²)) -> (ℤ, ℤ)
-paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø, ø)) [] ø
+paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø)) [] ø
   where
-    h (c, facing, n, _, seen) =
+    h (c, facing, n, _) =
       sum
         [ n,
           manhattan c end,
           1000 ⋅ maximum (0 : [turnDiff d facing | d <- c `goingTo` end])
         ]
-    go cap ((est, (c, facing, n, path, seen)) :<! q) paths (gseen :: Map (ℤ², Dir²) ℤ)
+    go cap ((est, (c, facing, n, path)) :<! q) paths (gseen :: Map (ℤ², Dir²) ℤ)
       | n > cap = (cap, size (foldl1 (∪) paths))
       | c ≡ end = go n q ((end |-> path) : paths) (gseen |. ((c, facing), n))
-      | (c, facing) ∈ seen = go cap q paths gseen
       | (c, facing) ∈ gseen ∧ gseen |! (c, facing) ≢ n = go cap q paths gseen
       | otherwise =
           go
@@ -52,8 +51,7 @@ paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø, ø)) []
                       ( c',
                         facing',
                         n + size path' + 1000 ⋅ (turnDiff facing facing'),
-                        path' ∪ path,
-                        (c, facing) |-> seen
+                        path' ∪ path
                       )
                       q
                 )
@@ -65,5 +63,4 @@ paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø, ø)) []
 
 (part1, part2) :: (ℤ, ℤ) =
   let (g :: G ℤ² C) = $(grid 16)
-      gr = graph g
-   in paths (g |!> Start) (g |!> End) gr
+   in paths (g |!> Start) (g |!> End) (graph g)
