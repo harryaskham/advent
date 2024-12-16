@@ -29,7 +29,7 @@ graph g = go (mk₁ (g |!> Start)) ø
            in go (q >< mk (fst <$> nodes)) (gr |. (c, mkMap nodes))
 
 paths :: ℤ² -> ℤ² -> Map ℤ² (Map ℤ² (Dir², Set ℤ²)) -> (ℤ, ℤ)
-paths start end gr = go (round (∞)) (mkQ₁ h (start, DirRight, 0, ø)) [] ø
+paths start end gr = go (ꝏ @ℤ) (mkQ₁ h (start, DirRight, 0, ø)) [] ø
   where
     score n x t = n + x + 1000 ⋅ t
     h (c, facing, n, _) =
