@@ -12,8 +12,8 @@ step :: [Dir²] -> ℤ² -> G ℤ² C -> G ℤ² C
 step [] _ g = g
 step (dir : dirs) robot g =
   case (g |! robot', push [robot]) of
+    (S, _) -> step dirs robot' (g |. (robot, S) |. (robot', R))
     (W, _) -> step dirs robot g
-    (S, _) -> step dirs robot' g
     (_, Just moves) -> step dirs robot' (foldl' (&) g moves)
     _ -> step dirs robot g
   where
@@ -26,10 +26,13 @@ step (dir : dirs) robot g =
               mconcat $
                 [ case (g |! c, dir) of
                     (O, _) -> [c]
-                    (_, DirUp) -> [c, (x + 1, y)]
-                    (_, DirDown) -> [c, (x - 1, y)]
+                    (OL, DirUp) -> [c, (x + 1, y)]
+                    (OL, DirDown) -> [c, (x + 1, y)]
+                    (OR, DirUp) -> [c, (x - 1, y)]
+                    (OR, DirDown) -> [c, (x - 1, y)]
                     (_, DirRight) -> [c]
                     (_, DirLeft) -> [c]
+                    _ -> []
                   | c@(x, y) <- cs'
                 ]
           affected' = (g |!) ∘ move @ℤ dir 1 <$> affected
