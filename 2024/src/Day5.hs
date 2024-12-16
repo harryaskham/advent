@@ -13,8 +13,11 @@ mkCompare lt a b
   | b ∈ (lt |? a ? [b]) = LT
   | otherwise = GT
 
-solve f = sum (zipWith (\a b -> bool 0 (middle a) (a == b)) orders (sortBy (mkCompare rules) <$> orders))
+solve :: ([ℤ] -> [ℤ] -> ℤ) -> ℤ
+solve f = sum (zipWith f orders (sortBy (mkCompare rules) <$> orders))
 
-part1 = solve bool
+part1 :: ℤ
+part1 = solve (\a b -> bool 0 (middle a) (a == b))
 
-part2 = solve (\a b c -> bool b a c)
+part2 :: ℤ
+part2 = solve (\a b -> bool (middle b) 0 (a == b))
