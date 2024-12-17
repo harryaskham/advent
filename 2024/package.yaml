@@ -105,6 +105,8 @@ ghc-options:
   - -Wno-missing-signatures
   - -Wno-orphans
   - -Wno-implicit-prelude
+  - -Wno-unused-top-binds
+  - -Wno-deprecations
   - -Wno-unused-imports
   - -Wno-unused-packages
   - -Wno-missing-kind-signatures

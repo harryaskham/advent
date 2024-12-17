@@ -1,6 +1,6 @@
 module Day14 (part1, part2) where
 
-(dims@(w, h), robots) :: (ℤ², [ℤ⁴]) = ((101, 103), $(aoc 14) |-. tuples @4 (numbers @ℤ))
+(dims@(w, h), robots) :: (ℤ², [ℤ⁴]) = ((101, 103), $(aocx 14) |-. tuples @4 (numbers @ℤ))
 
 step :: ℤ⁴ -> ℤ⁴
 step (x, y, vx, vy) = ((x + vx) `mod` w, (y + vy) `mod` h, vx, vy)
