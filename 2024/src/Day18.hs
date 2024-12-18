@@ -1,7 +1,7 @@
 module Day18 (part1, part2) where
 
-grids :: ℤ² -> Vector ℤ² -> Vector (G ℤ² Char)
-grids (w, h) =
+gs :: ℤ² -> Vector ℤ² -> Vector (G ℤ² Char)
+gs (w, h) =
   mk
     ∘ (scanl' ((∘ (,'#')) ∘ (|.)))
       (defGrid [(x, y) | x <- [0 .. w], y <- [0 .. h]])
@@ -22,8 +22,8 @@ path dims gs = go (mkQ₁ h ((0, 0), 0, [])) (mkSet [])
 
 (part1, part2) :: (ℤ, String) =
   let (dims, bytes) = ((70, 70), mk $ $(aoc 18) |- tuples @2 (numbers @ℤ))
-      gs = grids dims bytes
-      paths n = path dims (pure (gs !! (n + 1)))
+      gs' = gs dims bytes
+      paths n = path dims (pure (gs' !! (n + 1)))
    in ( size (paths 1024),
         ((<>) $@)
           ∘ first (<> ",")
