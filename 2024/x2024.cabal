@@ -112,6 +112,7 @@ library x2024-lib
       ansi-terminal
     , base ==4.19.0.0
     , benchpress
+    , binary-search
     , hspec
     , parsec
     , quaalude
@@ -194,6 +195,7 @@ executable x2024
       ansi-terminal
     , base ==4.19.0.0
     , benchpress
+    , binary-search
     , hspec
     , parsec
     , quaalude
@@ -278,6 +280,7 @@ test-suite test-x2024
       ansi-terminal
     , base ==4.19.0.0
     , benchpress
+    , binary-search
     , hspec
     , parsec
     , quaalude

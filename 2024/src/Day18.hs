@@ -1,14 +1,32 @@
 module Day18 (part1, part2) where
 
-part1 :: Text
-part1 =
-  $(aoc 18)
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
+grids :: ℤ² -> Vector ℤ² -> Vector (G ℤ² Char)
+grids (w, h) =
+  mk
+    ∘ (scanl' ((∘ (,'#')) ∘ (|.)))
+      (defGrid [(x, y) | x <- [0 .. w], y <- [0 .. h]])
+    ∘ un
 
-part2 :: Text
-part2 = "Part 2"
+path :: ℤ² -> Vector (G ℤ² Char) -> [ℤ²]
+path dims gs = go (mkQ₁ h ((0, 0), 0, [])) (mkSet [])
+  where
+    g t = gs !! (min (t + 1) (size gs - 1))
+    h (c, t, _) = t + manhattan c dims
+    go NullQ _ = []
+    go ((c, t, p) :<!! q) seen
+      | c ≡ dims = p
+      | not (cellEmpty c (g t)) ∨ c ∈ seen = go q seen
+      | otherwise =
+          let ns = neighs @4 @[] c (g t)
+           in go (foldr (qInsert h ∘ (,t + 1,c : p)) q ns) (c |-> seen)
+
+(part1, part2) :: (ℤ, String) =
+  let (dims, bytes) = ((70, 70), mk $ $(aoc 18) |- tuples @2 (numbers @ℤ))
+      gs = grids dims bytes
+      paths n = path dims (pure (gs !! (n + 1)))
+   in ( size (paths 1024),
+        ((<>) $@)
+          ∘ first (<> ",")
+          ∘ both show
+          $ (bytes !! ((searchFromTo (null ∘ paths) 1025 (size bytes - 1)) ? -1))
+      )

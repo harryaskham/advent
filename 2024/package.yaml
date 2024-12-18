@@ -21,6 +21,7 @@ dependencies:
   - parsec
   - range-set-list
   - ansi-terminal
+  - binary-search
 
 internal-libraries:
   x2024-lib:
