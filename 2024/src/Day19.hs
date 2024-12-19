@@ -1,7 +1,6 @@
 module Day19 (part1, part2) where
 
 (part1, part2) :: (Σ ℤ, Σ ℤ) =
-  let (ts : _ : ps) = lines $(aoc 19)
-      go "" = pure (Σ 1)
-      go p = go .=<<. (stripPrefix <$> splitOn ", " ts <*> [p] <>?)
-   in ((⥢ first signum) ∘ run ∘ (go :: Text .->. Σ ℤ) <$> ps <>!)
+  let go ts "" = pure (Σ 1)
+      go ts p = go ts .=<<. (stripPrefix <$> splitOn ", " ts <*> [p] <>?)
+   in ((⥢ ((±) ⇱)) ∘ run ∘<∘ go &<$> snoc (flines $(aoc 19)) <>!)
