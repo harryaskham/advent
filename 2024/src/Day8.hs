@@ -6,7 +6,7 @@ antinodes l u =
    in nub ∘ (>>= (>>= nodes) ∘ join cartesian) ∘ values ∘ (|/ '.')
 
 step :: ℤ -> ℤ -> Grid' (ℤ × ℤ) Char -> Σ ℤ
-step l u = ((as @(Σ ℤ) .<. (∋)) &<$>& (antinodes l u ∘ co)) <>∘ dup
+step l u = (((as @(Σ ℤ) ∘ Σ) .<. (∋)) &<$>& (antinodes l u ∘ co)) <>∘ dup
 
 part1 :: Σ ℤ
 part1 = step 1 1 $ $(grid 8)
