@@ -1,29 +1,26 @@
 module Day20 (part1, part2) where
 
-cheats :: ".#SE" ▦ ℤ² -> ℤ -> ℤ -> ℤ
+cheats :: ".#SE" ▦ ℤ² -> ℤ -> ℤ -> [Σ ℤ]
 cheats g duration threshold =
-  size
-    [ (n, d + c2n |! n)
-      | let path = go (mk₁ [start]) ø,
-        let c2n = mkMap (zip (reverse path) [0 ..]),
-        (i, c) <- zip [0 ..] path,
-        n <- drop (i + 1) path,
-        let d = manhattan c n,
-        d <= duration,
-        let cost = i + d + (c2n |! n),
-        size path - cost >= threshold
-    ]
+  [ Σ 1
+    | let path = go (g |!> (#E □)) [g |!> (#S □)] ø,
+      let c2n = mkMap (zip path [0 ..]),
+      (d, c) <- zip [0 ..] (reverse path),
+      n <- drop (d + 1) (reverse path),
+      let d' = manhattan c n,
+      d' <= duration,
+      let cost = d + d' + c2n |! n,
+      size path - cost >= threshold
+  ]
   where
-    (start, end) = both (g |!>) (mkC @'S' @".#SE", mkC @'E' @".#SE")
-    go ((c : cs) :<| q) seen
-      | c ≡ end = reverse (c : cs)
-      | c ∈ seen = go q seen
+    go end (c : cs) seen
+      | c ≡ end = c : cs
       | otherwise =
-          let q' = q >< mk [n : c : cs | n <- neighs @4 c g, g |! n ≢ (mkC @'#' @".#SE")]
-           in go q' (c |-> seen)
+          let [n] = [n | n <- neighs @4 c g, g |! n ≢ (mkC @'#'), n ∉ seen]
+           in go end (n : c : cs) (c |-> seen)
 
-part1 :: ℤ
-part1 = cheats (readGrid $(aoc 20)) 2 100
+part1 :: Σ ℤ
+part1 = (cheats (readGrid $(aoc 20)) 2 100 <>!)
 
-part2 :: ℤ
-part2 = cheats (readGrid $(aoc 20)) 20 100
+part2 :: Σ ℤ
+part2 = (cheats (readGrid $(aoc 20)) 20 100 <>!)
