@@ -22,6 +22,8 @@ dependencies:
   - range-set-list
   - ansi-terminal
   - binary-search
+  - variant
+  - lens
 
 internal-libraries:
   x2024-lib:

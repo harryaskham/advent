@@ -114,10 +114,12 @@ library x2024-lib
     , benchpress
     , binary-search
     , hspec
+    , lens
     , parsec
     , quaalude
     , range-set-list
     , relude
+    , variant
     , vector
   mixins:
       base hiding (Prelude)
@@ -197,10 +199,12 @@ executable x2024
     , benchpress
     , binary-search
     , hspec
+    , lens
     , parsec
     , quaalude
     , range-set-list
     , relude
+    , variant
     , vector
     , x2024-lib
   mixins:
@@ -282,10 +286,12 @@ test-suite test-x2024
     , benchpress
     , binary-search
     , hspec
+    , lens
     , parsec
     , quaalude
     , range-set-list
     , relude
+    , variant
     , vector
     , x2024-lib
   mixins:

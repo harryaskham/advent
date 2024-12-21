@@ -16,7 +16,7 @@ cheats g duration threshold =
     go end (c : cs) seen
       | c ≡ end = c : cs
       | otherwise =
-          let [n] = [n | n <- neighs @4 c g, g |! n ≢ (mkC @'#'), n ∉ seen]
+          let [n] = [n | n <- neighs @4 c g, g |! n ≢ (#"#" □), n ∉ seen]
            in go end (n : c : cs) (c |-> seen)
 
 part1 :: Σ ℤ
