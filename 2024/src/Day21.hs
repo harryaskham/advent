@@ -28,7 +28,7 @@ all paths of moving r2 from r2loc to 0
 
 -}
 
-import Control.Lens (makeLenses, use, view, (%=), (.=))
+import Control.Lens (makeLenses, use, view, (%=), (.=), (?~))
 import Data.Map.Strict qualified as M
 import Data.Variant
 import Data.Variant.Types
@@ -41,22 +41,41 @@ type Dirpad = ".A^v<>"
 type Paths cs = (Cell cs, Cell cs) :|-> [[Cell Dirpad]]
 
 paths :: (SChar '.' :< SymSChars cs, Ord (Cell cs), GridCell (Cell cs)) => cs ▦ ℤ² -> Paths cs
-paths g = take 1 ∘ sortOn size <$> foldl1 (M.unionWith (<>)) (ps <$> cells g <*> pure g)
+paths g =
+  firstPaths ∘ sortOn size <$> foldr1 (M.unionWith (<>)) ([ps c d | c <- coords g, d <- coords g, g |! c ≢ (#"." □), g |! d ≢ (#"." □)])
   where
-    init = mkMap [((c, d), []) | c <- cells g, d <- cells g]
-    ps start g = go (mk₁ (s, [])) ø
+    firstPaths [] = []
+    firstPaths allPaths@(firstPath : _) = takeWhile ((≡ size firstPath) ∘ size) allPaths
+    -- removeDots paths =
+    --   mkMapWith
+    --     (<>)
+    --     [ ((from, to), [path])
+    --       | ((from, to), paths) <- unMap paths,
+    --         let fromP = g |!> from,
+    --         let visited path = fst $ foldl' (\(vs, c) dir -> ((g |! c) : vs, move @ℤ (toDir² dir) 1 c)) ([], fromP) path,
+    --         path <- paths,
+    --         let vs = visited path,
+    --         let valid = not (any ((≡ (#"." □))) vs),
+    --         traceShow ("from/to/path/visits/valid", toChar from, toChar to, toChar <$> path, toChar <$> vs, valid) $ valid
+    --     ]
+
+    init = mkMap [((c, d), []) | c <- cells g, d <- cells g, c ≢ (#"." □), d ≢ (#"." □)]
+    ps s e = go s (mk₁ (s, []))
       where
-        s = g |!> start
-        go Empty _ = init
-        go ((c, dirs) :<| q) seen
-          -- \| c ∈ seen = go q seen
-          | g |! c ≡ (#"." □) = go q seen
-          | size dirs > ((+) $@ gridDims g) = go q seen
+        go s Empty = init
+        go s ((c, dirs) :<| q)
+          | g |! c ≡ (#"." □) = go s q
+          | c ≡ e =
+              traceShow ("found e", toChar start, toChar end, dirs) $
+                go s q |~ ((start, end), (dirs :))
+          | size dirs >= ((+) $@ gridDims g) - 2 = go s q
           | otherwise =
-              let ns = [(n, (fromDir² <$> goingTo c n) <> dirs) | n <- neighs @4 c g]
-                  seen' = c |-> seen
-                  rest = go (q >< mk ns) seen'
-               in rest |~ ((g |! s, g |! c), (dirs :))
+              let ns = [(n, dirs <> [fromDir² dir]) | dir <- enumerate, let n = move @ℤ dir 1 c, n ∈ g, g |! n ≢ (#"." □)]
+               in traceShow ("moving from", c, dirs, "neighs", ns, toChar ∘ (g |!) . fst <$> ns) $
+                    go s (q >< mk ns)
+          where
+            start = g |! s
+            end = g |! e
 
 numpad :: Numpad ▦ ℤ²
 numpad =
@@ -78,177 +97,171 @@ dirpad =
 fromDir² :: Dir² -> Cell Dirpad
 fromDir² = fromChar ∘ toArrow²
 
+toDir² :: Cell Dirpad -> Dir²
+toDir² = fromArrow² ∘ toChar
+
 dirpaths :: Paths Dirpad
 dirpaths = paths dirpad
 
 data St = St
   { _presses :: [Cell Dirpad],
-    _code :: [Cell Numpad],
-    _entered :: [Cell Numpad],
-    _ra :: Cell Dirpad,
-    _raP :: ℤ²,
-    _rb :: Cell Dirpad,
-    _rbP :: ℤ²,
-    _rnum :: Cell Numpad,
+    _target :: Cell Numpad,
+    _entered :: Maybe (Cell Numpad),
+    _rsP :: [ℤ²],
     _rnumP :: ℤ²
   }
   deriving (Eq, Ord, Show)
 
 makeLenses ''St
 
-type M = StateT St IO
-
-runSt :: M a -> IO a
-runSt = flip evalStateT (initSt [])
-
-initSt :: [Cell Numpad] -> St
-initSt code =
+initSt :: ℤ -> St
+initSt layers =
   St
     { _presses = [],
-      _code = code,
-      _entered = [],
-      _ra = (#A □),
-      _raP = dirpad |!> (#A □),
-      _rb = (#A □),
-      _rbP = dirpad |!> (#A □),
-      _rnum = (#A □),
+      _target = (#A □),
+      _entered = Nothing,
+      _rsP = replicate (fromIntegral layers) (dirpad |!> (#A □)),
       _rnumP = numpad |!> (#A □)
     }
-
-branch :: M a -> M a
-branch action = do
-  st <- get
-  a <- action
-  put st
-  return a
-
-codeinput :: [Cell Numpad] -> M ()
-codeinput [] = return ()
-codeinput (c : cs) = do
-  numinput c
-  codeinput cs
-
-numinput :: Cell Numpad -> M ()
-numinput c = do
-  rnum' <- use rnum
-  let ps = numpaths |! (rnum', c)
-  sts <-
-    sortOn (size ∘ view presses)
-      <$> ( forM ps $ \p -> branch do
-              putTextLn $ "RNUM moving " <> (as $ toChar rnum') <> " to " <> (as $ toChar c) <> " via path: " <> (pack $ toChar <$> p)
-              forM p $ \button -> do
-                rbinput button
-              rbinput (#A □)
-              putTextLn $ "RNUM presses: " <> (as $ toChar c)
-              get
-          )
-  put $ sts !! 0
-  rnum .= c
-
-rbinput :: Cell Dirpad -> M ()
-rbinput c = do
-  rb' <- use rb
-  let ps = dirpaths |! (rb', c)
-  sts <-
-    sortOn (size ∘ view presses)
-      <$> ( forM ps $ \p -> branch do
-              putTextLn $ "RB moving " <> (as $ toChar rb') <> " to " <> (as $ toChar c) <> " via path: " <> (pack $ toChar <$> p)
-              forM p $ \button -> do
-                rainput button
-              rainput (#A □)
-              putTextLn $ "RB presses: " <> (as $ toChar c)
-              get
-          )
-  put $ sts !! 0
-  rb .= c
-
-rainput :: Cell Dirpad -> M ()
-rainput c = do
-  ra' <- use ra
-  let ps = dirpaths |! (ra', c)
-  sts <-
-    sortOn (size ∘ view presses)
-      <$> ( forM ps $ \p -> branch do
-              putTextLn $ "RA moving " <> (as $ toChar ra') <> " to " <> (as $ toChar c) <> " via path: " <> (pack $ toChar <$> p)
-              forM p $ \button -> do
-                humaninput button
-              humaninput (#A □)
-              putTextLn $ "RA presses: " <> (as $ toChar c)
-              get
-          )
-  put $ sts !! 0
-  ra .= c
-
-humaninput :: Cell Dirpad -> M ()
-humaninput c = do
-  putTextLn $ "Human presses: " <> (as $ toChar c)
-  presses %= (c :)
 
 toButtonsValue :: Text -> ([Cell Numpad], ℤ)
 toButtonsValue code =
   let cs = unpack code
    in ([fromChar c | c <- cs], take 3 cs |- number)
 
-open :: [Cell Numpad] -> [Cell Dirpad]
-open buttons = go ø (mkQ₁ h (initSt buttons))
+ixℤ i = ix (fromIntegral i)
+
+h :: St -> ℤ
+h st = size $ st ^. presses
+
+pause = False
+
+mpauseId = if pause then pauseId else id
+
+h' :: St -> ℤ
+h' st
+  | any (≡ True) [dirpad |? rP ∈ [Nothing, Just (#"." □)] | rP <- st ^. rsP] = ꝏ
+  | numpad |? (st ^. rnumP) ∈ [Nothing, Just (#"." □)] = ꝏ
+  | otherwise =
+      traceShow ("h' start", st) $
+        let rnum = numpad |! (st ^. rnumP)
+         in case numpaths |! (rnum, st ^. target) of
+              -- i.e. how many presses already + how many to have the robots input us to target plus an A press
+              [] -> traceShow ("no paths", toChar rnum, toChar (st ^. target)) $ ꝏ
+              paths ->
+                mpauseId ∘ traceShow ("h' rnum", paths, dbg st) $
+                  size (st ^. presses) + run do
+                    sizes <- forM paths $ \path -> do
+                      cost <- robocost .$. (0, (path <> [(#A □)]))
+                      traceShow ("h' path", path, cost) $ return cost
+                    traceShow ("minimum top", sizes) $
+                      if null sizes then traceShow ("no path top", paths) (return ꝏ) else return (minimum sizes)
   where
-    h st =
-      let remaining = drop (size (st ^. entered)) (st ^. code)
-          f _ [] = 0
-          f current (c : cs) = size (numpaths |! (current, c) !! 0) + f c cs
-       in size (st ^. presses) + f (st ^. rnum) remaining
-    key st = (st ^. entered, st ^. raP, st ^. rbP, st ^. rnumP)
-    go seen (st :<!! q)
-      | st ^. entered ≡ st ^. code = st ^. presses
+    dbg st = (st ^. target, st ^. rnumP, st ^. rsP)
+    robocost (layer, path)
+      | layer ≡ (size (st ^. rsP)) =
+          traceShow ("robocost final layer", size path, path, dbg st) $
+            return (size path)
+      | otherwise = do
+          let rP = dirpad |! ((st ^. rsP) !! layer)
+          -- the inputs that make this robot input the path
+          -- i.e. from current pos to first pos, an A press, repeatas to take including the button presses between
+          let segments = zip (rP : path) path
+          mpauseId ∘ traceShow ("robocost layer", layer, path, segments, dbg st) $ do
+            segmentCosts <- forM segments $ \(from, to) -> do
+              let segmentPaths =
+                    mpauseId ∘ traceShow ("robocost segment; layer", layer, (from, to), dbg st) $
+                      (dirpaths |! (from, to))
+              let segmentPathCost segmentPath =
+                    mpauseId ∘ traceShow ("robocost segment; layer", layer, (from, to), segmentPaths, dbg st) $
+                      robocost .$. (layer + 1, segmentPath <> [(#A □)])
+              sizes <- sequence $ segmentPathCost <$> segmentPaths
+              mpauseId ∘ traceShow ("robocost segment; layer", layer, (from, to), sizes, dbg st) $
+                traceShow ("minimum layer", layer, sizes) $
+                  if null sizes then return ꝏ else return (minimum sizes)
+            return $ sum segmentCosts
+
+push :: St -> St
+push st = go ø (mkQ₁ h st)
+  where
+    -- in traceShow ("robocost", layer, toChar <$> path) $
+    --     minimum $
+    --       (\path -> robocost (layer + 1) (path <> [(#A □)])) <$> paths
+    key st = (st ^. rsP, st ^. rnumP)
+    go seen ((cost, st) :<! q)
+      | (st ^. entered) ≡ Just (st ^. target) = st
       | key st ∈ seen = go seen q
-      | dirpad |? (st ^. raP) ∈ [Nothing, Just (#"." □)] = go seen q
-      | dirpad |? (st ^. rbP) ∈ [Nothing, Just (#"." □)] = go seen q
-      | numpad |? (st ^. rnumP) ∈ [Nothing, Just (#"." □)] = go seen q
-      | incorrectEntry st = go seen q
+      | any (≡ True) [dirpad |? rP ∈ [Nothing, Just (#"." □)] | rP <- st ^. rsP] = go seen' q
+      | numpad |? (st ^. rnumP) ∈ [Nothing, Just (#"." □)] = go seen' q
+      | incorrectEntry st = go seen' q
       | otherwise =
-          traceShow (key st) $
-            go (key st |-> seen) $
+          traceShow (cost, size seen, st ^. target, key st) $
+            go seen' $
               qAppend h [humanPress st (fromChar pressed) & presses %~ (fromChar pressed :) | pressed <- "<>^vA"] q
+      where
+        seen' = key st |-> seen
     humanPress :: St -> Cell Dirpad -> St
     humanPress st pressed
-      | pressed ≡ (#A □) = raPress st (dirpad |! (st ^. raP))
-      | otherwise = st & raP %~ move @ℤ (fromArrow² (toChar pressed)) 1
-    raPress :: St -> Cell Dirpad -> St
-    raPress st pressed
-      | pressed ≡ (#A □) = rbPress st (dirpad |! (st ^. rbP))
-      | otherwise = st & rbP %~ move @ℤ (fromArrow² (toChar pressed)) 1
-    rbPress :: St -> Cell Dirpad -> St
-    rbPress st pressed
-      | pressed ≡ (#A □) = rnumPress st (numpad |! (st ^. rnumP))
-      | otherwise = st & rnumP %~ move @ℤ (fromArrow² (toChar pressed)) 1
-    rnumPress :: St -> Cell Numpad -> St
-    rnumPress st pressed = st & entered %~ (<> [pressed])
+      | pressed ≡ (#A □) = rPress 0 st
+      | otherwise = st & rsP ∘ ixℤ 0 %~ move @ℤ (toDir² pressed) 1
+    rPress :: ℤ -> St -> St
+    rPress layer st =
+      let rP = (st ^. rsP) !! layer
+          pressed = dirpad |! rP
+       in if pressed ≡ (#A □)
+            then
+              if layer ≡ (size (st ^. rsP)) - 1
+                then rnumPress st
+                else rPress (layer + 1) st
+            else
+              if layer ≡ (size (st ^. rsP)) - 1
+                then st & rnumP %~ move @ℤ (toDir² pressed) 1
+                else st & rsP ∘ ixℤ (layer + 1) %~ move @ℤ (toDir² pressed) 1
+    rnumPress :: St -> St
+    rnumPress st =
+      let pressed = numpad |! (st ^. rnumP)
+       in st & entered ?~ pressed
     incorrectEntry :: St -> 𝔹
-    incorrectEntry st = any (≡ False) [e ≡ c | (e, c) <- zip (st ^. entered) (st ^. code)]
+    incorrectEntry st = case st ^. entered of
+      Nothing -> False
+      Just entered -> entered ≢ (st ^. target)
 
-part1' :: IO ℤ
-part1' = do
-  let buttonsValue = toButtonsValue <$> lines $(aocx 21)
-  complexities <- forM buttonsValue $ \(buttons, value) -> do
-    putTextLn $ "Code: " <> tshow (buttons, value)
-    runSt do
-      codeinput buttons
-      prs <- use presses
-      putTextLn $ "Presses: " <> tshow (toChar <$> reverse prs)
-      putTextLn $ "Num presses: " <> tshow (size prs)
-      return $ size prs ⋅ value
-  return $ sum complexities
+onecode :: Text -> ℤ -> ℤ
+onecode s = complexity [s]
 
-part1 :: ℤ
-part1 =
-  lines $(aoc 21)
+complexity :: [Text] -> ℤ -> ℤ
+complexity buttons layers =
+  buttons
     & fmap toButtonsValue
     & fmap
       ( \(buttons, value) ->
-          let presses = open buttons
-           in size presses ⋅ value
+          traceShow (buttons, value) $
+            let (ps, _) =
+                  foldl'
+                    -- (\(ps, rnumP') button -> let st = push (initSt layers & rnumP .~ rnumP' & target .~ button) in (ps + size (st ^. presses), st ^. rnumP))
+                    ( \(ps, rnumP') button ->
+                        traceShow ("in fold", ps, rnumP', button) $
+                          ( ps
+                              + h'
+                                ( St
+                                    { _presses = [],
+                                      _entered = Nothing,
+                                      _target = button,
+                                      _rnumP = rnumP',
+                                      _rsP = replicate (fromIntegral layers) (dirpad |!> (#A □))
+                                    }
+                                ),
+                            numpad |!> button
+                          )
+                    )
+                    (0, numpad |!> (#A □))
+                    buttons
+             in ps ⋅ value
       )
     & sum
 
-part2 :: Text
-part2 = "Part 2"
+part1 :: ℤ
+part1 = complexity (lines $(aoc 21)) 2
+
+part2 :: ℤ
+part2 = complexity (lines $(aoc 21)) 25
