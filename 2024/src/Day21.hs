@@ -1,16 +1,16 @@
 module Day21 where
 
-type Numpad = ".A0123456789"
+type NumPad = ".A0123456789"
 
-type Dirpad = ".A^v<>"
+type DirPad = ".A^v<>"
 
-numpad :: Numpad ▦ ℤ²
-numpad = readGrid "789\n456\n123\n.0A"
+numPad :: NumPad ▦ ℤ²
+numPad = readGrid "789\n456\n123\n.0A"
 
-dirpad :: Dirpad ▦ ℤ²
-dirpad = readGrid ".^A\n<v>"
+dirPad :: DirPad ▦ ℤ²
+dirPad = readGrid ".^A\n<v>"
 
-type Paths cs = (Cell cs, Cell cs) :|-> [[Cell Dirpad]]
+type Paths cs = (Cell cs, Cell cs) :|-> [[Cell DirPad]]
 
 paths :: (SChar '.' :< SymSChars cs, Ord (Cell cs), GridCell (Cell cs)) => cs ▦ ℤ² -> Paths cs
 paths g = shortest ∘ sortOn size <$> go (mk [(s, s, []) | s <- coords g])
@@ -24,12 +24,12 @@ paths g = shortest ∘ sortOn size <$> go (mk [(s, s, []) | s <- coords g])
           let ns = [(s, n, dirs <> (fromChar ∘ toArrow² <$> goingTo c n)) | n <- neighs @4 c g]
            in go (q >< mk ns) |~ ((g |! s, g |! c), (dirs :))
 
-(numPaths, dirPaths) :: (Paths Numpad, Paths Dirpad) = (paths numpad, paths dirpad)
+(numPaths, dirPaths) :: (Paths NumPad, Paths DirPad) = (paths numPad, paths dirPad)
 
-presses :: ℤ -> Cell Numpad -> Cell Numpad -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
+presses :: ℤ -> Cell NumPad -> Cell NumPad -> MM (ℤ, [Cell DirPad]) (Σ ℤ)
 presses layers = go numPaths 0
   where
-    go :: (Ord (Cell cs)) => Paths cs -> ℤ -> Cell cs -> Cell cs -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
+    go :: (Ord (Cell cs)) => Paths cs -> ℤ -> Cell cs -> Cell cs -> MM (ℤ, [Cell DirPad]) (Σ ℤ)
     go paths layer from to = minimum <$> forM (paths |! (from, to)) (\path -> go' .$. (layer, (path <> [(#A □)])))
     go' ((≡ layers) -> True, path) = return ∘ Σ $ size path
     go' (layer, path) = sum <$> forM (zip ((#A □) : path) path) (&@ go dirPaths (layer + 1))
