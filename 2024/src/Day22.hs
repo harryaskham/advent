@@ -33,7 +33,7 @@ part1 = ($(aoc 22) |- numbers @ℤ <&> Σ ∘ fst3 ∘ last ∘ secrets 2000 <>!
 
 part2 :: Σ ℤ
 part2 =
-  let pms = $(aocxn 22 1) |- numbers @ℤ <&> prices ∘ secrets 2000
+  let pms = $(aoc 22) |- numbers @ℤ <&> prices ∘ secrets 2000
    in maximum
         [ ([Σ (pm |? seq ? 0) | pm <- pms] <>!)
           | seq <- nub (keys <$> pms <>!)
