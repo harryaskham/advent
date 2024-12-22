@@ -34,18 +34,16 @@ presses layers = go numPaths 0
     go' ((≡ layers) -> True, path) = return ∘ Σ $ size path
     go' (layer, path) = sum <$> forM (zip ((#A □) : path) path) (&@ go dirPaths (layer + 1))
 
-complexity :: [Text] -> ℤ -> [Σ ℤ]
-complexity codes layers =
-  [ value ⋅ fst (foldl' (\(ps, start) b -> (ps + pressB start b, b)) (Σ 0, (#A □)) bs)
-    | code <- codes,
-      let cs = unpack code,
-      let bs = fromChar <$> cs,
-      let value = Σ $ take 3 cs |- number,
-      let pressB start b = run (presses layers start b)
-  ]
+complexity :: ℤ -> Text -> Σ ℤ
+complexity layers code =
+  let cs = unpack code
+      bs = fromChar <$> cs
+      value = Σ $ take 3 cs |- number
+      go start b = run (presses layers start b)
+   in value ⋅ fst (foldl' (\(ps, start) b -> (ps + go start b, b)) (Σ 0, (#A □)) bs)
 
 part1 :: Σ ℤ
-part1 = (complexity (lines $(aoc 21)) 2 <>!)
+part1 = (complexity 2 <$> (lines $(aoc 21)) <>!)
 
 part2 :: Σ ℤ
-part2 = (complexity (lines $(aoc 21)) 25 <>!)
+part2 = (complexity 25 <$> (lines $(aoc 21)) <>!)
