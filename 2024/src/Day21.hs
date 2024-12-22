@@ -21,18 +21,18 @@ paths g = shortest ∘ sortOn size <$> go (mk [(s, s, []) | s <- coords g])
       | g |! c ≡ (#"." □) = go q
       | size dirs >= ((+) $@ gridDims g) - 1 = go q
       | otherwise =
-          let ns = [(s, n, dirs <> (fromChar ∘ toArrow² <$> (goingTo c n))) | n <- neighs @4 c g]
+          let ns = [(s, n, dirs <> (fromChar ∘ toArrow² <$> goingTo c n)) | n <- neighs @4 c g]
            in go (q >< mk ns) |~ ((g |! s, g |! c), (dirs :))
 
 (numPaths, dirPaths) :: (Paths Numpad, Paths Dirpad) = (paths numpad, paths dirpad)
 
 presses :: ℤ -> Cell Numpad -> Cell Numpad -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
-presses layers = f numPaths 0
+presses layers = go numPaths 0
   where
-    f :: (Ord (Cell cs)) => Paths cs -> ℤ -> Cell cs -> Cell cs -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
-    f paths layer from to = minimum <$> forM (paths |! (from, to)) (\path -> go .$. (layer, (path <> [(#A □)])))
-    go ((≡ layers) -> True, path) = return ∘ Σ $ size path
-    go (layer, path) = sum <$> forM (zip ((#A □) : path) path) (&@ f dirPaths (layer + 1))
+    go :: (Ord (Cell cs)) => Paths cs -> ℤ -> Cell cs -> Cell cs -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
+    go paths layer from to = minimum <$> forM (paths |! (from, to)) (\path -> go' .$. (layer, (path <> [(#A □)])))
+    go' ((≡ layers) -> True, path) = return ∘ Σ $ size path
+    go' (layer, path) = sum <$> forM (zip ((#A □) : path) path) (&@ go dirPaths (layer + 1))
 
 complexity :: [Text] -> ℤ -> [Σ ℤ]
 complexity codes layers =
