@@ -26,24 +26,22 @@ paths g = shortest ∘ sortOn size <$> go (mk [(s, s, []) | s <- coords g])
 
 (numPaths, dirPaths) :: (Paths Numpad, Paths Dirpad) = (paths numpad, paths dirpad)
 
-presses :: ℤ -> Cell Numpad -> Cell Numpad -> MM (ℤ, [Cell Dirpad]) ℤ
-presses layers target start =
-  minimum <$> forM (numPaths |! (start, target)) (\path -> go .$. (0, (path <> [(#A □)])))
+presses :: ℤ -> Cell Numpad -> Cell Numpad -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
+presses layers = f numPaths 0
   where
-    go ((≡ layers) -> True, path) = return (size path)
-    go (layer, path) =
-      sum <$> do
-        forM (zip ((#A □) : path) path) $ \(from, to) ->
-          minimum <$> (forM (dirPaths |! (from, to)) (\path -> go .$. (layer + 1, path <> [(#A □)])))
+    f :: (Ord (Cell cs)) => Paths cs -> ℤ -> Cell cs -> Cell cs -> MM (ℤ, [Cell Dirpad]) (Σ ℤ)
+    f paths layer from to = minimum <$> forM (paths |! (from, to)) (\path -> go .$. (layer, (path <> [(#A □)])))
+    go ((≡ layers) -> True, path) = return ∘ Σ $ size path
+    go (layer, path) = sum <$> forM (zip ((#A □) : path) path) (&@ f dirPaths (layer + 1))
 
 complexity :: [Text] -> ℤ -> [Σ ℤ]
 complexity codes layers =
-  [ Σ ∘ (⋅ value) ∘ fst $
-      foldl' (\(ps, start) b -> (ps + run (presses layers b start), b)) (0, (#A □)) bs
+  [ value ⋅ fst (foldl' (\(ps, start) b -> (ps + pressB start b, b)) (Σ 0, (#A □)) bs)
     | code <- codes,
       let cs = unpack code,
-      let bs = [fromChar c | c <- cs],
-      let value = take 3 cs |- number
+      let bs = fromChar <$> cs,
+      let value = Σ $ take 3 cs |- number,
+      let pressB start b = run (presses layers start b)
   ]
 
 part1 :: Σ ℤ
