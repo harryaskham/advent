@@ -1,29 +1,42 @@
 module Day23 (part1, part2) where
 
-import Data.List (dropWhileEnd)
-import Relude.Unsafe qualified as U
+clique :: NonEmpty (Set (Set String))
+clique =
+  cliques $
+    mk
+      <$> mkWith
+        (∪)
+        ( [ [(a, mk₁ b), (b, mk₁ a)]
+            | (a, bs) <- unMap ($(aoc 23) |- (mapcat "-" abc abc)),
+              b <- bs
+          ]
+            <>!
+        )
 
-clique :: ([Set (Set String)] -> Set (Set String)) -> Set (Set String)
-clique f =
-  let g' = $(aoc 23) |- (mapcat "-" abc abc)
-      g = mk <$> mkWith (∪) ([[(a, mk₁ b), (b, mk₁ a)] | (a, bs) <- unMap g', b <- bs] <>!)
-      cls = f (cliques g)
-   in mk [mk cl | cl@[x : _, y : _, z : _] <- un <$> un cls, 't' ∈ [x, y, z]]
-
-clique' :: ([Set (Set String)] -> Set (Set String)) -> Set (Set String)
-clique' f =
-  let g' = $(aoc 23) |- (mapcat "-" abc abc)
-      g = mk <$> mkWith (∪) ([[(a, mk₁ b), (b, mk₁ a)] | (a, bs) <- unMap g', b <- bs] <>!)
-   in f (cliques g)
-
-cliques :: (String :|-> Set String) -> [Set (Set String)]
-cliques g =
-  takeWhile (not ∘ null) $
-    scanl' (\cs _ -> setConcatMap expand cs) (mk (mk₁ <$> keys g)) [0 .. size g]
+cliques :: (String :|-> Set String) -> NonEmpty (Set (Set String))
+cliques g = cl :| cls
   where
-    expand cs = mk [c |-> cs | c <- keys g, all ((c ∈) ∘ (g |!)) cs]
+    expand cs =
+      mk
+        [ c |-> cs
+          | c <- keys g,
+            all ((c ∈) ∘ (g |!)) cs
+        ]
+    (cl : cls) =
+      takeWhile (not ∘ null) $
+        scanl'
+          (\cs _ -> setConcatMap expand cs)
+          (mk (mk₁ <$> keys g))
+          [0 .. size g]
 
-part1 :: ℤ
-part1 = size (clique (!! 2))
+part1 :: Σ ℤ
+part1 =
+  ( [ Σ 1
+      | [x : _, y : _, z : _] <- un <$> un (clique !! (2 :: ℤ)),
+        't' ∈ [x, y, z]
+    ]
+      <>!
+  )
 
-part2 = intercalate "," (sort (un (setConcat (clique' (\cls -> cls !! (size cls - 1))))))
+part2 :: String
+part2 = intercalate "," ∘ sort ∘ un ∘ setConcat ∘ last $ clique
