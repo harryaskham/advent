@@ -24,6 +24,7 @@ dependencies:
   - binary-search
   - variant
   - lens
+  - bimap
 
 internal-libraries:
   x2024-lib:
