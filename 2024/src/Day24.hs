@@ -1,11 +1,9 @@
 module Day24 where
 
+import Control.Applicative qualified as CA
 import Data.Bimap qualified as BM
 import Data.Text qualified as T
 import Text.Show qualified as TS
-
--- z27: one of rvf or dkb is wrong
--- rvf is AND x27 y27, should be XOR x27 y27 → tpc
 
 swaptext =
   T.unpack
@@ -19,12 +17,12 @@ swaptext =
     ∘ T.replace "smf XOR rfd -> fcd" "smf XOR rfd -> z33"
     ∘ T.pack
 
-(initial', circuit') :: (Map String 𝔹, Map String (String, String, String)) =
-  -- \$(aocxn 24 2)
-  (swaptext $(aoc 24))
+inp :: (String -> String) -> (Map String 𝔹, Map String (String, String, String))
+inp swaps =
+  $(aoc 24)
     |- ( (,)
            <$> ((mapSep (string ": ") eol abc123 (as @𝔹 <$> number @ℤ)) <* eol)
-           <*> ((\m -> mkWith (<>) [(w, op) | (op, ws) <- unMap m, w <- ws]) <$> (mapcat "-> " (tuple @3 (abcABC123 <* spaces)) abc123))
+           <*> ((\m -> mkWith (<>) [(swaps w, op) | (op, ws) <- unMap m, w <- ws]) <$> (mapcat "-> " (tuple @3 (abcABC123 <* spaces)) abc123))
        )
 
 value :: Map String 𝔹 -> Map String String -> Map String (String, String, String) -> String -> 𝔹
@@ -48,38 +46,6 @@ to n c x =
       | (i, b) <- zip [n - 1, n - 2 ..] (pad (as @ℤ₆₄ n) False (intToBits (as @ℤ₆₄ x)))
     ]
 
-x !+! y = go (to n 'x' x <> to n 'y' y) (mkMap []) circuit'
-
-test :: ℤ -> Map String String -> [𝔹]
-test n swap' =
-  let x !+! y = go (to n 'x' x <> to n 'y' y) swap' circuit'
-   in [a !+! b ≡ a + b | a <- [1 .. 10], b <- [1 .. 10]]
-
-tests swps = test 45 (mkMap [(a, b) | [a, b] <- swps])
-
-swaps :: Map String (String, String, String) -> [Map String String]
-swaps circuit =
-  [ mkMap $ [a, b, c, d] <> (swap <$> [a, b, c, d])
-    | let ps = triPairs (keys (circuit)),
-      (a@(a0, a1), b@(b0, b1), c@(c0, c1), d@(d0, d1)) <- (,,,) <$> ps <*> ps <*> ps <*> ps,
-      nub [a0, a1, b0, b1, c0, c1, d0, d1] ≡ [a0, a1, b0, b1, c0, c1, d0, d1]
-  ]
-
-fours :: (Eq a) => [a] -> [[a]]
-fours xs =
-  [ [a, b, c, d]
-    | (a, b, c, d) <- (,,,) <$> xs <*> xs <*> xs <*> xs,
-      nub [a, b, c, d] ≡ [a, b, c, d]
-  ]
-
-swaps2 :: Map String (String, String, String) -> [Map String String]
-swaps2 circuit =
-  [ mkMap $ [a, b] <> (swap <$> [a, b])
-    | let ps = triPairs (keys (circuit)),
-      (a@(a0, a1), b@(b0, b1)) <- (,) <$> ps <*> ps,
-      nub [a0, a1, b0, b1] ≡ [a0, a1, b0, b1]
-  ]
-
 go :: Map String 𝔹 -> Map String String -> Map String (String, String, String) -> ℤ
 go initial swap' circuit =
   bitsToInt $
@@ -92,32 +58,74 @@ go initial swap' circuit =
         ]
 
 part1 :: ℤ
-part1 = go initial' ø circuit'
-
-printBit :: Map String 𝔹 -> String -> String
-printBit initial z
-  | z ∈ initial = z
-  | otherwise =
-      let (w, op, y) = circuit' |! z
-       in "(" <> z <> ": " <> (printBit initial w) <> " " <> op <> " (" <> (printBit initial y) <> ")"
+part1 =
+  let (xy, circuit) = inp id
+   in go xy ø circuit
 
 indent :: Int -> String -> String
 indent n s = unpack (unlines ((pack (replicate n ' ') <>) <$> lines (pack s)))
 
--- nC2 ⋅ (n-2)C2 ⋅ (n-4)C2 ⋅ (n-6)C2
-part2' :: String
-part2' =
-  let n = 1 + maximum [n |- number @ℤ | (z : n) <- keys circuit', z ≡ 'z']
-   in intercalate "," ∘ sort ∘ mconcat $
-        [ [a, b]
-          | -- \| let swaps' = swaps circuit',
-            let swaps' = swaps2 circuit',
-            (i, swap') <- zip [0 ..] swaps',
-            traceShow (i, size swaps') $ and (test n swap'),
-            (a, b) <- unMap swap'
-        ]
-
 data Circuit = OR Circuit Circuit | AND Circuit Circuit | XOR Circuit Circuit | N String deriving (Eq, Ord)
+
+part2 :: String
+part2 = intercalate "," (sort (keys (fixAdd mempty ? mempty)))
+  where
+    fixAdd :: String :|-> String -> Maybe (String :|-> String)
+    fixAdd swaps
+      | size swaps ≡ 8 = Just swaps
+      | size swaps > 8 = Nothing
+      | otherwise =
+          let f z = swaps |? z ? z
+              circuit = snd (inp f)
+              x !+! y = go (to n 'x' x <> to n 'y' y) (mkMap []) circuit
+              m' :: BM.Bimap String (Maybe Circuit)
+              m' = mkBimap [(z, getTree circuit z) | z <- keys circuit]
+              m :: BM.Bimap String Circuit
+              m = (? (N "()")) `BM.mapR` m'
+              n = 1 + maximum [n |- number @ℤ | (z : n) <- keys circuit, z ≡ 'z']
+              x i = N ('x' : pad 2 '0' (show i))
+              y i = N ('y' : pad 2 '0' (show i))
+              z i = ('z' : pad 2 '0' (show i))
+              halfadd a b = (XOR a b, AND a b)
+              add1 a b c =
+                let (p, c0) = halfadd a b
+                    (s, c1) = halfadd p c
+                 in (s, OR c0 c1)
+              cin 0 = N "()"
+              cin 1 = AND (x 0) (y 0)
+              cin i = snd $ add1 (x (i - 1)) (y (i - 1)) (cin (i - 1))
+              radd 0 = XOR (x 0) (y 0)
+              radd i = fst $ add1 (x i) (y i) (cin i)
+              diffit i = (diffTree (m BM.! (z i)) (radd i))
+              diffc i name = (diffTree (m BM.! name) (cin i))
+              real i = m BM.! (z i)
+              getk k = m BM.! k
+              gett k = getclosest (getk k)
+              getc k = m BM.!> snd (getclosest (getk k) !! 0)
+              exS k = getclosest (radd k)
+              exC k = getclosest (cin k)
+              getclosest cir =
+                [ (name, cir')
+                  | (name, cir') <- unBimap m,
+                    diffTree cir cir' ≡ []
+                ]
+              nextS =
+                [ (i, s, c, circuit |! (z i), ci)
+                  | i <- [0 .. n - 1],
+                    let c = exC i,
+                    let ci = getc $ (fst (c !! 0)),
+                    let s = exS i,
+                    null s ∨ (fst (s !! 0)) /= z i
+                ]
+           in traceShow (swaps) $ case nextS of
+                [] -> Just swaps
+                ((i, ((sname, _) : _), _, _, _) : _) ->
+                  traceShow (sname, z i) $
+                    fixAdd (swaps |. (z i, sname) |. (sname, z i))
+                ((i, [], ((cname, c) : _), (c0, _, c1), ci) : _) ->
+                  let ((((c0, _) : _), _) : (((c1, _) : _), _) : _) = both getclosest <$> diffit i
+                   in fixAdd (swaps |. (c0, c1) |. (c1, c0))
+                e -> traceShow ("no match", e) $ Nothing
 
 -- instance TS.Show Circuit where
 --  show (OR a b) = "OR\n" <> indent 1 (show a <> "\n" <> show b)
@@ -130,13 +138,19 @@ instance TS.Show Circuit where
   show (AND a b) = "(AND " <> show a <> " " <> show b <> ")"
   show (N a) = a
 
-getTree :: String -> Circuit
-getTree z =
-  case circuit' |? z of
-    Just (w, "AND", y) -> AND (getTree w) (getTree y)
-    Just (w, "OR", y) -> OR (getTree w) (getTree y)
-    Just (w, "XOR", y) -> XOR (getTree w) (getTree y)
-    Nothing -> N z
+getTree :: String :|-> (String, String, String) -> String -> Maybe Circuit
+getTree cr = go mempty
+  where
+    go seen z
+      | z ∈ seen = Nothing
+      | otherwise =
+          let seen' = z |-> seen
+           in case cr |? z of
+                Just (w, "AND", y) -> AND <$> go seen' w <*> go seen' y
+                Just (w, "OR", y) -> OR <$> go seen' w <*> go seen' y
+                Just (w, "XOR", y) -> XOR <$> go seen' w <*> go seen' y
+                Nothing -> Just $ N z
+                _ -> Nothing
 
 oneDs [] [] = []
 oneDs a [] = []
@@ -161,91 +175,6 @@ treeIn t t'@(XOR a b) = (diffTree t t' ≡ []) ∨ (treeIn t a) ∨ (treeIn t b)
 treeIn t t'@(XOR a b) = (diffTree t t' ≡ []) ∨ (treeIn t a) ∨ (treeIn t b)
 treeIn t t' = diffTree t t' ≡ []
 
-m = (mkBimap [(z, getTree z) | z <- keys circuit'])
+-- divs = [(fst <$> getclosest da, fst <$> getclosest db) | i <- [0 .. 44], let d = diffit i, not (null d), (da, db) <- d]
 
-oneswap :: String -> String -> BM.Bimap String Circuit -> BM.Bimap String Circuit
-oneswap a b =
-  BM.insert a (m BM.! b) . BM.insert b (m BM.! a)
-
-n = 1 + maximum [n |- number @ℤ | (z : n) <- keys circuit', z ≡ 'z']
-
-dm' = [diffTree (m BM.! (z na)) (m BM.! (z nb)) | (na, nb) <- pairs [0 .. n - 1]]
-
-trees = [z <> " =\n" <> (show g) | (z, g) <- unBimap m]
-
-x i = N ('x' : pad 2 '0' (show i))
-
-y i = N ('y' : pad 2 '0' (show i))
-
-halfadd a b = (XOR a b, AND a b)
-
-add1 a b c =
-  let (p, c0) = halfadd a b
-      (s, c1) = halfadd p c
-   in (s, OR c0 c1)
-
-cin 0 = N "()"
-cin 1 = AND (x 0) (y 0)
-cin i = snd $ add1 (x (i - 1)) (y (i - 1)) (cin (i - 1))
-
-radd 0 = XOR (x 0) (y 0)
-radd i = fst $ add1 (x i) (y i) (cin i)
-
-z i = ('z' : pad 2 '0' (show i))
-
-diffit i = (diffTree (m BM.! (z i)) (radd i))
-
-real i = m BM.! (z i)
-
-getk k = m BM.! k
-
-gett k = getclosest (getk k)
-
-exS k = getclosest (radd k)
-
-exC k = getclosest (cin k)
-
-getclosest :: Circuit -> [(String, Circuit)]
-getclosest cir = [(name, cir') | (name, cir') <- unBimap m, diffTree cir cir' ≡ []]
-
-divs = [(fst <$> getclosest da, fst <$> getclosest db) | i <- [0 .. 44], let d = diffit i, not (null d), (da, db) <- d]
-
-prs = (catMaybes . (\(a, b) -> [a !? 0, b !? 0]) <$> divs) & filter ((== 2) . size) & fmap sort & sort & nub
-
-ordr a b
-  | diffTree a b ≡ [] = EQ
-  | a `treeIn` b = LT
-  | otherwise = GT
-
-ordrT a b = ordr (getk a) (getk b)
-
-fourpairs = prs & sortBy (\a b -> ordrT (a !! 0) (b !! 0)) & fours
-
-prtests = [(quad, ts) | quad <- fourpairs, let ts = tests quad, or ts]
-
-part2 :: String
-part2 = intercalate "," $ sort ["hmk", "z16", "z20", "fhp", "rvf", "tpc", "z33", "fcd"]
-
--- part2 :: IO ()
--- part2 =
---   do
---     -- mapM_ putStrLn ["Real:\n" <> show (m BM.! (z i)) <> "\nConstructed:\n" <> show (radd i) <> "\n\n\n" | i <- [0 .. n - 1]]
---     mapM_ putStrLn [show (i, abs, size abs) | i <- [0 .. n - 1], let abs = diffTree (m BM.! (z i)) (radd i)]
-
--- wdk: (AND OR AND x40 y40) should be (AND XOR )
-{-
-z38 first gate looks at 35: XOR OR AND OR AND OR AND 35
-z25 frst gate looks at 23: XOR OR AND OR AND XOR 23
-z23 first gae looks at 21: XOR OR AND OR AND 21
-z10 at 8: XOR OR AND OR AND 8
-z07 at 4:
-
-y16 AND x16 → z16
-hmk exactly matches z16
-
-wkw OR jgr -> z33
-jgr is a carry-out bit
-
-pns AND tsc → z20
-
--}
+-- prs = (catMaybes . (\(a, b) -> [a !? 0, b !? 0]) <$> divs) & filter ((== 2) . size) & fmap sort & sort & nub
