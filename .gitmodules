@@ -4,3 +4,6 @@
 [submodule "2024/lib/quaalude"]
 	path = 2024/lib/quaalude
 	url = git@github.com:harryaskham/quaalude.git
+[submodule "2025/lib/quaalude"]
+	path = 2025/lib/quaalude
+	url = git@github.com:harryaskham/quaalude.git
