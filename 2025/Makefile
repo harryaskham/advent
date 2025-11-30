@@ -1,5 +1,5 @@
 pre-init:
-	git mv year-template.cabal "x$$(date +%Y).cabal"  # EXCLUDE
+	#mv year-template.cabal "x$$(date +%Y).cabal"  # EXCLUDE
 	find . -type f | xargs sed -i "/EXCLUDE/! s/year-template/x$$(date +%Y)/g"  # EXCLUDE
 
 hpack:
@@ -20,7 +20,7 @@ copy-day-666:
 pre-run: hpack gen-hie
 
 run: pre-run
-	cabal v2-run year-template
+	cabal v2-run x2025
 
 repl: pre-run
 	cabal v2-repl
@@ -30,7 +30,7 @@ test: pre-run
 
 testwatch: pre-run
 	ghciwatch --test-ghci Spec.main \
-	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-year-template"
+	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2025"
 	--watch src \
 	--watch input \
 	--watch test \

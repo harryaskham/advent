@@ -1,4 +1,4 @@
-name: year-template
+name: x2025
 version: 0.1.0.0
 github: harryaskham/advent
 author: "Harry Askham"
@@ -7,7 +7,7 @@ language: Haskell2010
 
 dependencies:
   - name: base
-    version: "==4.19.0.0"
+    version: ">=4.19.0.0"
     mixin:
       - hiding (Prelude)
   - name: quaalude
@@ -19,19 +19,19 @@ dependencies:
   - vector
 
 internal-libraries:
-  year-template-lib:
+  x2025-lib:
     source-dirs: src
 
 executable:
   dependencies:
-    - year-template-lib
+    - x2025-lib
   source-dirs: app
   main: Main.hs
 
 tests:
-  test-year-template:
+  test-x2025:
     dependencies:
-      - year-template-lib
+      - x2025-lib
     main: Spec.hs
     source-dirs: test
 

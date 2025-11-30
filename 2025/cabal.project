@@ -1,14 +1,10 @@
 packages:
-  ./year-template.cabal
+  ./x2025.cabal
   ./lib/quaalude
 
 package zlib
-  extra-include-dirs: /Users/askham/.nix-profile/include
-  extra-lib-dirs: /Users/askham/.nix-profile/lib
   extra-include-dirs: /home/harry/.nix-profile/include
   extra-lib-dirs: /home/harry/.nix-profile/lib
-  extra-include-dirs: /home/ema/.nix-profile/include
-  extra-lib-dirs: /home/ema/.nix-profile/lib
   extra-include-dirs: /data/data/com.termux.nix/files/home/.nix-profile/include
   extra-lib-dirs: /data/data/com.termux.nix/files/home/.nix-profile/lib
 

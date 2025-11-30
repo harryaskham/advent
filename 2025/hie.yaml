@@ -4,10 +4,10 @@ cradle:
       component: "lib:quaalude"
 
     - path: "./src"
-      component: "year-template:lib:year-template-lib"
+      component: "x2025:lib:x2025-lib"
 
     - path: "./app/Main.hs"
-      component: "year-template:exe:year-template"
+      component: "x2025:exe:x2025"
 
     - path: "./test"
-      component: "year-template:test:test-year-template"
+      component: "x2025:test:test-x2025"
