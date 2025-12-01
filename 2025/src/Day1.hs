@@ -6,8 +6,11 @@ turns = $(aoc 1) |-.. ((*) <$> (((string "L") $> (-1)) <|> ((string "R") $> 1)) 
 turn :: ℤ' -> ℤ' -> ℤ'
 turn x r = (x + r) `mod` 100
 
+zeros :: [ℤ'] -> ℤ'
+zeros = scanl' turn 50 >>> counts >>> (|! 0)
+
 part1 :: ℤ'
-part1 = (turns & scanl' turn 50 & counts) |! 0
+part1 = zeros turns
 
 part2 :: ℤ'
-part2 = ((turns >>= (\x -> replicate (abs x) (sgn x))) & scanl' turn 50 & counts) |! 0
+part2 = zeros (turns >>= ((replicate $@) . (abs &&& sgn)))
