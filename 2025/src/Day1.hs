@@ -1,22 +1,18 @@
 module Day1 (part1, part2) where
 
-import Data.Text (replace)
-
-turns :: [Int]
+turns :: [ℤ']
 turns =
-  ( $(input (1 :: Int))
-      & replace "L" "-"
-      & replace "R" ""
-      & unpack
+  ( $(aoc 1)
+      |-.. ((*) <$> (((string "L") $> (-1)) <|> ((string "R") $> 1)) <*> number)
   )
-    |-.. number
 
+turn :: ℤ' -> ℤ' -> ℤ'
 turn x r = (x + r) `mod` 100
 
-part1 :: Int
+part1 :: ℤ'
 part1 = (turns & scanl' turn 50 & counts) |! 0
 
-part2 :: Int
+part2 :: ℤ'
 part2 =
-  let ts = mconcat ((\x -> replicate (abs x) (signum x)) <$> turns)
+  let ts = turns >>= (\x -> replicate (abs x) (signum x))
    in (ts & scanl' turn 50 & counts) |! 0
