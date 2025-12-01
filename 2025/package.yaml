@@ -17,6 +17,7 @@ dependencies:
   - relude
   - hspec
   - vector
+  - benchpress
 
 internal-libraries:
   x2025-lib:

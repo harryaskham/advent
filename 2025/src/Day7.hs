@@ -20,7 +20,7 @@ module Day7 (part1, part2) where
 
 part1 :: Text
 part1 =
-  $(input 7)
+  $(input (7 :: Int))
     -- & readAs (signed decimal)
     -- & parseWith parser
     -- & parseLinesWith line
