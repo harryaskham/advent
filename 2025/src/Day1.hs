@@ -1,32 +1,22 @@
 module Day1 (part1, part2) where
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+import Data.Text (replace)
 
--- line :: Parser Int
--- line = number
+turns :: [Int]
+turns =
+  ( $(input (1 :: Int))
+      & replace "L" "-"
+      & replace "R" ""
+      & unpack
+  )
+    |-.. number
 
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
+turn x r = (x + r) `mod` 100
 
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
+part1 :: Int
+part1 = (turns & scanl' turn 50 & counts) |! 0
 
-part1 :: Text
-part1 =
-  $(input (1 :: Int))
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+part2 :: Int
+part2 =
+  let ts = mconcat ((\x -> replicate (abs x) (signum x)) <$> turns)
+   in (ts & scanl' turn 50 & counts) |! 0
