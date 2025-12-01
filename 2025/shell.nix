@@ -11,7 +11,7 @@ let
       , template-haskell, text, unordered-containers, utility-ht, vector
       }:
       mkDerivation {
-        pname = "x2021";
+        pname = "x2025";
         version = "0.1.0.0";
         src = ./.;
         isLibrary = true;
