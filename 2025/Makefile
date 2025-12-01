@@ -1,5 +1,5 @@
 pre-init:
-	#mv year-template.cabal "x$$(date +%Y).cabal"  # EXCLUDE
+	mv year-template.cabal "x$$(date +%Y).cabal"  # EXCLUDE
 	find . -type f | xargs sed -i "/EXCLUDE/! s/year-template/x$$(date +%Y)/g"  # EXCLUDE
 
 hpack:
@@ -13,7 +13,7 @@ init: pre-init hpack gen-hie
 
 copy-day-666:
 	echo "Copy Day666.hs over other days? (destructive)" && read ans && [ $${ans:-N} = y ];
-	for i in $$(seq 1 25); do \
+	for i in $$(seq 1 12); do \
 		sed "s/666/$$i/g" src/Day666.hs > src/Day$$i.hs; \
 	done
 
