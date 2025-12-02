@@ -20,3 +20,6 @@ main = hspec do
   describe ("Day 1") do
     it "computes Part 1" (Day1.part1 `shouldBe` 1129)
     it "computes Part 2" (Day1.part2 `shouldBe` 6638)
+  describe ("Day 2") do
+    it "computes Part 1" (Day2.part1 `shouldBe` Σ 0)
+    it "computes Part 2" (Day2.part2 `shouldBe` Σ 0)

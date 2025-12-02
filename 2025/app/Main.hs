@@ -36,7 +36,7 @@ benchEachPart =
             let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
              in (T.unpack t, putTextLn (t <> ": " <> r))
         )
-        $runAllDays
+        ($(runAllDays' 12))
     )
 
 benchAllDays :: IO ()
@@ -49,6 +49,6 @@ benchAllDays =
               let t = "Day " <> show (d :: Integer) <> " - Part " <> show (p :: Integer)
                in putTextLn (t <> ": " <> r)
           )
-          $runAllDays
+          ($(runAllDays' 12))
       )
     ]
