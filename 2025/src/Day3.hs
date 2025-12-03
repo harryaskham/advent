@@ -10,15 +10,13 @@ p e bs =
         | otherwise = do
             aM <- go .$. (i + 1, e)
             bM <- go .$. (i + 1, e - 1)
-            case (aM, bM) of
-              (Nothing, Nothing) -> pure Nothing
-              (Just a, Nothing) -> pure . Just $ a
-              (Nothing, Just b') ->
+            case bM of
+              Nothing -> pure aM
+              Just b' ->
                 let b = b' + (fromIntegral (bs !! i) * 10 ^ (e - 1))
-                 in pure . Just $ b
-              (Just a, Just b') ->
-                let b = b' + (fromIntegral (bs !! i) * 10 ^ (e - 1))
-                 in pure . Just $ max a b
+                 in case aM of
+                      Nothing -> pure . Just $ b
+                      Just a -> pure . Just $ max a b
    in (? 0) . run $ go .$. (0, e)
 
 part1 :: Integer
