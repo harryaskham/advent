@@ -13,7 +13,7 @@ init: pre-init hpack gen-hie
 
 copy-day-666:
 	echo "Copy Day666.hs over other days? (destructive)" && read ans && [ $${ans:-N} = y ];
-	for i in $$(seq 1 12); do \
+	for i in $$(seq 5 12); do \
 		sed "s/666/$$i/g" src/Day666.hs > src/Day$$i.hs; \
 	done
 
@@ -25,10 +25,10 @@ run: pre-run
 repl: pre-run
 	cabal v2-repl
 
-test: pre-run
+tests: pre-run
 	cabal v2-test
 
-testwatch: pre-run
+test: pre-run
 	ghciwatch --test-ghci Spec.main \
 	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2025"
 	--watch src \
