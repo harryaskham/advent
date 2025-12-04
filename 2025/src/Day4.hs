@@ -1,32 +1,15 @@
 module Day4 (part1, part2) where
 
--- parser :: Parser [Int]
--- parser = many1 (number <* eol) <* eof
+remove :: ℤ -> ".@" ▦ ℤ² -> ℤ
+remove 0 _ = 0
+remove n g =
+  let cs = [c | c <- coords g, g |! c == (#"@" □), size [n | n <- neighs @8 @[] c g, g |! n == (#"@" □)] < 4]
+   in case cs of
+        [] -> 0
+        cs -> size cs + remove (n - 1) (foldl' (\g c -> g |. (c, (#"." □))) g cs)
 
--- line :: Parser Int
--- line = number
-
--- data Cell
---   = Empty
---   | Wall
---   deriving (Eq, Ord)
-
--- instance GridCell Cell where
---   charMap =
---     BM.fromList
---       [ (Empty, ' '),
---         (Wall, '#')
---       ]
-
-part1 :: Text
-part1 =
-  $(input (4 :: Int))
-    -- & readAs (signed decimal)
-    -- & parseWith parser
-    -- & parseLinesWith line
-    -- & lines
-    -- & readGrid
-    & (<> "Part 1")
-
-part2 :: Text
-part2 = "Part 2"
+(part1, part2) :: ℤ² =
+  let (g :: ".@" ▦ ℤ²) = $(grid 4)
+   in ( remove 1 g,
+        remove (-1) g
+      )
