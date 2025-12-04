@@ -1,7 +1,18 @@
 module Day4 (part1, part2) where
 
 removable :: ".@" ▦ ℤ² -> [ℤ²]
-removable g = [c | c <- coords g, g |! c == (#"@" □), size [n | n <- neighs @8 @[] c g, g |! n == (#"@" □)] < 4]
+removable g =
+  let cs =
+        g
+          & unGrid
+          & fmap
+            ( \(c, x) ->
+                if x == (#"@" □) && size [n | n <- neighs @8 @[] c g, g |! n == (#"@" □)] < 4
+                  then Just c
+                  else Nothing
+            )
+          & mkSet
+   in [c | c <- coords g, Just c ∈ cs]
 
 remove :: ℤ -> ".@" ▦ ℤ² -> ℤ
 remove 0 _ = 0
