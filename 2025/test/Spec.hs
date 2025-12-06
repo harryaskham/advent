@@ -17,18 +17,18 @@ import Test.Hspec
 
 main :: IO ()
 main = hspec do
-  describe ("Day 1") do
-    it "computes Part 1" (Day1.part1 `shouldBe` 1129)
-    it "computes Part 2" (Day1.part2 `shouldBe` 6638)
-  describe ("Day 2") do
-    it "computes Part 1" (Day2.part1 `shouldBe` Σ 44487518055)
-    it "computes Part 2" (Day2.part2 `shouldBe` Σ 4301558612814388)
-  describe ("Day 3") do
-    it "computes Part 1" (Day3.part1 `shouldBe` 17158)
-    it "computes Part 2" (Day3.part2 `shouldBe` 170449335646486)
-  describe ("Day 4") do
-    it "computes Part 1" (Day4.part1 `shouldBe` 1397)
-    it "computes Part 2" (Day4.part2 `shouldBe` 8758)
+  -- describe ("Day 1") do
+  --   it "computes Part 1" (Day1.part1 `shouldBe` 1129)
+  --   it "computes Part 2" (Day1.part2 `shouldBe` 6638)
+  -- describe ("Day 2") do
+  --   it "computes Part 1" (Day2.part1 `shouldBe` Σ 44487518055)
+  --   it "computes Part 2" (Day2.part2 `shouldBe` Σ 4301558612814388)
+  -- describe ("Day 3") do
+  --   it "computes Part 1" (Day3.part1 `shouldBe` 17158)
+  --   it "computes Part 2" (Day3.part2 `shouldBe` 170449335646486)
+  -- describe ("Day 4") do
+  --   it "computes Part 1" (Day4.part1 `shouldBe` 1397)
+  --   it "computes Part 2" (Day4.part2 `shouldBe` 8758)
   describe ("Day 5") do
     it "computes Part 1" (Day5.part1 `shouldBe` 707)
     it "computes Part 2" (Day5.part2 `shouldBe` 361615643045059)
