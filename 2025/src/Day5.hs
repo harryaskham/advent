@@ -1,6 +1,6 @@
 module Day5 (part1, part2) where
 
-i :: ([RangeOf ℤ] ≠ []) × ([ℤ] ≠ []) = ($(aoc 5) ⋮↵⋮)
+i :: ([RangeOf ℤ] ≠ []) × ([ℤ] ≠ []) = ($(aoc 5) ⋯)
 
 part1 :: ℤ = ((snd i |-?-> (or ∘ (<$> fst i) ∘ (∈))) |.|)
 

@@ -1,6 +1,6 @@
 module Day6 (part1, part2) where
 
-(ps, ops) :: [[ℕ]] × [ℕ -> ℕ -> ℕ] = (⊤) ⇱ ($(aoc 6) ⋯)
+(ps, ops) :: [[ℕ]] × [ℕ -> ℕ -> ℕ] = (⊤) . un ⇱ ($(aoc 6) |- (⋮×⋯))
 
 psᵀ :: [[ℕ]] = ((splitOn "\n" $(aoc 6)) ⊤) & splitBy (all (== ' ')) & ((isDigit <-?-|) <$$>) & ((⋯) <$$>)
 
