@@ -39,8 +39,8 @@ main = hspec do
     it "computes Part 1" (Day7.part1 `shouldBe` 1518)
     it "computes Part 2" (Day7.part2 `shouldBe` 25489586715621)
   describe ("Day 8") do
-    it "computes Part 1" (Day8.part1 `shouldBe` 0)
-    it "computes Part 2" (Day8.part2 `shouldBe` 0)
+    it "computes Part 1" (Day8.part1 `shouldBe` Π 122636)
+    it "computes Part 2" (Day8.part2 `shouldBe` 9271575747)
   describe ("Day 9") do
     it "computes Part 1" (Day9.part1 `shouldBe` 0)
     it "computes Part 2" (Day9.part2 `shouldBe` 0)
