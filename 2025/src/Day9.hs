@@ -1,4 +1,4 @@
-module Day9 (part1, part2) where
+module Day9 where
 
 ps :: [ℤ²] = (($(aoc 9) |- parseVia @([CSV ℤ 2] ≠ [])) ⊏)
 
@@ -51,7 +51,7 @@ sortLines :: [ℤ² × ℤ²] -> [ℤ² × ℤ²]
 sortLines = nub . sort . fmap sortLine
 
 circuit :: [ℤ²] -> [ℤ² × ℤ²]
-circuit ps' = let ps = nub ps' in sortLines $ pairs (ps ++ [ps !! 0])
+circuit ps' = pairs (ps ++ [ps !! 0])
 
 rects = reverse $ sort [(ds² $@ r, r) | r <- triPairs ps]
 
@@ -173,7 +173,113 @@ goAll = maximum (go <$> [hlines, vlines]) -- , reverse hlines, reverse vlines])
 
 plines = circuit ps
 
-perimPs = mkSet [(x, y) | ((x0, y0), (x1, y1)) <- plines, x <- [min x0 x1 .. max x0 x1], y <- [min y0 y1 .. max y0 y1]]
+walkP c [] = []
+walkP c@(cx, cy) ((a, b) : ls) =
+  let d@(dx, dy) = a ≡ c ??? b $ a
+   in [(x, y) | x <- range cx dx, y <- range cy dy] <> walkP d ls
+
+walkPLines' c [] = []
+walkPLines' c@(cx, cy) ((a, b) : ls) =
+  let d@(dx, dy) = a ≡ c ??? b $ a
+   in (c, d) : walkPLines' d ls
+
+walkPLines ps = go (ps ++ [head' ps])
+  where
+    go (a : b : []) = [(a, b)]
+    go (a : b : rest) = (a, b) : go (b : rest)
+
+perimPs =
+  let s = let (((y, (x, _)) : _) : _) = hlines in (x, y)
+   in mkSet (walkP s plines)
+
+perimPLines :: [ℤ² × ℤ²]
+perimPLines = walkPLines ps
+
+rawOuterPLine :: (Dir² -> Dir²) -> ℤ² × ℤ² -> ℤ² × ℤ²
+rawOuterPLine turn ((a@(x0, y0), b@(x1, y1))) =
+  let [d] = goingTo a b
+      d' = turn d
+   in both (move @ℤ d' 1) (a, b)
+
+outerPLine :: (Dir² -> Dir²) -> ℤ² × ℤ² -> [ℤ² × ℤ²]
+outerPLine turn pline = iterateFix removeP [rawOuterPLine turn pline]
+
+lineMask :: ℤ² × ℤ² -> ℤ² × ℤ² -> [ℤ² × ℤ²]
+lineMask l@((lx0, ly0), (lx1, ly1)) m@((mx0, my0), (mx1, my1))
+  | overlapVV =
+      traceShow ("VV", l, m) $
+        let x = lx0
+         in filter
+              (\((_, y0), (_, y1)) -> y1 ≥ y0)
+              [ ((x, min ly0 ly1), (x, min my0 my1 - 1)),
+                ((x, max my0 my1 + 1), (x, max ly0 ly1))
+              ]
+  | overlapHH =
+      traceShow ("HH", l, m) $
+        let y = ly0
+         in filter
+              (\((x0, _), (x1, _)) -> x1 ≥ x0)
+              [ ((min lx0 lx1, y), (min mx0 mx1 - 1, y)),
+                ((max mx0 mx1 + 1, y), (max lx0 lx1, y))
+              ]
+  | overlapVH =
+      traceShow ("VH", l, m) $
+        let x = lx0
+            y = my0
+         in filter
+              (\((_, y0), (_, y1)) -> y1 ≥ y0)
+              [ ((x, min ly0 ly1), (x, y - 1)),
+                ((x, y + 1), (x, max ly0 ly1))
+              ]
+  | overlapHV =
+      traceShow ("HV", l, m) $
+        let x = mx0
+            y = ly0
+         in filter
+              (\((x0, _), (x1, _)) -> x1 ≥ x0)
+              [ ((min lx0 lx1, y), (x - 1, y)),
+                ((x + 1, y), (max lx0 lx1, y))
+              ]
+  | otherwise = [l]
+  where
+    lVert = lx0 ≡ lx1
+    lHoriz = ly0 ≡ ly1
+    mVert = mx0 ≡ mx1
+    mHoriz = my0 ≡ my1
+    sameX = lx0 ≡ mx0
+    sameY = ly0 ≡ my0
+    overlapVV = lVert ∧ mVert ∧ sameX
+    overlapHH = lHoriz ∧ mHoriz ∧ sameY
+    overlapVH = lVert ∧ mHoriz ∧ my0 ≥ min ly0 ly1 ∧ my1 ≤ max ly0 ly1 ∧ (min mx0 mx1 ≤ lx0) ∧ (max mx0 mx1 ≥ lx0)
+    overlapHV = lHoriz ∧ mVert ∧ mx0 ≥ min lx0 lx1 ∧ mx1 ≤ max lx0 lx1 ∧ (min my0 my1 ≤ ly0) ∧ (max my0 my1 ≥ ly0)
+
+removeP1 :: ℤ² × ℤ² -> [ℤ² × ℤ²]
+removeP1 line =
+  nub $ foldl' (\line pline -> line >>= flip lineMask pline) [line] perimPLines
+
+removeP :: [ℤ² × ℤ²] -> [ℤ² × ℤ²]
+removeP lines =
+  traceShow lines $
+    (nub $ removeP1 =<< lines)
+
+outerPLines' :: (Dir² -> Dir²) -> [ℤ² × ℤ²]
+outerPLines' turn =
+  let rawOLines = rawOuterPLine turn <$> perimPLines
+   in traceShow ("raw o", rawOLines) $ iterateFix removeP rawOLines
+
+outerPLines :: (Dir² -> Dir²) -> [ℤ² × ℤ²]
+outerPLines turn = outerPLine turn =<< perimPLines
+
+outerPLinesCW :: [ℤ² × ℤ²]
+outerPLinesCW = outerPLines turnCW
+
+outerPLinesCCW :: [ℤ² × ℤ²]
+outerPLinesCCW = outerPLines turnCCW
+
+rectHasOuterP ((x0, y0), (x1, y1)) (x, y) = x ≥ min x0 x1 ∧ x ≤ max x0 x1 ∧ y ≥ min y0 y1 ∧ y ≤ max y0 y1
+
+rectHasOuterPLine ((x0, y0), (x1, y1)) ((lx0, ly0), (lx1, ly1)) =
+  min lx0 lx1 <= max x0 x1 ∧ max lx0 lx1 >= min x0 x1 ∧ min ly0 ly1 <= max y0 y1 ∧ max ly0 ly1 >= min y0 y1
 
 start = let (((y, (x0, x1)) : _) : _) = hlines in (x0 + 1, y + 1)
 
@@ -188,9 +294,33 @@ flood seen (c :<| q)
 
 allPs = flood perimPs (mkSeq [start])
 
-validR ((x0, y0), (x1, y1)) = and [(x, y) ∈ allPs | x <- [min x0 x1 .. max x0 x1], y <- [min y0 y1 .. max y0 y1]]
+validR' ((x0, y0), (x1, y1)) = and [(x, y) ∈ allPs | x <- [min x0 x1 .. max x0 x1], y <- [min y0 y1 .. max y0 y1]]
 
-part2 = head' [a | (a, r) <- rects, traceShow (a, r) $ validR r]
+validR'' outerPs r = not (or (rectHasOuterP r <$> outerPs))
+
+validR outerPLines r = not (or (rectHasOuterPLine r <$> outerPLines))
+
+best outerPLines =
+  traceShow outerPLines $
+    head' [a | (a, r) <- rects, traceShow (a, r) $ validR outerPLines r]
+
+-- g :: "#X.<>" ▦ ℤ²
+-- g =
+--   mkGrid
+--     ( [ [((x, y), (#"." □)) | x <- [0 .. 12], y <- [0 .. 12]],
+--         [(p, (#"#" □)) | p <- un perimPs],
+--         -- [(p, (#"<" □)) | p <- outerPsCW'],
+--         [(p, (#">" □)) | p <- outerPsCCW']
+--       ]
+--         <>!
+--     )
+
+part2 =
+  -- traceShow outerPsCW $
+  -- traceTextLn (pretty g) $
+  -- traceShow ("out cw", outerPLinesCW, "out ccw", outerPLinesCCW) $
+  traceShow ("out ccw", outerPLinesCCW) $
+    best outerPLinesCCW
 
 -- 4455021870 not it
 -- 4557681710 not it
