@@ -1,9 +1,5 @@
-module Day9 where
+module Day9 (part1, part2) where
 
-(out, rects) :: [ℤ² × ℤ²] :^ 2 =
-  (($(aoc 9) |- (⋮) @([ℤ ⹉ 2] ≠ [])) ⊏)
-    & (outside ∘ loopPairs &&& triPairs)
-
-part1 :: ℤ = ((Ȟ ((ds² <$@> rects) 🎝)) !>)
-
-part2 :: ℤ = ((Ȟ ([ds² $@ r | r <- rects, not (or (intersectRectangles r <$> out))] 🎝)) !>)
+(part1, part2) :: ℤ × ℤ =
+  let (out, rects) = outside ∘ loopPairs &&& triPairs $ (((⋮) @([ℤ ⹉ 2] ≠ []) $(aoc 9)) ⊏)
+   in ((!>) ∘ Ȟ ∘ (🎝) ∘ (ds² <$@>) ∘ (rects |-?->)) <:> ((⊨), not ∘ or ∘ (out <&>) ∘ (□?□))
