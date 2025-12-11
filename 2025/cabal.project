@@ -3,10 +3,22 @@ packages:
   ./lib/quaalude
 
 package zlib
-  extra-include-dirs: /home/harry/.nix-profile/include
+  extra-include-dirs: /Users/harryaskham/.nix-profile/include
+  extra-lib-dirs: /Users/harryaskham/.nix-profile/lib
+  extra-include-dirs: /Users/harryaskham/.nix-profile/include
   extra-lib-dirs: /home/harry/.nix-profile/lib
-  extra-include-dirs: /data/data/com.termux.nix/files/home/.nix-profile/include
+  extra-include-dirs: /home/harry/.nix-profile/include
   extra-lib-dirs: /data/data/com.termux.nix/files/home/.nix-profile/lib
+  extra-include-dirs: /data/data/com.termux.nix/files/home/.nix-profile/include
+
+package z3
+  extra-include-dirs: /Users/harryaskham/.nix-profile/include
+  extra-lib-dirs: /Users/harryaskham/.nix-profile/lib
+  extra-include-dirs: /Users/harryaskham/.nix-profile/include
+  extra-lib-dirs: /home/harry/.nix-profile/lib
+  extra-include-dirs: /home/harry/.nix-profile/include
+  extra-lib-dirs: /data/data/com.termux.nix/files/home/.nix-profile/lib
+  extra-include-dirs: /data/data/com.termux.nix/files/home/.nix-profile/include
 
 allow-newer:
   *:Cabal
