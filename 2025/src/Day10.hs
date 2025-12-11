@@ -26,7 +26,7 @@ press (ls', bs, js) =
 
 presso :: (𝕊, [[ℤ]], [ℤ]) -> ℤ
 presso (_, bs, js) =
-  let loss (n, cs) = n + sum ((js, cs) ⤊ (-))
+  let loss (n, cs) = n + maximum ((js, cs) ⤊ (-))
       csE = const 0 <$> js
       go :: Maybe ℤ -> Set [ℤ] -> MinQ ℤ (ℤ, [ℤ]) -> ℤ
       go (Just best) _ NullQ = best
