@@ -29,8 +29,9 @@ tests: pre-run
 	cabal v2-test
 
 test: pre-run
-	ghciwatch --test-ghci Spec.main \
-	--command "cabal -O0 -j --ghc-options=-j v2-repl --enable-multi-repl test-x2025"
+	ghciwatch \
+	--test-ghci Spec.main \
+	--command "cabal -O0 -j --ghc-options=-j repl test-x2025" \
 	--watch src \
 	--watch input \
 	--watch test \

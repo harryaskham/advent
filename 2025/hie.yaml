@@ -3,6 +3,9 @@ cradle:
     - path: "./lib/quaalude/src"
       component: "lib:quaalude"
 
+    - path: "./lib/quaalude/test"
+      component: "quaalude:test:quaalude-tests"
+
     - path: "./src"
       component: "x2025:lib:x2025-lib"
 
