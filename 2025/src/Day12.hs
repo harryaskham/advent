@@ -367,7 +367,7 @@ growRs :: [(ℤ², [ℤ])] -> [(ℤ², [ℤ])]
 growRs rs =
   let mvs :: Vector (MaxSet ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
       vSigss = varSigs <$> mvs
-      loss (maxX, maxY) (MaxSet (mx, my) s, cs)
+      loss rs (MaxSet (mx, my) s, cs)
         | rs ≡ [] = ((99999999, 99999999), (99999999, 99999999))
         | mx > maxX ∨ my > maxY = ((99999999, 99999999), (99999999, 99999999))
         -- \| otherwise = ((mx, my), minimum [(mx + 1 - w) ^ 2 + (my + 1 - h) ^ 2 | ((w, h), ns) <- rs]) -- , sum [max 0 (n - c) | (c, n) <- (zip cs ns)])
@@ -375,13 +375,16 @@ growRs rs =
             ( (0, 0),
               minimum [if mx + 1 > w ∨ my + 1 > h then (9999999, 9999999) else ((max 0 (w - (mx + 1)) + max 0 (h - (my + 1))), sum [negate c | (c, n) <- (zip cs ns)]) | ((w, h), ns) <- rs]
             )
+        where
+          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
       -- else (mx + my) -- mx + my + 2 + (mx + 1) ⋅ (my + 1))
-      go :: [(ℤ², [ℤ])] -> Set (MaxSet ℤ²) -> ℤ² :|-> Set [ℤ] -> MinQ (ℤ², ℤ²) (MaxSet ℤ², [ℤ]) -> [(ℤ², [ℤ])]
+      go :: [(ℤ², [ℤ])] -> Set ([ℤ], MaxSet ℤ²) -> ℤ² :|-> Set [ℤ] -> MinQ (ℤ², ℤ²) (MaxSet ℤ², [ℤ]) -> [(ℤ², [ℤ])]
       go rs seen rToCs NullQ = rs
-      go rs seen rToCs ((_, (st@(g@(MaxSet (mx, my) s), cs))) :<! q)
+      go rs seen rToCs ((l, (st@(g@(MaxSet (mx, my) s), cs))) :<! q)
+        | l ≢ loss rs st = traceShow "loss changed" $ go rs seen rToCs (qInsert (loss rs) st q)
         | size rs ≡ 0 = traceShow "solve true" rs
         | mx > maxX ∨ my > maxY = traceShow "too big" $ go rs seen rToCs q
-        | g ∈ seen =
+        | (cs, g) ∈ seen =
             -- traceShow ("seen hit", (mx, my), cs) $
             go rs seen rToCs q
         | otherwise =
@@ -392,32 +395,32 @@ growRs rs =
                       let cs' = cs !. (i, (cs !! i + 1)),
                       gv <- un (vars g),
                       -- (g'@(MaxSet (mx', my') s'), j, (x, y)) <- placeV (mx + 4, my + 4) g vSigs,
-                      (gv', j, (x, y)) <- placeV (mx + 4, my + 4) gv (take 1 vSigs),
+                      (gv', j, (x, y)) <- placeV (mx + 4, my + 4) gv vSigs,
                       contiguous gv',
-                      g'@(MaxSet (mx', my') s') <- un (vars gv'),
+                      -- g'@(MaxSet (mx', my') s') <- un (vars gv'),
+                      let g'@(MaxSet (mx', my') s') = gv',
                       (mx' ≤ maxX ∧ my' ≤ maxY) ∨ (my' ≤ maxX ∧ mx' ≤ maxY),
+                      (cs', g') ∉ seen,
                       let (w', h') = (mx' + 1, my' + 1),
-                      let st' = (g', cs'),
-                      g' ∉ seen
+                      let st' = (g', cs')
                       -- traceShow st' True
                       -- traceShow ("grew", g') True,
                       -- traceV g True,
                       -- traceV g' True
                     ]
                 -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
-                seen' = foldl' (\seen g -> g |-> seen) seen (un (vars g))
+                -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
+                seen' = (cs, g) |-> seen
                 rToCs' = foldl' (\rToCs (r, c) -> if r ∈ rToCs then rToCs |~ (r, (cs |->)) else rToCs |. (r, mk [cs])) rToCs newCs
                 possible r@((w, h), ns) = or [and [c ≥ n | (c, n) <- zip cs' ns] | ((w', h'), cs') <- newCs, w' ≤ w, h' ≤ h]
                 rs' = rs |-?-> (not ∘ possible)
-                q' = qAppend (loss (maxX, maxY)) states q
+                q' = qAppend (loss rs') states q
              in -- traceRToCs rToCs $
                 traceShow ("rs", size rs, if size rs ≢ size rs' then "found" else "nope", size q, "seen", size seen, "mxy", (mx, my), "cs", cs) $
                   go rs' seen' rToCs' q'
         where
           (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
-   in go rs (∅) (∅) (mkQ₁ (loss (maxX, maxY)) ((MaxSet (0, 0) (∅)), (const 0 <$> ps)))
-  where
-    (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
+   in go rs (∅) (∅) (mkQ₁ (loss rs) ((MaxSet (0, 0) (∅)), (const 0 <$> ps)))
 
 toG :: MaxSet ℤ² -> ".#X" ▦ ℤ²
 toG (MaxSet (w, h) v) = mkGrid [(c, c ∈ v ??? (#"#" □) $ (#"." □)) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
