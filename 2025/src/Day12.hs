@@ -1,7 +1,10 @@
 module Day12 (part1, part2) where
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aoc 12) & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
+  $(aocx 12)
+    -- \$(aoc 12)
+    -- \$(aocxn 12 1)
+    & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
 
 traceIt (w, h) s a =
   let g :: ".#" ▦ ℤ² = mkGrid [((x, y), if (x, y) ∈ s then (#"#" □) else (#"." □)) | y <- [0 .. h - 1], x <- [0 .. w - 1]]
@@ -321,31 +324,6 @@ placeVs ri (w, h) cs mvs =
                   $ go seen' q'
    in go (∅) (mkQ₁ loss (cs, (MaxSet (0, 0) (∅)), (∅)))
 
-growRs :: ℤ² :|-> Set (ℤ :|-> ℤ)
-growRs =
-  let (mw, mh) = bimaximum (fst <$> rs)
-      mvs :: Vector (MaxSet ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
-      vSigss = varSigs <$> mvs
-      go seen rToCs Empty = rToCs
-      go seen rToCs ((g@(MaxSet (w, h) s), cs) :<| q)
-        | w > mw + 3 ∧ h > mh + 3 = rToCs
-        | ((w, h), cs) ∈ seen = go seen rToCs q
-        | otherwise =
-            let (states, rCs) =
-                  unzip
-                    [ ((g', cs'), ((w, h), cs'))
-                    | (i, vSigs) <- enum (un vSigss),
-                      let cs' = cs |~ (i, (+ 1)),
-                      (g'@(MaxSet (w, h) s), j, (x, y)) <- placeV (w, h) g vSigs,
-                      ((w, h), cs') ∉ seen
-                      -- traceV g' True
-                    ]
-                seen' = ((w, h), cs) |-> seen
-                rToCs' = foldl' (\rToCs (r, c) -> if r ∈ rToCs then rToCs |~ (r, (cs |->)) else rToCs |. (r, mk [cs])) rToCs rCs
-             in go seen' rToCs' (q >< mk states)
-   in -- in go (∅) (MaxSet (bimaximum (fst <$> rs)) (∅)) (mkMap [(i, 0) | i <- [0 .. size ps - 1]])
-      go ((∅) :: Set (ℤ², ℤ :|-> ℤ)) ((∅) :: ℤ² :|-> Set (ℤ :|-> ℤ)) (mkSeq [((MaxSet (mw + 1, mh + 1) (∅)), (mkMap [(i, 0) | i <- [0 .. size ps - 1]]))])
-
 searcho :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹
 searcho ri (w, h) cs vs =
   let mvs :: Vector (MaxSet ℤ²) = mk ∘ un <$> vs
@@ -385,6 +363,62 @@ searcho ri (w, h) cs vs =
                   $ go seen' q'
    in go (∅) (mkQ₁ loss (cs, (∅)))
 
+growRs :: [(ℤ², [ℤ])] -> [(ℤ², [ℤ])]
+growRs rs =
+  let mvs :: Vector (MaxSet ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
+      vSigss = varSigs <$> mvs
+      loss (maxX, maxY) (MaxSet (mx, my) s, cs)
+        | rs ≡ [] = ((99999999, 99999999), (99999999, 99999999))
+        | mx > maxX ∨ my > maxY = ((99999999, 99999999), (99999999, 99999999))
+        -- \| otherwise = ((mx, my), minimum [(mx + 1 - w) ^ 2 + (my + 1 - h) ^ 2 | ((w, h), ns) <- rs]) -- , sum [max 0 (n - c) | (c, n) <- (zip cs ns)])
+        | otherwise =
+            ( (0, 0),
+              minimum [if mx + 1 > w ∨ my + 1 > h then (9999999, 9999999) else ((max 0 (w - (mx + 1)) + max 0 (h - (my + 1))), sum [negate c | (c, n) <- (zip cs ns)]) | ((w, h), ns) <- rs]
+            )
+      -- else (mx + my) -- mx + my + 2 + (mx + 1) ⋅ (my + 1))
+      go :: [(ℤ², [ℤ])] -> Set (MaxSet ℤ²) -> ℤ² :|-> Set [ℤ] -> MinQ (ℤ², ℤ²) (MaxSet ℤ², [ℤ]) -> [(ℤ², [ℤ])]
+      go rs seen rToCs NullQ = rs
+      go rs seen rToCs ((_, (st@(g@(MaxSet (mx, my) s), cs))) :<! q)
+        | size rs ≡ 0 = traceShow "solve true" rs
+        | mx > maxX ∨ my > maxY = traceShow "too big" $ go rs seen rToCs q
+        | g ∈ seen =
+            -- traceShow ("seen hit", (mx, my), cs) $
+            go rs seen rToCs q
+        | otherwise =
+            let (states, newCs) =
+                  unzip
+                    [ (st', ((w', h'), cs'))
+                    | (i, vSigs) <- enum (un vSigss),
+                      let cs' = cs !. (i, (cs !! i + 1)),
+                      gv <- un (vars g),
+                      -- (g'@(MaxSet (mx', my') s'), j, (x, y)) <- placeV (mx + 4, my + 4) g vSigs,
+                      (gv', j, (x, y)) <- placeV (mx + 4, my + 4) gv (take 1 vSigs),
+                      contiguous gv',
+                      g'@(MaxSet (mx', my') s') <- un (vars gv'),
+                      (mx' ≤ maxX ∧ my' ≤ maxY) ∨ (my' ≤ maxX ∧ mx' ≤ maxY),
+                      let (w', h') = (mx' + 1, my' + 1),
+                      let st' = (g', cs'),
+                      g' ∉ seen
+                      -- traceShow st' True
+                      -- traceShow ("grew", g') True,
+                      -- traceV g True,
+                      -- traceV g' True
+                    ]
+                -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
+                seen' = foldl' (\seen g -> g |-> seen) seen (un (vars g))
+                rToCs' = foldl' (\rToCs (r, c) -> if r ∈ rToCs then rToCs |~ (r, (cs |->)) else rToCs |. (r, mk [cs])) rToCs newCs
+                possible r@((w, h), ns) = or [and [c ≥ n | (c, n) <- zip cs' ns] | ((w', h'), cs') <- newCs, w' ≤ w, h' ≤ h]
+                rs' = rs |-?-> (not ∘ possible)
+                q' = qAppend (loss (maxX, maxY)) states q
+             in -- traceRToCs rToCs $
+                traceShow ("rs", size rs, if size rs ≢ size rs' then "found" else "nope", size q, "seen", size seen, "mxy", (mx, my), "cs", cs) $
+                  go rs' seen' rToCs' q'
+        where
+          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
+   in go rs (∅) (∅) (mkQ₁ (loss (maxX, maxY)) ((MaxSet (0, 0) (∅)), (const 0 <$> ps)))
+  where
+    (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
+
 toG :: MaxSet ℤ² -> ".#X" ▦ ℤ²
 toG (MaxSet (w, h) v) = mkGrid [(c, c ∈ v ??? (#"#" □) $ (#"." □)) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
 
@@ -394,11 +428,13 @@ traceV v a = traceG (toG v) a
 
 traceVs vs a = foldl' (\a v -> traceV v a) a vs
 
+traceRToCs rToCs a =
+  traceTextLn (unlines $ tshow <$> [(r, cs) | (r, css) <- sort $ unMap rToCs, cs <- un css]) a
+
 -- part1 :: ℤ = enum rs |?| fitM placeVs
-part1 :: ℤ =
-  let rToCs = growRs
-   in -- traceShow rToCs $
-      size [r | (r, ns) <- rs, let cs :: ℤ :|-> ℤ = mkMap $ enum ns, r ∈ rToCs, cs ∈ (rToCs |! r)]
+part1 :: ℤ = size rs - size (growRs rs)
+
+--     size [r | ((w, h), ns) <- rs, [cs | ((w', h'), css) <- unMap rToCs, w' ≤ w, h' ≤ h, cs <- un css, and [c ≥ n | (c, n) <- zip cs ns]] ≢ []]
 
 part2 :: ℤ = 0
 
