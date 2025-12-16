@@ -6,173 +6,10 @@ module Day12 where
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
 
-traceIt (w, h) s a =
-  let g :: ".#" ▦ ℤ² = mkGrid [((x, y), if (x, y) ∈ s then (#"#" □) else (#"." □)) | y <- [0 .. h - 1], x <- [0 .. w - 1]]
-   in traceTextLn (pretty g) a
+vars :: forall f a. (Eq (f a), Rotatable (f a), HMirrorable (f a), VMirrorable (f a)) => f a -> [f a]
+vars xs = nub [f xs | f <- (∘) <$> [id, (↻), (↻) ∘ (↻), (↺)] <*> [id, (◓), (◐)]]
 
-place :: ℤ² -> Set (Set ℤ²) -> Set (Set ℤ²) -> Set (Set ℤ²)
-place (w, h) gs vs =
-  mk
-    [ g ∪ v
-    | traceShow ("states", (gs |.|)) True,
-      g <- un gs,
-      traceShow ("space", w ⋅ h - (g |.|), "size", ((head' (un vs)) |.|)) True,
-      -- traceIt (w, h) g True,
-      x <- [0 .. w - 1],
-      y <- [0 .. h - 1],
-      v' <- un vs,
-      let v = setMap (bimap (+ x) (+ y)) v',
-      w ⋅ h - (g |.|) ≥ (v |.|),
-      -- traceIt (w, h) v True,
-      v |-?-> (\(x, y) -> x < 0 ∨ x ≥ w ∨ y < 0 ∨ y ≥ h) ≡ (∅),
-      g ∩ v ≡ (∅)
-    ]
-
-fit :: (ℤ, (ℤ², [ℤ])) -> 𝔹
-fit (ri, ((w, h), ns)) =
-  let cs :: ℤ :|-> ℤ = mkMap $ enum ns
-      traceG g a = traceTextLn (pretty g) a
-      vs :: Vector (Set ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
-   in search ri (w, h) cs vs
-
-search :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹
-search ri (w, h) cs vs =
-  let loss (MaxSet _ free, cs) = size free
-      key cache (mfree, cs) = (cs, head' $ sort (vars mfree))
-      mfree = MaxSet (w - 1, h - 1) (box (0, 0) (w - 1, h - 1))
-      -- toGrid :: Set ℤ² -> ".#" ▦ ℤ²
-      -- toGrid v = mkGrid [(c, c ∈ v ??? (#"#" □) $ (#"." □)) | c <- un b]
-      -- traceG g a = traceTextLn (pretty g) a
-      -- traceV v a = traceG (toGrid v) a
-      -- traceVs vs a = foldl' (\a v -> traceV v a) a (fst3 <$> un vs)
-      -- traceVss vss a = foldl' (\a vs -> traceVs vs a) a (un vss)
-      -- toGridI :: Set ℤ² -> ".#" ▦ ℤ²
-      -- toGridI v = mkGrid [(c, c ∈ v ??? (#"." □) $ (#"#" □)) | c <- un b]
-      -- traceGI g a = traceTextLn (pretty g) a
-      -- traceVI v a = traceGI (toGridI v) a
-      -- traceVsI vs a = foldl' (\a v -> traceVI v a) a (fst3 <$> un vs)
-      -- traceVssI vss a = foldl' (\a vs -> traceVsI vs a) a (un vss)
-      go _ _ _ NullQ = traceShow "solve false" False
-      go (n, seenHits, cacheHits) seen cache ((_, st@(mfree@(MaxSet m free), cs)) :<! q)
-        | sum (values cs) ≡ 0 = traceShow "solve true" True
-        -- \| n > 100000 = traceShow "timeout" False
-        | otherwise =
-            let (cache', cacheHits') = case cache |? mfree of
-                  Nothing -> (cache |. (mfree, fittingIFs vs mfree), cacheHits)
-                  Just ifs -> (cache, cacheHits + 1)
-                states =
-                  -- nubOn key $
-                  [ st'
-                  | -- traceShow ("space", w ⋅ h - (g |.|), "size", ((head' (un vs)) |.|)) True,
-                    -- mfree'@(MaxSet m' free') ← un (vars mfree),
-                    (i, mfree') <- cache' |! mfree,
-                    cs |? i > Just 0,
-                    let cs' = cs |~ (i, subtract 1),
-                    let st' = (mfree', cs')
-                    -- traceTextLn (unlines $ (tshow ("next", st')) : (tshow <$> [toGridI free, toGrid v])) True
-                    -- fits
-                    -- key st' ∉ seen
-                  ]
-                k = key cache' st
-                isSeen = k ∈ seen
-                seenHits' = isSeen ??? seenHits + 1 $ seenHits
-                seen' = k |-> seen
-                q' = qAppend loss states q
-             in traceShow
-                  ( "ri",
-                    ri,
-                    "q",
-                    size q,
-                    "n",
-                    n,
-                    "cache",
-                    size cache',
-                    "seen",
-                    size seen',
-                    "seenhits",
-                    (seenHits', showDP 4 $ fromIntegral seenHits' / fromIntegral n),
-                    "cachehits",
-                    (cacheHits', showDP 4 $ fromIntegral cacheHits' / fromIntegral n),
-                    "free",
-                    size free,
-                    "cs",
-                    [cs |! i | i <- [0 .. size cs - 1]]
-                  )
-                  $ if key cache' st ∈ seen
-                    then go (n + 1, seenHits', cacheHits') seen cache' q
-                    else go (n + 1, seenHits', cacheHits') seen' cache' q'
-   in -- in traceVss vss $ go (0, 0) (∅) (mkQ₁ loss (b, (∅), cs))
-      go (0, 0, 0) (∅) ((∅) @((MaxSet ℤ²) :|-> [(ℤ, MaxSet ℤ²)])) (mkQ₁ loss (mfree, cs))
-
-fit' :: (ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹) -> (ℤ, (ℤ², [ℤ])) -> 𝔹
-fit' searchF (ri, ((w, h), ns)) =
-  let cs :: ℤ :|-> ℤ = mkMap $ enum ns
-      traceG g a = traceTextLn (pretty g) a
-      vs :: Vector (Set ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
-   in searchF ri (w, h) cs vs
-
-fitM :: (ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (MaxSet ℤ²) -> 𝔹) -> (ℤ, (ℤ², [ℤ])) -> 𝔹
-fitM searchF (ri, ((w, h), ns)) =
-  let cs :: ℤ :|-> ℤ = mkMap $ enum ns
-      traceG g a = traceTextLn (pretty g) a
-      vs :: Vector (MaxSet ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
-   in searchF ri (w, h) cs vs
-
-search' :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹
-search' ri (w, h) cs vs =
-  let go (mfree, cs)
-        | sum (values cs) ≡ 0 = pure True
-        | otherwise =
-            let states =
-                  [ (mfree', cs')
-                  | (i, c) <- unMap cs,
-                    c > 0,
-                    let v' = vs !! i,
-                    mfreeVar@(MaxSet m@(w, h) freeVar) <- vars mfree,
-                    x <- [0 .. w - 3],
-                    y <- [0 .. h - 3],
-                    let v = setMap (bimap (+ x) (+ y)) v',
-                    -- traceV mfreeVar v True,
-                    v ∩ freeVar |=| v,
-                    let mfree' = MaxSet m (freeVar ∖ v),
-                    let cs' = cs |~ (i, subtract 1)
-                  ]
-             in or <$> go .=<<. states
-      mfree@(MaxSet m free) = MaxSet (w - 1, h - 1) (box (0, 0) (w - 1, h - 1))
-   in traceShow ri $ traceShowId $ run $ go .$. (mfree, cs)
-  where
-    toGrid :: MaxSet ℤ² -> Set ℤ² -> ".#X" ▦ ℤ²
-    toGrid (MaxSet (w, h) free) v = mkGrid [(c, (c ∈ v ∧ c ∉ free) ??? (#"X" □) $ (c ∉ free ??? (#"#" □) $ (#"." □))) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
-    traceG g a = traceTextLn (pretty g) a
-    traceV mfree v a = traceG (toGrid mfree v) a
-
-search''' :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹
-search''' ri (w, h) cs vs =
-  let go (mfree, cs)
-        | sum (values cs) ≡ 0 = pure True
-        | otherwise =
-            let states =
-                  [ (mfree', cs')
-                  | (i, c) <- unMap cs,
-                    c > 0,
-                    let v' = vs !! i,
-                    mfreeVar@(MaxSet m@(w, h) freeVar) <- vars mfree,
-                    x <- [0 .. w - 3],
-                    y <- [0 .. h - 3],
-                    let v = setMap (bimap (+ x) (+ y)) v',
-                    -- traceV mfreeVar v True,
-                    v ∩ freeVar |=| v,
-                    let mfree' = MaxSet m (freeVar ∖ v),
-                    let cs' = cs |~ (i, subtract 1)
-                  ]
-             in or <$> go .=<<. states
-      mfree@(MaxSet m free) = MaxSet (w - 1, h - 1) (box (0, 0) (w - 1, h - 1))
-   in traceShow ri $ traceShowId $ run $ go .$. (mfree, cs)
-  where
-    toGrid :: MaxSet ℤ² -> Set ℤ² -> ".#X" ▦ ℤ²
-    toGrid (MaxSet (w, h) free) v = mkGrid [(c, (c ∈ v ∧ c ∉ free) ??? (#"X" □) $ (c ∉ free ??? (#"#" □) $ (#"." □))) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
-    traceG g a = traceTextLn (pretty g) a
-    traceV mfree v a = traceG (toGrid mfree v) a
+vss :: [[MaxSet ℤ²]] = [vars (mk (p |?> (#"#" □))) | p <- snd <$> ps]
 
 contiguous ::
   forall f a {n}.
@@ -192,365 +29,197 @@ contiguous shape =
       go seen _ = seen |=| shape
    in go (∅) (mkSeq [arbitrary shape])
 
--- min0 :: MaxSet ℤ² -> MaxSet ℤ²
--- min0 (MaxSet m s) = let (minX, minY) = biminimum s in mk $ setMap (bimap (subtract minX) (subtract minY)) s
+data Shape a where
+  EmptyShape :: Shape a
+  Invalid :: Shape a
+  Shape :: (Ord a, MkDiffList a) => Seq a -> Set a -> DiffList a -> (a, a) -> Shape a
 
-buildWith :: ℤ² -> Set (MaxSet ℤ²) -> MaxSet ℤ² -> Set (MaxSet ℤ²)
-buildWith (w, h) shapes mv
-  | shapes ≡ (∅) = mk (vars mv)
-  | otherwise =
-      mk
-        [ ms'
-        | ms'@(MaxSet (sw, sh) s') <- un shapes,
-          mv'@(MaxSet (vw, vh) v') <- vars @MaxSet mv,
-          msx <- [0 .. sw + 1],
-          msy <- [0 .. sh + 1],
-          mvx <- [0 .. vw + 1],
-          mvy <- [0 .. vh + 1],
-          let ms :: MaxSet ℤ² = setMap (bimap (+ msx) (+ msy)) ms',
-          let mv :: MaxSet ℤ² = setMap (bimap (+ mvx) (+ mvy)) mv',
-          let ms'@(MaxSet (w', h') _) = mv ∪ ms,
-          let mvs@(MaxSet _ vs) = mv ∩ ms,
-          vs ≡ (∅),
-          w' < w,
-          h' < h,
-          contiguous ms'
-          -- traceShow ((msx, msy), (mvx, mvy)) True,
-          -- traceShow "shape" True,
-          -- traceShow ms True,
-          -- traceV ms True,
-          -- traceShow "plus" True,
-          -- traceShow mv True,
-          -- traceV mv True,
-          -- traceShow "intersect" True,
-          -- traceShow mvs True,
-          -- traceV mvs True,
-          -- traceShow "union" True,
-          -- traceShow ms' True,
-          -- traceV ms' True
-        ]
+deriving instance (Show a) => Show (Shape a)
 
-search'' :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹
-search'' ri (w, h) cs vs =
-  let mvs :: Vector (MaxSet ℤ²) = mk ∘ un <$> vs
-      go cs
-        | sum (values cs) ≡ 0 =
-            traceShow (ri, cs) $
-              pure (∅)
+deriving instance (Eq a) => Eq (Shape a)
+
+deriving instance (Ord a) => Ord (Shape a)
+
+getCs (Shape cs _ _ _) = cs
+
+getS (Shape _ s _ _) = s
+
+getDs (Shape _ _ ds _) = ds
+
+getBs (Shape _ _ _ bs) = bs
+
+type instance Element (Shape a) = a
+
+instance Foldable Shape where
+  foldr _ accum Invalid = accum
+  foldr _ accum EmptyShape = accum
+  foldr f accum (Shape _ s _ _) = foldr f accum s
+
+mkShape :: (Foldable f) => f ℤ² -> Shape ℤ²
+mkShape cs = case toList cs of
+  [] -> EmptyShape
+  cs ->
+    let s = mkSet cs
+        lb = biminimum cs
+        ub = bimaximum cs
+     in if s |≢| cs
+          then Invalid
+          else Shape (mk cs) s (mkDiffList cs) (lb, ub)
+
+instance (Semigroup (Shape a)) => Monoid (Shape a) where
+  mempty = EmptyShape
+
+instance (Bimaximum a, Biminimum a, MkDiffList a) => Semigroup (Shape a) where
+  Invalid <> s = Invalid
+  s <> Invalid = Invalid
+  EmptyShape <> s = s
+  s <> EmptyShape = s
+  (Shape cs0@(_ :|> l0) s0 ds0 (lb0, ub0)) <> (Shape cs1@(h1 :<| _) s1 ds1 (lb1, ub1)) =
+    let s01 = s0 ∪ s1
+     in ((s01 |.|) ≡ (s0 |.|) + (s1 |.|))
+          ??? (Shape (cs0 >< cs1) s01 (diffListConcatVia ds0 l0 h1 ds1) (biminimum [lb0, lb1], bimaximum [ub0, ub1]))
+          $ Invalid
+
+offsetShape x y Invalid = Invalid
+offsetShape x y EmptyShape = EmptyShape
+offsetShape x y (Shape cs s ds ((lx, ly), (ux, uy))) =
+  let cs' = bimap (+ x) (+ y) <$> cs
+   in Shape cs' (mk $ un cs') ds ((lx + x, ly + y), (ux + x, uy + y))
+
+shapess :: [[Shape ℤ²]] = [[mkShape v | v <- vars (mk @MaxSet (p |?> (#"#" □)))] | p <- snd <$> ps]
+
+validShape _ Invalid = False
+validShape _ EmptyShape = True
+validShape wh shape = boundedShape wh shape
+
+boundedShape _ Invalid = False
+boundedShape _ EmptyShape = True
+boundedShape (w, h) shape = let (sw, sh) = shapeWH shape in sw ≤ w ∧ sh ≤ h
+
+shapeWH Invalid = (0, 0)
+shapeWH EmptyShape = (0, 0)
+shapeWH (Shape _ _ _ ((lx, ly), (ux, uy))) = (ux - lx + 1, uy - ly + 1)
+
+alignShape Invalid = Invalid
+alignShape EmptyShape = EmptyShape
+alignShape shape@(Shape _ _ _ ((lx, ly), (ux, uy))) = offsetShape (negate lx) (negate ly) shape
+
+place :: ℤ² -> Shape ℤ² -> [Shape ℤ²] -> [Shape ℤ²]
+place (w, h) EmptyShape shapes = shapes |-?-> validShape (w, h)
+place (w, h) Invalid shapes = []
+place (w, h) shape0' shapes =
+  [ shape01
+  | let shape0@(Shape cs0 s0 ds0 ((lx0, ly0), (ux0, uy0))) = alignShape shape0',
+    let (w0, h0) = shapeWH shape0,
+    shape1'@(Shape _ _ _ ((lx1, ly1), (ux1, uy1))) <- (alignShape <$> shapes) |-?-> validShape (w, h),
+    -- traceShape shape1' True,
+    let (w1, h1) = shapeWH shape1',
+    xO <- range (negate w1) w0,
+    yO <- range (negate h1) h0,
+    let shape1 = offsetShape xO yO shape1',
+    -- traceShape shape1 True,
+    let shape01 = alignShape $ shape0 <> shape1,
+    validShape (w, h) shape01
+    -- traceShape shape01 True,
+  ]
+place _ _ shapes = []
+
+shapes :: ℤ² -> [[Shape ℤ²]] -> ([ℤ] .->. MinQ ℤ² (Shape ℤ²))
+shapes (w, h) shape1ss =
+  let go :: [ℤ] .->. MinQ ℤ² (Shape ℤ²)
+      go ns
+        | any (< 0) ns = pure (∅)
+        | sum ns ≡ 0 = pure (mkQ₁ shapeWH (∅))
         | otherwise = do
-            shapes <-
-              foldl1 (∪)
-                <$> sequence
-                  [ do
-                      shapes <- go .$. cs'
-                      pure (buildWith (w, h) shapes (mvs !! i))
-                  | (i, c) <- sortOn snd $ unMap cs,
-                    c > 0,
-                    let cs' = cs |~ (i, subtract 1)
-                  ]
-            traceV (arbitrary shapes) $
-              traceShow (ri, (w, h), cs, size shapes) $
-                pure shapes
-   in traceShowId $ (run $ go .$. cs) ≢ (∅)
+            ishape0ss <- sequence [((i,) <$> (go .$. (ns !. (i, (n - 1))))) | (i, n) <- enum ns]
+            let f i shape01s shape0 =
+                  let shape01sL = place (w, h) shape0 (shape1ss !! i)
+                   in -- (traceShow ns ∘ traceShape (arbitrary shape01sL)) $
+                      qAppend shapeWH shape01sL shape01s
+            let g shape01s (i, shape0s) = foldlU' (f i) shape01s shape0s
+            let shapes = foldl' g (∅) ishape0ss
+            let tf =
+                  case shapes of
+                    NullQ -> traceShow (ns, "no shapes")
+                    _ -> traceShow ns . traceV (arbitrary shapes)
+            pure $ tf shapes
+   in go
 
-varSigs p =
-  -- traceShow p $
-  -- traceShowId $
-  nub
-    [[(x1 - x0, y1 - y0) | ((x0, y0), (x1, y1)) <- pairs (sort $ un v)] | v <- un (vars p)]
+area :: Shape ℤ² -> ℤ
+area shape = (*) $@ shapeWH shape
 
-traceSig sig a =
-  case (placeSig (10, 10) (MaxSet (10, 10) (∅)) (4, 4) sig) of
-    Just g -> traceV g a
-    Nothing -> traceShow ("failed to place", sig) a
-
-placeSig (w, h) (MaxSet m g) start sig =
-  let go (x, y) sigs g'
-        | x < 0 ∨ y < 0 ∨ x ≥ w ∨ y ≥ h ∨ (x, y) ∈ g = Nothing
-        | otherwise = case sigs of
-            ((dx, dy) : sigs) -> go (x + dx, y + dy) sigs ((x, y) |-> g')
-            [] -> Just (mk $ un ((x, y) |-> g'))
-   in go start sig g
-
-placeV (w, h) g vSigs =
-  catMaybes
-    [ (,j,(x, y)) <$> placeSig (w, h) g (x, y) sig
-    | -- traceShow "v" True,
-      -- traceV v True,
-      (j, sig) <- enum vSigs,
-      -- traceShow "sig" True,
-      -- traceSig sig True,
-      x <- [0 .. w - 1],
-      y <- [0 .. h - 1]
+showShape :: Shape ℤ² -> Text
+showShape Invalid = "invalid"
+showShape EmptyShape = "empty"
+showShape shape@(Shape cs _ _ bs) =
+  unlines
+    [ tshow (size cs, bs),
+      pretty (toG shape)
     ]
 
-placeVs :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (MaxSet ℤ²) -> 𝔹
-placeVs ri (w, h) cs mvs =
-  let vSigss = varSigs <$> mvs
-      loss (cs, g, placed) = (sum (values cs), sum [v ^ 2 | v <- values cs])
-      key (cs, g, placed) = placed
-      go _ NullQ = traceShow "solve false" False
-      go seen ((_, st@(cs, g, placed)) :<! q)
-        | sum (values cs) ≡ 0 =
-            -- traceV g $
-            traceShow "solve true" True
-        | (seen |.|) > 1000 = traceShow "timeout" False
-        | key st ∈ seen = go seen q
-        | otherwise =
-            let states =
-                  [ st'
-                  | (i, c) <- unMap cs,
-                    c > 0,
-                    let cs' = cs |~ (i, subtract 1),
-                    let gjcs' = placeV (w, h) g (vSigss !! i),
-                    -- traceShow ("placed", i, "for", size gs') True,
-                    (g', j, c) <- gjcs',
-                    let st' = (cs', g', (j, c) |-> placed)
-                  ]
-                seen' = key st |-> seen
-                q' = qAppend loss states q
-             in traceShow
-                  ( "ri",
-                    ri,
-                    "wh",
-                    (w, h),
-                    "q",
-                    size q,
-                    "seen",
-                    size seen,
-                    "cs",
-                    [cs |! i | i <- [0 .. size cs - 1]]
-                  )
-                  $ go seen' q'
-   in go (∅) (mkQ₁ loss (cs, (MaxSet (0, 0) (∅)), (∅)))
+showShapes :: [Shape ℤ²] -> Text
+showShapes = unlines ∘ fmap showShape
 
-searcho :: ℤ -> ℤ² -> ℤ :|-> ℤ -> Vector (Set ℤ²) -> 𝔹
-searcho ri (w, h) cs vs =
-  let mvs :: Vector (MaxSet ℤ²) = mk ∘ un <$> vs
-      loss (cs, mshape@(MaxSet (w, h) shape)) = sum (values cs)
-      -- key (cs, shape) = (cs, shape)
-      key (cs, shape) = shape -- (cs, shape)
-      go _ NullQ = traceShow "solve false" False
-      go seen ((_, st@(cs, shape)) :<! q)
-        | sum (values cs) ≡ 0 = traceShow "solve true" True
-        | key st ∈ seen = go seen q
-        | otherwise =
-            let states =
-                  [ st'
-                  | (i, c) <- unMap cs,
-                    c > 0,
-                    let cs' = cs |~ (i, subtract 1),
-                    let shapes = buildWith (w, h) (mkSet [shape]) (mvs !! i),
-                    traceShow ("shape", i, "produced", size shapes) True,
-                    shape' <- un shapes,
-                    let st' = (cs', shape'),
-                    key st' ∉ seen
-                  ]
-                seen' = key st |-> seen
-                q' = qAppend loss states q
-             in traceShow
-                  ( "ri",
-                    ri,
-                    "q",
-                    size q,
-                    "seen",
-                    size seen,
-                    -- "shape",
-                    -- shape,
-                    "cs",
-                    [cs |! i | i <- [0 .. size cs - 1]]
-                  )
-                  $ go seen' q'
-   in go (∅) (mkQ₁ loss (cs, (∅)))
+showShapess :: [[Shape ℤ²]] -> Text
+showShapess = unlines ∘ fmap showShapes
 
-growRs :: Set (ℤ², [ℤ]) -> Set (ℤ², [ℤ])
-growRs rs =
-  let mvs :: Vector (MaxSet ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
-      vSigss = varSigs <$> mvs
-      loss rs (MaxSet (mx, my) s, cs)
-        -- \| rs ≡ (∅) = (inf, inf)
-        -- \| mx > maxX ∨ my > maxY = (inf, inf)
-        -- \| otherwise = ((mx, my), minimum [(mx + 1 - w) ^ 2 + (my + 1 - h) ^ 2 | ((w, h), ns) <- rs]) -- , sum [max 0 (n - c) | (c, n) <- (zip cs ns)])
-        | otherwise =
-            let sizeCost = (mx + 1) ⋅ (my + 1)
-                rDist ((w, h), _) = (mx + 1 - w) ^ 2 + (my + 1 - h) ^ 2 --  max 0 (w - (mx + 1)) + max 0 (h - (my + 1))
-                cDist (_, ns) = sum [max 0 (n - c) | (c, n) <- (zip cs ns)]
-             in ((0, 0), minimum [(cDist r, rDist r) | r <- un rs])
-        where
-          --  [ if mx + 1 > w ∨ my + 1 > h
-          --      then inf
-          --      else
-          --        (sum [max 0 (n - c) | (c, n) <- (zip cs ns)])
-          --  | ((w, h), ns) <- un rs
-          --  ]
-          -- in ((0, 0), closestR)
+traceShape s a = traceTextLn (showShape s) a
 
-          inf = (999999999, 999999999)
-          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> un rs)
-      -- else (mx + my) -- mx + my + 2 + (mx + 1) ⋅ (my + 1))
-      go :: Set (ℤ², [ℤ]) -> Set ([ℤ], MaxSet ℤ²) -> ℤ² :|-> Set [ℤ] -> MinQ (ℤ², ℤ²) (MaxSet ℤ², [ℤ]) -> Set (ℤ², [ℤ])
-      go rs seen rToCs NullQ = rs
-      go rs seen rToCs ((l, (st@(g@(MaxSet (mx, my) s), cs))) :<! q)
-        | l ≢ loss rs st = traceShow "loss changed" $ go rs seen rToCs (qInsert (loss rs) st q)
-        | rs ≡ (∅) = traceShow "solve true" rs
-        | (mx > maxX) ∧ (my > maxY) = traceShow ("too big", (mx, my), (maxX, maxY)) $ go rs seen rToCs q
-        | (cs, g) ∈ seen =
-            -- traceShow ("seen hit", (mx, my), cs) $
-            go rs seen rToCs q
-        | otherwise =
-            let (states, newCs) =
-                  unzip
-                    [ (st', ((w', h'), cs'))
-                    | (i, vSigs) <- enum (un vSigss),
-                      let cs' = cs !. (i, (cs !! i + 1)),
-                      -- gv <- omap (both (+ 2)) <$> un (vars g),
-                      let gv = omap (both (+ 3)) g,
-                      -- (g'@(MaxSet (mx', my') s'), j, (x, y)) <- placeV (mx + 4, my + 4) g vSigs,
-                      (gv', j, (x, y)) <- placeV (mx + 3, my + 3) gv vSigs,
-                      -- contiguous gv',
-                      -- g'@(MaxSet (mx', my') s') <- un (vars gv'),
-                      let g'@(MaxSet (mx', my') s') = mk ∘ un @MaxSet $ gv', -- recompute max
-                      -- (mx' ≤ maxX ∧ my' ≤ maxY) ∨ (my' ≤ maxX ∧ mx' ≤ maxY),
-                      -- (cs', g') ∉ seen,
-                      let (w', h') = (mx' + 1, my' + 1),
-                      let st' = (g', cs'),
-                      traceShow st' True,
-                      traceShow ("grew", g') True,
-                      traceV gv True,
-                      traceV gv' True
-                    ]
-                -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
-                -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
-                seen' = (cs, g) |-> seen
-                rToCs' = foldl' (\rToCs (r, c) -> if r ∈ rToCs then rToCs |~ (r, (cs |->)) else rToCs |. (r, mk [cs])) rToCs newCs
-                possible r@((w, h), ns) = or [and [c ≥ n | (c, n) <- zip cs' ns] | ((w', h'), cs') <- newCs, w' ≤ w, h' ≤ h]
-                rs' = rs |-?-> (not ∘ possible)
-                q' = qAppend (loss rs') states q
-             in -- traceRToCs rToCs $
-                traceShow
-                  ( "rs",
-                    size rs,
-                    if size rs ≢ size rs' then "found" else "nope",
-                    "q",
-                    size q,
-                    "seen",
-                    size seen,
-                    "maxXY rs",
-                    (maxX, maxY),
-                    "mxy",
-                    (mx, my),
-                    "cs",
-                    cs
-                  )
-                  $ go rs' seen' rToCs' q'
-        where
-          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> un rs)
-   in go rs (∅) (∅) (mkQ₁ (loss rs) ((MaxSet (3, 3) (∅)), (const 0 <$> ps)))
-
-place1 :: ℤ² -> MaxSet ℤ² -> MaxSet ℤ² -> [MaxSet ℤ²]
-place1 (x, y) shape@(MaxSet (msx, msy) sS) v'@(MaxSet _ vS')
-  | sS ∩ vS ≢ (∅) =
-      -- (traceV shape . traceV v . traceShow "overlap") $
-      []
-  | otherwise =
-      let (minX, minY) = biminimum (un sS')
-          r = mk (bimap (subtract minX) (subtract minY) <$> un sS')
-       in -- (traceV shape . traceV v . traceV r . traceShow "fits") $
-          [r]
+decomp :: [ℤ] -> [(ℤ, [ℤ])]
+decomp ns = go [(1, ns)]
   where
-    v@(MaxSet (mvx, mvy) vS) = mk (bimap (+ x) (+ y) <$> un vS')
-    sS' = sS ∪ vS
+    go :: [(ℤ, [ℤ])] -> [(ℤ, [ℤ])]
+    go cns = iterateFix (go1 =<<) cns
+    go1 :: (ℤ, [ℤ]) -> [(ℤ, [ℤ])]
+    go1 (c, ns)
+      | all (≡ 0) ns = []
+      | all (< 2) ns = [(c, ns)]
+      | otherwise =
+          tracePrefixId ("decomp", ns) $
+            let (qs, rs) = unzip [n `quotRem` 2 | n <- ns]
+             in (2 ⋅ c, qs) : go1 (c, rs)
 
-placeN :: MaxSet ℤ² -> [MaxSet ℤ²] -> [MaxSet ℤ²]
-placeN shape@(MaxSet (msx, msy) _) vs =
-  [ shape'
-  | -- v' <- vs,
-    -- v <- un $ vars v',
-    v@(MaxSet (mvx, mvy) _) <- vs, -- un $ vars v',
-    x <- [-mvx - 1 .. msx + 1],
-    y <- [-mvy - 1 .. msy + 1],
-    shape' <- place1 (x, y) shape v
-  ]
+possible :: [[Shape ℤ²]] -> [(ℤ², [ℤ])] -> [Maybe (Shape ℤ²)]
+possible shapess rs =
+  let go = shapes (bimaximum (fst <$> rs)) shapess
+      shapessNsWHGo =
+        run
+          ( forM
+              rs
+              ( \r@((w, h), ns) -> do
+                  (shapess', ns') <- unzip <$> traverse (\(n', ns') -> (go .$. ns') <&> (,n')) (decomp ns)
+                  pure (shapess', ns', (w, h), shapes (w, h) shapess)
+              )
+          )
+   in shapessNsWHGo
+        <&> ( \(shapess', ns', (w, h), go') -> run do
+                q <- go' .$. ns'
+                case takeWhileWithKey (\(w', h') _ -> w' ≤ w ∧ h' ≤ h) q of
+                  [] -> traceShow "no fit" $ pure Nothing
+                  ((_, shape) : _) -> traceShow "arb fit" ∘ traceShape shape $ pure (Just shape)
+            )
 
-fits (w, h) (MaxSet (mx, my) _) = mx < w ∧ my < h
+possible' :: [[Shape ℤ²]] -> [(ℤ², [ℤ])] -> [Maybe (Shape ℤ²)]
+possible' shapess rs =
+  let go = shapes (bimaximum (fst <$> rs)) shapess
+      shapessNsWHGo = [(shapess, ns, (w, h), go) | ((w, h), ns) <- rs]
+   in shapessNsWHGo
+        <&> ( \(shapess', ns', (w, h), go') -> run do
+                q <- go' .$. ns'
+                case takeWhileWithKey (\(w', h') _ -> w' ≤ w ∧ h' ≤ h) q of
+                  [] -> traceShow "no fit" $ pure Nothing
+                  ((_, shape) : _) -> traceShow "arb fit" ∘ traceShape shape $ pure (Just shape)
+            )
 
--- TODO: LCM of shapes and sum compositse plus topups
-shapes :: ℤ² -> [ℤ] -> [MaxSet ℤ²]
-shapes (w, h) ns =
-  let go :: [ℤ] .->. [(MaxSet ℤ², ℤ² :|-> ℤ)]
-      go ns
-        | sum ns ≡ 0 = pure [((∅), (∅))]
-        -- \| sum ns ≡ 1 = let [i] = ns |?> 1 in pure [((ss !! i), mkMap [(c, i) | c <- un (ss !! i)])]
-        | otherwise =
-            do
-              shapess <- sequence [n > 0 ??? ((i,) <$> (go .$. (ns !. (i, (n - 1))))) $ pure (i, []) | (i, n) <- enum ns]
-              -- shapess <- traverse (\(i, ns) -> (i,) <$> (go .$. ns)) [(i, (ns !. (i, (n - 1)))) | (i, n) <- enum ns]
-              let shapes =
-                    [ (shape', g')
-                    | (i, shapes) <- shapess,
-                      (shape, g) <- shapes,
-                      shape' <- placeN shape (sVars !! i),
-                      fits (w, h) shape',
-                      -- traceV (mk $ un placed) True,
-                      let g' = mkMap [(c, g |? c ? i) | c <- un shape'] -- foldl' (\g c -> c ∈ g ??? g $ g |. (c, i)) g (un shape')
-                      -- traceVC shape g True,
-                      -- traceVC shape' g' True
-                    ]
-              traceShow ns . traceV (fst $ arbitrary shapes) $ (pure ∘ nubOn fst $ shapes)
-        where
-          ss :: [MaxSet ℤ²] = [mk (p |?> (#"#" □)) | p <- snd <$> ps]
-          sVars :: [[MaxSet ℤ²]] = [vars (mk (p |?> (#"#" □))) | p <- snd <$> ps]
-   in (\vs -> traceVs vs vs) ∘ fmap fst ∘ run $ go ns
-
-toG :: MaxSet ℤ² -> ".#X" ▦ ℤ²
-toG (MaxSet (w, h) v) = mkGrid [(c, c ∈ v ??? (#"#" □) $ (#"." □)) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
-
-traceG g a
-  | (un g |.|) > 0 = traceTextLn (pretty g) a
-  | otherwise = traceShow "empty grid" a
-
-traceV v a = traceG (toG v) a
-
-traceVs vs a = foldl' (\a v -> traceV v a) a vs
-
-toC 0 = (#A □)
-toC 1 = (#B □)
-toC 2 = (#C □)
-toC 3 = (#D □)
-toC 4 = (#E □)
-toC 5 = (#F □)
-
-toGC :: MaxSet ℤ² -> ℤ² :|-> ℤ -> ".ABCDEF" ▦ ℤ²
-toGC (MaxSet (w, h) v) cs =
-  mkGrid [(c, c ∈ v ??? toC (cs |! c) $ (#"." □)) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
-
-traceVC v cs a = traceG (toGC v cs) a
-
-traceVsCs vsCs a = foldl' (\a (v, cs) -> traceVC v cs a) a vsCs
-
-traceVsId vsCs = traceVsCs vsCs vsCs
-
-traceRToCs rToCs a =
-  traceTextLn (unlines $ tshow <$> [(r, cs) | (r, css) <- sort $ unMap rToCs, cs <- un css]) a
-
--- part1 :: ℤ = enum rs |?| fitM placeVs
--- part1 :: ℤ = size rs - size (growRs (mk rs))
-part1 :: ℤ = rs |?| (\((w, h), ns) -> not ∘ null $ shapes (w, h) ns)
-
---     size [r | ((w, h), ns) <- rs, [cs | ((w', h'), css) <- unMap rToCs, w' ≤ w, h' ≤ h, cs <- un css, and [c ≥ n | (c, n) <- zip cs ns]] ≢ []]
+part1 :: ℤ = (((possible shapess rs) <>?) |.|)
 
 part2 :: ℤ = 0
 
-vars :: forall f a. (Show (f a), Rotatable (f a), HMirrorable (f a), VMirrorable (f a)) => f a -> [f a]
-vars xs = [f xs | f <- (∘) <$> [id, (↻), (↻) ∘ (↻), (↺)] <*> [id, (◓), (◐)]]
+toG :: (Foldable f) => f ℤ² -> ".#X" ▦ ℤ²
+toG xs =
+  let (maxX, maxY) = bimaximum xs
+      (minX, minY) = biminimum xs
+      cs = mkSet (toList xs)
+   in mkGrid [((x - minX, y - minY), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [minY .. maxX], y <- [minY .. maxY]]
 
-fittingIFs vs mfree =
-  [ (i, mfree')
-  | (i, v') <- enum (un vs),
-    mfreeVar@(MaxSet m@(w, h) freeVar) <- vars mfree,
-    x <- [0 .. w - 3],
-    y <- [0 .. h - 3],
-    let v = setMap (bimap (+ x) (+ y)) v',
-    v ∩ freeVar |=| v,
-    let mfree' = MaxSet m (freeVar ∖ v)
-  ]
+traceV v a = traceGrid (toG v) a
