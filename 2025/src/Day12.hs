@@ -1,4 +1,4 @@
-module Day12 (part1, part2) where
+module Day12 where
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
   $(aocx 12)
@@ -363,27 +363,37 @@ searcho ri (w, h) cs vs =
                   $ go seen' q'
    in go (∅) (mkQ₁ loss (cs, (∅)))
 
-growRs :: [(ℤ², [ℤ])] -> [(ℤ², [ℤ])]
+growRs :: Set (ℤ², [ℤ]) -> Set (ℤ², [ℤ])
 growRs rs =
   let mvs :: Vector (MaxSet ℤ²) = mk [mk (p |?> (#"#" □)) | p <- snd <$> ps]
       vSigss = varSigs <$> mvs
       loss rs (MaxSet (mx, my) s, cs)
-        | rs ≡ [] = ((99999999, 99999999), (99999999, 99999999))
-        | mx > maxX ∨ my > maxY = ((99999999, 99999999), (99999999, 99999999))
+        -- \| rs ≡ (∅) = (inf, inf)
+        -- \| mx > maxX ∨ my > maxY = (inf, inf)
         -- \| otherwise = ((mx, my), minimum [(mx + 1 - w) ^ 2 + (my + 1 - h) ^ 2 | ((w, h), ns) <- rs]) -- , sum [max 0 (n - c) | (c, n) <- (zip cs ns)])
         | otherwise =
-            ( (0, 0),
-              minimum [if mx + 1 > w ∨ my + 1 > h then (9999999, 9999999) else ((max 0 (w - (mx + 1)) + max 0 (h - (my + 1))), sum [negate c | (c, n) <- (zip cs ns)]) | ((w, h), ns) <- rs]
-            )
+            let sizeCost = (mx + 1) ⋅ (my + 1)
+                rDist ((w, h), _) = (mx + 1 - w) ^ 2 + (my + 1 - h) ^ 2 --  max 0 (w - (mx + 1)) + max 0 (h - (my + 1))
+                cDist (_, ns) = sum [max 0 (n - c) | (c, n) <- (zip cs ns)]
+             in ((0, 0), minimum [(cDist r, rDist r) | r <- un rs])
         where
-          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
+          --  [ if mx + 1 > w ∨ my + 1 > h
+          --      then inf
+          --      else
+          --        (sum [max 0 (n - c) | (c, n) <- (zip cs ns)])
+          --  | ((w, h), ns) <- un rs
+          --  ]
+          -- in ((0, 0), closestR)
+
+          inf = (999999999, 999999999)
+          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> un rs)
       -- else (mx + my) -- mx + my + 2 + (mx + 1) ⋅ (my + 1))
-      go :: [(ℤ², [ℤ])] -> Set ([ℤ], MaxSet ℤ²) -> ℤ² :|-> Set [ℤ] -> MinQ (ℤ², ℤ²) (MaxSet ℤ², [ℤ]) -> [(ℤ², [ℤ])]
+      go :: Set (ℤ², [ℤ]) -> Set ([ℤ], MaxSet ℤ²) -> ℤ² :|-> Set [ℤ] -> MinQ (ℤ², ℤ²) (MaxSet ℤ², [ℤ]) -> Set (ℤ², [ℤ])
       go rs seen rToCs NullQ = rs
       go rs seen rToCs ((l, (st@(g@(MaxSet (mx, my) s), cs))) :<! q)
         | l ≢ loss rs st = traceShow "loss changed" $ go rs seen rToCs (qInsert (loss rs) st q)
-        | size rs ≡ 0 = traceShow "solve true" rs
-        | mx > maxX ∨ my > maxY = traceShow "too big" $ go rs seen rToCs q
+        | rs ≡ (∅) = traceShow "solve true" rs
+        | (mx > maxX) ∧ (my > maxY) = traceShow ("too big", (mx, my), (maxX, maxY)) $ go rs seen rToCs q
         | (cs, g) ∈ seen =
             -- traceShow ("seen hit", (mx, my), cs) $
             go rs seen rToCs q
@@ -393,20 +403,21 @@ growRs rs =
                     [ (st', ((w', h'), cs'))
                     | (i, vSigs) <- enum (un vSigss),
                       let cs' = cs !. (i, (cs !! i + 1)),
-                      gv <- un (vars g),
+                      -- gv <- omap (both (+ 2)) <$> un (vars g),
+                      let gv = omap (both (+ 3)) g,
                       -- (g'@(MaxSet (mx', my') s'), j, (x, y)) <- placeV (mx + 4, my + 4) g vSigs,
-                      (gv', j, (x, y)) <- placeV (mx + 4, my + 4) gv vSigs,
-                      contiguous gv',
+                      (gv', j, (x, y)) <- placeV (mx + 3, my + 3) gv vSigs,
+                      -- contiguous gv',
                       -- g'@(MaxSet (mx', my') s') <- un (vars gv'),
-                      let g'@(MaxSet (mx', my') s') = gv',
-                      (mx' ≤ maxX ∧ my' ≤ maxY) ∨ (my' ≤ maxX ∧ mx' ≤ maxY),
-                      (cs', g') ∉ seen,
+                      let g'@(MaxSet (mx', my') s') = mk ∘ un @MaxSet $ gv', -- recompute max
+                      -- (mx' ≤ maxX ∧ my' ≤ maxY) ∨ (my' ≤ maxX ∧ mx' ≤ maxY),
+                      -- (cs', g') ∉ seen,
                       let (w', h') = (mx' + 1, my' + 1),
-                      let st' = (g', cs')
-                      -- traceShow st' True
-                      -- traceShow ("grew", g') True,
-                      -- traceV g True,
-                      -- traceV g' True
+                      let st' = (g', cs'),
+                      traceShow st' True,
+                      traceShow ("grew", g') True,
+                      traceV gv True,
+                      traceV gv' True
                     ]
                 -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
                 -- seen' = foldl' (\seen g -> (cs, g) |-> seen) seen (un (vars g))
@@ -416,32 +427,121 @@ growRs rs =
                 rs' = rs |-?-> (not ∘ possible)
                 q' = qAppend (loss rs') states q
              in -- traceRToCs rToCs $
-                traceShow ("rs", size rs, if size rs ≢ size rs' then "found" else "nope", size q, "seen", size seen, "mxy", (mx, my), "cs", cs) $
-                  go rs' seen' rToCs' q'
+                traceShow
+                  ( "rs",
+                    size rs,
+                    if size rs ≢ size rs' then "found" else "nope",
+                    "q",
+                    size q,
+                    "seen",
+                    size seen,
+                    "maxXY rs",
+                    (maxX, maxY),
+                    "mxy",
+                    (mx, my),
+                    "cs",
+                    cs
+                  )
+                  $ go rs' seen' rToCs' q'
         where
-          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> rs)
-   in go rs (∅) (∅) (mkQ₁ (loss rs) ((MaxSet (0, 0) (∅)), (const 0 <$> ps)))
+          (maxX, maxY) = both (subtract 1) $ bimaximum (fst <$> un rs)
+   in go rs (∅) (∅) (mkQ₁ (loss rs) ((MaxSet (3, 3) (∅)), (const 0 <$> ps)))
+
+place1 :: ℤ² -> MaxSet ℤ² -> MaxSet ℤ² -> [MaxSet ℤ²]
+place1 (x, y) shape@(MaxSet (msx, msy) sS) v'@(MaxSet _ vS')
+  | sS ∩ vS ≢ (∅) =
+      -- (traceV shape . traceV v . traceShow "overlap") $
+      []
+  | otherwise =
+      let (minX, minY) = biminimum (un sS')
+          r = mk (bimap (subtract minX) (subtract minY) <$> un sS')
+       in -- (traceV shape . traceV v . traceV r . traceShow "fits") $
+          [r]
+  where
+    v@(MaxSet (mvx, mvy) vS) = mk (bimap (+ x) (+ y) <$> un vS')
+    sS' = sS ∪ vS
+
+placeN :: MaxSet ℤ² -> [MaxSet ℤ²] -> [MaxSet ℤ²]
+placeN shape@(MaxSet (msx, msy) _) vs =
+  [ shape'
+  | -- v' <- vs,
+    -- v <- un $ vars v',
+    v@(MaxSet (mvx, mvy) _) <- vs, -- un $ vars v',
+    x <- [-mvx - 1 .. msx + 1],
+    y <- [-mvy - 1 .. msy + 1],
+    shape' <- place1 (x, y) shape v
+  ]
+
+fits (w, h) (MaxSet (mx, my) _) = mx < w ∧ my < h
+
+shapes :: ℤ² -> [ℤ] -> [MaxSet ℤ²]
+shapes (w, h) ns =
+  let go :: [ℤ] .->. [(MaxSet ℤ², ℤ² :|-> ℤ)]
+      go ns
+        | sum ns ≡ 0 = pure [((∅), (∅))]
+        -- \| sum ns ≡ 1 = let [i] = ns |?> 1 in pure [((ss !! i), mkMap [(c, i) | c <- un (ss !! i)])]
+        | otherwise =
+            traceShow ns $
+              do
+                shapess <- sequence [n > 0 ??? ((i,) <$> (go .$. (ns !. (i, (n - 1))))) $ pure (i, []) | (i, n) <- enum ns]
+                -- shapess <- traverse (\(i, ns) -> (i,) <$> (go .$. ns)) [(i, (ns !. (i, (n - 1)))) | (i, n) <- enum ns]
+                let shapes =
+                      [ (shape', g')
+                      | (i, shapes) <- shapess,
+                        (shape, g) <- shapes,
+                        shape' <- placeN shape (sVars !! i),
+                        fits (w, h) shape',
+                        -- traceV (mk $ un placed) True,
+                        let g' = mkMap [(c, g |? c ? i) | c <- un shape'] -- foldl' (\g c -> c ∈ g ??? g $ g |. (c, i)) g (un shape')
+                        -- traceVC shape g True,
+                        -- traceVC shape' g' True
+                      ]
+                traceV (fst $ arbitrary shapes) $ pure $ nubOn fst $ shapes
+        where
+          ss :: [MaxSet ℤ²] = [mk (p |?> (#"#" □)) | p <- snd <$> ps]
+          sVars :: [[MaxSet ℤ²]] = [vars (mk (p |?> (#"#" □))) | p <- snd <$> ps]
+   in (\vs -> traceVs vs vs) ∘ fmap fst ∘ run $ go ns
 
 toG :: MaxSet ℤ² -> ".#X" ▦ ℤ²
 toG (MaxSet (w, h) v) = mkGrid [(c, c ∈ v ??? (#"#" □) $ (#"." □)) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
 
-traceG g a = traceTextLn (pretty g) a
+traceG g a
+  | (un g |.|) > 0 = traceTextLn (pretty g) a
+  | otherwise = traceShow "empty grid" a
 
 traceV v a = traceG (toG v) a
 
 traceVs vs a = foldl' (\a v -> traceV v a) a vs
 
+toC 0 = (#A □)
+toC 1 = (#B □)
+toC 2 = (#C □)
+toC 3 = (#D □)
+toC 4 = (#E □)
+toC 5 = (#F □)
+
+toGC :: MaxSet ℤ² -> ℤ² :|-> ℤ -> ".ABCDEF" ▦ ℤ²
+toGC (MaxSet (w, h) v) cs =
+  mkGrid [(c, c ∈ v ??? toC (cs |! c) $ (#"." □)) | x <- [0 .. w], y <- [0 .. h], let c = (x, y)]
+
+traceVC v cs a = traceG (toGC v cs) a
+
+traceVsCs vsCs a = foldl' (\a (v, cs) -> traceVC v cs a) a vsCs
+
+traceVsId vsCs = traceVsCs vsCs vsCs
+
 traceRToCs rToCs a =
   traceTextLn (unlines $ tshow <$> [(r, cs) | (r, css) <- sort $ unMap rToCs, cs <- un css]) a
 
 -- part1 :: ℤ = enum rs |?| fitM placeVs
-part1 :: ℤ = size rs - size (growRs rs)
+-- part1 :: ℤ = size rs - size (growRs (mk rs))
+part1 :: ℤ = rs |?| (\((w, h), ns) -> not ∘ null $ shapes (w, h) ns)
 
 --     size [r | ((w, h), ns) <- rs, [cs | ((w', h'), css) <- unMap rToCs, w' ≤ w, h' ≤ h, cs <- un css, and [c ≥ n | (c, n) <- zip cs ns]] ≢ []]
 
 part2 :: ℤ = 0
 
-vars :: forall f a. (Rotatable (f a), HMirrorable (f a), VMirrorable (f a)) => f a -> [f a]
+vars :: forall f a. (Show (f a), Rotatable (f a), HMirrorable (f a), VMirrorable (f a)) => f a -> [f a]
 vars xs = [f xs | f <- (∘) <$> [id, (↻), (↻) ∘ (↻), (↺)] <*> [id, (◓), (◐)]]
 
 fittingIFs vs mfree =
