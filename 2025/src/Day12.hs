@@ -474,6 +474,7 @@ placeN shape@(MaxSet (msx, msy) _) vs =
 
 fits (w, h) (MaxSet (mx, my) _) = mx < w ∧ my < h
 
+-- TODO: LCM of shapes and sum compositse plus topups
 shapes :: ℤ² -> [ℤ] -> [MaxSet ℤ²]
 shapes (w, h) ns =
   let go :: [ℤ] .->. [(MaxSet ℤ², ℤ² :|-> ℤ)]
@@ -481,22 +482,21 @@ shapes (w, h) ns =
         | sum ns ≡ 0 = pure [((∅), (∅))]
         -- \| sum ns ≡ 1 = let [i] = ns |?> 1 in pure [((ss !! i), mkMap [(c, i) | c <- un (ss !! i)])]
         | otherwise =
-            traceShow ns $
-              do
-                shapess <- sequence [n > 0 ??? ((i,) <$> (go .$. (ns !. (i, (n - 1))))) $ pure (i, []) | (i, n) <- enum ns]
-                -- shapess <- traverse (\(i, ns) -> (i,) <$> (go .$. ns)) [(i, (ns !. (i, (n - 1)))) | (i, n) <- enum ns]
-                let shapes =
-                      [ (shape', g')
-                      | (i, shapes) <- shapess,
-                        (shape, g) <- shapes,
-                        shape' <- placeN shape (sVars !! i),
-                        fits (w, h) shape',
-                        -- traceV (mk $ un placed) True,
-                        let g' = mkMap [(c, g |? c ? i) | c <- un shape'] -- foldl' (\g c -> c ∈ g ??? g $ g |. (c, i)) g (un shape')
-                        -- traceVC shape g True,
-                        -- traceVC shape' g' True
-                      ]
-                traceV (fst $ arbitrary shapes) $ pure $ nubOn fst $ shapes
+            do
+              shapess <- sequence [n > 0 ??? ((i,) <$> (go .$. (ns !. (i, (n - 1))))) $ pure (i, []) | (i, n) <- enum ns]
+              -- shapess <- traverse (\(i, ns) -> (i,) <$> (go .$. ns)) [(i, (ns !. (i, (n - 1)))) | (i, n) <- enum ns]
+              let shapes =
+                    [ (shape', g')
+                    | (i, shapes) <- shapess,
+                      (shape, g) <- shapes,
+                      shape' <- placeN shape (sVars !! i),
+                      fits (w, h) shape',
+                      -- traceV (mk $ un placed) True,
+                      let g' = mkMap [(c, g |? c ? i) | c <- un shape'] -- foldl' (\g c -> c ∈ g ??? g $ g |. (c, i)) g (un shape')
+                      -- traceVC shape g True,
+                      -- traceVC shape' g' True
+                    ]
+              traceShow ns . traceV (fst $ arbitrary shapes) $ (pure ∘ nubOn fst $ shapes)
         where
           ss :: [MaxSet ℤ²] = [mk (p |?> (#"#" □)) | p <- snd <$> ps]
           sVars :: [[MaxSet ℤ²]] = [vars (mk (p |?> (#"#" □))) | p <- snd <$> ps]
