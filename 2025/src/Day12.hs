@@ -328,9 +328,9 @@ shapesEdge ((w, h), ns') shape1ss =
             let shape01s = case foldl' g (∅) ishape0ss of
                   q@((_, s) :<! _) -> if ns ≡ ns' then mkQ₁ shapeWH s else q
                   q@NullQ -> q
-            case shape01s of
-              NullQ -> traceShow (ns, "no shapes") $ pure shape01s
-              ((_, s) :<! _) -> traceShow (ns, "fit") $ pure (if ns ≡ ns' then mkQ₁ shapeWH s else shape01s)
+            pure $ case shape01s of
+              q@((_, s) :<! _) -> if ns ≡ ns' then mkQ₁ shapeWH s else q
+              q@NullQ -> q
    in go
 
 placeEdge :: ℤ² -> Shape ℤ² -> [Shape ℤ²] -> [Shape ℤ²]
