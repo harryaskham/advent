@@ -215,35 +215,6 @@ decomp1 ns = swap <$> unMap cs
            in tracePrefixId ("decomp", ns) $
                 ns' : go1 ns''
 
-possible :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
-possible shapess r@((w, h), ns) =
-  let (shapess', ns') = run $ unzip <$> traverse (\(n', ns') -> (shapes (w, h) shapess .$. ns') <&> (,n')) (tracePrefixId "decomp" (decomp ns))
-      shapessL' = nub ∘ toList <$> shapess'
-   in traceShow (size <$> shapessL', "intermediary", ns') $ possible' shapessL' ((w, h), ns')
-
-possibleL :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
-possibleL shapess r@((w, h), ns) =
-  let (shapess', ns') = run $ unzip <$> traverse (\(n', ns') -> (shapesL (w, h) shapess .$. ns') <&> (,n')) (tracePrefixId "decomp" (decomp ns))
-   in traceShow (size <$> shapess', "intermediary", ns') $ possibleL' shapess' ((w, h), ns')
-
-possibleL' :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
-possibleL' shapess r@((w, h), ns) =
-  traceShow ("possible'", ns) $
-    let shapess' = run $ dropWhile (\s -> let (sw, sh) = shapeWH s in sw > w ∨ sh > h) <$> shapesL (w, h) shapess .$. ns
-     in case shapess' of
-          [] -> traceShow "no fit" $ Nothing
-          ((shape) : _) -> traceShow "arb fit" ∘ traceShape shape $ Just shape
-
-possible' :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
-possible' shapess r@((w, h), ns) =
-  traceShow ("possible'", ns) $
-    let q = run $ shapes (w, h) shapess ns
-     in traceShow
-          (size q, "fits")
-          $ case takeWhileWithKey (\(w', h') _ -> w' ≤ w ∧ h' ≤ h) q of
-            [] -> traceShow "no fit" $ Nothing
-            ((_, shape) : _) -> traceShow "arb fit" ∘ traceShape shape $ Just shape
-
 -- part1 :: ℤ = (((possible shapess <$> rs) <>?) |.|)
 part1 :: ℤ = (((solveR <$> rs) <>?) |.|)
 
@@ -317,20 +288,16 @@ shapesEdge ((w, h), ns') shape1ss =
         | sum ns ≡ 0 = pure (mkQ₁ shapeWH (∅))
         | otherwise = do
             ishape0ss <- sequence [((i,) <$> (go .$. (ns !. (i, (n - 1))))) | (i, n) <- enum ns]
-            let f i shape01s shape0 =
-                  let shape01sL = placeEdge (w, h) shape0 (shape1ss !! i)
-                   in case (shape01sL, ns ≡ ns') of
-                        ((s : _), True) -> mkQ₁ shapeWH s
-                        _ -> qAppend shapeWH shape01sL shape01s
+            let f i shape01s shape0 = case placeEdge (w, h) shape0 (shape1ss !! i) of
+                  shape01sL@(s : _) -> if ns ≡ ns' then mkQ₁ shapeWH s else qAppend shapeWH shape01sL shape01s
+                  [] -> shape01s
             let g shape01s (i, shape0s) = case foldlU' (f i) shape01s shape0s of
-                  q@((_, s) :<! _) -> if ns ≡ ns' then mkQ₁ shapeWH s else q
                   q@NullQ -> q
+                  q@((_, s) :<! _) -> if ns ≡ ns' then mkQ₁ shapeWH s else q
             let shape01s = case foldl' g (∅) ishape0ss of
-                  q@((_, s) :<! _) -> if ns ≡ ns' then mkQ₁ shapeWH s else q
                   q@NullQ -> q
-            pure $ case shape01s of
-              q@((_, s) :<! _) -> if ns ≡ ns' then mkQ₁ shapeWH s else q
-              q@NullQ -> q
+                  q@((_, s) :<! _) -> traceShow ns ∘ traceShape s $ if ns ≡ ns' then mkQ₁ shapeWH s else q
+            pure shape01s
    in go
 
 placeEdge :: ℤ² -> Shape ℤ² -> [Shape ℤ²] -> [Shape ℤ²]
@@ -357,11 +324,12 @@ possible1 :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
 possible1 shapess r@((w, h), ns) =
   let (shapess', ns') = run $ unzip <$> traverse (\(n', ns') -> (shapesEdge r shapess .$. ns') <&> (,n')) (tracePrefixId "decomp" (decomp1 ns))
       shapessL' = nub ∘ toList <$> shapess'
-   in traceShow (size <$> shapessL', "intermediary", ns') $ possible1' shapessL' ((w, h), ns')
+   in traceShow ("intermediary", ns') $
+        possible1' shapessL' ((w, h), ns')
 
 possible1' :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
 possible1' shapess r@((w, h), ns) =
-  traceShow ("possible'", ns) $
+  traceShow ("possible1'", ns) $
     case run $ shapesEdge r shapess ns of
       NullQ -> traceShow "no fit" $ Nothing
       ((_, smallestShape) :<! q) ->
