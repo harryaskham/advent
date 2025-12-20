@@ -1,7 +1,7 @@
 module Day12 where
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aocx 12)
+  $(aoc 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
@@ -119,8 +119,8 @@ place (w, h) shape0' shapes =
     let shape1 = offsetShape xO yO shape1',
     -- traceShape shape1 True,
     let shape01 = alignShape $ shape0 <> shape1,
-    validShape (w, h) shape01
-    -- traceShape shape01 True,
+    validShape (w, h) shape01,
+    traceShape shape01 True
   ]
 place _ _ shapes = []
 
@@ -141,28 +141,6 @@ shapes (w, h) shape1ss =
             let tf =
                   case shapes of
                     NullQ -> traceShow (ns, "no shapes")
-                    _ -> traceShow ns . traceV (arbitrary shapes)
-            pure $ tf shapes
-   in go
-
-shapesL :: ℤ² -> [[Shape ℤ²]] -> ([ℤ] .->. [Shape ℤ²])
-shapesL (w, h) shape1ss =
-  let go :: [ℤ] .->. [Shape ℤ²]
-      go ns
-        | any (< 0) ns = pure []
-        | sum ns ≡ 0 = pure [(∅)]
-        | otherwise = do
-            -- TODO: here we acn decomp by halves
-            ishape0ss <- sequence [((i,) <$> (go .$. (ns !. (i, (n - 1))))) | (i, n) <- enum ns]
-            let f i shape01s shape0 =
-                  let shape01sL = place (w, h) shape0 (shape1ss !! i)
-                   in -- (traceShow ns ∘ traceShape (arbitrary shape01sL)) $
-                      shape01s <> shape01sL
-            let g shape01s (i, shape0s) = foldl' (f i) shape01s shape0s
-            let shapes = foldl' g [] ishape0ss
-            let tf =
-                  case shapes of
-                    [] -> traceShow (ns, "no shapes")
                     _ -> traceShow ns . traceV (arbitrary shapes)
             pure $ tf shapes
    in go
@@ -215,10 +193,7 @@ decomp1 ns = swap <$> unMap cs
            in tracePrefixId ("decomp", ns) $
                 ns' : go1 ns''
 
--- part1 :: ℤ = (((possible shapess <$> rs) <>?) |.|)
-part1 :: ℤ = (((solveR <$> rs) <>?) |.|)
-
-solveR r = possibleD shapess r
+part1 :: ℤ = (((possibleDL shapess <$> rs) <>?) |.|)
 
 part2 :: ℤ = 0
 
@@ -300,11 +275,26 @@ shapesEdge ((w, h), ns') shape1ss =
             pure shape01s
    in go
 
+shapesEdgeL :: (ℤ², [ℤ]) -> [[Shape ℤ²]] -> ([ℤ] .->. [Shape ℤ²])
+shapesEdgeL ((w, h), ns') shape1ss =
+  let go :: [ℤ] .->. [Shape ℤ²]
+      go ns
+        | any (< 0) ns = pure []
+        | sum ns ≡ 0 = pure [(∅)]
+        | otherwise = do
+            ishape0ss <- sequence [((i,) <$> (go .$. (ns !. (i, (n - 1))))) | (i, n) <- enum ns]
+            let f i shape01s shape0 = placeEdge (w, h) shape0 (shape1ss !! i)
+            let g shape01s (i, shape0s) = foldl' (f i) shape01s shape0s
+            let shape01s = foldl' g [] ishape0ss
+            pure shape01s
+   in go
+
 placeEdge :: ℤ² -> Shape ℤ² -> [Shape ℤ²] -> [Shape ℤ²]
 placeEdge (w, h) EmptyShape shapes = shapes |-?-> validShape (w, h)
 placeEdge (w, h) Invalid shapes = []
 placeEdge (w, h) shape0' shapes =
-  [ shape01
+  [ -- traceShow ("made", (w, h), shapeWH shape01) $
+  shape01
   | let shape0@(Shape cs0 s0 ds0 ((lx0, ly0), (ux0, uy0))) = alignShape shape0',
     let (w0, h0) = shapeWH shape0,
     shape1' <- (alignShape <$> shapes) |-?-> validShape (w, h),
@@ -320,30 +310,38 @@ placeEdge (w, h) shape0' shapes =
   ]
 placeEdge _ _ shapes = []
 
-possibleD :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
-possibleD shapess r@((w, h), ns) =
-  traceShow ("possibleD", ns) $
+possibleDL :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
+possibleDL shapess r@((w, h), ns) =
+  traceShow ("possibleDL", ns) $
     let (shapess', ns') =
           run $
             unzip
               <$> traverse
                 ( \(n', ns') ->
-                    (shapesEdge r shapess .$. ns') <&> (,n')
+                    (shapesL r shapess .$. ns') <&> (,n')
                 )
                 (tracePrefixId "decomp" (decomp ns))
-        shapessL' = nub ∘ toList <$> shapess'
      in traceShow ("intermediary", ns') $
-          possible shapessL' ((w, h), ns')
+          possibleDL' shapess' ((w, h), ns')
 
-possible :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
-possible shapess r@((w, h), ns) =
-  traceShow ("possible", ns) $ run do
-    q <- shapesEdge r shapess ns
-    pure $ case q of
-      NullQ -> traceShow "no fit" $ Nothing
-      ((_, smallestShape) :<! _) ->
-        traceShow "smallest" ∘ traceShape smallestShape $
-          let (w', h') = shapeWH smallestShape
-           in if w' ≤ w ∧ h' ≤ h
-                then traceShow "fit" $ Just smallestShape
-                else traceShow "smallest no fit" $ Nothing
+possibleDL' :: [[Shape ℤ²]] -> (ℤ², [ℤ]) -> Maybe (Shape ℤ²)
+possibleDL' shapess r@((w, h), ns) =
+  traceShow ("possibleL", ns) $ run do
+    shapess' <- shapesL r shapess ns
+    pure $ case [shape | shape <- shapess', let (w', h') = shapeWH shape, w' ≤ w ∧ h' ≤ h] of
+      [] -> traceShow "no fit" $ Nothing
+      (shape : _) -> traceShow "fit" ∘ traceShape shape $ Just shape
+
+shapesL :: (ℤ², [ℤ]) -> [[Shape ℤ²]] -> ([ℤ] .->. [Shape ℤ²])
+shapesL ((w, h), ns') shape1ss =
+  let go :: [ℤ] .->. [Shape ℤ²]
+      go ns
+        | any (< 0) ns = pure []
+        | sum ns ≡ 0 = pure [(∅)]
+        | otherwise = do
+            ishape0ss <- sequence [((i,) <$> (go .$. (ns !. (i, (n - 1))))) | (i, n) <- enum ns]
+            let f i shape01s shape0 = place (w, h) shape0 (shape1ss !! i)
+            let g shape01s (i, shape0s) = foldl' (f i) shape01s shape0s
+            let shape01s = foldl' g [] ishape0ss
+            pure shape01s
+   in go
