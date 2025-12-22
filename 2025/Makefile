@@ -30,10 +30,13 @@ tests: pre-run
 
 test: pre-run
 	ghciwatch \
-	--test-ghci Spec.main \
+	--before-startup-shell hpack \
+	--after-startup-ghci 'import System.Environment (withArgs)' \
+	--test-ghci 'withArgs ["--color"] main' \
 	--command "cabal -O0 -j --ghc-options=-j repl test-x2025" \
 	--watch src \
 	--watch input \
 	--watch test \
 	--restart-glob '**/package.yaml' \
 	--poll 1s
+
