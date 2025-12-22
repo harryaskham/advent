@@ -23,7 +23,7 @@ part1 :: ℤ =
               | ls == ls' = n
               | ls ∈ seen = go seen q
               | otherwise = go (ls |-> seen) (foldl' (\q bi -> q |> (n + 1, press ls bs bi)) q (range 0 ((bs |.|) - 1)))
-         in go (∅) (mk₁ (0, lsE))
+         in go ((∅) @(Set 𝕊)) (mk₁ (0, lsE))
    in sum (go' <$> xs)
 
 part2 :: ℤ =

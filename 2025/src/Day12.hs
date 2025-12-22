@@ -6,50 +6,61 @@ module Day12 where
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
 
-type C f a =
-  ( ShapeLike a,
-    Monoid (f a),
+type C' m f s i =
+  ( Integral i,
+    Unable m,
+    Unable f,
+    Uniqueable f (s (i, i)),
+    Mkable m (f (s (i, i))),
+    Coord' i i (i, i),
+    Eq (f (s (i, i))),
+    Originable s (i, i),
+    Insertable f (s (i, i)),
+    Insertable [] (s (i, i)),
+    Functor m,
+    Applicative m,
+    Monad m,
+    Alternative m,
+    Foldable m,
+    Traversable m,
+    Ixable Integer m,
+    Mkable f (s (i, i)),
     Foldable f,
-    Alternative f,
     Mkable f ℤ,
-    Semigroup (f ℤ²),
-    Semigroup (f ℤ),
-    Mkable f a,
+    Filterable f (s (i, i)),
+    Semigroup (m ℤ²),
+    Semigroup (m ℤ),
+    Semigroup (f (s (i, i))),
+    Monoid (f (s (i, i))),
     Sizable (f ℤ²),
     Arbitrary f ℤ²,
-    Takeable ℤ f a,
-    Mkable f (ℤ, a)
+    Arbitrary m (s (i, i)),
+    Takeable ℤ m (s (i, i)),
+    Sizable (f (s (i, i))),
+    Mkable f (ℤ, (i, i)),
+    Mkable m (s (i, i)),
+    Mkable m ℤ,
+    Foldable f,
+    ShapeLikeC s i,
+    Show i,
+    Show (m ℤ),
+    Mkable m (".#" ▦ ℤ²),
+    Mkable m [ℤ],
+    Monoid (m (s (i, i))),
+    Eq (s (i, i)),
+    Semigroup (m (i, i)),
+    Semigroup (m i),
+    Mkable m i,
+    Arbitrary f (s (i, i))
   ) ::
     Constraint
 
-vars :: forall g f a. (Mkable g (f a), Foldable f, Eq (f a), Rotatable (f a), HMirrorable (f a), VMirrorable (f a)) => f a -> g (f a)
-vars xs = mk [f xs | f <- (∘) <$> [id, (↻), (↻) ∘ (↻), (↺)] <*> [id, (◓), (◐)]]
-
-vss :: [[MaxSet ℤ²]] = [vars (mk (p |?> (#"#" □))) | p <- snd <$> ps]
-
-contiguous ::
-  forall f a {n}.
-  ( MagnitudeF (f a) ~ Integer,
-    ShapeLike a,
-    Arbitrary f a,
-    a ~ (n, n),
-    Ord n,
-    Num n,
-    Magnitude (f a),
-    Memberable a (f a)
-  ) =>
-  f a -> 𝔹
-contiguous shape =
-  let go seen (c :<| q)
-        | c ∉ shape ∨ c ∈ seen = go seen q
-        | otherwise = go (c |-> seen) (q >< mk (neighborsNoDiags c))
-      go seen _ = seen |=| shape
-   in go (∅) (mkSeq [arbitrary shape])
-
-contiguousShape :: a -> 𝔹
-contiguousShape Invalid = False
-contiguousShape EmptyShape = True
-contiguousShape (Shape cs _ _ _) = contiguous (un cs)
+type C m f s i =
+  ( C' m f s i,
+    ShapeLike s i,
+    ShapeLikes m f s i
+  ) ::
+    Constraint
 
 data Shape a where
   EmptyShape :: Shape a
@@ -67,24 +78,35 @@ instance Sizable (Shape a) where
   size EmptyShape = 0
   size (Shape cs _ _ _) = size cs
 
-instance (Num a, Ord a) => Rotatable (Shape (a, a)) where
+instance (ShapeLike Shape i, Num i, Ord i) => Rotatable (Shape (i, i)) where
   (↺) EmptyShape = EmptyShape
   (↺) Invalid = Invalid
-  (↺) (Shape cs s ds bs) = mkShape ((mk @MaxSet (un cs)) ↺)
+  (↺) (Shape cs s ds bs) = mkShape ((mk @BoundedSet (un cs)) ↺)
 
   (↻) EmptyShape = EmptyShape
   (↻) Invalid = Invalid
-  (↻) (Shape cs s ds bs) = mkShape ((mk @MaxSet (un cs)) ↻)
+  (↻) (Shape cs s ds bs) = mkShape ((mk @BoundedSet (un cs)) ↻)
 
-instance (Num a, Ord a) => HMirrorable (Shape (a, a)) where
+instance (ShapeLike Shape i, Num i, Ord i) => HMirrorable (Shape (i, i)) where
   (◐) EmptyShape = EmptyShape
   (◐) Invalid = Invalid
-  (◐) (Shape cs s ds bs) = mkShape ((mk @MaxSet (un cs)) ◐)
+  (◐) (Shape cs s ds bs) = mkShape ((mk @BoundedSet (un cs)) ◐)
 
-instance (Num a, Ord a) => VMirrorable (Shape (a, a)) where
+instance (ShapeLike Shape i, Num i, Ord i) => VMirrorable (Shape (i, i)) where
   (◓) EmptyShape = EmptyShape
   (◓) Invalid = Invalid
-  (◓) (Shape cs s ds bs) = mkShape ((mk @MaxSet (un cs)) ◓)
+  (◓) (Shape cs s ds bs) = mkShape ((mk @BoundedSet (un cs)) ◓)
+
+instance (Num i, Show i, Integral i, Coord' i i (i, i)) => Originable Shape (i, i) where
+  origin = (0, 0)
+  toOrigin Invalid = Invalid
+  toOrigin EmptyShape = EmptyShape
+  toOrigin shape@(Shape _ _ _ ((lx, ly), (ux, uy))) =
+    offsetShape (negate lx, negate ly) shape
+
+instance (Originable Shape a) => Originable LossShape a where
+  origin = origin @Shape @a
+  toOrigin (LossShape s) = LossShape (toOrigin s)
 
 getCs (Shape cs _ _ _) = cs
 
@@ -115,223 +137,168 @@ instance (Bimaximum a, Biminimum a, MkDiffList a) => Semigroup (Shape a) where
           ??? (Shape (cs0 >< cs1) s01 (diffListConcatVia ds0 l0 h1 ds1) (biminimum [lb0, lb1], bimaximum [ub0, ub1]))
           $ Invalid
 
-offsetShape x y Invalid = Invalid
-offsetShape x y EmptyShape = EmptyShape
-offsetShape x y (Shape cs s ds ((lx, ly), (ux, uy))) =
-  let cs' = bimap (+ x) (+ y) <$> cs
-   in Shape cs' (mk $ un cs') ds ((lx + x, ly + y), (ux + x, uy + y))
-
--- shapess :: [[Shape ℤ²]] = [[mkShape v | v <- vars (mk @MaxSet (p |?> (#"#" □)))] | p <- snd <$> ps]
-
-shapess :: forall f a. (Mkable f a, ShapeLike a) => [f a]
-shapess = [mk [mkShape @a (mk @MaxSet (p |?> (#"#" □)))] | p <- snd <$> ps]
-
-decomp :: [ℤ] -> [(ℤ, [ℤ])]
-decomp ns = go [(1, ns)]
-  where
-    go :: [(ℤ, [ℤ])] -> [(ℤ, [ℤ])]
-    go cns = iterateFix (go1 =<<) cns
-    go1 :: (ℤ, [ℤ]) -> [(ℤ, [ℤ])]
-    go1 (c, ns)
-      | all (≡ 0) ns = []
-      | all (< 2) ns = [(c, ns)]
-      | otherwise =
-          tracePrefixId ("decomp", ns) $
-            let (qs, rs) = unzip [n `quotRem` 2 | n <- ns]
-             in (2 ⋅ c, qs) : go1 (c, rs)
-
-decomp1 :: [ℤ] -> [(ℤ, [ℤ])]
-decomp1 ns = swap <$> unMap cs
-  where
-    nss :: [[ℤ]] = go1 ns
-    cs :: Map [ℤ] ℤ = counts @[Integer] @Integer nss
-    go1 :: [ℤ] -> [[ℤ]]
-    go1 ns
-      | all (≡ 0) ns = []
-      | otherwise =
-          let ns' = [n > 0 ??? 1 $ 0 | n <- ns]
-              ns'' = [n - n' | (n, n') <- zip ns ns']
-           in tracePrefixId ("decomp", ns) $
-                ns' : go1 ns''
-
 part2 :: ℤ = 0
-
-trN ::
-  ( Foldable f,
-    Integral i,
-    Takeable i f a,
-    Mkable f (ℤ, a),
-    Show l
-  ) =>
-  l -> i -> f a -> a -> a
-trN label n xs a =
-  foldl' (\a (i, x) -> traceShow (label, i) ∘ traceShape x $ a) a (enum (take n xs))
-
-trNM ::
-  ( Takeable Int g (f a),
-    Takeable Int f a,
-    Mkable g (ℤ, f a),
-    Mkable f (ℤ, a),
-    Foldable f,
-    Foldable g,
-    Show l
-  ) =>
-  l -> Int -> Int -> g (f a) -> a -> a
-trNM label n m xss a =
-  ( ( Ł
-        ( \a (i, xs) ->
-            ((Ł (\a (j, x) -> traceShow (label, i, j) ∘ traceShape x $ a) a (enum (take m xs))) !>)
-        )
-        a
-        (enum (take n xss))
-    )
-      !>
-  )
-
-trNId ::
-  ( Integral i,
-    Foldable f,
-    Takeable i f a,
-    Mkable f (ℤ, a),
-    Show l
-  ) =>
-  l -> i -> f a -> f a
-trNId label n xs = trN label n xs xs
-
-toG :: (Foldable f) => f ℤ² -> ".#X" ▦ ℤ²
-toG xs =
-  let (maxX, maxY) = bimaximum xs
-      (minX, minY) = biminimum xs
-      cs = mkSet (toList xs)
-   in mkGrid [((x - minX, y - minY), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [minY .. maxX], y <- [minY .. maxY]]
 
 traceV v a = traceGrid (toG v) a
 
-shapeWH' = shapeWH ∘ fst
+class (Shapes m f s i) => Possible m f s i where
+  decomp :: [ℤ] -> ([ℤ], [[ℤ]])
+  default decomp :: [ℤ] -> ([ℤ], [[ℤ]])
+  decomp ns = unzip $ go [(1, ns)]
+    where
+      go :: [(ℤ, [ℤ])] -> [(ℤ, [ℤ])]
+      go cns = iterateFix (go1 =<<) cns
+      go1 :: (ℤ, [ℤ]) -> [(ℤ, [ℤ])]
+      go1 (c, ns)
+        | all (≡ 0) ns = []
+        | all (< 2) ns = [(c, ns)]
+        | otherwise =
+            tracePrefixId ("decomp", ns) $
+              let (qs, rs) = unzip [n `quotRem` 2 | n <- ns]
+               in (2 ⋅ c, qs) : go1 (c, rs)
+  decomp1 :: [ℤ] -> ([ℤ], [[ℤ]])
+  default decomp1 :: [ℤ] -> ([ℤ], [[ℤ]])
+  decomp1 ns = unzip $ swap <$> unMap cs
+    where
+      nss :: [[ℤ]] = go1 ns
+      cs :: Map [ℤ] ℤ = counts @[Integer] @Integer nss
+      go1 :: [ℤ] -> [[ℤ]]
+      go1 ns
+        | all (≡ 0) ns = []
+        | otherwise =
+            let ns' = [n > 0 ??? 1 $ 0 | n <- ns]
+                ns'' = [n - n' | (n, n') <- zip ns ns']
+             in tracePrefixId ("decomp", ns) $
+                  ns' : go1 ns''
 
-class Possible f a where
-  possibleDecomposed :: [f a] -> (ℤ², [ℤ]) -> Maybe a
-  default possibleDecomposed :: (C f a) => [f a] -> (ℤ², [ℤ]) -> Maybe a
-  possibleDecomposed shapess r@((w, h), ns) =
-    trNM ("possibleDecomposed", ns) 6 3 shapess $
-      let (shapess', ns') =
-            run (unzip <$> traverse (\(n', ns') -> (toList <$> (shapes (w, h) shapess .$. ns')) <&> (,n')) (decomp ns))
-          res = possible @f shapess' ((w, h), ns')
-       in traceShow (ns, "decomped to", ns', size <$> shapess') $
-            foldl'
-              ( \a ss -> case arb ss of
-                  Just s -> traceShape s a
-                  Nothing -> traceShow "intermediate failed" a
-              )
-              res
-              shapess'
-
-  possible :: (C f a) => [f a] -> (ℤ², [ℤ]) -> Maybe a
-  default possible :: (Foldable f, Arbitrary f ℤ²) => [f a] -> (ℤ², [ℤ]) -> Maybe a
-  possible shapess r@((w, h), ns) =
-    trNM ("possible", ns) 6 3 shapess $ run do
-      shapess' <- shapes (w, h) shapess .$. ns
-      pure $ case arb [shape | shape <- toList shapess', validShape (w, h) shape] of
+  possibleDecomposed :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  default possibleDecomposed :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  possibleDecomposed shapess r@(wh, ns) =
+    let res = possible @m @f @s @i shapess' (wh, ns')
+     in traceShow (ns, "decomped to", ns', size <$> shapess') $
+          foldl'
+            ( \a ss -> case arb ss of
+                Just s -> traceShape s a
+                Nothing -> traceShow "intermediate failed" a
+            )
+            res
+            shapess'
+    where
+      (ns', decompNss) = decomp @m @f @s @i ns
+      shapess' = run $ sequence [shapes wh shapess .$. decompNs | decompNs <- mk decompNss]
+  possible :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  default possible :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  possible shapess r@(wh, ns) =
+    run do
+      shapes' <- shapes @m @f @s @i wh shapess .$. ns
+      pure $ case arb (shapes' |-?-> validShape wh) of
         Nothing -> traceShow "no fit" $ Nothing
         Just shape -> traceShow "fit" ∘ traceShape shape $ Just shape
 
-instance (C f a) => Possible f a
+instance (Shapes m f s i) => Possible m f s i
 
-class PlaceRange f a where
-  rangeEdge :: ℤ² -> ℤ² -> f ℤ²
-  default rangeEdge :: (C f a) => ℤ² -> ℤ² -> f ℤ²
+class (C m f s i) => Place m f s i where
+  rangeEdge :: (i, i) -> (i, i) -> m (i, i)
+  rangeBlock :: (i, i) -> (i, i) -> m (i, i)
+  place :: (i, i) -> s (i, i) -> f (s (i, i)) -> f (s (i, i))
+  places :: (i, i) -> f (s (i, i)) -> f (s (i, i)) -> f (s (i, i))
+
+instance (C m f s i) => Place m f s i where
   rangeEdge (w0, h0) (w1, h1) =
     [(xO, yO) | xO <- ((0 - w1 - 1) |...| 0) <> ((w1 - w0) |...| (w1 + 1)), yO <- (0 - h1 - 1) |...| (h1 + 1)]
       <> [(xO, yO) | xO <- (0 - w1 - 1) |...| w0, yO <- ((0 - h1 - 1) |...| 0) <> ((h0 - h1 - 1) |...| (h1 + 1))]
 
-  rangeBlock :: ℤ² -> ℤ² -> f ℤ²
-  default rangeBlock :: (C f a) => ℤ² -> ℤ² -> f ℤ²
   rangeBlock (w0, h0) (w1, h1) =
     [ (xO, yO)
     | xO <- (0 - w1 - 1) |...| (w0 + 1),
       yO <- (0 - h1 - 1) |...| (h0 + 1)
     ]
 
-instance (C f a) => PlaceRange f a
-
-class Place f a where
-  place :: a -> f a -> f a
-
-instance (C f a) => Place f (Shape ℤ²) where
-  place shape0U shape1s
-    | shape0U ≡ (∅) = [shape | shapeO <- shape1s, shape <- vars shapeO, validShape' shape]
-    | not (validShape' shape0U) = mempty
+  place wh shape0 shape1s
+    | shape0 ≡ (∅) = foldMap (vars @m @f @s) shape1s
+    | not (validShape wh shape0) = mempty
     | otherwise =
-        traceShow "place" $
-          [ shape01
-          | -- traceShow "shape0 unaligned" True,
-            -- traceShape shape0U True,
-            let shape0@(Shape cs0 s0 ds0 ((lx0, ly0), (ux0, uy0))) = alignShape shape0U,
-            -- traceShow "shape0 aligned" True,
-            -- traceShape shape0 True,
-            let (w0, h0) = shapeWH shape0,
-            shape1UO <- shape1s,
-            -- traceShow "shape1 unaligned, unvaried" True,
-            -- traceShape shape1UO True,
-            validShape' shape1UO,
-            shape1U <- vars shape1UO,
-            -- traceShow "shape1 unaligned, varied" True,
-            -- traceShape shape1U True,
-            let shape1 = alignShape shape1U,
-            -- traceShow "shape1 aligned, varied" True,
-            -- traceShape shape1 True,
-            let (w1, h1) = shapeWH shape1,
-            (xO, yO) <- rangeBlock (w0, h0) (w1, h1),
-            let shape1Offset = offsetShape xO yO shape1,
-            -- traceShow "shape1 aligned, varied, offset" True,
-            -- traceShape shape1Offset True,
-            let shape01U = shape0 <> shape1Offset,
-            -- traceShow "shape01 unaligned" True,
-            -- traceShape shape01U True,
-            validShape' shape01U,
-            let shape01 = alignShape shape01U,
-            let filterValid = contiguousShape shape01,
-            -- traceShow ("shape01 filter ok", filterValid) True,
-            filterValid,
-            traceShow "shape01 aligned" True,
-            traceShape shape01 True
-          ]
+        let wh0 = shapeWH shape0
+         in traceShow "place" ∘ traceArb $
+              uniq
+                ( ( Ł
+                      ( \shape01s shape1O ->
+                          let wh1 = shapeWH shape1O
+                           in ( ( Ł
+                                    ( \shape01s shape1 ->
+                                        let shape01 = toOrigin (shape0 <> shape1)
+                                         in if validShape wh shape01
+                                              then shape01 |-> shape01s
+                                              else shape01s
+                                    )
+                                    shape01s
+                                    (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
+                                )
+                                  !>
+                              )
+                      )
+                      (∅)
+                      (foldMap (vars @m @f @s) shape1s)
+                  )
+                    !>
+                )
 
-instance (Place f (Shape ℤ²)) => Place f LossShape where
-  place (LossShape shape0U) shape1s = LossShape <$> (place shape0U (unLossShape <$> shape1s))
+  places wh shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
 
-class Shapes f a where
-  shapes :: ℤ² -> [f a] -> ([ℤ] .->. f a)
-  default shapes :: (C f a) => ℤ² -> [f a] -> ([ℤ] .->. f a)
-  shapes (w, h) shape1ss =
-    let go :: [ℤ] .->. f a
+class (Place m f s i) => Shapes m f s i where
+  shapes :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
+
+  sss :: [s (i, i)]
+  sss = shapess @m @f @s @i
+
+instance (Place m f s i) => Shapes m f s i where
+  shapes wh shape1ss =
+    let go :: [ℤ] .->. f (s (i, i))
         go ns
-          | any (< 0) ns = pure mempty
-          | sum ns ≡ 0 = pure $ pure (∅)
-          | otherwise = do
-              ishape0ss <- sequence [((i,) <$> (go .$. (ns !. (i, (n - 1))))) | (i, n) <- enum ns]
-              let f i shape01s shape0 = [shape | shape <- place shape0 (shape1ss !! i), validShape (w, h) shape]
-              let g shape01s (i, shape0s) = ((Ł (f i) shape01s shape0s) !>)
-              let shape01s = ((Ł g (∅) ishape0ss) !>)
-              pure $ trNId ("shapes", ns) 5 shape01s
+          | all (≡ 0) ns = pure $ mk₁ (∅)
+          | any (< 0) ns = pure (∅)
+          | otherwise =
+              traceArb
+                <$> foldM
+                  ( \shape01s (i, n) -> do
+                      let ns' = traceShowId $ ns !. (i, (n - 1))
+                      shape0s <- go .$. ns'
+                      let shape01s' = traceArb $ places @m @f @s wh shape0s (traceShow "shape1ss !! i" ∘ traceArb $ shape1ss !! i)
+                      pure (uniq $ shape01s <> (shape01s' |-?-> boundedShape wh))
+                  )
+                  (∅)
+                  (ns ..#)
      in go
 
-instance (C f a) => Shapes f a
+traceArb xs =
+  case arb xs of
+    Nothing -> traceShow "empty" xs
+    Just s -> traceShow "arb" ∘ traceShape s $ xs
 
-class ShapeLike a where
-  mkShape :: (Foldable f) => f ℤ² -> a
-  validShape :: ℤ² -> a -> 𝔹
-  validShape' :: a -> 𝔹
-  boundedShape :: ℤ² -> a -> 𝔹
-  shapeWH :: a -> ℤ²
-  alignShape :: a -> a
-  area :: a -> ℤ
-  showShape :: a -> Text
-  showShapes :: [a] -> Text
-  showShapess :: [[a]] -> Text
-  traceShape :: a -> b -> b
+type ShapeLikeC s i =
+  ( Show i,
+    Integral i,
+    Coord' i i (i, i),
+    Semigroup (s (i, i)),
+    Monoid (s (i, i))
+  ) ::
+    Constraint
 
-instance ShapeLike (Shape ℤ²) where
+class ShapeLike s i where
+  mkShape :: (Foldable m) => m (i, i) -> s (i, i)
+  validShape :: (i, i) -> s (i, i) -> 𝔹
+  boundedShape :: (i, i) -> s (i, i) -> 𝔹
+  shapeWH :: s (i, i) -> (i, i)
+  offsetShape :: (i, i) -> s (i, i) -> s (i, i)
+  area :: (a ~ (i, i)) => s (i, i) -> i
+  contiguous :: s (i, i) -> 𝔹
+  toG :: s (i, i) -> ".#X" ▦ (i, i)
+  showShape :: s (i, i) -> Text
+  showShapes :: [s (i, i)] -> Text
+  showShapess :: [[s (i, i)]] -> Text
+  traceShape :: s (i, i) -> b -> b
+
+instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   mkShape cs = case toList cs of
     [] -> EmptyShape
     cs ->
@@ -343,33 +310,30 @@ instance ShapeLike (Shape ℤ²) where
             else Shape (mk cs) s (mkDiffList cs) (lb, ub)
 
   validShape _ Invalid = False
-  validShape _ EmptyShape = True
+  validShape _ EmptyShape = False
   validShape wh shape = boundedShape wh shape
 
-  validShape' Invalid = False
-  validShape' _ = True
-
   boundedShape _ Invalid = False
-  boundedShape _ EmptyShape = True
   boundedShape (w, h) shape = let (sw, sh) = shapeWH shape in sw ≤ w ∧ sh ≤ h
 
   shapeWH Invalid = (0, 0)
   shapeWH EmptyShape = (0, 0)
   shapeWH (Shape _ _ _ ((lx, ly), (ux, uy))) = (ux - lx + 1, uy - ly + 1)
 
-  alignShape Invalid = Invalid
-  alignShape EmptyShape = EmptyShape
-  alignShape shape@(Shape _ _ _ ((lx, ly), (ux, uy))) =
-    offsetShape (negate lx) (negate ly) shape
+  offsetShape (x, y) Invalid = Invalid
+  offsetShape (x, y) EmptyShape = EmptyShape
+  offsetShape (x, y) (Shape cs s ds ((lx, ly), (ux, uy))) =
+    let cs' = bimap (+ x) (+ y) <$> cs
+     in Shape cs' (mk $ un cs') ds ((lx + x, ly + y), (ux + x, uy + y))
 
   area shape = (*) $@ shapeWH shape
 
-  showShape Invalid = "invalid"
-  showShape EmptyShape = "empty"
+  showShape Invalid = "Invalid"
+  showShape EmptyShape = "EmptyShape"
   showShape shape@(Shape cs _ _ bs) =
     unlines
       [ tshow (size cs, bs),
-        pretty (toG (alignShape shape))
+        pretty (toG (toOrigin shape))
       ]
 
   showShapes = unlines ∘ fmap showShape
@@ -378,38 +342,100 @@ instance ShapeLike (Shape ℤ²) where
 
   traceShape s a = traceTextLn (showShape s) a
 
-data LossShape = LossShape {unLossShape :: Shape ℤ²} deriving (Eq, Show)
+  contiguous Invalid = False
+  contiguous EmptyShape = True
+  contiguous (Shape cs'@(c :<| _) _ _ _) = go cs (mkSeq [c])
+    where
+      cs = mkSet (un cs')
+      go left (c :<| q)
+        | c ∉ cs ∨ c ∉ left = go left q
+        | otherwise = go (left ∸ c) (q >< mk (neighborsNoDiags c))
+      go left _ = left ≡ (∅)
 
-instance ShapeLike LossShape where
-  mkShape cs = LossShape (mkShape @(Shape ℤ²) cs)
+  toG s =
+    let (Shape cs' _ _ ((minX, minY), (maxX, maxY))) = toOrigin @Shape @(i, i) s
+        cs = mkSet (toList cs')
+     in mkGrid [((x - minX, y - minY), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [minY .. maxX], y <- [minY .. maxY]]
+
+data LossShape a = LossShape {unLossShape :: Shape a} deriving (Eq, Show)
+
+type instance LossF (LossShape a) = LossShape a
+
+type instance LossF (Integer, (Integer, Integer)) = (Integer, (Integer, Integer))
+
+class (ShapeLike s i) => ShapeLikes m f s i where
+  shapess :: [s (i, i)]
+  vars :: s (i, i) -> f (s (i, i))
+
+instance
+  ( C' m f s i,
+    ShapeLike s i,
+    Rotatable (s (i, i)),
+    HMirrorable (s (i, i)),
+    VMirrorable (s (i, i))
+  ) =>
+  ShapeLikes m f s i
+  where
+  shapess = [mkShape @s (both fromInteger <$> (p |?> (#"#" □))) | p <- mk (snd <$> ps)]
+  vars s =
+    let fs = (∘) <$> mk [id, (↻) @(s (i, i)), ((↻) @(s (i, i))) ∘ ((↻) @(s (i, i))), ((↺) @(s (i, i)))] <*> mk [id, ((◓) @(s (i, i))), ((◐) @(s (i, i)))]
+     in uniq ∘ mk $ fs <*> [s]
+
+instance (Show i, Integral i, ShapeLike Shape i, Coord' i i (i, i)) => ShapeLike LossShape i where
+  mkShape cs = LossShape (mkShape @Shape @i cs)
   validShape wh (LossShape s) = validShape wh s
-  validShape' (LossShape s) = validShape' s
   boundedShape wh (LossShape s) = boundedShape wh s
   shapeWH (LossShape s) = shapeWH s
-  alignShape (LossShape s) = LossShape (alignShape s)
+  offsetShape o (LossShape s) = LossShape (offsetShape o s)
   area (LossShape s) = area s
   showShape (LossShape s) = showShape s
   showShapes = unlines ∘ fmap showShape
   showShapess = unlines ∘ fmap showShapes
   traceShape s a = traceTextLn (showShape s) a
+  contiguous (LossShape s) = contiguous s
+  toG (LossShape s) = toG s
 
-instance Ord LossShape where
-  compare (LossShape s1) (LossShape s2) =
-    let loss shape = shapeWH shape
-     in compare (size s1) (size s2)
+instance (Ord i, Integral i, Show i, Coord' i i (i, i)) => Ord (LossShape (i, i)) where
+  compare =
+    let loss shape = (negate (size shape), both (* area shape) (shapeWH shape))
+     in comparing loss
 
-instance Sizable LossShape where
+instance Sizable (LossShape a) where
   size (LossShape s) = size s
 
-instance (Rotatable (Shape ℤ²)) => Rotatable LossShape where
+instance (Rotatable (Shape a)) => Rotatable (LossShape a) where
   (↺) (LossShape s) = LossShape $ (↺) s
   (↻) (LossShape s) = LossShape $ (↻) s
 
-instance (HMirrorable (Shape ℤ²)) => HMirrorable LossShape where
+instance (HMirrorable (Shape a)) => HMirrorable (LossShape a) where
   (◐) (LossShape s) = LossShape $ (◐) s
 
-instance (VMirrorable (Shape ℤ²)) => VMirrorable LossShape where
-  (◓) (LossShape s) = LossShape $ (◐) s
+instance (VMirrorable (Shape a)) => VMirrorable (LossShape a) where
+  (◓) (LossShape s) = LossShape $ (◓) s
+
+instance Magnitude (Shape a) where
+  (|.|) (Shape cs _ _ _) = (cs |.|)
+
+type instance MagnitudeF (Shape a) = Integer
+
+type instance MagnitudeF (LossShape a) = Integer
+
+instance Magnitude (LossShape a) where
+  (|.|) (LossShape s) = (s |.|)
+
+instance (Semigroup (Shape a)) => Semigroup (LossShape a) where
+  (LossShape a) <> (LossShape b) = LossShape (a <> b)
+
+instance (Monoid (Shape a)) => Monoid (LossShape a) where
+  mempty = LossShape mempty
+
+shapessZ = shapess @[] @[] @LossShape @ℤ
+
+ss :: [LossQ (LossShape ℤ²)] = (\s -> s |-> (∅)) <$> shapessZ
+
+-- rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> rs
 
 part1 :: ℤ
-part1 = (((possible @(LossQ LossShape) @LossShape (shapess @(LossQ LossShape) @LossShape) <$> take 2 rs) <>?) |.|)
+part1 =
+  let rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> (take 1 ∘ drop 1 $ rs)
+   in ((rs' <>?) |.|)
