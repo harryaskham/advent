@@ -1,11 +1,5 @@
 module Day12 where
 
-(ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aocx 12)
-    -- \$(aoc 12)
-    -- \$(aocxn 12 1)
-    & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
-
 type C' m f s i =
   ( Integral i,
     Unable m,
@@ -69,9 +63,15 @@ data Shape a where
 
 deriving instance (Show a) => Show (Shape a)
 
-deriving instance (Eq a) => Eq (Shape a)
+instance (Eq a) => Eq (Shape a) where
+  EmptyShape == EmptyShape = True
+  (Shape cs _ _ _) == (Shape cs' _ _ _) = cs ≡ cs'
+  _ == _ = False
 
-deriving instance (Ord a) => Ord (Shape a)
+instance (Ord a) => Ord (Shape a) where
+  compare (Shape cs _ _ _) (Shape cs' _ _ _) = compare cs cs'
+  compare EmptyShape EmptyShape = EQ
+  compare _ _ = LT
 
 instance Sizable (Shape a) where
   size Invalid = 0
@@ -156,6 +156,7 @@ class (Shapes m f s i) => Possible m f s i where
             tracePrefixId ("decomp", ns) $
               let (qs, rs) = unzip [n `quotRem` 2 | n <- ns]
                in (2 ⋅ c, qs) : go1 (c, rs)
+
   decomp1 :: [ℤ] -> ([ℤ], [[ℤ]])
   default decomp1 :: [ℤ] -> ([ℤ], [[ℤ]])
   decomp1 ns = unzip $ swap <$> unMap cs
@@ -168,24 +169,28 @@ class (Shapes m f s i) => Possible m f s i where
         | otherwise =
             let ns' = [n > 0 ??? 1 $ 0 | n <- ns]
                 ns'' = [n - n' | (n, n') <- zip ns ns']
-             in tracePrefixId ("decomp", ns) $
-                  ns' : go1 ns''
+             in ns' : go1 ns''
 
   possibleDecomposed :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
   default possibleDecomposed :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
-  possibleDecomposed shapess r@(wh, ns) =
-    let res = possible @m @f @s @i shapess' (wh, ns')
-     in traceShow (ns, "decomped to", ns', size <$> shapess') $
-          foldl'
-            ( \a ss -> case arb ss of
-                Just s -> traceShape s a
-                Nothing -> traceShow "intermediate failed" a
-            )
-            res
-            shapess'
+  possibleDecomposed shapess r@(wh, ns)
+    | size ns' ≡ 1 ∨ all (≤ 1) ns' =
+        let res = possible @m @f @s @i shapess' (wh, ns')
+         in traceShow (ns, "decomped to", ns', "of", decompNss, size <$> shapess') $
+              foldl'
+                ( \a ss -> case arb ss of
+                    Just s -> traceShape s a
+                    Nothing -> traceShow "intermediate failed" a
+                )
+                res
+                shapess'
+    | otherwise =
+        traceShow (ns, "decomped to", ns', "of", decompNss, size <$> shapess') $
+          possibleDecomposed shapess' (wh, ns')
     where
-      (ns', decompNss) = decomp @m @f @s @i ns
+      (ns', decompNss) = decomp1 @m @f @s @i ns
       shapess' = run $ sequence [shapes wh shapess .$. decompNs | decompNs <- mk decompNss]
+
   possible :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
   default possible :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
   possible shapess r@(wh, ns) =
@@ -232,7 +237,7 @@ instance (C m f s i) => Place m f s i where
                                               else shape01s
                                     )
                                     shape01s
-                                    (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
+                                    (offsetShape <$> rangeBlock @m @f @s wh0 wh1 <*> pure shape1O)
                                 )
                                   !>
                               )
@@ -248,10 +253,14 @@ instance (C m f s i) => Place m f s i where
 class (Place m f s i) => Shapes m f s i where
   shapes :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
 
+  shapePairs :: (i, i) -> m (f (s (i, i))) -> m (f (s (i, i)))
+
   sss :: [s (i, i)]
   sss = shapess @m @f @s @i
 
 instance (Place m f s i) => Shapes m f s i where
+  shapePairs wh shapess = places @s @f @s @i wh <$> shapess <*> shapess
+
   shapes wh shape1ss =
     let go :: [ℤ] .->. f (s (i, i))
         go ns
@@ -431,11 +440,26 @@ instance (Monoid (Shape a)) => Monoid (LossShape a) where
 
 shapessZ = shapess @[] @[] @LossShape @ℤ
 
-ss :: [LossQ (LossShape ℤ²)] = (\s -> s |-> (∅)) <$> shapessZ
+shapessQ :: forall q a. (Insertable q (LossShape (Integer, Integer)), Monoid (q (LossShape (Integer, Integer)))) => [q (LossShape ℤ²)]
+shapessQ = (\s -> s |-> (∅)) <$> shapessZ
+
+shapessL :: [[LossShape ℤ²]] = pure <$> shapessZ
+
+shapessSet :: [Set (Shape ℤ²)] = mkSet ∘ pure <$> sss @[] @Set @Shape @Integer
+
+lossshapessSet :: [Set (LossShape ℤ²)] = mk <$> shapessL
 
 -- rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> rs
 
 part1 :: ℤ
 part1 =
-  let rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> (take 1 ∘ drop 1 $ rs)
+  -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
+  -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
+  let rs' :: [Maybe (Shape ℤ²)] = possibleDecomposed @[] @Set @Shape @Integer shapessSet <$> (take 2 rs)
    in ((rs' <>?) |.|)
+
+(ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
+  $(aocx 12)
+    -- \$(aoc 12)
+    -- \$(aocxn 12 1)
+    & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
