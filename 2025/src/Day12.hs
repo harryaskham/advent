@@ -4,8 +4,11 @@ type C' m f s i =
   ( Integral i,
     Unable m,
     Unable f,
+    Ord (f (s (i, i))),
     Uniqueable f (s (i, i)),
     Mkable m (f (s (i, i))),
+    Mkable m (i, f (s (i, i))),
+    Mkable m ([i], f (s (i, i))),
     Coord' i i (i, i),
     Eq (f (s (i, i))),
     Originable s (i, i),
@@ -22,6 +25,7 @@ type C' m f s i =
     Foldable f,
     Mkable f ℤ,
     Filterable f (s (i, i)),
+    Sizable (m ([i], f (s (i, i)))),
     Semigroup (m ℤ²),
     Semigroup (m ℤ),
     Semigroup (f (s (i, i))),
@@ -45,7 +49,10 @@ type C' m f s i =
     Semigroup (m (i, i)),
     Semigroup (m i),
     Mkable m i,
-    Arbitrary f (s (i, i))
+    Arbitrary f (s (i, i)),
+    Rotatable (s (i, i)),
+    HMirrorable (s (i, i)),
+    VMirrorable (s (i, i))
   ) ::
     Constraint
 
@@ -207,6 +214,8 @@ class (C m f s i) => Place m f s i where
   rangeBlock :: (i, i) -> (i, i) -> m (i, i)
   place :: (i, i) -> s (i, i) -> f (s (i, i)) -> f (s (i, i))
   places :: (i, i) -> f (s (i, i)) -> f (s (i, i)) -> f (s (i, i))
+  place' :: s (i, i) -> f (s (i, i)) -> f (s (i, i))
+  places' :: f (s (i, i)) -> f (s (i, i)) -> f (s (i, i))
 
 instance (C m f s i) => Place m f s i where
   rangeEdge (w0, h0) (w1, h1) =
@@ -218,6 +227,33 @@ instance (C m f s i) => Place m f s i where
     | xO <- (0 - w1 - 1) |...| (w0 + 1),
       yO <- (0 - h1 - 1) |...| (h0 + 1)
     ]
+
+  place' shape0 shape1s
+    | not (validShape (99, 99) shape0) = mempty
+    | shape0 ≡ (∅) = foldMap (vars @m @f @s) shape1s
+    | otherwise =
+        let wh0 = shapeWH shape0
+         in traceShow "place'" ∘ traceArb $
+              uniq
+                ( ( Ł
+                      ( \shape01s shape1O ->
+                          let wh1 = shapeWH shape1O
+                           in ( ( Ł
+                                    ( \shape01s shape1 ->
+                                        let shape01 = toOrigin (shape0 <> shape1)
+                                         in if (validShape (99, 99) shape01) then shape01 |-> shape01s else shape01s
+                                    )
+                                    shape01s
+                                    (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
+                                )
+                                  !>
+                              )
+                      )
+                      (∅)
+                      (foldMap (vars @m @f @s) shape1s)
+                  )
+                    !>
+                )
 
   place wh shape0 shape1s
     | shape0 ≡ (∅) = foldMap (vars @m @f @s) shape1s
@@ -237,7 +273,7 @@ instance (C m f s i) => Place m f s i where
                                               else shape01s
                                     )
                                     shape01s
-                                    (offsetShape <$> rangeBlock @m @f @s wh0 wh1 <*> pure shape1O)
+                                    (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
                                 )
                                   !>
                               )
@@ -248,19 +284,55 @@ instance (C m f s i) => Place m f s i where
                     !>
                 )
 
+  places' shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place' @m @f @s @i shape0U shape1s)) !>)) (∅) shape0Us) !>)
   places wh shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
 
 class (Place m f s i) => Shapes m f s i where
   shapes :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
 
-  shapePairs :: (i, i) -> m (f (s (i, i))) -> m (f (s (i, i)))
-
   sss :: [s (i, i)]
   sss = shapess @m @f @s @i
 
-instance (Place m f s i) => Shapes m f s i where
-  shapePairs wh shapess = places @s @f @s @i wh <$> shapess <*> shapess
+  compShapes :: m ([i], f (s (i, i)))
+  compShapes = mk [([(i ≡ j) ??? 1 $ 0 | j <- range 0 (size $ sss @m @f @s @i)], mk₁ s) | (i, s) <- enum $ sss @m @f @s @i]
 
+  shapePairs :: (i, i) -> m (f (s (i, i))) -> m ([i], f (s (i, i)))
+  shapePairs wh shs =
+    let shsL = un shs
+        n = size shsL
+     in mk $ nubOn snd [(sort [i, j], places @m @f @s @i wh (shsL !! i) (shsL !! j)) | i <- range 0 (n - 1), j <- range i (n - 1)]
+
+  expandCompShapes :: m ([i], f (s (i, i))) -> m ([i], f (s (i, i)))
+  expandCompShapes cshs =
+    let cshsL = un cshs
+        n = size cshsL
+     in mk $
+          nubOn
+            snd
+            [ (zipWith (+) nsI nsJ, traceShow "excomp" ∘ traceArb $ places' @m @f @s @i shsI shsJ)
+            | i <- range 0 (n - 1),
+              j <- range i (n - 1),
+              let (nsI, shsI) = cshsL !! i,
+              let (nsJ, shsJ) = cshsL !! j
+            ]
+
+  expandN :: i -> m ([i], f (s (i, i))) -> m ([i], f (s (i, i)))
+  expandN n cshs =
+    let go 0 cshs = cshs
+        go n cshs =
+          let cshs' = expandCompShapes cshs
+           in traceShow ("expanded", size cshs, "→", size cshs') $ go (n - 1) cshs'
+     in go n cshs
+
+  cshs0 :: m ([i], f (s (i, i)))
+  cshs0 = compShapes @m @f @s @i
+
+sps = shapePairs @[] @[] @Shape @Integer (6, 6) (pure <$> shapess @[] @[] @Shape @ℤ)
+
+xsh n = expandN @[] @Set @Shape @Integer n (compShapes @[] @Set @Shape @Integer)
+xsh n = expandN @[] @Set @Shape @Integer n (compShapes @[] @Set @Shape @Integer)
+
+instance (Place m f s i) => Shapes m f s i where
   shapes wh shape1ss =
     let go :: [ℤ] .->. f (s (i, i))
         go ns
@@ -282,7 +354,7 @@ instance (Place m f s i) => Shapes m f s i where
 traceArb xs =
   case arb xs of
     Nothing -> traceShow "empty" xs
-    Just s -> traceShow "arb" ∘ traceShape s $ xs
+    Just s -> traceShow ("arb of", size xs) ∘ traceShape s $ xs
 
 type ShapeLikeC s i =
   ( Show i,
