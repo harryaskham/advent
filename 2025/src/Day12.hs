@@ -3,6 +3,7 @@ module Day12 where
 type C' m f s i =
   ( Integral i,
     Unable m,
+    Takeable Integer f (s (i, i)),
     Unable f,
     Ord (f (s (i, i))),
     Uniqueable f (s (i, i)),
@@ -221,14 +222,6 @@ class (Shapes m f s i) => Possible m f s i where
         Nothing -> traceShow "no fit" $ Nothing
         Just shape -> traceShow "fit" ∘ traceShape shape $ Just shape
 
-  possibleSeen :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
-  default possibleSeen :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
-  possibleSeen shapess r@(wh, ns) =
-    let shapes' = run $ shapesSeen @m @f @s @i wh shapess ns
-     in case arb (shapes' |-?-> validShape wh) of
-          Nothing -> traceShow "no fit" $ Nothing
-          Just shape -> traceShow "fit" ∘ traceShape shape $ Just shape
-
 instance (Shapes m f s i) => Possible m f s i
 
 class (C m f s i) => Place m f s i where
@@ -281,28 +274,28 @@ instance (C m f s i) => Place m f s i where
     | not (validShape wh shape0) = mempty
     | otherwise =
         let wh0 = shapeWH shape0
-         in traceShow "place" ∘ traceArb $
-              ( ( Ł
-                    ( \shape01s shape1O ->
-                        let wh1 = shapeWH shape1O
-                         in ( ( Ł
-                                  ( \shape01s shape1 ->
-                                      let shape01 = toOrigin (shape0 <> shape1)
-                                       in if boundedShape wh shape01
-                                            then shape01 |-> shape01s
-                                            else shape01s
-                                  )
-                                  shape01s
-                                  (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
-                              )
-                                !>
+         in -- traceShow "place" ∘ traceArb $
+            ( ( Ł
+                  ( \shape01s shape1O ->
+                      let wh1 = shapeWH shape1O
+                       in ( ( Ł
+                                ( \shape01s shape1 ->
+                                    let shape01 = toOrigin (shape0 <> shape1)
+                                     in if boundedShape wh shape01
+                                          then shape01 |-> shape01s
+                                          else shape01s
+                                )
+                                shape01s
+                                (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
                             )
-                    )
-                    (∅)
-                    shape1s
-                )
-                  !>
+                              !>
+                          )
+                  )
+                  (∅)
+                  shape1s
               )
+                !>
+            )
 
   places' shape0Us shape1s = ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place' @m @f @s @i shape0U shape1s)) !>)) (∅) shape0Us) !>)
   places wh shape0Us shape1s = ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
@@ -383,17 +376,17 @@ instance (Place m f s i) => Shapes m f s i where
           | all (≡ 0) ns = pure $ mk₁ (∅)
           | any (< 0) ns = pure (∅)
           | otherwise =
-              traceArb
-                <$> foldM
-                  ( \shape01s (i, n) -> do
-                      let ns' = ns !. (i, (n - 1))
-                      shape0s <- go .$. ns'
-                      let shape1Vs = traceShow "shape1sVss !! i" ∘ traceArb $ shape1ss !! i
-                      let shape01s' = traceArb $ places @m @f @s wh shape0s shape1Vs
-                      pure (shape01s <> shape01s')
-                  )
-                  (∅)
-                  (ns ..#)
+              foldM
+                ( \shape01s (i, n) -> do
+                    let ns' = ns !. (i, (n - 1))
+                    shape0s <- go .$. ns'
+                    let shape0Vs = foldMap (vars @m @f @s @i ∘ traceShapeId) shape0s
+                    let shape1Vs = shape1ss !! i
+                    let shape01s' = places @m @f @s wh shape0Vs shape1Vs
+                    pure $ take 20 $ (shape01s <> shape01s')
+                )
+                (∅)
+                (ns ..#)
      in go
 
 traceArb xs =
@@ -578,11 +571,11 @@ part1 :: ℤ
 part1 =
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
-  let rs' = possible @[] @[] @Shape @Integer shapessL <$> (take 1 rs)
+  let rs' = possible @[] @LossQ @LossShape @Integer shapessQ <$> rs
    in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aocx 12)
+  $(aoc 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
