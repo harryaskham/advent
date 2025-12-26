@@ -383,7 +383,7 @@ instance (Place m f s i) => Shapes m f s i where
                     let shape0Vs = foldMap (vars @m @f @s @i ∘ traceShapeId) shape0s
                     let shape1Vs = shape1ss !! i
                     let shape01s' = places @m @f @s wh shape0Vs shape1Vs
-                    pure $ take 20 $ (shape01s <> shape01s')
+                    pure $ take 50 $ (shape01s <> shape01s')
                 )
                 (∅)
                 (ns ..#)
@@ -575,7 +575,7 @@ part1 =
    in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aoc 12)
+  $(aocx 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
