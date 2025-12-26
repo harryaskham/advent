@@ -380,10 +380,12 @@ instance (Place m f s i) => Shapes m f s i where
                 ( \shape01s (i, n) -> do
                     let ns' = ns !. (i, (n - 1))
                     shape0s <- go .$. ns'
-                    let shape0Vs = foldMap (vars @m @f @s @i ∘ traceShapeId) shape0s
-                    let shape1Vs = shape1ss !! i
+                    -- let shape0Vs = foldMap (vars @m @f @s @i ∘ traceShapeId) shape0s
+                    let shape0Vs = shape0s
+                    let shape1Vs = shape1sVs !! i
                     let shape01s' = places @m @f @s wh shape0Vs shape1Vs
-                    pure $ take 50 $ (shape01s <> shape01s')
+                    pure $ take 1 $ (shape01s <> shape01s')
+                    -- pure $ (shape01s <> shape01s')
                 )
                 (∅)
                 (ns ..#)
