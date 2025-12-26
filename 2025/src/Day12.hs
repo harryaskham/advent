@@ -256,26 +256,25 @@ instance (C m f s i) => Place m f s i where
     | otherwise =
         let wh0 = shapeWH shape0
          in traceShow "place'" ∘ traceArb $
-              uniq
-                ( ( Ł
-                      ( \shape01s shape1O ->
-                          let wh1 = shapeWH shape1O
-                           in ( ( Ł
-                                    ( \shape01s shape1 ->
-                                        let shape01 = toOrigin (shape0 <> shape1)
-                                         in if (validShape (99, 99) shape01) then shape01 |-> shape01s else shape01s
-                                    )
-                                    shape01s
-                                    (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
-                                )
-                                  !>
+              ( ( Ł
+                    ( \shape01s shape1O ->
+                        let wh1 = shapeWH shape1O
+                         in ( ( Ł
+                                  ( \shape01s shape1 ->
+                                      let shape01 = toOrigin (shape0 <> shape1)
+                                       in if (validShape (99, 99) shape01) then shape01 |-> shape01s else shape01s
+                                  )
+                                  shape01s
+                                  (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
                               )
-                      )
-                      (∅)
-                      (foldMap (vars @m @f @s) shape1s)
-                  )
-                    !>
+                                !>
+                            )
+                    )
+                    (∅)
+                    (foldMap (vars @m @f @s) shape1s)
                 )
+                  !>
+              )
 
   place wh shape0 shape1s
     | shape0 ≡ (∅) = shape1s
@@ -305,8 +304,8 @@ instance (C m f s i) => Place m f s i where
                   !>
               )
 
-  places' shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place' @m @f @s @i shape0U shape1s)) !>)) (∅) shape0Us) !>)
-  places wh shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
+  places' shape0Us shape1s = ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place' @m @f @s @i shape0U shape1s)) !>)) (∅) shape0Us) !>)
+  places wh shape0Us shape1s = ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
 
 class (Place m f s i) => Shapes m f s i where
   shapes :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
@@ -365,7 +364,7 @@ class (Place m f s i) => Shapes m f s i where
                             shape01s
                             shape0s
                     let shape01s'' = shape01s' |-?-> (\s -> boundedShape wh s ∧ contiguous s)
-                    pure (uniq $ shape01s <> shape01s'')
+                    pure (shape01s <> shape01s'')
                 )
                 (∅)
                 (ns ..#)
@@ -391,7 +390,7 @@ instance (Place m f s i) => Shapes m f s i where
                       shape0s <- go .$. ns'
                       let shape1Vs = traceShow "shape1sVss !! i" ∘ traceArb $ shape1ss !! i
                       let shape01s' = traceArb $ places @m @f @s wh shape0s shape1Vs
-                      pure (uniq $ shape01s <> shape01s')
+                      pure (shape01s <> shape01s')
                   )
                   (∅)
                   (ns ..#)
@@ -579,7 +578,7 @@ part1 :: ℤ
 part1 =
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
-  let rs' :: [Maybe (Shape ℤ²)] = possible @[] @[] @Shape @Integer shapessL <$> (take 1 rs)
+  let rs' = possible @[] @[] @Shape @Integer shapessL <$> (take 1 rs)
    in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
