@@ -11,6 +11,7 @@ type C' m f s i =
     Mkable m ([i], f (s (i, i))),
     Coord' i i (i, i),
     Eq (f (s (i, i))),
+    Ord (s (i, i)),
     Originable s (i, i),
     Insertable f (s (i, i)),
     Insertable [] (s (i, i)),
@@ -70,14 +71,27 @@ data Shape a where
 
 deriving instance (Show a) => Show (Shape a)
 
-instance (Eq a) => Eq (Shape a) where
-  EmptyShape == EmptyShape = True
-  (Shape cs _ _ _) == (Shape cs' _ _ _) = cs ≡ cs'
-  _ == _ = False
+instance (Eq (i, i), Show i, Integral i, Coord' i i (i, i), ShapeLikes [] [] Shape i) => Eq (Shape (i, i)) where
+  (==) EmptyShape = \case
+    EmptyShape -> True
+    _ -> False
+  (==) a@(Shape _ _ _ _) =
+    let vas = vars @[] @[] @Shape @i a
+        vaCss = uniq $ getCs <$> vas
+     in \case
+          b@(Shape _ _ _ _) ->
+            let bO@(Shape csBO _ _ _) = toOrigin b
+             in any (≡ csBO) vaCss
+          _ -> False
+  (==) _ = const False
 
-instance (Ord a) => Ord (Shape a) where
-  compare (Shape cs _ _ _) (Shape cs' _ _ _) = compare cs cs'
+instance (Ord a, Eq (Shape a)) => Ord (Shape a) where
+  compare a@(Shape cs _ _ _) b@(Shape cs' _ _ _)
+    | a ≡ b = EQ
+    | otherwise = compare cs cs'
   compare EmptyShape EmptyShape = EQ
+  compare EmptyShape (Shape _ _ _ _) = LT
+  compare (Shape _ _ _ _) EmptyShape = GT
   compare _ _ = LT
 
 instance Sizable (Shape a) where
@@ -207,6 +221,14 @@ class (Shapes m f s i) => Possible m f s i where
         Nothing -> traceShow "no fit" $ Nothing
         Just shape -> traceShow "fit" ∘ traceShape shape $ Just shape
 
+  possibleSeen :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  default possibleSeen :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  possibleSeen shapess r@(wh, ns) =
+    let shapes' = run $ shapesSeen @m @f @s @i wh shapess ns
+     in case arb (shapes' |-?-> validShape wh) of
+          Nothing -> traceShow "no fit" $ Nothing
+          Just shape -> traceShow "fit" ∘ traceShape shape $ Just shape
+
 instance (Shapes m f s i) => Possible m f s i
 
 class (C m f s i) => Place m f s i where
@@ -256,33 +278,32 @@ instance (C m f s i) => Place m f s i where
                 )
 
   place wh shape0 shape1s
-    | shape0 ≡ (∅) = foldMap (vars @m @f @s) shape1s
+    | shape0 ≡ (∅) = shape1s
     | not (validShape wh shape0) = mempty
     | otherwise =
         let wh0 = shapeWH shape0
          in traceShow "place" ∘ traceArb $
-              uniq
-                ( ( Ł
-                      ( \shape01s shape1O ->
-                          let wh1 = shapeWH shape1O
-                           in ( ( Ł
-                                    ( \shape01s shape1 ->
-                                        let shape01 = toOrigin (shape0 <> shape1)
-                                         in if validShape wh shape01
-                                              then shape01 |-> shape01s
-                                              else shape01s
-                                    )
-                                    shape01s
-                                    (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
-                                )
-                                  !>
+              ( ( Ł
+                    ( \shape01s shape1O ->
+                        let wh1 = shapeWH shape1O
+                         in ( ( Ł
+                                  ( \shape01s shape1 ->
+                                      let shape01 = toOrigin (shape0 <> shape1)
+                                       in if boundedShape wh shape01
+                                            then shape01 |-> shape01s
+                                            else shape01s
+                                  )
+                                  shape01s
+                                  (offsetShape <$> rangeEdge @m @f @s wh0 wh1 <*> pure shape1O)
                               )
-                      )
-                      (∅)
-                      (foldMap (vars @m @f @s) shape1s)
-                  )
-                    !>
+                                !>
+                            )
+                    )
+                    (∅)
+                    shape1s
                 )
+                  !>
+              )
 
   places' shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place' @m @f @s @i shape0U shape1s)) !>)) (∅) shape0Us) !>)
   places wh shape0Us shape1s = uniq ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
@@ -291,7 +312,7 @@ class (Place m f s i) => Shapes m f s i where
   shapes :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
 
   sss :: [s (i, i)]
-  sss = shapess @m @f @s @i
+  sss = shapess @[] @f @s @i
 
   compShapes :: m ([i], f (s (i, i)))
   compShapes = mk [([(i ≡ j) ??? 1 $ 0 | j <- range 0 (size $ sss @m @f @s @i)], mk₁ s) | (i, s) <- enum $ sss @m @f @s @i]
@@ -327,6 +348,29 @@ class (Place m f s i) => Shapes m f s i where
   cshs0 :: m ([i], f (s (i, i)))
   cshs0 = compShapes @m @f @s @i
 
+  shapesSeen :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
+  shapesSeen wh shape1ss =
+    let go ns
+          | all (≡ 0) ns = pure $ mk₁ (∅)
+          | any (< 0) ns = pure $ (∅)
+          | otherwise =
+              foldM
+                ( \shape01s (i, n) -> do
+                    let ns' = ns !. (i, (n - 1))
+                    let shape1s = shape1ss !! i
+                    shape0s <- go .$. ns'
+                    let shape01s' =
+                          foldl'
+                            (\shape01s' shape0 -> shape01s <> place @m @f @s wh shape0 shape1s)
+                            shape01s
+                            shape0s
+                    let shape01s'' = shape01s' |-?-> (\s -> boundedShape wh s ∧ contiguous s)
+                    pure (uniq $ shape01s <> shape01s'')
+                )
+                (∅)
+                (ns ..#)
+     in go
+
 sps = shapePairs @[] @[] @Shape @Integer (6, 6) (pure <$> shapess @[] @[] @Shape @ℤ)
 
 xsh n = expandN @[] @Set @Shape @Integer n (compShapes @[] @Set @Shape @Integer)
@@ -334,7 +378,8 @@ xsh n = expandN @[] @Set @Shape @Integer n (compShapes @[] @Set @Shape @Integer)
 
 instance (Place m f s i) => Shapes m f s i where
   shapes wh shape1ss =
-    let go :: [ℤ] .->. f (s (i, i))
+    let shape1sVs = [foldMap (vars @m @f @s @i) shape1s | shape1s <- shape1ss]
+        go :: [ℤ] .->. f (s (i, i))
         go ns
           | all (≡ 0) ns = pure $ mk₁ (∅)
           | any (< 0) ns = pure (∅)
@@ -342,10 +387,11 @@ instance (Place m f s i) => Shapes m f s i where
               traceArb
                 <$> foldM
                   ( \shape01s (i, n) -> do
-                      let ns' = traceShowId $ ns !. (i, (n - 1))
+                      let ns' = ns !. (i, (n - 1))
                       shape0s <- go .$. ns'
-                      let shape01s' = traceArb $ places @m @f @s wh shape0s (traceShow "shape1ss !! i" ∘ traceArb $ shape1ss !! i)
-                      pure (uniq $ shape01s <> (shape01s' |-?-> boundedShape wh))
+                      let shape1Vs = traceShow "shape1sVss !! i" ∘ traceArb $ shape1ss !! i
+                      let shape01s' = traceArb $ places @m @f @s wh shape0s shape1Vs
+                      pure (uniq $ shape01s <> shape01s')
                   )
                   (∅)
                   (ns ..#)
@@ -378,6 +424,7 @@ class ShapeLike s i where
   showShapes :: [s (i, i)] -> Text
   showShapess :: [[s (i, i)]] -> Text
   traceShape :: s (i, i) -> b -> b
+  traceShapeId :: s (i, i) -> s (i, i)
 
 instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   mkShape cs = case toList cs of
@@ -422,6 +469,7 @@ instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   showShapess = unlines ∘ fmap showShapes
 
   traceShape s a = traceTextLn (showShape s) a
+  traceShapeId s = traceTextLn (showShape s) s
 
   contiguous Invalid = False
   contiguous EmptyShape = True
@@ -438,14 +486,17 @@ instance (ShapeLikeC Shape i) => ShapeLike Shape i where
         cs = mkSet (toList cs')
      in mkGrid [((x - minX, y - minY), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [minY .. maxX], y <- [minY .. maxY]]
 
-data LossShape a = LossShape {unLossShape :: Shape a} deriving (Eq, Show)
+data LossShape a = LossShape {unLossShape :: Shape a} deriving (Show)
+
+instance (Eq (Shape a)) => Eq (LossShape a) where
+  (LossShape a) == (LossShape b) = a == b
 
 type instance LossF (LossShape a) = LossShape a
 
 type instance LossF (Integer, (Integer, Integer)) = (Integer, (Integer, Integer))
 
 class (ShapeLike s i) => ShapeLikes m f s i where
-  shapess :: [s (i, i)]
+  shapess :: m (s (i, i))
   vars :: s (i, i) -> f (s (i, i))
 
 instance
@@ -460,7 +511,7 @@ instance
   shapess = [mkShape @s (both fromInteger <$> (p |?> (#"#" □))) | p <- mk (snd <$> ps)]
   vars s =
     let fs = (∘) <$> mk [id, (↻) @(s (i, i)), ((↻) @(s (i, i))) ∘ ((↻) @(s (i, i))), ((↺) @(s (i, i)))] <*> mk [id, ((◓) @(s (i, i))), ((◐) @(s (i, i)))]
-     in uniq ∘ mk $ fs <*> [s]
+     in mk $ (toOrigin <$> (fs <*> [s]))
 
 instance (Show i, Integral i, ShapeLike Shape i, Coord' i i (i, i)) => ShapeLike LossShape i where
   mkShape cs = LossShape (mkShape @Shape @i cs)
@@ -473,6 +524,7 @@ instance (Show i, Integral i, ShapeLike Shape i, Coord' i i (i, i)) => ShapeLike
   showShapes = unlines ∘ fmap showShape
   showShapess = unlines ∘ fmap showShapes
   traceShape s a = traceTextLn (showShape s) a
+  traceShapeId s = traceTextLn (showShape s) s
   contiguous (LossShape s) = contiguous s
   toG (LossShape s) = toG s
 
@@ -510,16 +562,16 @@ instance (Semigroup (Shape a)) => Semigroup (LossShape a) where
 instance (Monoid (Shape a)) => Monoid (LossShape a) where
   mempty = LossShape mempty
 
-shapessZ = shapess @[] @[] @LossShape @ℤ
+shapessL :: [[Shape ℤ²]] = pure <$> shapess @[] @[] @Shape @ℤ
+
+lossshapessL :: [[LossShape ℤ²]] = pure <$> shapess @[] @[] @LossShape @ℤ
 
 shapessQ :: forall q a. (Insertable q (LossShape (Integer, Integer)), Monoid (q (LossShape (Integer, Integer)))) => [q (LossShape ℤ²)]
-shapessQ = (\s -> s |-> (∅)) <$> shapessZ
-
-shapessL :: [[LossShape ℤ²]] = pure <$> shapessZ
+shapessQ = (\s -> s |-> (∅)) <$> shapess @[] @[] @LossShape @ℤ
 
 shapessSet :: [Set (Shape ℤ²)] = mkSet ∘ pure <$> sss @[] @Set @Shape @Integer
 
-lossshapessSet :: [Set (LossShape ℤ²)] = mk <$> shapessL
+lossshapessSet :: [Set (LossShape ℤ²)] = mk <$> lossshapessL
 
 -- rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> rs
 
@@ -527,7 +579,7 @@ part1 :: ℤ
 part1 =
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
-  let rs' :: [Maybe (Shape ℤ²)] = possibleDecomposed @[] @Set @Shape @Integer shapessSet <$> (take 2 rs)
+  let rs' :: [Maybe (Shape ℤ²)] = possible @[] @[] @Shape @Integer shapessL <$> (take 1 rs)
    in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
