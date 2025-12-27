@@ -1,59 +1,73 @@
 module Day12 where
 
 type C' m f s i =
-  ( Integral i,
-    Unable m,
-    Takeable Integer f (s (i, i)),
-    Unable f,
-    Ord (f (s (i, i))),
-    Uniqueable f (s (i, i)),
-    Mkable m (f (s (i, i))),
-    Mkable m (i, f (s (i, i))),
-    Mkable m ([i], f (s (i, i))),
-    Coord' i i (i, i),
-    Eq (f (s (i, i))),
-    Ord (s (i, i)),
-    Originable s (i, i),
-    Insertable f (s (i, i)),
-    Insertable [] (s (i, i)),
-    Functor m,
+  ( Alternative m,
     Applicative m,
-    Monad m,
-    Alternative m,
-    Foldable m,
-    Traversable m,
-    Ixable Integer m,
-    Mkable f (s (i, i)),
-    Foldable f,
-    Mkable f ℤ,
-    Filterable f (s (i, i)),
-    Sizable (m ([i], f (s (i, i)))),
-    Semigroup (m ℤ²),
-    Semigroup (m ℤ),
-    Semigroup (f (s (i, i))),
-    Monoid (f (s (i, i))),
-    Sizable (f ℤ²),
+    Arbitrary f (s (i, i)),
     Arbitrary f ℤ²,
     Arbitrary m (s (i, i)),
-    Takeable ℤ m (s (i, i)),
-    Sizable (f (s (i, i))),
-    Mkable f (ℤ, (i, i)),
-    Mkable m (s (i, i)),
-    Mkable m ℤ,
-    Foldable f,
-    ShapeLikeC s i,
-    Show i,
-    Show (m ℤ),
-    Mkable m (".#" ▦ ℤ²),
-    Mkable m [ℤ],
-    Monoid (m (s (i, i))),
+    Coord' i i (i, i),
+    Differenceable s (i, i),
+    Eq (f (s (i, i))),
+    Eq (m ([i], s (i, i))),
     Eq (s (i, i)),
+    Eq i,
+    Filterable f (s (i, i)),
+    Foldable f,
+    Foldable f,
+    Foldable m,
+    Functor m,
+    HMirrorable (s (i, i)),
+    Insertable [] (s (i, i)),
+    Insertable f (s (i, i)),
+    Integral i,
+    Ixable Integer m,
+    Magnitude (s (i, i)),
+    MagnitudeF (s (i, i)) ~ Integer,
+    ( Mkable f (s (i, i)),
+      Mkable f (ℤ, (i, i)),
+      Mkable f ℤ,
+      Mkable m (".#" ▦ ℤ²),
+      Mkable m (Integer, i),
+      Mkable m ([i], f (s (i, i))),
+      Mkable m (f (s (i, i))),
+      Mkable m (i, f (s (i, i))),
+      Mkable m (s (i, i)),
+      Mkable m [ℤ],
+      Mkable m i,
+      Mkable m ℤ,
+      Mkable s (i, i)
+    ),
+    Monad m,
+    Monoid (f (s (i, i))),
+    Monoid (m ([i], s (i, i))),
+    Monoid (m (s (i, i))),
+    Num i,
+    Ord (f (s (i, i))),
+    Ord (m (s (i, i))),
+    Ord (s (i, i)),
+    Originable s (i, i),
+    Rotatable (s (i, i)),
+    Semigroup (f (s (i, i))),
     Semigroup (m (i, i)),
     Semigroup (m i),
-    Mkable m i,
-    Arbitrary f (s (i, i)),
-    Rotatable (s (i, i)),
-    HMirrorable (s (i, i)),
+    Semigroup (m ℤ),
+    Semigroup (m ℤ²),
+    ShapeLikeC s i,
+    Show (m ℤ),
+    Show i,
+    Sizable (f (s (i, i))),
+    Sizable (f ℤ²),
+    Sizable (m ([i], f (s (i, i)))),
+    Takeable Integer f (s (i, i)),
+    Takeable ℤ m (s (i, i)),
+    Traversable m,
+    Unable f,
+    Unable m,
+    Unionable (m ([i], s (i, i))),
+    Uniqueable m (s (i, i)),
+    Uniqueable f (s (i, i)),
+    Uniqueable m ([i], s (i, i)),
     VMirrorable (s (i, i))
   ) ::
     Constraint
@@ -213,6 +227,15 @@ class (Shapes m f s i) => Possible m f s i where
       (ns', decompNss) = decomp1 @m @f @s @i ns
       shapess' = run $ sequence [shapes wh shapess .$. decompNs | decompNs <- mk decompNss]
 
+  possibleBeam :: i -> m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  default possibleBeam :: i -> m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
+  possibleBeam n shapess r@(wh, ns) =
+    run do
+      shapes' <- shapesBeam @m @f @s @i n wh shapess .$. ns
+      pure $ case arb (shapes' |-?-> validShape wh) of
+        Nothing -> traceShow "no fit" $ Nothing
+        Just shape -> traceShow "fit" ∘ traceShape shape $ Just shape
+
   possible :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
   default possible :: m (f (s (i, i))) -> ((i, i), [ℤ]) -> Maybe (s (i, i))
   possible shapess r@(wh, ns) =
@@ -227,6 +250,7 @@ instance (Shapes m f s i) => Possible m f s i
 class (C m f s i) => Place m f s i where
   rangeEdge :: (i, i) -> (i, i) -> m (i, i)
   rangeBlock :: (i, i) -> (i, i) -> m (i, i)
+  rangeBlockInner :: (i, i) -> (i, i) -> m (i, i)
   place :: (i, i) -> s (i, i) -> f (s (i, i)) -> f (s (i, i))
   places :: (i, i) -> f (s (i, i)) -> f (s (i, i)) -> f (s (i, i))
   place' :: s (i, i) -> f (s (i, i)) -> f (s (i, i))
@@ -236,6 +260,12 @@ instance (C m f s i) => Place m f s i where
   rangeEdge (w0, h0) (w1, h1) =
     [(xO, yO) | xO <- ((0 - w1 - 1) |...| 0) <> ((w1 - w0) |...| (w1 + 1)), yO <- (0 - h1 - 1) |...| (h1 + 1)]
       <> [(xO, yO) | xO <- (0 - w1 - 1) |...| w0, yO <- ((0 - h1 - 1) |...| 0) <> ((h0 - h1 - 1) |...| (h1 + 1))]
+
+  rangeBlockInner (w0, h0) (w1, h1) =
+    [ (xO, yO)
+    | xO <- 0 |...| (w0 - w1),
+      yO <- 0 |...| (h0 - h1)
+    ]
 
   rangeBlock (w0, h0) (w1, h1) =
     [ (xO, yO)
@@ -301,6 +331,7 @@ instance (C m f s i) => Place m f s i where
   places wh shape0Us shape1s = ((Ł (\shape01s shape0U -> ((Ł (<-|) shape01s (place @m @f @s @i wh shape0U shape1s)) !>)) (∅) shape0Us) !>)
 
 class (Place m f s i) => Shapes m f s i where
+  shapesBeam :: i -> (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
   shapes :: (i, i) -> m (f (s (i, i))) -> ([ℤ] .->. (f (s (i, i))))
 
   sss :: [s (i, i)]
@@ -369,7 +400,8 @@ xsh n = expandN @[] @Set @Shape @Integer n (compShapes @[] @Set @Shape @Integer)
 xsh n = expandN @[] @Set @Shape @Integer n (compShapes @[] @Set @Shape @Integer)
 
 instance (Place m f s i) => Shapes m f s i where
-  shapes wh shape1ss =
+  shapes = shapesBeam 0
+  shapesBeam n wh shape1ss =
     let shape1sVs = [foldMap (vars @m @f @s @i) shape1s | shape1s <- shape1ss]
         go :: [ℤ] .->. f (s (i, i))
         go ns
@@ -385,7 +417,7 @@ instance (Place m f s i) => Shapes m f s i where
                       let shape0Vs = shape0s
                       let shape1Vs = shape1sVs !! i
                       let shape01s' = places @m @f @s wh shape0Vs shape1Vs
-                      pure $ take 1 $ (shape01s <> shape01s')
+                      pure $ (if n ≡ 0 then id else take n) $ (shape01s <> shape01s')
                       -- pure $ (shape01s <> shape01s')
                   )
                   (∅)
@@ -406,6 +438,22 @@ type ShapeLikeC s i =
   ) ::
     Constraint
 
+instance (ShapeLike Shape i) => Mkable Shape (i, i) where
+  mk = mkShape @Shape @i
+
+instance (ShapeLike LossShape i) => Mkable LossShape (i, i) where
+  mk = mkShape @LossShape @i
+
+instance (ShapeLike Shape i) => Differenceable Shape (i, i) where
+  Invalid ∖ _ = Invalid
+  _ ∖ Invalid = Invalid
+  s ∖ EmptyShape = s
+  EmptyShape ∖ _ = EmptyShape
+  (Shape cs s ds bs) ∖ (Shape cs' s' ds' bs') = mkShape (s ∖ s')
+
+instance (Differenceable Shape (i, i)) => Differenceable LossShape (i, i) where
+  (LossShape s) ∖ (LossShape s') = LossShape (s ∖ s')
+
 class ShapeLike s i where
   mkShape :: (Foldable m) => m (i, i) -> s (i, i)
   validShape :: (i, i) -> s (i, i) -> 𝔹
@@ -420,6 +468,26 @@ class ShapeLike s i where
   showShapess :: [[s (i, i)]] -> Text
   traceShape :: s (i, i) -> b -> b
   traceShapeId :: s (i, i) -> s (i, i)
+
+instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet (i, i) where
+  mkShape = mk
+  validShape = boundedShape
+  boundedShape (w, h) (BoundedSet (minX, minY) (maxX, maxY) _) = minX ≥ 0 ∧ minY ≥ 0 ∧ maxX < w ∧ maxY < h
+  shapeWH (BoundedSet (minX, minY) (maxX, maxY) _) = (maxX - minX + 1, maxY - minY + 1)
+  area s = let (w, h) = shapeWH s in w ⋅ h
+  contiguous (BoundedSet _ _ s) = go s (mkSeq (head' $ un s))
+    where
+      cs = mkSet (un cs')
+      go left (c :<| q)
+        | c ∉ cs ∨ c ∉ left = go left q
+        | otherwise = go (left ∸ c) (q >< mk (neighborsNoDiags c))
+      go left _ = left ≡ (∅)
+  toG s = undefined
+  showShape s = undefined
+  showShapes s = undefined
+  showShapess ss = undefined
+  traceShape s = undefined
+  traceShapeId s = undefined
 
 instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   mkShape cs = case toList cs of
@@ -574,11 +642,73 @@ part1 :: ℤ
 part1 =
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
   -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
-  let rs' = possible @[] @LossQ @LossShape @Integer shapessQ <$> rs
+  let rs' = possibleBeam @[] @LossQ @LossShape @Integer 1 shapessQ <$> rs
    in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aoc 12)
+  $(aocx 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
+
+class (C m m s i) => Chisel m s i where
+  chisel1 :: s (i, i) -> s (i, i) -> m (s (i, i))
+  chiselI :: m (m (s (i, i))) -> [i] -> s (i, i) -> m ([i], s (i, i))
+  chiselR :: m (m (s (i, i))) -> ((i, i), [i]) -> m ([i], s (i, i))
+  chiselRs :: [((i, i), [i])] -> [m ([i], (s (i, i)))]
+  chiselRsN :: [((i, i), [i])] -> i
+  chiselAOC :: i
+
+instance (C m m s i) => Chisel m s i where
+  chisel1 s block =
+    traceShow "chisel1" ∘ traceShape s ∘ traceShape block $
+      uniq
+        [ block'
+        | let (w0, h0) = shapeWH block,
+          let (w1, h1) = shapeWH s,
+          (xO, yO) <- rangeBlockInner @m @m @s @i (w0, h0) (w1, h1),
+          let s' = offsetShape (xO, yO) s,
+          let block' = block ∖ s',
+          (block' |.|) ≡ (block |.|) - (s |.|)
+        ]
+
+  chiselI sss ns block
+    | all (≡ 0) ns = pure (ns, block)
+    | otherwise =
+        traceShow ("chiselI", ns) $
+          uniq
+            [ (ns', block')
+            | (i, n) <- mk (ns ..#),
+              n > 0,
+              let ns' = ns !. (i, n - 1),
+              let ss = sss !! i,
+              s <- ss,
+              block' <- chisel1 @m @s @i s block,
+              traceShape block' True
+            ]
+
+  chiselR sss ((w, h), ns) =
+    let go :: ([i], s (i, i)) .->. m ([i], s (i, i))
+        go (ns, block)
+          | all (≡ 0) ns = pure $ pure (ns, block)
+          | otherwise = do
+              nsBlocks <-
+                sequence
+                  [ go .$. (ns', block')
+                  | (ns', block') <- chiselI @m @s @i sss ns block
+                  ]
+              pure $ uniq $ ((Ŀ (∪) nsBlocks) !>)
+        block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
+     in traceShow ("chiselR", (w, h), ns) $
+          run $
+            go (ns, block)
+
+  chiselRs rs =
+    let sss = [vars @m @m @s @i s | s <- shapess @m @m @s @i]
+     in chiselR @m @s @i sss <$> rs
+
+  chiselRsN rs = (|! True) ∘ counts $ (≢ (∅)) <$> chiselRs @m @s @i rs
+
+  chiselAOC =
+    let rsI = [(both fromIntegral wh, fromIntegral <$> ns) | (wh, ns) <- take 3 rs]
+     in chiselRsN @m @s @i rsI
