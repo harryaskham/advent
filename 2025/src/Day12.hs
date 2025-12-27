@@ -8,11 +8,16 @@ type C' m f s i =
     Arbitrary m (s (i, i)),
     Coord' i i (i, i),
     Differenceable s (i, i),
-    Eq (f (s (i, i))),
-    Eq (m ([i], s (i, i))),
-    Eq (s (i, i)),
-    Eq i,
-    Filterable f (s (i, i)),
+    ( Eq (f (s (i, i))),
+      Eq (m ([i], s (i, i))),
+      Eq (s (i, i)),
+      Eq i,
+      Eq (f (m i, s (i, i))),
+      Eq (f ([i], s (i, i)))
+    ),
+    ( Filterable f (s (i, i)),
+      Filterable m ((i, i), m i)
+    ),
     Foldable f,
     Foldable f,
     Foldable m,
@@ -25,7 +30,9 @@ type C' m f s i =
     Magnitude (s (i, i)),
     MagnitudeF (s (i, i)) ~ Integer,
     ( Mkable f (s (i, i)),
+      Mkable f (m i, s (i, i)),
       Mkable f (ℤ, (i, i)),
+      Mkable f ([i], s (i, i)),
       Mkable f ℤ,
       Mkable m (".#" ▦ ℤ²),
       Mkable m (Integer, i),
@@ -39,13 +46,19 @@ type C' m f s i =
       Mkable s (i, i)
     ),
     Monad m,
-    Monoid (f (s (i, i))),
-    Monoid (m ([i], s (i, i))),
-    Monoid (m (s (i, i))),
+    ( Monoid (f (s (i, i))),
+      Monoid (m ([i], s (i, i))),
+      Monoid (m (s (i, i))),
+      Monoid (f (m i, s (i, i))),
+      Monoid (f ([i], s (i, i))),
+      Monoid (m (m i, s (i, i)))
+    ),
     Num i,
-    Ord (f (s (i, i))),
-    Ord (m (s (i, i))),
-    Ord (s (i, i)),
+    ( Ord (f (s (i, i))),
+      Ord (m (s (i, i))),
+      Ord (s (i, i)),
+      Ord (m i)
+    ),
     Originable s (i, i),
     Rotatable (s (i, i)),
     Semigroup (f (s (i, i))),
@@ -54,8 +67,10 @@ type C' m f s i =
     Semigroup (m ℤ),
     Semigroup (m ℤ²),
     ShapeLikeC s i,
-    Show (m ℤ),
-    Show i,
+    ( Show (m ℤ),
+      Show (m i),
+      Show i
+    ),
     Sizable (f (s (i, i))),
     Sizable (f ℤ²),
     Sizable (m ([i], f (s (i, i)))),
@@ -65,9 +80,13 @@ type C' m f s i =
     Unable f,
     Unable m,
     Unionable (m ([i], s (i, i))),
-    Uniqueable m (s (i, i)),
-    Uniqueable f (s (i, i)),
-    Uniqueable m ([i], s (i, i)),
+    ( Uniqueable m (s (i, i)),
+      Uniqueable f (s (i, i)),
+      Uniqueable m ([i], s (i, i)),
+      Uniqueable m (m i, s (i, i)),
+      Uniqueable f (m i, s (i, i)),
+      Uniqueable f ([i], s (i, i))
+    ),
     VMirrorable (s (i, i))
   ) ::
     Constraint
@@ -572,6 +591,9 @@ type instance LossF (Integer, (Integer, Integer)) = (Integer, (Integer, Integer)
 class (ShapeLike s i) => ShapeLikes m f s i where
   shapess :: m (s (i, i))
   vars :: s (i, i) -> f (s (i, i))
+  varss :: m (f (s (i, i)))
+  default varss :: (Functor m) => m (f (s (i, i)))
+  varss = vars @m @f @s @i <$> (shapess @m @f @s @i)
 
 instance
   ( C' m f s i,
@@ -650,11 +672,12 @@ lossshapessSet :: [Set (LossShape ℤ²)] = mk <$> lossshapessL
 -- rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> rs
 
 part1 :: ℤ
-part1 =
-  -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
-  -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
-  let rs' = possibleBeam @[] @LossQ @LossShape @Integer 1 shapessQ <$> rs
-   in ((rs' <>?) |.|)
+part1 = ((chiselR1s @[] @[] @Shape @Integer (take 2 rs)) |.|)
+
+-- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
+-- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
+-- let rs' = possibleBeam @[] @LossQ @LossShape @Integer 1 shapessQ <$> rs
+--  in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
   $(aocx 12)
@@ -662,66 +685,95 @@ part1 =
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
 
-class (C m m s i) => Chisel m s i where
+-- could do bidi search and check for frontier overlap
+
+class (C m f s i) => Chisel m f s i where
   chisel1 :: s (i, i) -> s (i, i) -> m (s (i, i))
-  chiselI :: m (m (s (i, i))) -> ([i], s (i, i)) -> m ([i], s (i, i))
-  chiselR :: m (m (s (i, i))) -> ((i, i), [i]) -> m ([i], s (i, i))
-  chiselRs :: [((i, i), [i])] -> [m ([i], (s (i, i)))]
-  chiselRsN :: [((i, i), [i])] -> i
-  chiselAOC :: i
+  chiselI :: (m i, s (i, i)) .->. f (m i, s (i, i))
+  chiselI1 :: i -> s (i, i) -> f (s (i, i))
+  chiselR :: ((i, i), m i) -> f (m i, s (i, i))
+  chiselR1 :: ((i, i), m i) -> Bool
+  chiselR1s :: m ((i, i), m i) -> m ((i, i), m i)
 
-instance (C m m s i) => Chisel m s i where
+  varsDet :: [[s (i, i)]]
+  varsDet = [un (uniq vs) | vs <- un $ varss @m @f @s @i]
+
+instance (C m f s i) => Chisel m f s i where
   chisel1 s block =
-    traceShow "chisel1" ∘ traceShape s ∘ traceShape block $
-      uniq
-        [ block'
-        | let (w0, h0) = shapeWH block,
-          let (w1, h1) = shapeWH s,
-          (xO, yO) <- rangeBlockInner @m @m @s @i (w0, h0) (w1, h1),
-          let s' = offsetShape (xO, yO) s,
-          let block' = block ∖ s',
-          (block' |.|) ≡ (block |.|) - (s |.|)
-        ]
+    -- traceShow ("chisel1", (block |.|)) $
+    [ block'
+    | let (w0, h0) = shapeWH block,
+      let (w1, h1) = shapeWH s,
+      (xO, yO) <- rangeBlockInner @m @f @s @i (w0, h0) (w1, h1),
+      let s' = offsetShape (xO, yO) s,
+      let block' = block ∖ s',
+      (block' |.|) ≡ (block |.|) - (s |.|)
+    ]
 
-  chiselI sss (ns, block)
-    | all (≡ 0) ns = pure (ns, block)
+  chiselI (ns, block)
+    | all (≡ 0) ns = pure $ mk [(ns, block)]
     | otherwise =
-        traceShow ("chiselI", ns) $
-          uniq
-            [ (ns', block')
-            | (i, n) <- mk (ns ..#),
-              n > 0,
-              let ns' = ns !. (i, n - 1),
-              let ss = sss !! i,
-              s <- ss,
-              block' <- chisel1 @m @s @i s block,
-              traceShape block' True
-            ]
+        -- traceShow ("chiselI", ns) $
+        pure ∘ mk ∘ un $
+          [ (ns', block')
+          | (i, n) <- (ns ..#),
+            n > 0,
+            let ns' = ns !. (i, n - 1),
+            s <- mk $ varsDet @m @f @s @i !! i,
+            block' <- chisel1 @m @f @s @i s block
+            -- traceShape block' True
+          ]
 
-  chiselR sss ((w, h), ns) =
-    let chiselIsss = chiselI @m @s @i sss
-        go :: ([i], s (i, i)) .->. m ([i], s (i, i))
+  chiselI1 i block =
+    -- traceShow ("chiselI1", i) $
+    mk $
+      [ block'
+      | s <- varsDet @m @f @s @i !! i,
+        block' <- un $ chisel1 @m @f @s @i s block
+      ]
+
+  chiselR ((w, h), ns) =
+    let block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
+        go :: (m i, s (i, i)) .->. f (m i, s (i, i))
         go (ns, block)
-          | all (≡ 0) ns = pure $ pure (ns, block)
-          | otherwise = do
-              nsBlocks <-
-                sequence
-                  [ go .$. (ns', block')
-                  | (ns', block') <- chiselIsss (ns, block)
-                  ]
-              pure $ uniq $ ((Ŀ (∪) nsBlocks) !>)
-        block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
+          | all (≡ 0) ns = pure $ mk [(ns, block)]
+          | otherwise =
+              -- traceShow ("chiselR-go", ns) ∘ traceShape block $ do
+              do
+                nsBlocks' <- chiselI @m @f @s @i .$. (ns, block)
+                nsBlocks'' <- foldMapM (go .$.) nsBlocks'
+                pure $ uniq nsBlocks''
      in traceShow ("chiselR", (w, h), ns) $
           run $
             go (ns, block)
 
-  chiselRs rs =
-    let sss = [vars @m @m @s @i s | s <- shapess @m @m @s @i]
-     in chiselR @m @s @i sss <$> rs
+  -- e.g. build up fromr eaminders, build up ns from there
+  chiselRec (3, 3) = pure (chiselR ((3,3) <$> [i]
+  chiselRec (3, h) = do
+    let (ns, remainders) = chiselRec .$. (3, h - 1)
+        extras = remainders <&> (∪ (mk (box (0,h) (3,h+1))))
+    | w < 4 ∧ h < 4 = pure $ chiselR r
+    | otherwise =
+      let (w',h') = 
+            if w < 4 then (w,h-3) else if h < 4 then (w-3, h) else (w-3,h-3)
+      let last = chiselRec
 
-  chiselRsN rs = (|! True) ∘ counts $ (≢ (∅)) <$> chiselRs @m @s @i rs
+  chiselRec ((w, h), ns) =
+  chiselRec ((w, h), ns) =
+    let block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
+        go :: (m i, s (i, i)) .->. f (m i, s (i, i))
+        go (ns, block)
+          | all (≡ 0) ns = pure $ mk [(ns, block)]
+          | otherwise =
+              -- traceShow ("chiselR-go", ns) ∘ traceShape block $ do
+              do
+                nsBlocks' <- chiselI @m @f @s @i .$. (ns, block)
+                nsBlocks'' <- foldMapM (go .$.) nsBlocks'
+                pure $ uniq nsBlocks''
+     in traceShow ("chiselR", (w, h), ns) $
+          run $
+            go (ns, block)
 
-  chiselAOC =
-    let rs' = take 2 rs
-        rsI = [(both fromIntegral wh, fromIntegral <$> ns) | (wh, ns) <- rs']
-     in chiselRsN @m @s @i rsI
+  chiselR1 r = chiselR @m @f @s @i r ≢ (∅)
+
+  chiselR1s rs = rs |-?-> chiselR1 @m @f @s @i
