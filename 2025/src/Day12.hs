@@ -376,19 +376,20 @@ instance (Place m f s i) => Shapes m f s i where
           | all (≡ 0) ns = pure $ mk₁ (∅)
           | any (< 0) ns = pure (∅)
           | otherwise =
-              foldM
-                ( \shape01s (i, n) -> do
-                    let ns' = ns !. (i, (n - 1))
-                    shape0s <- go .$. ns'
-                    -- let shape0Vs = foldMap (vars @m @f @s @i ∘ traceShapeId) shape0s
-                    let shape0Vs = shape0s
-                    let shape1Vs = shape1sVs !! i
-                    let shape01s' = places @m @f @s wh shape0Vs shape1Vs
-                    pure $ take 1 $ (shape01s <> shape01s')
-                    -- pure $ (shape01s <> shape01s')
-                )
-                (∅)
-                (ns ..#)
+              traceShow ns $
+                foldM
+                  ( \shape01s (i, n) -> do
+                      let ns' = ns !. (i, (n - 1))
+                      shape0s <- go .$. ns'
+                      -- let shape0Vs = foldMap (vars @m @f @s @i ∘ traceShapeId) shape0s
+                      let shape0Vs = shape0s
+                      let shape1Vs = shape1sVs !! i
+                      let shape01s' = places @m @f @s wh shape0Vs shape1Vs
+                      pure $ take 1 $ (shape01s <> shape01s')
+                      -- pure $ (shape01s <> shape01s')
+                  )
+                  (∅)
+                  (ns ..#)
      in go
 
 traceArb xs =
@@ -577,7 +578,7 @@ part1 =
    in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aocxn 12 1)
+  $(aoc 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
