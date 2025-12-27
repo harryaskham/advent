@@ -455,7 +455,7 @@ instance (Differenceable Shape (i, i)) => Differenceable LossShape (i, i) where
   (LossShape s) ∖ (LossShape s') = LossShape (s ∖ s')
 
 class ShapeLike s i where
-  mkShape :: (Foldable m) => m (i, i) -> s (i, i)
+  mkShape :: (Foldable m, Unable m) => m (i, i) -> s (i, i)
   validShape :: (i, i) -> s (i, i) -> 𝔹
   boundedShape :: (i, i) -> s (i, i) -> 𝔹
   shapeWH :: s (i, i) -> (i, i)
@@ -469,25 +469,36 @@ class ShapeLike s i where
   traceShape :: s (i, i) -> b -> b
   traceShapeId :: s (i, i) -> s (i, i)
 
-instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet (i, i) where
-  mkShape = mk
+instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
+  mkShape = mk ∘ un
   validShape = boundedShape
   boundedShape (w, h) (BoundedSet (minX, minY) (maxX, maxY) _) = minX ≥ 0 ∧ minY ≥ 0 ∧ maxX < w ∧ maxY < h
   shapeWH (BoundedSet (minX, minY) (maxX, maxY) _) = (maxX - minX + 1, maxY - minY + 1)
   area s = let (w, h) = shapeWH s in w ⋅ h
-  contiguous (BoundedSet _ _ s) = go s (mkSeq (head' $ un s))
+  offsetShape (x, y) s = omap (bimap (+ x) (+ y)) s
+  contiguous (BoundedSet _ _ s) = go s (mkSeq (take 1 $ un s))
     where
-      cs = mkSet (un cs')
       go left (c :<| q)
-        | c ∉ cs ∨ c ∉ left = go left q
+        | c ∉ s ∨ c ∉ left = go left q
         | otherwise = go (left ∸ c) (q >< mk (neighborsNoDiags c))
       go left _ = left ≡ (∅)
-  toG s = undefined
-  showShape s = undefined
-  showShapes s = undefined
-  showShapess ss = undefined
-  traceShape s = undefined
-  traceShapeId s = undefined
+
+  toG s =
+    let (BoundedSet (minX, minY) (maxX, maxY) cs) = toOrigin @BoundedSet @(i, i) s
+     in mkGrid [((x - minX, y - minY), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [minY .. maxX], y <- [minY .. maxY]]
+
+  showShape shape@(BoundedSet mins maxs s) =
+    unlines
+      [ tshow (size s, (mins, maxs)),
+        pretty (toG (toOrigin shape))
+      ]
+
+  showShapes = unlines ∘ fmap showShape
+
+  showShapess = unlines ∘ fmap showShapes
+
+  traceShape s a = traceTextLn (showShape s) a
+  traceShapeId s = traceTextLn (showShape s) s
 
 instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   mkShape cs = case toList cs of
@@ -653,7 +664,7 @@ part1 =
 
 class (C m m s i) => Chisel m s i where
   chisel1 :: s (i, i) -> s (i, i) -> m (s (i, i))
-  chiselI :: m (m (s (i, i))) -> [i] -> s (i, i) -> m ([i], s (i, i))
+  chiselI :: m (m (s (i, i))) -> ([i], s (i, i)) -> m ([i], s (i, i))
   chiselR :: m (m (s (i, i))) -> ((i, i), [i]) -> m ([i], s (i, i))
   chiselRs :: [((i, i), [i])] -> [m ([i], (s (i, i)))]
   chiselRsN :: [((i, i), [i])] -> i
@@ -672,7 +683,7 @@ instance (C m m s i) => Chisel m s i where
           (block' |.|) ≡ (block |.|) - (s |.|)
         ]
 
-  chiselI sss ns block
+  chiselI sss (ns, block)
     | all (≡ 0) ns = pure (ns, block)
     | otherwise =
         traceShow ("chiselI", ns) $
@@ -688,14 +699,15 @@ instance (C m m s i) => Chisel m s i where
             ]
 
   chiselR sss ((w, h), ns) =
-    let go :: ([i], s (i, i)) .->. m ([i], s (i, i))
+    let chiselIsss = chiselI @m @s @i sss
+        go :: ([i], s (i, i)) .->. m ([i], s (i, i))
         go (ns, block)
           | all (≡ 0) ns = pure $ pure (ns, block)
           | otherwise = do
               nsBlocks <-
                 sequence
                   [ go .$. (ns', block')
-                  | (ns', block') <- chiselI @m @s @i sss ns block
+                  | (ns', block') <- chiselIsss (ns, block)
                   ]
               pure $ uniq $ ((Ŀ (∪) nsBlocks) !>)
         block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
@@ -710,5 +722,6 @@ instance (C m m s i) => Chisel m s i where
   chiselRsN rs = (|! True) ∘ counts $ (≢ (∅)) <$> chiselRs @m @s @i rs
 
   chiselAOC =
-    let rsI = [(both fromIntegral wh, fromIntegral <$> ns) | (wh, ns) <- take 3 rs]
+    let rs' = take 2 rs
+        rsI = [(both fromIntegral wh, fromIntegral <$> ns) | (wh, ns) <- rs']
      in chiselRsN @m @s @i rsI
