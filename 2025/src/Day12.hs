@@ -697,6 +697,7 @@ class (C m f s i) => Chisel m f s i where
 
   varsDet :: [[s (i, i)]]
   varsDet = [un (uniq vs) | vs <- un $ varss @m @f @s @i]
+  chiselRec :: (m i, s (i, i)) .->. f (m i, s (i, i))
 
 instance (C m f s i) => Chisel m f s i where
   chisel1 s block =
@@ -747,32 +748,21 @@ instance (C m f s i) => Chisel m f s i where
           run $
             go (ns, block)
 
-  -- e.g. build up fromr eaminders, build up ns from there
-  chiselRec (3, 3) = pure (chiselR ((3,3) <$> [i]
-  chiselRec (3, h) = do
-    let (ns, remainders) = chiselRec .$. (3, h - 1)
-        extras = remainders <&> (∪ (mk (box (0,h) (3,h+1))))
-    | w < 4 ∧ h < 4 = pure $ chiselR r
-    | otherwise =
-      let (w',h') = 
-            if w < 4 then (w,h-3) else if h < 4 then (w-3, h) else (w-3,h-3)
-      let last = chiselRec
-
+  chiselRec ((3, 3), ns) = chiselI .$. ((3, 3), ns)
+  chiselRec ((3, h), ns) =
+    foldMapM
+      (chiselI .$.)
+      [ (ns', block)
+      | (ns', remainder) <- chiselRec .$. ((3, h - 1), ns),
+        let block = remainder ∪ mk (box (0, h - 1) (2, h))
+      ]
   chiselRec ((w, h), ns) =
-  chiselRec ((w, h), ns) =
-    let block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
-        go :: (m i, s (i, i)) .->. f (m i, s (i, i))
-        go (ns, block)
-          | all (≡ 0) ns = pure $ mk [(ns, block)]
-          | otherwise =
-              -- traceShow ("chiselR-go", ns) ∘ traceShape block $ do
-              do
-                nsBlocks' <- chiselI @m @f @s @i .$. (ns, block)
-                nsBlocks'' <- foldMapM (go .$.) nsBlocks'
-                pure $ uniq nsBlocks''
-     in traceShow ("chiselR", (w, h), ns) $
-          run $
-            go (ns, block)
+    foldMapM
+      (chiselI .$.)
+      [ (ns', block)
+      | (ns', remainder) <- chiselRec .$. ((w - 1, h), ns),
+        let block = remainder ∪ mk (box (w - 1, 0) (w, h - 1))
+      ]
 
   chiselR1 r = chiselR @m @f @s @i r ≢ (∅)
 
