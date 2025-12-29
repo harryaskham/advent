@@ -58,7 +58,8 @@ type C' m f s i =
       Mkable m [s (i, i)],
       Mkable m ℤ,
       Mkable m ([i], [s (i, i)]),
-      Mkable s (i, i)
+      Mkable s (i, i),
+      Mkable m (f (m i, s (i, i)))
     ),
     Monad m,
     ( Monoid (f (s (i, i))),
@@ -66,7 +67,8 @@ type C' m f s i =
       Monoid (m (s (i, i))),
       Monoid (f (m i, s (i, i))),
       Monoid (f ([i], s (i, i))),
-      Monoid (m (m i, s (i, i)))
+      Monoid (m (m i, s (i, i))),
+      Monoid (m (f (m i, s (i, i))))
     ),
     Num i,
     ( Ord (f (s (i, i))),
@@ -96,6 +98,7 @@ type C' m f s i =
     Takeable Integer f (s (i, i)),
     Takeable ℤ m (s (i, i)),
     Traversable m,
+    Transposable (s (i, i)),
     Unable f,
     Unable m,
     ( Unionable (m ([i], s (i, i))),
@@ -172,6 +175,11 @@ instance (ShapeLike Shape i, Num i, Ord i) => VMirrorable (Shape (i, i)) where
   (◓) EmptyShape = EmptyShape
   (◓) Invalid = Invalid
   (◓) (Shape cs s ds bs) = mkShape ((mk @BoundedSet (un cs)) ◓)
+
+instance (ShapeLike Shape i, Num i, Ord i) => Transposable (Shape (i, i)) where
+  (⊤) EmptyShape = EmptyShape
+  (⊤) Invalid = Invalid
+  (⊤) (Shape cs s ds bs) = mkShape ((mk @BoundedSet (un cs)) ⊤)
 
 instance (Num i, Show i, Integral i, Coord' i i (i, i)) => Originable Shape (i, i) where
   origin = (0, 0)
@@ -528,8 +536,8 @@ class ShapeLike s i where
   showShapess :: [[s (i, i)]] -> Text
   traceShape :: s (i, i) -> b -> b
   traceShapeId :: s (i, i) -> s (i, i)
-  traceShapeLabelled :: Text -> s (i, i) -> a -> a
-  traceShapeIdLabelled :: Text -> s (i, i) -> s (i, i)
+  traceShapeLabelled :: (Show t) => t -> s (i, i) -> a -> a
+  traceShapeIdLabelled :: (Show t) => t -> s (i, i) -> s (i, i)
 
 instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
   mkShape = mk ∘ un
@@ -537,7 +545,9 @@ instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
   boundedShape (w, h) (BoundedSet (minX, minY) (maxX, maxY) _) = minX ≥ 0 ∧ minY ≥ 0 ∧ maxX < w ∧ maxY < h
   shapeWH (BoundedSet (minX, minY) (maxX, maxY) _) = (maxX - minX + 1, maxY - minY + 1)
   area s = let (w, h) = shapeWH s in w ⋅ h
-  offsetShape (x, y) s = omap (bimap (+ x) (+ y)) s
+  offsetShape (x, y) bs@(BoundedSet _ _ s)
+    | s ≡ (∅) = bs
+    | otherwise = omap (bimap (+ x) (+ y)) bs
   contiguous (BoundedSet _ _ s) = go s (mkSeq (take 1 $ un s))
     where
       go left (c :<| q)
@@ -563,8 +573,8 @@ instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
 
   traceShape s a = traceTextLn (showShape s) a
   traceShapeId s = traceTextLn (showShape s) s
-  traceShapeLabelled l s a = traceTextLn (unlines [l, (showShape s)]) a
-  traceShapeIdLabelled l s = traceTextLn (unlines [l, (showShape s)]) s
+  traceShapeLabelled l s a = traceTextLn (unlines [tshow l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [tshow l, (showShape s)]) s
 
 instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   mkShape cs = case toList cs of
@@ -610,8 +620,8 @@ instance (ShapeLikeC Shape i) => ShapeLike Shape i where
 
   traceShape s a = traceTextLn (showShape s) a
   traceShapeId s = traceTextLn (showShape s) s
-  traceShapeLabelled l s a = traceTextLn (unlines [l, (showShape s)]) a
-  traceShapeIdLabelled l s = traceTextLn (unlines [l, (showShape s)]) s
+  traceShapeLabelled l s a = traceTextLn (unlines [tshow l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [tshow l, (showShape s)]) s
 
   contiguous Invalid = False
   contiguous EmptyShape = True
@@ -670,8 +680,8 @@ instance (Show i, Integral i, ShapeLike Shape i, Coord' i i (i, i)) => ShapeLike
   showShapess = unlines ∘ fmap showShapes
   traceShape s a = traceTextLn (showShape s) a
   traceShapeId s = traceTextLn (showShape s) s
-  traceShapeLabelled l s a = traceTextLn (unlines [l, (showShape s)]) a
-  traceShapeIdLabelled l s = traceTextLn (unlines [l, (showShape s)]) s
+  traceShapeLabelled l s a = traceTextLn (unlines [tshow l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [tshow l, (showShape s)]) s
   contiguous (LossShape s) = contiguous s
   toG (LossShape s) = toG s
 
@@ -692,6 +702,9 @@ instance (HMirrorable (Shape a)) => HMirrorable (LossShape a) where
 
 instance (VMirrorable (Shape a)) => VMirrorable (LossShape a) where
   (◓) (LossShape s) = LossShape $ (◓) s
+
+instance (Transposable (Shape (i, i))) => Transposable (LossShape (i, i)) where
+  (⊤) (LossShape s) = LossShape (s ⊤)
 
 instance Magnitude (Shape a) where
   (|.|) Invalid = 0
@@ -735,7 +748,7 @@ type instance LossF Dir2 = Dir2
 --  in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aoc 12)
+  $(aocx 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
@@ -777,8 +790,7 @@ class (C m f s i) => Chisel m f s i where
   buildRemSplit :: s (i, i) .->. f (m i, s (i, i))
   buildRemSplitR :: (i, i) .->. f (m i, s (i, i))
 
-  blockReduceCapped :: (m i, s (i, i)) -> f (m i, s (i, i))
-  blockReduceCappedR :: ((i, i), m i) -> f (m i, s (i, i))
+  shrink :: ((i, i), m i) -> Fit f (m i, s (i, i))
 
   solveReduce :: (m i, s (i, i)) -> Bool
   solveReduceR :: ((i, i), m i) -> Bool
@@ -1149,96 +1161,86 @@ instance (C m f s i) => Chisel m f s i where
                                 )
                                 nsRems
 
-  solveReduceR ((w, h), ns) = solveReduce @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+  shrink ((w', h'), targetNs) = run $ go .$. ((w', h'), mkBlock (w', h')) -- (∅))
+    where
+      mkBlock (w, h) = mkShape @s @i (box @[] (0, 0) (w - 1, h - 1))
+      -- block = mkShape @s @i (box @[] (0, 0) (w - 1, h - 1))
+      addNs ns ns' = [ns !! i + ns' !! i | (i, _) <- (ns ..#)]
+      validNs :: m i -> Bool
+      validNs ns = and [(ns !! i) ≤ n | (i, n) <- (targetNs ..#)]
+      mkFit (ns, rem)
+        | ns ≡ targetNs = Fit (ns, rem)
+        | validNs ns = Partial (mk₁ (ns, rem))
+        | otherwise = Partial (∅)
+      go :: ((i, i), s (i, i)) .->. Fit f (m i, s (i, i))
+      go ((w, h), rem)
+        | (w, h) ≡ (3, 3) = traceShapeLabelled ("shrink", (3, 3)) rem $ pure ∘ foldMap mkFit $ buildIFix @m @f @s @i (rem |-?-> (\(x, y) -> x < 3 ∧ y < 3))
+        | w < 3 ∨ h < 3 = pure $ Partial (∅) -- traceShapeLabelled ("shrink", (w, h)) rem $ pure ∘ mkFit $ (mk [0, 0, 0, 0, 0, 0], (rem |-?-> (\(x, y) -> x < w ∧ y < h)))
+        -- \| h > w =
+        --     traceShapeLabelled ("shrink", (w, h)) rem $
+        --       do
+        --         nsRemsE <- go .$. ((h, w), (rem ⊤))
+        --         case nsRemsE of
+        --           Fit (ns, rem) -> pure ∘ Fit $ (ns, (rem ⊤))
+        --           Partial nsRems -> pure ∘ Partial $ flip foldMap nsRems $ \(ns, rem) -> mk₁ (ns, (rem ⊤))
+        | otherwise = do
+            let shrinkW
+                  | w ≥ 4 = [((w - 1, h), (3, h), (w - 1, 0), (1, h), (w - 1, 0), (\(x, y) -> x < 3), (\(x, y) -> x < w - 3), (◐))]
+                  | otherwise = []
+            let shrinkH
+                  | h ≥ 4 = [((w, h - 1), (w, 3), (0, h - 1), (w, 1), (0, h - 1), (\(x, y) -> y < 3), (\(x, y) -> y < h - 3), (◓))]
+                  | otherwise = []
+            let shrinks = shrinkW <> shrinkH
+            flip foldMapM shrinks $
+              \((innerW, innerH), (outerW, outerH), offsetInner, sliceDims, offsetOuter, innerSliceF, combinedSliceF, (◐/◓)) ->
+                traceShapeLabelled ("shrink", (w, h), (innerW, innerH), (outerW, outerH), offsetInner) rem $
+                  do
+                    innerNsRemsE <- go .$. ((innerW, innerH), rem)
+                    case innerNsRemsE of
+                      Fit r -> pure (Fit r)
+                      Partial innerNsRems -> flip foldMapM innerNsRems $ \(innerNs, innerRem) -> do
+                        let innerRem' = offsetShape offsetInner (innerRem ◐/◓)
+                        let innerSlice' = innerRem' |-?-> innerSliceF
+                        let outerSlice' = mkBlock sliceDims ∪ innerSlice'
+                        -- outerNsRemsE <- go .$. ((outerW, outerH), innerRem')
+                        -- outerNsRemsE <- go .$. ((outerW, outerH), outerSlice)
+                        let outerNsRemsE = foldMap mkFit (buildIFix @m @f @s @i outerSlice')
+                        case outerNsRemsE of
+                          Fit r -> pure (Fit r)
+                          Partial outerNsRems -> flip foldMapM outerNsRems $ \(outerNs, outerRem') ->
+                            let outerRem = offsetShape offsetOuter (outerRem' ◐/◓)
+                                combinedRem = innerRem |-?-> combinedSliceF ∪ outerRem
+                                ns = addNs innerNs outerNs
+                             in traceShapeLabelled ("innerRem", innerNs) innerRem
+                                  ∘ traceShapeLabelled ("innerRem'", innerNs, offsetInner) innerRem'
+                                  ∘ traceShapeLabelled ("innerSlice'", innerNs) innerSlice'
+                                  ∘ traceShapeLabelled ("outerSlice'", innerNs, offsetOuter) outerSlice'
+                                  ∘ traceShapeLabelled ("outerRem'", outerNs) outerRem'
+                                  ∘ traceShapeLabelled ("outerRem", outerNs) outerRem
+                                  ∘ traceShapeLabelled ("combinedRem", innerNs, "+", outerNs, "=", ns) combinedRem
+                                  $ pure
+                                  $ mkFit (ns, combinedRem)
 
-  solveReduce (ns, block) = case foldMap (\(ns', s) -> ns ≡ ns' ??? [s] $ []) (blockReduceCapped @m @f @s @i (ns, block)) of
-    [] -> False
-    (s : _) -> traceShape s True
-
-  blockReduceCappedR ((w, h), ns) = blockReduceCapped @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
-
-  blockReduceCapped (ns, block) =
-    let go block
-          | (w <= threshold ∧ h ≤ threshold) = pure $ traceWhen tracing (traceShow "base case" ∘ traceShape block) $ (buildIFix @m @f @s @i block)
-          | otherwise =
-              traceWhen tracing (traceShow "go" ∘ traceShape block) $
-                do
-                  let getBorder s DirUp = (s |-?-> (\(x, y) -> y ≤ minY + (borderSize - 1)), s |-?-> (\(x, y) -> y > minY + (borderSize - 1)))
-                      getBorder s DirDown = (s |-?-> (\(x, y) -> y ≥ maxY - (borderSize - 1)), s |-?-> (\(x, y) -> y < maxY - (borderSize - 1)))
-                      getBorder s DirLeft = (s |-?-> (\(x, y) -> x ≤ minX + (borderSize - 1)), s |-?-> (\(x, y) -> x > minX + (borderSize - 1)))
-                      getBorder s DirRight = (s |-?-> (\(x, y) -> x ≥ maxX - (borderSize - 1)), s |-?-> (\(x, y) -> x < maxX - (borderSize - 1)))
-                  let shrink DirRight (x, y) = x < maxX - shrinkBy + 1
-                      shrink DirLeft (x, y) = x > minX + shrinkBy - 1
-                      shrink DirDown (x, y) = y < maxY - shrinkBy + 1
-                      shrink DirUp (x, y) = y > minY + shrinkBy - 1
-                  let extra DirDown = mkShape @s @i (box @[] (minX, maxY - shrinkBy + 1) (maxX, maxY))
-                      extra DirUp = mkShape @s @i (box @[] (minX, minY) (maxX, minY + shrinkBy - 1))
-                      extra DirRight = mkShape @s @i (box @[] (maxX - shrinkBy + 1, minY) (maxX, maxY))
-                      extra DirLeft = mkShape @s @i (box @[] (minX, minY) (minX + shrinkBy - 1, maxY))
-                  res <-
-                    foldMap
-                      ( \dirs ->
-                          traceWhen tracing1 (traceShow ("initial", (w, h), dirs) ∘ traceShape block) $ do
-                            let block' = foldl' (\b dir -> b |-?-> shrink dir) block dirs
-                            let ex = traceWhen tracing1 (traceShapeIdLabelled "ex") $ foldl' (\b dir -> b <> extra dir) (∅) dirs
-                            nsRems <- withOriginGo block'
-                            foldMapM
-                              ( \(ns', rem) ->
-                                  if not (validNs ns')
-                                    then pure (∅)
-                                    else traceWhen tracing1 (traceShapeLabelled (tshow ("block", dirs, (w, h), (minX, minY), (maxX, maxY), ns')) block) $
-                                      traceWhen tracing1 (traceShapeLabelled (tshow ("block'", dirs, (w, h), (minX, minY), (maxX, maxY), ns')) block') $
-                                        traceWhen tracing1 (traceShapeLabelled (tshow ("rem", dirs, ns')) rem) $ do
-                                          let (border, inner) = traceWhen tracing1 (\(b, i) -> traceShapeLabelled "border" b ∘ traceShapeLabelled "inner" i $ (b, i)) $ foldl' (\(b, i) dir -> let (b', i') = getBorder rem dir in (b <> b', i <> i')) ((∅), (∅)) dirs
-                                          let borderBlock = traceWhen tracing1 (traceShapeIdLabelled (tshow ("borderblock", ns'))) $ border ∪ ex
-                                          -- let borderBlock = traceWhen tracing1 (traceShapeIdLabelled (tshow ("borderblock", ns'))) $ rem ∪ ex
-                                          -- rems <- blockReduce @m @f @s @i .$. borderBlock
-                                          rems <- withOriginGo borderBlock
-                                          foldMapM
-                                            ( \(ns'', rem') ->
-                                                let rem'' = inner <> rem'
-                                                    ns''' = ns' `addNs` ns''
-                                                 in traceWhen tracing1 (traceShapeLabelled (tshow ("rem'", ns'')) rem') $
-                                                      traceWhen tracing1 (traceShapeLabelled (tshow ("rem''", ns''')) rem'') $
-                                                        traceWhen tracing (traceShow (ns''', "of", ns)) $
-                                                          pure $
-                                                            ( mconcat
-                                                                [ (if validNs ns' then mk₁ @f (ns', rem) else (∅)),
-                                                                  (if validNs ns'' then mk₁ @f (ns'', rem') else (∅)),
-                                                                  (if validNs ns''' then mk₁ @f (ns''', rem'') else (∅))
-                                                                ]
-                                                            )
-                                            )
-                                            rems
-                              )
-                              nsRems
-                      )
-                      (mconcat [(if h > threshold then [[DirUp], [DirDown]] else []), (if w > threshold then [[DirLeft], [DirRight]] else [])])
-                  -- (if h > threshold ∧ w > threshold then [[ud, lr] | ud <- [DirUp, DirDown], lr <- [DirLeft, DirRight]] else if h > threshold then [[DirUp], [DirDown]] else if w > threshold then [[DirLeft], [DirRight]] else [])
-                  let hits = res |-?-> (\(ns', _) -> ns ≡ ns')
-                  if hits ≡ (∅) then pure res else pure ∘ mk₁ $ arbitrary hits
-          where
-            borderSize = 4
-            shrinkBy = 1
-            threshold = 4
-            (w, h) = shapeWH block
-            (minX, minY) = biminimum block
-            (maxX, maxY) = bimaximum block
-            addNs ns ns' = [ns !! i + ns' !! i | (i, _) <- (ns ..#)]
-            validNs ns' = and [(ns' !! i) ≤ n | (i, n) <- (ns ..#)]
-            withOrigin f s = let (minX, minY) = biminimum s in offsetShape (minX, minY) (f (toOrigin s))
-            withOriginGo block =
-              let (minX, minY) = biminimum block
-               in do
-                    nsBlocks <- go .$. (toOrigin block)
-                    pure $ foldMap (\(ns, block') -> mk₁ @f (ns, offsetShape (minX, minY) block')) nsBlocks
-     in run $ go .$. block
+  -- outerNsRemsE <- go .$. ((outerW, outerH), (∅))
+  -- case outerNsRemsE of
+  --   Fit r -> pure (Fit r)
+  --   Partial outerNsRems -> flip foldMapM outerNsRems $ \(outerNs, outerRem) -> do
+  --     let outerRem' = offsetShape offsetOuterRem outerRem
+  --     let outerRem'' = rem ∪ outerRem'
+  --     innerNsRemsE <- go .$. ((innerW, innerH), outerRem'')
+  --     case innerNsRemsE of
+  --       Fit r -> pure (Fit r)
+  --       Partial innerNsRems -> flip foldMapM innerNsRems $ \(innerNs, innerRem) ->
+  --         let ns = addNs innerNs outerNs
+  --          in traceShapeLabelled ("outerRem", outerNs) outerRem ∘ traceShapeLabelled ("outerRem offset", outerNs, offsetOuterRem) outerRem' ∘ traceShapeLabelled ("outerRem''", outerNs) outerRem'' ∘ traceShapeLabelled ("innerRem", outerNs, "+", innerNs, "=", ns) innerRem $ pure $ mkFit (ns, innerRem)
 
   chiselR1 r = chiselR @m @f @s @i r ≢ (∅)
 
   chiselR1s rs = rs |-?-> chiselR1 @m @f @s @i
 
-  solveR r = traceShow "solution" ∘ traceShowId $ solveReduceR @m @f @s @i r
+  solveR r = traceShow "solution" ∘ traceShowId $ case shrink @m @f @s @i r of
+    Fit (_, r) -> traceShapeLabelled "fit" r $ True
+    Partial r -> traceShow "partial" $ False
 
 -- chiselFit = go (cycle [(first (subtract 1), ,second (subtract 1)])
 --  where
@@ -1246,6 +1248,16 @@ instance (C m f s i) => Chisel m f s i where
 --      | w < 3 ∨ h < 3 = all (≡0) ns
 --      | otherwise =
 --        let (w',h')
+
+data Fit f a = Fit a | Partial (f a)
+
+instance (Semigroup (f a)) => Semigroup (Fit f a) where
+  (Fit a) <> _ = Fit a
+  _ <> (Fit a) = Fit a
+  (Partial a) <> (Partial b) = Partial (a <> b)
+
+instance (Monoid (f a)) => Monoid (Fit f a) where
+  mempty = Partial mempty
 
 tracing = True
 
@@ -1280,3 +1292,5 @@ chIRemZ = chiselIRemZ @[] @Set @BoundedSet @Integer
 chIRemZR = chiselIRemZR @[] @Set @BoundedSet @Integer
 
 chR = chiselR @[] @Set @BoundedSet @Integer
+
+shr = shrink @[] @Set @BoundedSet @Integer
