@@ -735,7 +735,7 @@ type instance LossF Dir2 = Dir2
 --  in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aocx 12)
+  $(aoc 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
@@ -1151,7 +1151,7 @@ instance (C m f s i) => Chisel m f s i where
 
   solveReduceR ((w, h), ns) = solveReduce @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
 
-  solveReduce (ns, block) = case foldMap (\(ns', s) -> traceShow (ns, ns') (ns ≡ ns' ??? [s] $ [])) (blockReduceCapped @m @f @s @i (ns, block)) of
+  solveReduce (ns, block) = case foldMap (\(ns', s) -> ns ≡ ns' ??? [s] $ []) (blockReduceCapped @m @f @s @i (ns, block)) of
     [] -> False
     (s : _) -> traceShape s True
 
@@ -1199,14 +1199,15 @@ instance (C m f s i) => Chisel m f s i where
                                                 let rem'' = inner <> rem'
                                                     ns''' = ns' `addNs` ns''
                                                  in traceWhen tracing1 (traceShapeLabelled (tshow ("rem'", ns'')) rem') $
-                                                      traceWhen tracing (traceShapeLabelled (tshow ("rem''", ns''')) rem'') $
-                                                        pure $
-                                                          ( mconcat
-                                                              [ (if validNs ns' then mk₁ @f (ns', rem) else (∅)),
-                                                                (if validNs ns'' then mk₁ @f (ns'', rem') else (∅)),
-                                                                (if validNs ns''' then mk₁ @f (ns''', rem'') else (∅))
-                                                              ]
-                                                          )
+                                                      traceWhen tracing1 (traceShapeLabelled (tshow ("rem''", ns''')) rem'') $
+                                                        traceWhen tracing (traceShow ns''') $
+                                                          pure $
+                                                            ( mconcat
+                                                                [ (if validNs ns' then mk₁ @f (ns', rem) else (∅)),
+                                                                  (if validNs ns'' then mk₁ @f (ns'', rem') else (∅)),
+                                                                  (if validNs ns''' then mk₁ @f (ns''', rem'') else (∅))
+                                                                ]
+                                                            )
                                             )
                                             rems
                               )
@@ -1217,7 +1218,7 @@ instance (C m f s i) => Chisel m f s i where
                   let hits = res |-?-> (\(ns', _) -> ns ≡ ns')
                   if hits ≡ (∅) then pure res else pure ∘ mk₁ $ arbitrary hits
           where
-            borderSize = 3
+            borderSize = 4
             shrinkBy = 1
             threshold = 4
             (w, h) = shapeWH block
