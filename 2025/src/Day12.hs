@@ -3,9 +3,12 @@ module Day12 where
 type C' m f s i =
   ( Alternative m,
     Applicative m,
-    Arbitrary f (s (i, i)),
-    Arbitrary f ℤ²,
-    Arbitrary m (s (i, i)),
+    ( Arbitrary f (s (i, i)),
+      Arbitrary f (m i, s (i, i)),
+      Arbitrary f ([i], s (i, i)),
+      Arbitrary f ℤ²,
+      Arbitrary m (s (i, i))
+    ),
     Coord' i i (i, i),
     Differenceable s (i, i),
     ( Eq (f (s (i, i))),
@@ -17,15 +20,20 @@ type C' m f s i =
     ),
     ( Filterable f (s (i, i)),
       Filterable m ((i, i), m i),
-      Filterable s (i, i)
+      Filterable s (i, i),
+      Filterable f (m i, s (i, i)),
+      Filterable f ([i], s (i, i))
     ),
     Foldable f,
-    Foldable f,
+    Foldable s,
     Foldable m,
     Functor m,
     HMirrorable (s (i, i)),
-    Insertable [] (s (i, i)),
-    Insertable f (s (i, i)),
+    ( Insertable [] (s (i, i)),
+      Insertable f (s (i, i)),
+      Insertable f (m i, s (i, i)),
+      Insertable f ([i], s (i, i))
+    ),
     Integral i,
     Ixable Integer m,
     Ixable i m,
@@ -38,14 +46,18 @@ type C' m f s i =
       Mkable f ℤ,
       Mkable m (".#" ▦ ℤ²),
       Mkable m (Integer, i),
+      Mkable f Dir2,
       Mkable m ([i], f (s (i, i))),
       Mkable m (f (s (i, i))),
       Mkable m (i, f (s (i, i))),
       Mkable m (s (i, i)),
       Mkable m [ℤ],
+      Mkable m (i, [s (i, i)]),
       Mkable m i,
       Mkable m (i, i),
+      Mkable m [s (i, i)],
       Mkable m ℤ,
+      Mkable m ([i], [s (i, i)]),
       Mkable s (i, i)
     ),
     Monad m,
@@ -76,6 +88,7 @@ type C' m f s i =
     ),
     ( Sizable (f (m i, s (i, i))),
       Sizable (f ([i], s (i, i))),
+      Sizable (m ([i], [s (i, i)])),
       Sizable (f (s (i, i))),
       Sizable (f ℤ²),
       Sizable (m ([i], f (s (i, i))))
@@ -186,8 +199,12 @@ instance Foldable Shape where
   foldr _ accum EmptyShape = accum
   foldr f accum (Shape _ s _ _) = foldr f accum s
 
+instance Foldable LossShape where
+  foldr f accum (LossShape s) = foldr f accum s
+
 instance (ShapeLike Shape i) => Filterable Shape (i, i) where
   (Shape cs _ _ _) |-?-> f = mk $ un cs |-?-> f
+  s |-?-> _ = s
 
 instance (Filterable Shape (i, i)) => Filterable LossShape (i, i) where
   (LossShape s) |-?-> f = LossShape (s |-?-> f)
@@ -511,6 +528,8 @@ class ShapeLike s i where
   showShapess :: [[s (i, i)]] -> Text
   traceShape :: s (i, i) -> b -> b
   traceShapeId :: s (i, i) -> s (i, i)
+  traceShapeLabelled :: Text -> s (i, i) -> a -> a
+  traceShapeIdLabelled :: Text -> s (i, i) -> s (i, i)
 
 instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
   mkShape = mk ∘ un
@@ -530,7 +549,7 @@ instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
     -- let (BoundedSet (minX, minY) (maxX, maxY) cs) = toOrigin @BoundedSet @(i, i) s
     let (BoundedSet (minX, minY) (maxX, maxY) cs) = s
      in -- in mkGrid [((x - minX, y - minY), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [minY .. maxX], y <- [minY .. maxY]]
-        mkGrid [((x, y), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [0 .. maxX], y <- [0 .. maxY]]
+        mkGrid [((x, y), (x, y) ∈ cs ??? (#"#" □) $ (#"." □)) | x <- [0 .. maxX + 3], y <- [0 .. maxY + 3]]
 
   showShape shape@(BoundedSet mins maxs s) =
     unlines
@@ -544,6 +563,8 @@ instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
 
   traceShape s a = traceTextLn (showShape s) a
   traceShapeId s = traceTextLn (showShape s) s
+  traceShapeLabelled l s a = traceTextLn (unlines [l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [l, (showShape s)]) s
 
 instance (ShapeLikeC Shape i) => ShapeLike Shape i where
   mkShape cs = case toList cs of
@@ -589,6 +610,8 @@ instance (ShapeLikeC Shape i) => ShapeLike Shape i where
 
   traceShape s a = traceTextLn (showShape s) a
   traceShapeId s = traceTextLn (showShape s) s
+  traceShapeLabelled l s a = traceTextLn (unlines [l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [l, (showShape s)]) s
 
   contiguous Invalid = False
   contiguous EmptyShape = True
@@ -647,6 +670,8 @@ instance (Show i, Integral i, ShapeLike Shape i, Coord' i i (i, i)) => ShapeLike
   showShapess = unlines ∘ fmap showShapes
   traceShape s a = traceTextLn (showShape s) a
   traceShapeId s = traceTextLn (showShape s) s
+  traceShapeLabelled l s a = traceTextLn (unlines [l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [l, (showShape s)]) s
   contiguous (LossShape s) = contiguous s
   toG (LossShape s) = toG s
 
@@ -669,6 +694,8 @@ instance (VMirrorable (Shape a)) => VMirrorable (LossShape a) where
   (◓) (LossShape s) = LossShape $ (◓) s
 
 instance Magnitude (Shape a) where
+  (|.|) Invalid = 0
+  (|.|) EmptyShape = 0
   (|.|) (Shape cs _ _ _) = (cs |.|)
 
 type instance MagnitudeF (Shape a) = Integer
@@ -698,7 +725,9 @@ lossshapessSet :: [Set (LossShape ℤ²)] = mk <$> lossshapessL
 -- rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> rs
 
 part1 :: ℤ
-part1 = ((take 2 rs |-?-> solveR @[] @Set @BoundedSet @Integer) |.|)
+part1 = (((take 2 $ rs) |-?-> solveR @[] @Set @BoundedSet @Integer) |.|)
+
+type instance LossF Dir2 = Dir2
 
 -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
 -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
@@ -721,6 +750,24 @@ class (C m f s i) => Chisel m f s i where
   chiselR1 :: ((i, i), m i) -> Bool
   chiselR1s :: m ((i, i), m i) -> m ((i, i), m i)
 
+  chiselRem :: ((i, i), m i) -> f (m i, s (i, i))
+
+  chiselIRem :: (m i, s (i, i)) .->. f (m i, s (i, i))
+  chiselIFix :: (m i, s (i, i)) -> f (m i, s (i, i))
+  chiselIFixZ :: (m i, s (i, i)) -> f (m i, s (i, i))
+  chiselIRemZ :: (m i, s (i, i)) .->. f (m i, s (i, i))
+  chiselIRemR :: ((i, i), m i) -> f (m i, s (i, i))
+  chiselIFixR :: ((i, i), m i) -> f (m i, s (i, i))
+  chiselIFixZR :: ((i, i), m i) -> f (m i, s (i, i))
+  chiselIRemZR :: ((i, i), m i) -> f (m i, s (i, i))
+
+  buildIFix :: s (i, i) -> f (m i, s (i, i))
+  buildIFix1 :: s (i, i) -> f (m i, s (i, i))
+  buildIFixZ :: s (i, i) -> f (m i, s (i, i))
+  buildIFixR :: (i, i) -> f (m i, s (i, i))
+  buildIFix1R :: (i, i) -> f (m i, s (i, i))
+  buildIFixZR :: (i, i) -> f (m i, s (i, i))
+
   varsDet :: [[s (i, i)]]
   varsDet = mkShape @s @i <$$> [un <$> vs | vs <- varss @[] @[] @BoundedSet @i]
   chiselRec :: ((i, i), m i) .->. f (m i, s (i, i))
@@ -729,6 +776,12 @@ class (C m f s i) => Chisel m f s i where
   buildRemRSplit :: (i, i) .->. f (m i, s (i, i))
   buildRemSplit :: s (i, i) .->. f (m i, s (i, i))
   buildRemSplitR :: (i, i) .->. f (m i, s (i, i))
+
+  blockReduceCapped :: (m i, s (i, i)) -> f (m i, s (i, i))
+  blockReduceCappedR :: ((i, i), m i) -> f (m i, s (i, i))
+
+  solveReduce :: (m i, s (i, i)) -> Bool
+  solveReduceR :: ((i, i), m i) -> Bool
 
   solveR :: ((i, i), m i) -> Bool
 
@@ -758,6 +811,149 @@ instance (C m f s i) => Chisel m f s i where
             -- traceShape block' True
           ]
 
+  chiselIRemR ((w, h), ns) = run $ chiselIRem @m @f @s @i .$. (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+  chiselIFixR ((w, h), ns) = chiselIFix @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+  chiselIFixZR ((w, h), ns) = chiselIFixZ @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+  chiselIRemZR ((w, h), ns) = run $ chiselIRemZ @m @f @s @i .$. (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+
+  chiselIRem (ns, block) = do
+    let nsBlocks' :: f (m i, s (i, i)) =
+          foldMap
+            ( \(i, n) ->
+                let ns' = ns !. (i, n - 1)
+                 in if n ≡ 0
+                      then (∅)
+                      else
+                        foldMap
+                          ( \s ->
+                              foldMap (\block' -> mk₁ (ns', block')) (chisel1 @m @f @s @i s block)
+                          )
+                          (varsDet @m @f @s @i !! i)
+            )
+            (ns ..#)
+    nsBlocks'' <-
+      foldMapM
+        ( \nsBlock' -> do
+            nsBlocks'' <- chiselIRem @m @f @s @i .$. nsBlock'
+            pure $ nsBlock' |-> nsBlocks''
+        )
+        nsBlocks'
+    pure $ (ns, block) |-> nsBlocks''
+
+  buildIFix1R (w, h) = buildIFix1 @m @f @s @i (mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+  buildIFixR (w, h) = buildIFix @m @f @s @i (mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+
+  buildIFix1 block = buildIFix block |-?-> (\(ns, _) -> all (> 1) ns)
+
+  buildIFix block =
+    iterateFix go (mk₁ (mk [0, 0, 0, 0, 0, 0], block))
+    where
+      go nsBlocks =
+        nsBlocks
+          <> foldMap
+            ( \(ns, block) ->
+                foldMap
+                  ( \(i, n) ->
+                      let ns' = ns !. (i, n + 1)
+                       in foldMap
+                            ( \s ->
+                                foldMap (\block' -> mk₁ (ns', block')) (chisel1 @m @f @s @i s block)
+                            )
+                            (varsDet @m @f @s @i !! i)
+                  )
+                  (ns ..#)
+            )
+            nsBlocks
+
+  buildIFixZR (w, h) = buildIFixZ @m @f @s @i (mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+
+  buildIFixZ block =
+    iterateFix go (mk₁ (mk [0, 0, 0, 0, 0, 0], block))
+    where
+      go nsBlocks =
+        let next =
+              foldMap
+                ( \(ns, block) ->
+                    foldMap
+                      ( \(i, n) ->
+                          let ns' = ns !. (i, n + 1)
+                           in foldMap
+                                ( \s ->
+                                    foldMap (\block' -> mk₁ (ns', block')) (chisel1 @m @f @s @i s block)
+                                )
+                                (varsDet @m @f @s @i !! i)
+                      )
+                      (ns ..#)
+                )
+                nsBlocks
+         in if next ≡ (∅) then nsBlocks else next
+
+  chiselIFix (ns, block) =
+    iterateFix go (mk₁ (ns, block))
+    where
+      go nsBlocks =
+        nsBlocks
+          <> foldMap
+            ( \(ns, block) ->
+                foldMap
+                  ( \(i, n) ->
+                      let ns' = ns !. (i, n - 1)
+                       in if n ≡ 0
+                            then (∅)
+                            else
+                              foldMap
+                                ( \s ->
+                                    foldMap (\block' -> mk₁ (ns', block')) (chisel1 @m @f @s @i s block)
+                                )
+                                (varsDet @m @f @s @i !! i)
+                  )
+                  (ns ..#)
+            )
+            nsBlocks
+
+  chiselIFixZ (ns, block) =
+    iterateFix go (mk₁ (ns, block))
+    where
+      go nsBlocks =
+        let next =
+              foldMap
+                ( \(ns, block) ->
+                    foldMap
+                      ( \(i, n) ->
+                          let ns' = ns !. (i, n - 1)
+                           in if n ≡ 0
+                                then (∅)
+                                else
+                                  foldMap
+                                    ( \s ->
+                                        foldMap (\block' -> mk₁ (ns', block')) (chisel1 @m @f @s @i s block)
+                                    )
+                                    (varsDet @m @f @s @i !! i)
+                      )
+                      (ns ..#)
+                )
+                nsBlocks
+         in if next ≡ (∅) then nsBlocks else next
+
+  chiselIRemZ (ns, block)
+    | all (≡ 0) ns = pure $ mk₁ (ns, block)
+    | otherwise =
+        let nsBlocks' :: f (m i, s (i, i)) =
+              foldMap
+                ( \(i, n) ->
+                    let ns' = ns !. (i, n - 1)
+                     in if n ≡ 0
+                          then (∅)
+                          else
+                            foldMap
+                              ( \s ->
+                                  foldMap (\block' -> mk₁ (ns', block')) (chisel1 @m @f @s @i s block)
+                              )
+                              (varsDet @m @f @s @i !! i)
+                )
+                (ns ..#)
+         in foldMapM (chiselIRemZ @m @f @s @i .$.) nsBlocks'
+
   chiselI1 i block =
     mk $
       [ -- traceShow ("chiselI1", i) ∘ traceShape block ∘ traceShape block' $
@@ -776,8 +972,20 @@ instance (C m f s i) => Chisel m f s i where
               do
                 nsBlocks' <- chiselI @m @f @s @i .$. (ns, block)
                 nsBlocks'' <- foldMapM (go .$.) nsBlocks'
-                pure $ uniq nsBlocks''
+                pure $ nsBlocks''
      in traceShow ("chiselR", (w, h), ns) $
+          run $
+            go (ns, block)
+
+  chiselRem ((w, h), ns) =
+    let block :: s (i, i) = mk (box (0, 0) (w - 1, h - 1))
+        go :: (m i, s (i, i)) .->. f (m i, s (i, i))
+        go (ns, block) =
+          do
+            nsBlocks' <- chiselIRem @m @f @s @i .$. (ns, block)
+            nsBlocks'' <- foldMapM (go .$.) nsBlocks'
+            pure $ (ns, block) |-> nsBlocks''
+     in traceShow ("chiselRem", (w, h), ns) $
           run $
             go (ns, block)
 
@@ -941,10 +1149,133 @@ instance (C m f s i) => Chisel m f s i where
                                 )
                                 nsRems
 
+  solveReduceR ((w, h), ns) = solveReduce @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+
+  solveReduce (ns, block) = case foldMap (\(ns', s) -> traceShow (ns, ns') (ns ≡ ns' ??? [s] $ [])) (blockReduceCapped @m @f @s @i (ns, block)) of
+    [] -> False
+    (s : _) -> traceShape s True
+
+  blockReduceCappedR ((w, h), ns) = blockReduceCapped @m @f @s @i (ns, mkShape @s @i (box @[] (0, 0) (w - 1, h - 1)))
+
+  blockReduceCapped (ns, block) =
+    let go block
+          | (w <= threshold ∧ h ≤ threshold) = pure $ traceWhen tracing (traceShow "base case" ∘ traceShape block) $ (buildIFix @m @f @s @i block)
+          | otherwise =
+              traceWhen tracing (traceShow "go" ∘ traceShape block) $
+                do
+                  let getBorder s DirUp = (s |-?-> (\(x, y) -> y ≤ minY + (borderSize - 1)), s |-?-> (\(x, y) -> y > minY + (borderSize - 1)))
+                      getBorder s DirDown = (s |-?-> (\(x, y) -> y ≥ maxY - (borderSize - 1)), s |-?-> (\(x, y) -> y < maxY - (borderSize - 1)))
+                      getBorder s DirLeft = (s |-?-> (\(x, y) -> x ≤ minX + (borderSize - 1)), s |-?-> (\(x, y) -> x > minX + (borderSize - 1)))
+                      getBorder s DirRight = (s |-?-> (\(x, y) -> x ≥ maxX - (borderSize - 1)), s |-?-> (\(x, y) -> x < maxX - (borderSize - 1)))
+                  let shrink DirRight (x, y) = x < maxX - shrinkBy + 1
+                      shrink DirLeft (x, y) = x > minX + shrinkBy - 1
+                      shrink DirDown (x, y) = y < maxY - shrinkBy + 1
+                      shrink DirUp (x, y) = y > minY + shrinkBy - 1
+                  let extra DirDown = mkShape @s @i (box @[] (minX, maxY - shrinkBy + 1) (maxX, maxY))
+                      extra DirUp = mkShape @s @i (box @[] (minX, minY) (maxX, minY + shrinkBy - 1))
+                      extra DirRight = mkShape @s @i (box @[] (maxX - shrinkBy + 1, minY) (maxX, maxY))
+                      extra DirLeft = mkShape @s @i (box @[] (minX, minY) (minX + shrinkBy - 1, maxY))
+                  res <-
+                    foldMap
+                      ( \dirs ->
+                          traceWhen tracing1 (traceShow ("initial", (w, h), dirs) ∘ traceShape block) $ do
+                            let block' = foldl' (\b dir -> b |-?-> shrink dir) block dirs
+                            let ex = traceWhen tracing1 (traceShapeIdLabelled "ex") $ foldl' (\b dir -> b <> extra dir) (∅) dirs
+                            nsRems <- withOriginGo block'
+                            foldMapM
+                              ( \(ns', rem) ->
+                                  if not (validNs ns')
+                                    then pure (∅)
+                                    else traceWhen tracing1 (traceShapeLabelled (tshow ("block", dirs, (w, h), (minX, minY), (maxX, maxY), ns')) block) $
+                                      traceWhen tracing1 (traceShapeLabelled (tshow ("block'", dirs, (w, h), (minX, minY), (maxX, maxY), ns')) block') $
+                                        traceWhen tracing1 (traceShapeLabelled (tshow ("rem", dirs, ns')) rem) $ do
+                                          let (border, inner) = traceWhen tracing1 (\(b, i) -> traceShapeLabelled "border" b ∘ traceShapeLabelled "inner" i $ (b, i)) $ foldl' (\(b, i) dir -> let (b', i') = getBorder rem dir in (b <> b', i <> i')) ((∅), (∅)) dirs
+                                          let borderBlock = traceWhen tracing1 (traceShapeIdLabelled (tshow ("borderblock", ns'))) $ border ∪ ex
+                                          -- let borderBlock = traceWhen tracing1 (traceShapeIdLabelled (tshow ("borderblock", ns'))) $ rem ∪ ex
+                                          -- rems <- blockReduce @m @f @s @i .$. borderBlock
+                                          rems <- withOriginGo borderBlock
+                                          foldMapM
+                                            ( \(ns'', rem') ->
+                                                let rem'' = inner <> rem'
+                                                    ns''' = ns' `addNs` ns''
+                                                 in traceWhen tracing1 (traceShapeLabelled (tshow ("rem'", ns'')) rem') $
+                                                      traceWhen tracing (traceShapeLabelled (tshow ("rem''", ns''')) rem'') $
+                                                        pure $
+                                                          ( mconcat
+                                                              [ (if validNs ns' then mk₁ @f (ns', rem) else (∅)),
+                                                                (if validNs ns'' then mk₁ @f (ns'', rem') else (∅)),
+                                                                (if validNs ns''' then mk₁ @f (ns''', rem'') else (∅))
+                                                              ]
+                                                          )
+                                            )
+                                            rems
+                              )
+                              nsRems
+                      )
+                      -- (mk @f (mconcat [(if h > threshold then [DirUp, DirDown] else []), (if w > threshold then [DirLeft, DirRight] else [])]))
+                      (if h > threshold ∧ w > threshold then [[ud, lr] | ud <- [DirUp, DirDown], lr <- [DirLeft, DirRight]] else if h > threshold then [[DirUp], [DirDown]] else if w > threshold then [[DirLeft], [DirRight]] else [])
+                  let hits = res |-?-> (\(ns', _) -> ns ≡ ns')
+                  if hits ≡ (∅) then pure res else pure ∘ mk₁ $ arbitrary hits
+          where
+            borderSize = 3
+            shrinkBy = 1
+            threshold = 4
+            (w, h) = shapeWH block
+            (minX, minY) = biminimum block
+            (maxX, maxY) = bimaximum block
+            addNs ns ns' = [ns !! i + ns' !! i | (i, _) <- (ns ..#)]
+            validNs ns' = and [(ns' !! i) ≤ n | (i, n) <- (ns ..#)]
+            withOrigin f s = let (minX, minY) = biminimum s in offsetShape (minX, minY) (f (toOrigin s))
+            withOriginGo block =
+              let (minX, minY) = biminimum block
+               in do
+                    nsBlocks <- go .$. (toOrigin block)
+                    pure $ foldMap (\(ns, block') -> mk₁ @f (ns, offsetShape (minX, minY) block')) nsBlocks
+     in run $ go .$. block
+
   chiselR1 r = chiselR @m @f @s @i r ≢ (∅)
 
   chiselR1s rs = rs |-?-> chiselR1 @m @f @s @i
 
-  solveR ((w, h), ns) = ns ∈ (fst <$> un (run $ buildRemRSplit @m @f @s @i .$. (w, h)))
+  solveR r = traceShow "solution" ∘ traceShowId $ solveReduceR @m @f @s @i r
 
-tracing = False
+-- chiselFit = go (cycle [(first (subtract 1), ,second (subtract 1)])
+--  where
+--    go (shrink:shrinks) ((w,h),ns)
+--      | w < 3 ∨ h < 3 = all (≡0) ns
+--      | otherwise =
+--        let (w',h')
+
+tracing = True
+
+tracing1 = False
+
+chIRem = chiselIRem @[] @Set @BoundedSet @Integer
+
+chIFix = chiselIFix @[] @Set @BoundedSet @Integer
+
+chIFixZ = chiselIFixZ @[] @Set @BoundedSet @Integer
+
+chIFixR = chiselIFixR @[] @Set @BoundedSet @Integer
+
+bIFix = buildIFix @[] @Set @BoundedSet @Integer
+
+bIFix1 = buildIFix1 @[] @Set @BoundedSet @Integer
+
+bIFixZ = buildIFixZ @[] @Set @BoundedSet @Integer
+
+bIFixR = buildIFixR @[] @Set @BoundedSet @Integer
+
+bIFix1R = buildIFix1R @[] @Set @BoundedSet @Integer
+
+bIFixZR = buildIFixZR @[] @Set @BoundedSet @Integer
+
+chIFixZR = chiselIFixZR @[] @Set @BoundedSet @Integer
+
+chIRemR = chiselIRemR @[] @Set @BoundedSet @Integer
+
+chIRemZ = chiselIRemZ @[] @Set @BoundedSet @Integer
+
+chIRemZR = chiselIRemZR @[] @Set @BoundedSet @Integer
+
+chR = chiselR @[] @Set @BoundedSet @Integer
