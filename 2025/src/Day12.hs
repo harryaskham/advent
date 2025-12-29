@@ -1200,7 +1200,7 @@ instance (C m f s i) => Chisel m f s i where
                                                     ns''' = ns' `addNs` ns''
                                                  in traceWhen tracing1 (traceShapeLabelled (tshow ("rem'", ns'')) rem') $
                                                       traceWhen tracing1 (traceShapeLabelled (tshow ("rem''", ns''')) rem'') $
-                                                        traceWhen tracing (traceShow ns''') $
+                                                        traceWhen tracing (traceShow (ns''', "of", ns)) $
                                                           pure $
                                                             ( mconcat
                                                                 [ (if validNs ns' then mk₁ @f (ns', rem) else (∅)),
@@ -1213,8 +1213,8 @@ instance (C m f s i) => Chisel m f s i where
                               )
                               nsRems
                       )
-                      -- (mk @f (mconcat [(if h > threshold then [DirUp, DirDown] else []), (if w > threshold then [DirLeft, DirRight] else [])]))
-                      (if h > threshold ∧ w > threshold then [[ud, lr] | ud <- [DirUp, DirDown], lr <- [DirLeft, DirRight]] else if h > threshold then [[DirUp], [DirDown]] else if w > threshold then [[DirLeft], [DirRight]] else [])
+                      (mconcat [(if h > threshold then [[DirUp], [DirDown]] else []), (if w > threshold then [[DirLeft], [DirRight]] else [])])
+                  -- (if h > threshold ∧ w > threshold then [[ud, lr] | ud <- [DirUp, DirDown], lr <- [DirLeft, DirRight]] else if h > threshold then [[DirUp], [DirDown]] else if w > threshold then [[DirLeft], [DirRight]] else [])
                   let hits = res |-?-> (\(ns', _) -> ns ≡ ns')
                   if hits ≡ (∅) then pure res else pure ∘ mk₁ $ arbitrary hits
           where
