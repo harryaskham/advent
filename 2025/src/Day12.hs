@@ -35,6 +35,7 @@ type C' m f s i =
       Insertable f ([i], s (i, i))
     ),
     Integral i,
+    Intersectable (s (i, i)),
     Ixable Integer m,
     Ixable i m,
     Magnitude (s (i, i)),
@@ -46,24 +47,31 @@ type C' m f s i =
       Mkable f ℤ,
       Mkable m (".#" ▦ ℤ²),
       Mkable m (Integer, i),
-      Mkable f Dir2,
       Mkable m ([i], f (s (i, i))),
       Mkable m (f (s (i, i))),
       Mkable m (i, f (s (i, i))),
+      Mkable m ([i], Set (s (i, i))),
+      Mkable m (Set (m i, s (i, i))),
       Mkable m (s (i, i)),
       Mkable m [ℤ],
+      Mkable m (Set (s (i, i))),
       Mkable m (i, [s (i, i)]),
       Mkable m i,
       Mkable m (i, i),
+      Mkable m (i, Set (s (i, i))),
       Mkable m [s (i, i)],
       Mkable m ℤ,
+      Mkable m [(m i, s (i, i))],
       Mkable m ([i], [s (i, i)]),
       Mkable s (i, i),
       Mkable m (f (m i, s (i, i)))
     ),
+    Memberable (i, i) (s (i, i)),
     Monad m,
     ( Monoid (f (s (i, i))),
       Monoid (m ([i], s (i, i))),
+      Monoid (m [(m i, s (i, i))]),
+      Monoid (m (Set (m i, s (i, i)))),
       Monoid (m (s (i, i))),
       Monoid (f (m i, s (i, i))),
       Monoid (f ([i], s (i, i))),
@@ -90,9 +98,11 @@ type C' m f s i =
     ),
     ( Sizable (f (m i, s (i, i))),
       Sizable (f ([i], s (i, i))),
+      Sizable (m ([i], Set (s (i, i)))),
       Sizable (m ([i], [s (i, i)])),
       Sizable (f (s (i, i))),
       Sizable (f ℤ²),
+      Sizable (s (i, i)),
       Sizable (m ([i], f (s (i, i))))
     ),
     Takeable Integer f (s (i, i)),
@@ -101,6 +111,7 @@ type C' m f s i =
     Transposable (s (i, i)),
     Unable f,
     Unable m,
+    Unable s,
     ( Unionable (m ([i], s (i, i))),
       Unionable (s (i, i))
     ),
@@ -129,18 +140,26 @@ data Shape a where
 
 deriving instance (Show a) => Show (Shape a)
 
+-- instance (Eq (i, i), Show i, Integral i, Coord' i i (i, i), ShapeLikes [] [] Shape i) => Eq (Shape (i, i)) where
+--  (==) EmptyShape = \case
+--    EmptyShape -> True
+--    _ -> False
+--  (==) a@(Shape _ _ _ _) =
+--    let vas = vars @[] @[] @Shape @i a
+--        vaCss = uniq $ getCs <$> vas
+--     in \case
+--          b@(Shape _ _ _ _) ->
+--            let bO@(Shape csBO _ _ _) = toOrigin b
+--             in any (≡ csBO) vaCss
+--          _ -> False
+--  (==) _ = const False
 instance (Eq (i, i), Show i, Integral i, Coord' i i (i, i), ShapeLikes [] [] Shape i) => Eq (Shape (i, i)) where
   (==) EmptyShape = \case
     EmptyShape -> True
     _ -> False
-  (==) a@(Shape _ _ _ _) =
-    let vas = vars @[] @[] @Shape @i a
-        vaCss = uniq $ getCs <$> vas
-     in \case
-          b@(Shape _ _ _ _) ->
-            let bO@(Shape csBO _ _ _) = toOrigin b
-             in any (≡ csBO) vaCss
-          _ -> False
+  (==) a@(Shape cs _ _ _) = \case
+    b@(Shape cs' _ _ _) -> cs ≡ cs'
+    _ -> False
   (==) _ = const False
 
 instance (Ord a, Eq (Shape a)) => Ord (Shape a) where
@@ -496,11 +515,20 @@ type ShapeLikeC s i =
   ) ::
     Constraint
 
+instance (ShapeLike LossShape i) => IntLoss (LossShape (i, i)) where
+  loss (LossShape (Shape cs s ds bs)) = negate (size s)
+
 instance (ShapeLike Shape i) => Mkable Shape (i, i) where
   mk = mkShape @Shape @i
 
 instance (ShapeLike LossShape i) => Mkable LossShape (i, i) where
   mk = mkShape @LossShape @i
+
+instance Unable Shape where
+  un (Shape _ s _ _) = un s
+
+instance Unable LossShape where
+  un (LossShape s) = un s
 
 instance (ShapeLike Shape i) => Differenceable Shape (i, i) where
   Invalid ∖ _ = Invalid
@@ -512,6 +540,14 @@ instance (ShapeLike Shape i) => Differenceable Shape (i, i) where
 instance (Differenceable Shape (i, i)) => Differenceable LossShape (i, i) where
   (LossShape s) ∖ (LossShape s') = LossShape (s ∖ s')
 
+instance Memberable (i, i) (Shape (i, i)) where
+  a ∈ (Shape _ s _ _) = a ∈ s
+  a ∈ _ = False
+
+instance Memberable (i, i) (LossShape (i, i)) where
+  a ∈ (LossShape (Shape _ s _ _)) = a ∈ s
+  a ∈ _ = False
+
 instance (ShapeLike Shape i) => Unionable (Shape (i, i)) where
   Invalid ∪ _ = Invalid
   _ ∪ Invalid = Invalid
@@ -521,6 +557,16 @@ instance (ShapeLike Shape i) => Unionable (Shape (i, i)) where
 
 instance (Unionable (Shape (i, i))) => Unionable (LossShape (i, i)) where
   (LossShape s) ∪ (LossShape s') = LossShape (s ∪ s')
+
+instance (ShapeLike Shape i) => Intersectable (Shape (i, i)) where
+  Invalid ∩ _ = Invalid
+  _ ∩ Invalid = Invalid
+  s ∩ EmptyShape = EmptyShape
+  EmptyShape ∩ s = EmptyShape
+  (Shape _ s _ _) ∩ (Shape _ s' _ _) = mk ∘ un $ s ∩ s'
+
+instance (Intersectable (Shape (i, i))) => Intersectable (LossShape (i, i)) where
+  (LossShape s) ∩ (LossShape s') = LossShape (s ∩ s')
 
 class ShapeLike s i where
   mkShape :: (Foldable m, Unable m) => m (i, i) -> s (i, i)
@@ -538,6 +584,49 @@ class ShapeLike s i where
   traceShapeId :: s (i, i) -> s (i, i)
   traceShapeLabelled :: (Show t) => t -> s (i, i) -> a -> a
   traceShapeIdLabelled :: (Show t) => t -> s (i, i) -> s (i, i)
+
+instance (ShapeLikeC Set i) => ShapeLike Set i where
+  mkShape = foldMap mk₁
+  validShape = boundedShape
+  boundedShape (w, h) s = setMap (\(x, y) -> x ≤ w ∧ y ≤ h) s ≡ mk₁ True
+  shapeWH s
+    | s ≡ (∅) = (0, 0)
+    | otherwise =
+        let (minX, minY) = biminimum s
+            (maxX, maxY) = bimaximum s
+         in (maxX - minX + 1, maxY - minY + 1)
+  area s = let (w, h) = shapeWH s in w ⋅ h
+  offsetShape (x, y) = setMap (bimap (+ x) (+ y))
+  contiguous s = go s (mkSeq (take 1 $ un s))
+    where
+      go left (c :<| q)
+        | c ∉ s ∨ c ∉ left = go left q
+        | otherwise = go (left ∸ c) (q >< mk (neighborsNoDiags c))
+      go left _ = left ≡ (∅)
+
+  toG s
+    | s ≡ (∅) = mkGrid []
+    | otherwise =
+        let (minX, minY) = biminimum s
+            (maxX, maxY) = bimaximum s
+         in mkGrid [((x, y), (x, y) ∈ s ??? (#"#" □) $ (#"." □)) | x <- [0 .. maxX + 3], y <- [0 .. maxY + 3]]
+
+  showShape s
+    | s ≡ (∅) = "∅"
+    | otherwise =
+        unlines
+          [ tshow (size s),
+            pretty (toG s)
+          ]
+
+  showShapes = unlines ∘ fmap showShape
+
+  showShapess = unlines ∘ fmap showShapes
+
+  traceShape s a = traceTextLn (showShape s) a
+  traceShapeId s = traceTextLn (showShape s) s
+  traceShapeLabelled l s a = traceTextLn (unlines [tshow l, (showShape s)]) a
+  traceShapeIdLabelled l s = traceTextLn (unlines [tshow l, (showShape s)]) s
 
 instance (ShapeLikeC BoundedSet i) => ShapeLike BoundedSet i where
   mkShape = mk ∘ un
@@ -687,7 +776,7 @@ instance (Show i, Integral i, ShapeLike Shape i, Coord' i i (i, i)) => ShapeLike
 
 instance (Ord i, Integral i, Show i, Coord' i i (i, i)) => Ord (LossShape (i, i)) where
   compare =
-    let loss shape = (negate (size shape), both (* area shape) (shapeWH shape))
+    let loss shape = negate (size shape)
      in comparing loss
 
 instance Sizable (LossShape a) where
@@ -738,9 +827,7 @@ lossshapessSet :: [Set (LossShape ℤ²)] = mk <$> lossshapessL
 -- rs' :: [Maybe (LossShape ℤ²)] = possible @[] @LossQ @LossShape @Integer ss <$> rs
 
 part1 :: ℤ
-part1 = (((take 2 $ rs) |-?-> solveR @[] @Set @BoundedSet @Integer) |.|)
-
-type instance LossF Dir2 = Dir2
+part1 = (((rs ..#) |-?-> (\(i, r) -> traceShow (i, (rs |.|)) $ solveR @[] @Set @BoundedSet @Integer r)) |.|)
 
 -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
 -- let rs' :: [Maybe (LossShape ℤ²)] = possibleDecomposed @[] @LossQ @LossShape @Integer shapessQ <$> (take 1 rs)
@@ -748,7 +835,7 @@ type instance LossF Dir2 = Dir2
 --  in ((rs' <>?) |.|)
 
 (ps, rs) :: [(ℤ, ".#" ▦ ℤ²)] × [(ℤ², [ℤ])] =
-  $(aocx 12)
+  $(aoc 12)
     -- \$(aoc 12)
     -- \$(aocxn 12 1)
     & (⊏|⊐) @(([(ℤ, ".#" ▦ ℤ²) ⯻ ":\n"] ≠ []) × ([(ℤ² ⯻ "x", [ℤ] ⯻ " ") ⯻ ": "] ≠ []))
@@ -791,6 +878,7 @@ class (C m f s i) => Chisel m f s i where
   buildRemSplitR :: (i, i) .->. f (m i, s (i, i))
 
   shrink :: ((i, i), m i) -> Fit f (m i, s (i, i))
+  search :: ((i, i), m i) -> Fit f (m i, s (i, i))
 
   solveReduce :: (m i, s (i, i)) -> Bool
   solveReduceR :: ((i, i), m i) -> Bool
@@ -1172,17 +1260,14 @@ instance (C m f s i) => Chisel m f s i where
         | ns ≡ targetNs = Fit (ns, rem)
         | validNs ns = Partial (mk₁ (ns, rem))
         | otherwise = Partial (∅)
+
       go :: ((i, i), s (i, i)) .->. Fit f (m i, s (i, i))
       go ((w, h), rem)
-        | (w, h) ≡ (3, 3) = traceShapeLabelled ("shrink", (3, 3)) rem $ pure ∘ foldMap mkFit $ buildIFix @m @f @s @i (rem |-?-> (\(x, y) -> x < 3 ∧ y < 3))
         | w < 3 ∨ h < 3 = pure $ Partial (∅) -- traceShapeLabelled ("shrink", (w, h)) rem $ pure ∘ mkFit $ (mk [0, 0, 0, 0, 0, 0], (rem |-?-> (\(x, y) -> x < w ∧ y < h)))
-        -- \| h > w =
-        --     traceShapeLabelled ("shrink", (w, h)) rem $
-        --       do
-        --         nsRemsE <- go .$. ((h, w), (rem ⊤))
-        --         case nsRemsE of
-        --           Fit (ns, rem) -> pure ∘ Fit $ (ns, (rem ⊤))
-        --           Partial nsRems -> pure ∘ Partial $ flip foldMap nsRems $ \(ns, rem) -> mk₁ (ns, (rem ⊤))
+        | (w, h) ≡ (3, 3) =
+            traceWhen tracing (traceShapeLabelled ("shrink", (3, 3)) rem) $
+              pure ∘ foldMap mkFit $
+                buildIFix @m @f @s @i (rem |-?-> (\(x, y) -> x < 3 ∧ y < 3))
         | otherwise = do
             let shrinkW
                   | w ≥ 4 = [((w - 1, h), (3, h), (w - 1, 0), (1, h), (w - 1, 0), (\(x, y) -> x < 3), (\(x, y) -> x < w - 3), (◐))]
@@ -1191,9 +1276,9 @@ instance (C m f s i) => Chisel m f s i where
                   | h ≥ 4 = [((w, h - 1), (w, 3), (0, h - 1), (w, 1), (0, h - 1), (\(x, y) -> y < 3), (\(x, y) -> y < h - 3), (◓))]
                   | otherwise = []
             let shrinks = shrinkW <> shrinkH
-            flip foldMapM shrinks $
+            res <- flip foldMapM shrinks $
               \((innerW, innerH), (outerW, outerH), offsetInner, sliceDims, offsetOuter, innerSliceF, combinedSliceF, (◐/◓)) ->
-                traceShapeLabelled ("shrink", (w, h), (innerW, innerH), (outerW, outerH), offsetInner) rem $
+                traceWhen tracing (traceShapeLabelled ("shrink", (w, h), (innerW, innerH), (outerW, outerH), offsetInner) rem) $
                   do
                     innerNsRemsE <- go .$. ((innerW, innerH), rem)
                     case innerNsRemsE of
@@ -1203,23 +1288,28 @@ instance (C m f s i) => Chisel m f s i where
                         let innerSlice' = innerRem' |-?-> innerSliceF
                         let outerSlice' = mkBlock sliceDims ∪ innerSlice'
                         -- outerNsRemsE <- go .$. ((outerW, outerH), innerRem')
-                        -- outerNsRemsE <- go .$. ((outerW, outerH), outerSlice)
-                        let outerNsRemsE = foldMap mkFit (buildIFix @m @f @s @i outerSlice')
+                        outerNsRemsE <- go .$. ((outerW, outerH), outerSlice')
+                        -- let outerNsRemsE = foldMap mkFit (buildIFix @m @f @s @i outerSlice')
                         case outerNsRemsE of
                           Fit r -> pure (Fit r)
                           Partial outerNsRems -> flip foldMapM outerNsRems $ \(outerNs, outerRem') ->
                             let outerRem = offsetShape offsetOuter (outerRem' ◐/◓)
                                 combinedRem = innerRem |-?-> combinedSliceF ∪ outerRem
                                 ns = addNs innerNs outerNs
-                             in traceShapeLabelled ("innerRem", innerNs) innerRem
-                                  ∘ traceShapeLabelled ("innerRem'", innerNs, offsetInner) innerRem'
-                                  ∘ traceShapeLabelled ("innerSlice'", innerNs) innerSlice'
-                                  ∘ traceShapeLabelled ("outerSlice'", innerNs, offsetOuter) outerSlice'
-                                  ∘ traceShapeLabelled ("outerRem'", outerNs) outerRem'
-                                  ∘ traceShapeLabelled ("outerRem", outerNs) outerRem
-                                  ∘ traceShapeLabelled ("combinedRem", innerNs, "+", outerNs, "=", ns) combinedRem
-                                  $ pure
-                                  $ mkFit (ns, combinedRem)
+                                tr1 =
+                                  traceShapeLabelled ("innerRem", innerNs) innerRem
+                                    ∘ traceShapeLabelled ("innerRem'", innerNs, offsetInner) innerRem'
+                                    ∘ traceShapeLabelled ("innerSlice'", innerNs) innerSlice'
+                                    ∘ traceShapeLabelled ("outerSlice'", innerNs, offsetOuter) outerSlice'
+                                    ∘ traceShapeLabelled ("outerRem'", outerNs) outerRem'
+                                    ∘ traceShapeLabelled ("outerRem", outerNs) outerRem
+                                tr0 =
+                                  traceShapeLabelled ("combinedRem", innerNs, "+", outerNs, "=", ns) combinedRem
+                                tr = traceWhen tracing tr0 ∘ traceWhen tracing1 tr1
+                             in pure $ tr $ mkFit (ns, combinedRem)
+            pure $ case res of
+              Fit (ns, rem) -> traceShapeLabelled ("final Fit", ns) rem $ Fit (ns, rem)
+              Partial nsRems -> Partial nsRems
 
   -- outerNsRemsE <- go .$. ((outerW, outerH), (∅))
   -- case outerNsRemsE of
@@ -1238,9 +1328,50 @@ instance (C m f s i) => Chisel m f s i where
 
   chiselR1s rs = rs |-?-> chiselR1 @m @f @s @i
 
-  solveR r = traceShow "solution" ∘ traceShowId $ case shrink @m @f @s @i r of
-    Fit (_, r) -> traceShapeLabelled "fit" r $ True
-    Partial r -> traceShow "partial" $ False
+  solveR r = traceShow "solution" ∘ traceShowId $ case search @m @f @s @i r of
+    Fit (_, r) -> traceShow "fit" $ True
+    Partial r -> traceShow "no fit" $ False
+
+  search ((w, h), targetNs) = go (∅) (mkQ₁ loss ((0, 0), targetNs, mkBlock (w, h)))
+    where
+      mkBlock (w, h) = mkShape @s @i (box @[] (0, 0) (w - 1, h - 1))
+      -- loss ((x, y), ns, s) = (sum ns, ([foldMap (Σ ∘ (ssd² $@)) (triPairs cs) | cs <- groupOn fst $ un s] <>!))
+      loss ((x, y), ns, s) = (sum ns, foldMap (Σ ∘ (ssd² $@)) (pairs (sort $ un s)))
+      invert s = mk [(x, y) | x <- [0 .. 2], y <- [0 .. 2], (x, y) ∉ s]
+      minusNs ns ns' = [ns !! i - n | (i, n) <- (ns' ..#)]
+      impossible ns s = sum [n * size (varsDet @m @f @s @i !! i !! 0) | (i, n) <- (ns ..#)] > size s
+      go :: Set ((i, i), s (i, i)) -> MinQ (i, Σ i) ((i, i), m i, s (i, i)) -> Fit f (m i, s (i, i))
+      go _ NullQ = Partial (∅)
+      go seen ((l, ((x, y), ns, s)) :<! q)
+        | all (≡ 0) ns = traceShapeLabelled "fit!" s $ Fit (targetNs, s)
+        | ((x, y), s) ∈ seen = go seen q
+        | impossible ns s = go seen q
+        | otherwise =
+            traceWhen False (traceShapeLabelled (l, (x, y), ns, "so far") s) $
+              let next =
+                    [ ((x', y'), ns', s')
+                    | -- \| (ns', rem') <- un $ chiselIFix @m @f @s @i (ns, rem),
+                      let rem = traceWhen False (traceShapeIdLabelled ((x, y), "rem")) $ offsetShape (-x, -y) (s |-?-> (\(sx, sy) -> sx ≥ x ∧ sx < x + 3 ∧ sy ≥ y ∧ sy < y + 3)),
+                      -- (ns', rem') <- un $ buildIFix @m @f @s @i rem,
+                      -- let ns'' = minusNs ns ns',
+                      -- (ns', rem') <- un $ chiselIFix @m @f @s @i (ns, rem),
+                      (ns', s') <-
+                        (ns, s)
+                          : [ (ns', s')
+                            | (i, n) <- un (ns ..#),
+                              n > 0,
+                              let ns' = ns !. (i, n - 1),
+                              v <- varsDet @m @f @s @i !! i,
+                              rem ∩ v ≡ v,
+                              let rem' = traceWhen False (traceShapeIdLabelled ((x, y), "rem'")) $ rem ∖ v,
+                              -- let s' = (s |-?-> (\(sx, sy) -> (sx < x ∨ sx ≥ x + 3) ∧ (sy < y ∨ sy ≥ y + 3))) ∪ offsetShape (x, y) rem',
+                              let s' = ns ≡ ns' ??? s $ s ∖ offsetShape (x, y) (invert rem')
+                            ],
+                      let (x', y') = x < w - 3 ??? (x + 1, y) $ (0, y + 1),
+                      -- (x', y') <- [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)] <> (x < w - 3 ??? [] $ [(0, y + 1)]),
+                      y' < h - 2
+                    ]
+               in go (((x, y), s) |-> seen) (qAppend loss next q)
 
 -- chiselFit = go (cycle [(first (subtract 1), ,second (subtract 1)])
 --  where
@@ -1249,7 +1380,7 @@ instance (C m f s i) => Chisel m f s i where
 --      | otherwise =
 --        let (w',h')
 
-data Fit f a = Fit a | Partial (f a)
+data Fit f a = Fit a | Partial (f a) deriving (Show, Eq, Ord)
 
 instance (Semigroup (f a)) => Semigroup (Fit f a) where
   (Fit a) <> _ = Fit a
@@ -1261,7 +1392,7 @@ instance (Monoid (f a)) => Monoid (Fit f a) where
 
 tracing = True
 
-tracing1 = False
+tracing1 = True
 
 chIRem = chiselIRem @[] @Set @BoundedSet @Integer
 
