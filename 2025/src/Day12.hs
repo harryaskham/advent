@@ -1344,7 +1344,7 @@ instance (C m f s i) => Chisel m f s i where
       go _ NullQ = Partial (∅)
       go seen ((l, ((x, y), ns, s)) :<! q)
         | all (≡ 0) ns = traceShapeLabelled "fit!" s $ Fit (targetNs, s)
-        | ((x, y), s) ∈ seen = go seen q
+        -- \| ((x, y), s) ∈ seen = go seen q
         | impossible ns s = go seen q
         | otherwise =
             traceWhen False (traceShapeLabelled (l, (x, y), ns, "so far") s) $
