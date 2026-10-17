@@ -1,0 +1,2837 @@
+{
+ "2015/1": {
+  "approach": "Part 1 folds over the first input line with a strict foldl', adding one for '(' and subtracting one otherwise; part 2 runs the same step through scanl and uses elemIndex to find the first running floor of -1.",
+  "critique": "Using scanl plus elemIndex is a direct fit: the scan includes the initial 0, so the index found is already the 1-based character position, and the lazy list stops at the first match. The step lambda and the input pipeline are copied between parts instead of shared. Any character other than '(' counts as a down step, and head . lines fails on empty input.",
+  "tags": [
+   "fold",
+   "scan",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/2": {
+  "approach": "Each line is split on 'x', read into an Int triple via toTuple3, mapped through a per-box formula (paper or ribbon), and summed; both parts share one higher-order solve function.",
+  "critique": "Factoring solve over the per-box function keeps the two parts to one-line formulas, and taking the minimum over the three face areas or perimeters avoids sorting. Parsing is partial: read and the 2015 Util's toTuple3, which has no fallback clause, crash with uninformative errors on malformed lines. The three-term lists repeat the pairing pattern rather than deriving it.",
+  "tags": [
+   "parsing",
+   "math",
+   "arithmetic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/3": {
+  "approach": "Walks the direction list with an explicit recursive loop, counting visits per coordinate in a Map; part 2 alternates between two positions using a cycled list of (accessor, updater) tuple-function pairs.",
+  "critique": "The cycled `(fst, first)`/`(snd, second)` pairs let one loop drive both Santas without index arithmetic, though it is harder to read than splitting the list into even and odd moves and reusing part 1. Only the key set matters, so the counting Map and the always-true `M.filter (>= 1)` are unnecessary; a Set would do. `toDir2` and `go`'s pattern on `turns` are partial.",
+  "tags": [
+   "simulation",
+   "grid",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/4": {
+  "approach": "Brute-force linear search over positive integers: append each to the secret key, MD5-hash it with cryptohash, hex-encode, and return the first whose hex prefix has n zeros.",
+  "critique": "The lazy list comprehension under `head` is short, and `mine n` covers both parts. The secret key is a hard-coded literal instead of read through `Util.input`. Each candidate goes through String, ByteString, and a full hex encoding where checking raw digest bytes would suffice. Part 2 restarts at 1 instead of at part 1's answer, which is a valid lower bound.",
+  "tags": [
+   "brute force",
+   "md5",
+   "hashing",
+   "lazy evaluation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/5": {
+  "approach": "Each line is tested with predicates over adjacent character pairs from chunk2: vowel counts from a frequency Map, blocklist intersection, a recursive a?a scan, and indexed pair comparison for non-overlapping repeats.",
+  "critique": "One shared pair list keeps both parts short. chunk2 has no case for lists of length 0 or 1, but isNice never reaches it because numVowels >= 3 is checked first. isNice2 crashes on such lines because hasABA, evaluated first, has no pattern for lengths 0 or 1. hasTwoSeparatedChunks compares every pair of pairs, O(n^2) per line, where a pair-to-first-index Map would be linear.",
+  "tags": [
+   "string processing",
+   "brute force",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/6": {
+  "approach": "Parses instructions with Parsec into an Operation ADT, then folds them with foldl' over an immutable 1000x1000 unboxed array, using (//) for on/off/toggle and accum for brightness.",
+  "critique": "accum maps directly onto the brightness rules, and the TurnOff lambda clamps at zero. Every instruction builds a full rectangle-sized association list and produces a new immutable array, so a mutable ST/IOUArray or a difference-array approach would be the more direct option for large rectangles. The 999 grid bounds are hard-coded, the zero grid could use listArray with replicate, and toTuple2 is partial.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/7": {
+  "approach": "Parses gates into a Map from output wire to its connection, then evaluates wire `a` by recursive descent memoised with monad-memo; part 2 overrides `b` in the map and re-evaluates.",
+  "critique": "Lazy memoised recursion avoids an explicit topological sort, and part 2 is a one-line `M.insert` override. Values are plain `Int` and nothing masks them to 16 bits, so `complement` yields negatives and `shiftL` can exceed 65535; the code does not model 16-bit wires. `M.!` is partial and crashes on an undefined wire.",
+  "tags": [
+   "memoisation",
+   "parsing",
+   "recursion",
+   "bit manipulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/8": {
+  "approach": "Part 1 strips the outer quotes and decodes escapes with a recursive pattern-matching `escape`, then compares lengths. Part 2 computes encoded length arithmetically as 2 + length + count of quotes and backslashes via `countMap`.",
+  "critique": "The `escape` patterns read clearly, and part 2 counts the extra characters instead of building the encoded string. `escape` keeps a placeholder 'x' for hex escapes because only the length matters, which is correct but would mislead anyone reusing it as a decoder. `countMap` builds a whole Map to read two keys, where counting with `length . filter` and `elem` would do, and the `M` and `fromMaybe` imports exist only for that.",
+  "tags": [
+   "parsing",
+   "string processing",
+   "pattern matching"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/9": {
+  "approach": "Parses edges into a bidirectional adjacency Map with fromListWith, then runs an exhaustive DFS over Hamiltonian paths from every city, combining Maybe distances with minimum or maximum.",
+  "critique": "Passing minimum or maximum into routeWith lets both parts share one search. It is O(n!) brute force with no Held-Karp memoisation, which is workable only because the city count is small. The null-nextStates guard returns the same Nothing that the following filter's empty case already would. The parser uses many1 for one city name but many for the other.",
+  "tags": [
+   "dfs",
+   "brute force",
+   "parsing",
+   "graph"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/10": {
+  "approach": "Implements one look-and-say step as group-then-encode over a String, iterates it lazily with iterate, and indexes the stream at 40 and 50 to report lengths.",
+  "critique": "Compact and direct. Data.List.group does the run-length work, and sharing one iterate list means part 2 reuses the first 40 steps. Weaknesses: the puzzle input is hard-coded as a literal, String is a slow representation for strings that grow to millions of characters, and head is partial, though safe here because group never yields empty groups.",
+  "tags": [
+   "simulation",
+   "run-length encoding",
+   "lazy evaluation",
+   "strings"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/11": {
+  "approach": "Treats the password as a base-26 integer via readInt/showIntAtBase, increments one at a time with iterate, filters by three predicates, and takes the first and second elements of that filtered stream.",
+  "critique": "The base-26 round trip makes increment a one-liner, and the predicates are short. `all (== True) . (fs <*>) . pure` is a roundabout `and`, and noIOL's applicative form is harder to read than a direct `any` with `elem` over \"iol\". Increments are plain brute force with no skipping past i/o/l. hasThreeStraight has no clause for strings shorter than two characters. The password is hard-coded.",
+  "tags": [
+   "brute force",
+   "base conversion",
+   "string manipulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/12": {
+  "approach": "Parses the input into a small Json ADT with a recursive Parsec grammar, then folds it recursively: part 1 sums all numbers, part 2 zeroes any object whose values include the string \"red\".",
+  "critique": "The ADT and two structural folds make part 2 a one-guard change. The parser is minimal: numLit uses `many`, so it can match empty input and `read` crashes; strings accept letters only; whitespace is unsupported. Keys are parsed as Json, and sumJson and noRedSum duplicate three of four clauses where one fold with a predicate would do.",
+  "tags": [
+   "parsing",
+   "recursion",
+   "parser combinators"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/13": {
+  "approach": "Parses lines with Parsec into a nested Map of person-to-neighbour scores, then scores every permutation of guests around a circular table and takes the maximum; part 2 adds a zero-weight guest named \"harry\".",
+  "critique": "Scoring via zip xs (drop 1 (cycle xs)) handles circular adjacency neatly, and the nested Map built with fromListWith (++) models the input directly. Brute force over all n! orderings ignores rotational symmetry, so (n-1)! would suffice. The gain/lose case and M.! are partial, and part 2 re-parses the input, then extends the map with an M.insert plus a foldl' of M.adjust.",
+  "tags": [
+   "brute force",
+   "parsing",
+   "permutations"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/14": {
+  "approach": "Each reindeer's flight is modelled as an infinite cycled list of per-second speeds; part 1 sums the first 2503 entries, part 2 transposes running totals, takes leader indices each second, and counts frequencies.",
+  "critique": "Representing the fly/rest schedule as `cycle (replicate duration speed ++ replicate rest 0)` makes both parts short list pipelines with no explicit state. The cost is O(n·T) per-second simulation where a closed-form division would do for part 1. `maxIndices` sorts every second, `group . sort` replaces a count map, and 2503 is hard-coded twice.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "lazy lists",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/15": {
+  "approach": "Brute-forces every split of 100 teaspoons across exactly four ingredients with a nested list comprehension, scoring each by transposing per-ingredient scaled property rows, summing, clamping negatives, and multiplying.",
+  "critique": "The transpose-sum-clamp-product pipeline states the scoring rule directly, and passing the scorer to a shared `solve` avoids duplicating the search. Weaknesses: four ingredients and 100 spoons are hard-coded, score2 copies score's pipeline instead of reusing it, the list pattern `[cap, dur, fla, tex, cal]` is partial, and the six-tuple type is unwieldy.",
+  "tags": [
+   "brute force",
+   "parsing",
+   "combinatorics"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/16": {
+  "approach": "Parses each Sue into a Map of known attributes with Parsec, then linearly scans for the first Sue whose recorded attributes all agree with a hard-coded requirements Map, numbering Sues via zip [1..].",
+  "critique": "Absent keys count as unknown because only each Sue's own entries are checked, which fits Map directly. Part 2 is clumsier: three `all (== True)` blocks (just `and`), the special key lists are repeated, and `isNothing v ||` guards comparisons of wrapped `Maybe Int` values instead of using `maybe True`. `M.!` and `head` are partial, and the parsed Sue number is discarded in favour of position.",
+  "tags": [
+   "parsing",
+   "linear search",
+   "maps"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/17": {
+  "approach": "Breadth-first search over sets of index-tagged containers, adding one remaining container at a time, skipping already-seen sets, and collecting sets summing to 150; part 2 sorts by set size, groups, and counts the smallest group.",
+  "critique": "Tagging containers with indices keeps equal-sized containers distinct, and the seen-set prevents expanding a subset twice. Each subset is still generated once per insertion order, and its sum is recomputed from scratch. `delete` and list rebuilding add further cost. Part 2's sort-then-group could be a single pass for the minimum size and its count. The 150 target is hard-coded.",
+  "tags": [
+   "bfs",
+   "brute force",
+   "combinatorics",
+   "set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/18": {
+  "approach": "Simulates Conway-style life on a Data.Map grid keyed by (x,y), rebuilding the whole 100x100 map each step from neighbour counts and iterating 100 times; part two forces corners on.",
+  "critique": "Using M.lookup for neighbours handles the borders without special cases, and solve shares the iteration between parts. The 100x100 size is hard-coded, not taken from maxXY, and step and step2 duplicate the rule logic. step2 calls traceStrLn/pretty every generation, printing 100 grids via unsafePerformIO. Each step costs O(n log n) Map work where an unboxed array would be faster.",
+  "tags": [
+   "simulation",
+   "grid",
+   "cellular automaton"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/19": {
+  "approach": "Part 1 counts distinct single-replacement results using replaceOnes and nub. Part 2 inverts the rules and runs a best-first search from the molecule toward \"e\", prioritising shorter strings.",
+  "critique": "Inverting the rule map with fromListWith and pairing a min-priority queue with a seen set keeps the reduction short. The priority is string length div 2 and ignores the step count, so this is a greedy best-first search, not Dijkstra or A*. The first \"e\" it reaches is not guaranteed to be the minimum. nub over many long strings is quadratic.",
+  "tags": [
+   "best-first search",
+   "priority queue",
+   "parsing",
+   "string rewriting",
+   "greedy"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/20": {
+  "approach": "Linearly scans house numbers from 1, computing each house's presents by trial-dividing up to sqrt n to collect divisor pairs, deduplicating with nub, and summing; part 2 keeps only divisors d with n/d <= 50.",
+  "critique": "Each house's divisor sum is recomputed from scratch, about answer × sqrt(answer) divisions in total; a bounded-array sieve would be much faster. The target is hard-coded rather than read from input. Prepending n to the candidates adds nothing beyond candidate 1's pair, so the code depends on nub to drop the resulting duplicates, and nub is quadratic in the divisor count.",
+  "tags": [
+   "brute force",
+   "math",
+   "divisors"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/21": {
+  "approach": "Brute-forces every shop loadout (one weapon, optional armour, zero to two distinct rings) with list comprehensions, sums stats via a Sum monoid, and simulates the fight turn by turn.",
+  "critique": "The loadout enumeration is compact, and pairing stats as `Sum` values keeps the totals short. Boss stats are hard-coded in `playerWins` rather than parsed, and the loadout generator is copy-pasted between parts. Ring pairs are drawn as ordered pairs, so both orderings are simulated redundantly. `foldl1` is partial but safe because a weapon is always included.",
+  "tags": [
+   "brute force",
+   "simulation",
+   "list comprehension"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/22": {
+  "approach": "Depth-first branch-and-bound search: each state's children, in spell-list order, are prepended to a Data.Sequence used as a stack, and branches costing at least the best win are pruned.",
+  "critique": "Small pure transition functions (applyEffects, runSpell, bossHit, tickEffects) make the turn order easy to follow, and part 2 reuses the search through a modifier argument. Boss stats are hard-coded in mkGame, and spell costs are literals repeated inside getValidSpells. Pruning on mana spent bounds the search, but there is no visited set of game states. The three repeated case blocks could share a helper, and maximum [x, 1] is just max.",
+  "tags": [
+   "depth-first search",
+   "branch and bound",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/23": {
+  "approach": "Parses each instruction directly into a closure over (register Map, program counter), stores them in a Vector, and runs a tail-recursive interpreter until the PC leaves the program, returning register b.",
+  "critique": "Compiling instructions to functions at parse time removes any instruction ADT or dispatch, and Vector gives O(1) fetch. The jmp case reuses regAp with a dummy '_' register, relying on M.adjust ignoring missing keys, which is obscure. A Map for two registers is heavier than a tuple, and mem M.! r is partial. `length is` on a Vector uses Foldable, which is fine but V.length is clearer.",
+  "tags": [
+   "simulation",
+   "interpreter",
+   "parsing",
+   "parser combinators"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/24": {
+  "approach": "Enumerates candidate first groups by increasing size, each size sorted by product, and returns the product of the first whose leftovers a worklist search over a `Seq` can split into n equal-sum groups.",
+  "critique": "Trying smaller groups first and sorting by product makes the first feasible group the answer, and `sum xs == n * target` rejects wrong totals before searching. Successors are built for every remaining element times every group index, so one partition is reachable through many insertion orders, and each visited state adds all n! `permutations` to the seen set. Reusing the name `n` for the size generator inside `solve` hurts readability, and `head` and `read` are partial.",
+  "tags": [
+   "brute force",
+   "combinations",
+   "search",
+   "backtracking"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2015/25": {
+  "approach": "Zips an infinite diagonal enumeration of zero-based coordinates `(x, y - x)` with the code sequence from `iterate'` (multiply by 252533, then `mod`), returning the first code whose coordinate matches a literal target.",
+  "critique": "The diagonal list comprehension enumerates the grid compactly, and `iterate'` forces each code as it is produced. The search is linear in the target's position in the enumeration, where modular exponentiation would compute the code directly. Target, seed, multiplier and modulus are inline literals, and the target must be given in the zero-based `(x, y - x)` convention, which is not documented.",
+  "tags": [
+   "simulation",
+   "math",
+   "brute force",
+   "lazy evaluation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/1": {
+  "approach": "Parsing expands each instruction into a turning unit step followed by unit steps with `id` turns. Part 1 folds over position and heading; part 2 scanl-builds states with a visited Set and takes the first revisit.",
+  "critique": "Expanding moves into unit steps lets both parts share one input. Laziness means `head . filter` evaluates the scanl list only up to the first revisit, with O(log n) Set lookups. The cost is O(total distance) rather than O(instructions), even for part 1. `head`, the lambda pattern `(rl : n)` and the 2015-2020 `rlToTurn`, which has no fallback case, are all partial.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing",
+   "set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/2": {
+  "approach": "Each keypad is a Data.Map from coordinates to labels. Over every line in `dss`, foldl' walks the directions from (1,1), ignoring moves off the map; the final labels form the result string.",
+  "critique": "Using map membership as the boundary test lets one fold handle both the square and diamond keypads. Every line restarts at (1,1) instead of the previous line's final button, and in keypad2 that start is '2', not '5'. The input path is hard-coded, and 2015-2020 udlrToDir2 lacks a catch-all, so a stray '\\r' crashes.",
+  "tags": [
+   "simulation",
+   "grid",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/3": {
+  "approach": "Parses each line into a list of Ints with words/read, counts rows passing the three-way triangle inequality, and for part 2 transposes the rows into columns and regroups them with chunksOf 3.",
+  "critique": "The part 2 trick is short: transpose turns the column-wise reading into three long lists, and concatMap (chunksOf 3) cuts them back into triples, reusing valid unchanged. Weaknesses: valid is partial on lists not of length three, read gives no parse errors, and the input path is hard-coded rather than using Util.input.",
+  "tags": [
+   "parsing",
+   "transpose",
+   "list processing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/4": {
+  "approach": "A Parsec parser splits each line into name segments, a numeric sector ID and a checksum. A letter-frequency Map sorted by descending count, then alphabetically within ties, validates rooms. Part 2 applies a Caesar shift and searches for the target name.",
+  "critique": "The checksum pipeline (countMap, sortOn Down, groupOn, sortOn fst) gives the tie-break ordering in a readable point-free chain. However, the sector ID is taken as `last segments` via a partial `read`, so a malformed line fails at runtime. Part 2 hard-codes the exact decrypted string and uses `head`, and both parts re-read and re-parse the file.",
+  "tags": [
+   "parsing",
+   "frequency counting",
+   "sorting",
+   "caesar cipher"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/5": {
+  "approach": "A top-level constant `hashes` lazily lists hex MD5 digests of the hard-coded `input` with each counter appended; part 1 takes eight sixth characters from five-zero hashes, part 2 builds a position-to-character Map.",
+  "critique": "Laziness lets part 1 stop after eight matches, and `fromListWith (flip const)` keeps the first character per position. Part 2 always consumes the first 50,000,000 hashes via a hard-coded `take`, and `M.!` errors if any position 0–7 is missing. Each digest is hex-encoded and unpacked to a String before the prefix test, and the input is hard-coded rather than read from a file.",
+  "tags": [
+   "md5",
+   "brute force",
+   "lazy evaluation",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/6": {
+  "approach": "Transposes input lines into columns, counts characters per column with countMap into a Map, sorts the entries by count, and takes the last (most common) or head (least common) character.",
+  "critique": "Running both parts through traverse over [last, head] keeps one pipeline, but readFile sits inside the lambda, so the file is read and split twice; IO actions are not shared between iterations. The lambda nests fmap inside <$>, which takes effort to read. head/last are partial, and ties fall to alphabetical order because sortOn is stable over M.toList's ascending keys.",
+  "tags": [
+   "frequency counting",
+   "transpose",
+   "map",
+   "sorting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/7": {
+  "approach": "A Parsec parser splits each line into segments tagged Inside or Outside. Part 1 tests segments for ABBA with a four-character sliding-window recursion. Part 2 intersects outside ABA sets with flipped inside BAB sets.",
+  "critique": "Tagging segments as (String, BlockType) pairs keeps both parts short, and the set intersection makes part 2 direct. containsAbba lacks equations for strings shorter than three, and getAbas for shorter than two; parsed segments can be one or two letters. foldl1 in allAbas fails on an empty list, so a line lacking bracketed or unbracketed segments can crash. supportsTLS counts ABBAs in an Int where a Bool would do.",
+  "tags": [
+   "parsing",
+   "sliding window",
+   "sets",
+   "string processing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/8": {
+  "approach": "Parses each instruction directly into a Screen -> Screen function, composes them with foldl1 (>>>), and applies the result to a 6x50 Data.Sequence-of-Sequences grid of On/Off cells.",
+  "critique": "Turning the parser output straight into composed functions keeps the code short, and row rotation is a single splitAt and append on a Seq. Column rotation rebuilds every row through zip and update, and foldl1 makes an empty input crash. The 6x50 size is hard-coded, and the Show Cell instance is used for rendering rather than debugging.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "grid",
+   "function composition"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/9": {
+  "approach": "Part 1 uses a Parsec parser that builds the decompressed string by replicating each marker's span. Part 2 recurses: repeat count times the decompressed length of the marker's next n characters, plus the remainder's length.",
+  "critique": "Part 2 computes lengths without building the expanded text. Part 1 builds the whole string just to take its length, and every clause requires a marker, so a line without one fails to parse. splitCompression consumes the rest of its substring with `many anyChar` at every marker, which can make part 2 quadratic in line length. Parse errors surface through readWithParser's `error`.",
+  "tags": [
+   "parsing",
+   "recursion",
+   "string processing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/10": {
+  "approach": "Parses value and give rules with Parsec into Maps, then simulates with a Data.Sequence work queue seeded by one bot holding two chips, enqueuing bot recipients after each give.",
+  "critique": "Both answers come out of a single recursive `runFrom` simulation. Only one initially ready bot is queued (`head` of the qualifying keys), so other two-chip bots are reached only if some give leads back to them. Recipients with fewer than two chips are enqueued and then skipped. The 61/17 pair is hard-coded, `max`/`min` shadow Prelude, and `ops M.!`, `outputs M.!` and `head` are partial.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "queue"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/11": {
+  "approach": "Parses floors into a Map of item Sets, then runs a queue-based BFS over elevator moves of one or two items, deduplicating states by elevator floor plus a multiset of (generator floor, chip floor) pairs.",
+  "critique": "The pair-multiset key collapses states that differ only by element names, which is the symmetry reduction that makes part 2 tractable. Weaknesses: toCarry generates both orderings and singleton duplicates of each pair, and validity is checked only on dequeue, so the queue fills with invalid states. The floor-name case and item parser are partial, and terminal hard-codes floors 1-3.",
+  "tags": [
+   "bfs",
+   "parsing",
+   "state space search",
+   "symmetry reduction"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/12": {
+  "approach": "Parses assembunny into an Instruction ADT with Parsec, then interprets it over a Vector of instructions with registers in a Map Char Int, halting when the program counter leaves the vector.",
+  "critique": "The step function is a direct, readable interpreter, but carries unused extras from later days: Tgl, Out, and the returned vector and Maybe output. Its local tgl is partial: toggling an Out or a Tgl with a literal argument would fail at runtime with a non-exhaustive pattern match. There is no loop shortcut, so each instruction executes singly with Map lookups. Both parts repeat the parse.",
+  "tags": [
+   "simulation",
+   "interpreter",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/13": {
+  "approach": "Breadth-first search over an implicit grid, using a Data.Sequence queue of (position, steps) pairs and a Set of visited cells. Wall cells are found by the popCount parity of the formula.",
+  "critique": "Walls are computed on demand with popCount, so no grid is built. Cells are marked visited only when dequeued, so a cell can be queued and expanded several times; this is wasteful but still correct, because the step order holds. The two BFS functions are near copies that differ only in their stop condition. The favourite number is hard-coded rather than read from input.",
+  "tags": [
+   "bfs",
+   "grid",
+   "bit manipulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/14": {
+  "approach": "Builds a lazy infinite list of salted MD5 hashes iterated n times. It keeps indices whose first triple character appears as a five-in-a-row run in one of the next 1000 hashes, and returns the key at index 63.",
+  "critique": "Hashes are zipped with indices and getAllKeys passes the tail along, so each window is take 1000 over shared cells. Still, has5 rescans up to 1000 hashes per triple candidate. has3 and has5 use nub on tiny windows and are partial: no cases for very short lists, nor in isKey/getAllKeys for []. The salt is hard-coded.",
+  "tags": [
+   "brute force",
+   "lazy evaluation",
+   "md5",
+   "hashing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/15": {
+  "approach": "Parses discs with Parsec, then linearly scans t = 0,1,2,... until every disc's (position + index + t) mod size is zero; part 2 appends an extra 11-position disc.",
+  "critique": "The per-disc offset formula is compact, and the search is plain brute force over time: O(answer × discs), where sieving or CRT would step by the product of sizes. The parser reads disc index and starting position with single `digit`, so multi-digit values would fail. Using `nub` to check all-zero is roundabout; `all (== 0)` is clearer and short-circuits. Input is reread separately for each part.",
+  "tags": [
+   "brute force",
+   "parsing",
+   "math",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/16": {
+  "approach": "Repeatedly applies the dragon-curve step (append '0' plus the reversed complement) to a String until it reaches the target length and truncates. It then halves it pairwise with chunksOf 2 until the length is odd.",
+  "critique": "The code mirrors the puzzle's definition directly, and `reduce =<< chunksOf 2` uses the list monad as concatMap. Everything is a plain String, so part 2 builds intermediate strings of doubling size up to tens of millions of characters, then runs halving checksum passes over lists. The `length` checks rescan each list, and the input and both target lengths are hard-coded.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "string manipulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/17": {
+  "approach": "Breadth-first search over (position, path) states using a Data.Sequence queue, hashing passcode plus the path with md5String to decide open doors; part 2 exhausts the queue tracking the longest path reaching the vault.",
+  "critique": "Storing paths reversed makes extension O(1) via cons, though each step pays a `reverse` to hash. The passcode is hard-coded as a constant rather than read from input. Part 2 uses `maximum [a, b]` where `max` would do, and the shadowed `x, y` in the filter lambda hurts readability. Part 1 returns the string \"No path\" instead of a Maybe.",
+  "tags": [
+   "bfs",
+   "md5",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/18": {
+  "approach": "Simulates the trap rows by storing every cell of every row in a Data.Map keyed by (x,y), computing each new row from three lookups into the previous row, then counting Safe cells.",
+  "critique": "The four trap patterns are spelled out literally, and out-of-range neighbours fall back to safe because `M.lookup` returns Nothing, so walls need no special case. But the whole grid is kept, so part 2 holds about 40 million map entries with O(log n) inserts, when one row as a list or bit vector would do. `fromChar` is partial.",
+  "tags": [
+   "simulation",
+   "cellular automaton",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/19": {
+  "approach": "Simulates both games directly. Part 1 treats a Map from each elf to its neighbour as a linked ring. Part 2 finds the victim by index in a Data.Sequence and updates neighbour Maps in both directions.",
+  "critique": "Part 1 is a straightforward O(n log n) linked-ring simulation with bang-patterned arguments. Part 2 keeps three structures in step: the Seq locates and removes victims, and the two Maps relink neighbours and supply the next current elf. That is more bookkeeping than one structure needs. Neither part uses the Josephus closed forms (powers of 2 and 3). The input is hard-coded as `start`, and the `M.!` lookups are partial.",
+  "tags": [
+   "simulation",
+   "linked list",
+   "sequence",
+   "josephus"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/20": {
+  "approach": "Sorts ranges by lower bound and walks them carrying a current range. A later range ending below it is discarded, otherwise it becomes current. Gaps give part 1's answer and part 2's count.",
+  "critique": "Each recursive step consumes one list element, so after the sort the walk is linear. Discarding ranges that end inside the current one avoids building merged intervals. The two `go` functions duplicate the same logic. Neither counts a gap before the first range's lower bound, and both crash on an empty list. The 2^32 limit is hard-coded, and toTuple2 is partial.",
+  "tags": [
+   "interval merging",
+   "sorting",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/21": {
+  "approach": "Parses the instructions with Parsec into a Transformation ADT and folds them over a Data.Sequence. Part 2 folds inverse operations in reverse with foldr, finding the inverse letter-based rotation by search.",
+  "critique": "Most operations invert directly: swaps and reverse undo themselves, rotations flip direction, and moves swap their arguments. The letter rotation is inverted by trying every left rotation and checking it, which avoids hand-deriving a table. Weaknesses: `dig` reads only single digits, RotateLeft doesn't reduce mod length, and lazy `Just` patterns plus `head` are partial.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "brute force",
+   "sequence"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/22": {
+  "approach": "Part 1 parses nodes with Parsec and counts viable pairs by an O(n²) list comprehension. Part 2 adds Manhattan distances through a hard-coded wall gap at (4,15) plus 5×29 shuffle steps.",
+  "critique": "Part 1 follows the rules directly. Part 2 is solved by hand: the gap (4,15), goal column 30 and the 5*29 term fit one input only, and the Show instance hard-codes (30,0). The unfinished A* stores a full node Map in every queue entry and in its seen Set. Its priority is a lexicographic tuple from `h`, not an admissible estimate, and leftover traceShow/pauseId calls block on stdin.",
+  "tags": [
+   "parsing",
+   "grid",
+   "a-star",
+   "math",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/23": {
+  "approach": "Part 1 reuses the Day 12 interpreter (`run` on a Vector of parsed instructions with a Map of registers) seeded with a=7. Part 2 is a hard-coded closed form, 12! plus a product of two constants.",
+  "critique": "Reusing Day 12's `Machine` and `run` keeps part 1 to a few lines, though the imports alone don't show where `tgl` is handled. Part 2 never reads the input. It assumes the program computes a factorial plus a product and embeds that user's constants, so it is wrong for other inputs. Deriving the constants from the parsed instructions, or adding a multiply peephole, would generalise it.",
+  "tags": [
+   "simulation",
+   "interpreter",
+   "reverse engineering",
+   "math",
+   "hard-coded"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/24": {
+  "approach": "Runs a separate BFS over the grid map for every ordered pair of numbered cells to build a distance table, then exhaustively searches visiting orders by DFS, optionally adding the return leg to 0.",
+  "critique": "Reducing the grid to a small all-pairs distance graph before searching orders keeps the search cheap, and the optional final destination lets one function serve both parts. Weaknesses: BFS runs per pair (n² searches, not one per source, and symmetric pairs repeat); the order search is factorial with no memoisation; partial functions unjust, M.! and the incomplete go pattern on an empty queue.",
+  "tags": [
+   "bfs",
+   "grid",
+   "brute force",
+   "graph",
+   "tsp"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2016/25": {
+  "approach": "Brute-forces initial values of register a from zero, runs the Day 12 assembunny interpreter lazily as an output stream, and returns the first value whose first ten outputs alternate 0,1.",
+  "critique": "Reusing Day 12's step and exposing execution as a lazy [Maybe Int] stream keeps the search short, because take 10 . catMaybes stops each run after ten outputs. The ten-output check is a heuristic that does not prove the signal repeats forever. The search is linear in the answer, which works only because the answer is small. head on the filtered list is partial.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "interpreter",
+   "lazy evaluation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/1": {
+  "approach": "Part 1 recurses over the digit list with an accumulator, comparing neighbours and checking the final digit against the first. Part 2 zips the list with a cycled copy offset by half its length and sums equal pairs.",
+  "critique": "Part 2's zip against `drop n (cycle xs)` handles the wraparound in one line. Part 1 is partial: `sumMatching` has no empty-list case, and `part1` uses `head` on both the input lines and the digit list. The file-reading and parsing line is duplicated between the parts.",
+  "tags": [
+   "parsing",
+   "list processing",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/2": {
+  "approach": "Parses each tab-separated line into Ints; part 1 sums max minus min per row via the function applicative, part 2 searches all ordered pairs per row for an exact divisor.",
+  "critique": "Short and readable: `(-) <$> maximum <*> minimum` expresses the row range without naming the row, and the list comprehension states the divisibility condition directly. Part 2 is O(n²) per row, fine for small rows. `head` is partial, and `a /= b` compares values rather than positions, so a row with duplicate values whose only valid pair is that duplicate would be skipped. `read` also fails on malformed fields.",
+  "tags": [
+   "parsing",
+   "brute force",
+   "list comprehension",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/3": {
+  "approach": "Walks the spiral cell by cell from the origin, turning left whenever the left neighbour is unvisited. A Set of visited cells drives part 1; a Map of neighbour sums drives part 2.",
+  "critique": "One rule, turn left if that cell is free, drives both parts without ring arithmetic. Part 1 walks O(n) cells with O(log n) set operations where a closed-form ring calculation exists. `canTurn` is true when the left cell is occupied, and the walker then goes straight, so the name reads opposite to its effect. The two walkers are near-duplicates, part 2 increments `current` without ever reading it, and the input is hard-coded.",
+  "tags": [
+   "simulation",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/4": {
+  "approach": "Each line is split on spaces. Part 1 compares the word count with the count after nub. Part 2 maps each word to a Map Char Int letter histogram and runs the same nub-length comparison.",
+  "critique": "A letter-count Map is a canonical anagram key, so part 2 reuses part 1's duplicate check with only the key changed. Sorting each word would be simpler than building Maps through Sum monoids. nub is quadratic in words per line. splitOn \" \" produces empty words on doubled spaces, which words would not, and each part repeats the file reading and its own valid definition.",
+  "tags": [
+   "parsing",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/5": {
+  "approach": "Parses the offsets into an unboxed immutable array and recursively follows jumps. A per-part update function rewrites the current cell before the program counter moves.",
+  "critique": "Parameterising `run` by an updater shares the loop between parts. `A.//` copies the whole array on every step, so each jump is O(n), which is slow for part 2's long run. Array bounds are inclusive, but the exit guard is `pc >= snd (A.bounds is)`, so reaching the last valid index counts as escaping and that jump is never executed.",
+  "tags": [
+   "simulation",
+   "arrays",
+   "higher-order functions"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/6": {
+  "approach": "Simulates redistribution on a Map from bank index to blocks, recording each configuration's first step in a Map keyed by configuration; the first repeat gives both answers.",
+  "critique": "Storing the step number per state lets one pass give both the step count and the loop length. maximumBy over (value, negated index) breaks ties toward the lowest index without extra code. Each redistribution builds a list as long as the block count instead of using divMod, and the input string is hard-coded in the source instead of read from a file.",
+  "tags": [
+   "simulation",
+   "cycle detection",
+   "hashing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/7": {
+  "approach": "One Parsec parser, parameterised by an entry builder, produces either a child-to-parent or parent-to-child Map. Part 1 walks parent links to the root; part 2 descends into the odd-weighted subtree.",
+  "critique": "Passing `mkEntry` lets one parser build both maps. `weighFrom` is not memoised, so subtree weights are recomputed at each level. `findImbalance` relies on partial `head`: if a node has exactly two children of different weights, no weight group has more than one member, so `goodWeight` takes `head` of an empty list and crashes. Part 2 also reads and parses the input twice.",
+  "tags": [
+   "parsing",
+   "tree",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/8": {
+  "approach": "Each line is parsed into a pair of closures, a Map update and a predicate, then folded over a Data.Map register file; part 2 scans all intermediate maps and takes the global maximum.",
+  "critique": "Compiling instructions into functions at parse time keeps the interpreter to a single if, and scanl gives part 2 almost for free. The fixed seven-element list pattern in the let, the non-exhaustive case expressions and read are partial. Part 2 re-takes the maximum over every register in every intermediate map, O(n·r), where the updated value alone would do. Part 1 errors if no instruction ever fires.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "fold",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/9": {
+  "approach": "Two recursive Parsec grammars over the single input line: one threads nesting depth and sums depth per group, the other sums one per non-cancelled garbage character.",
+  "critique": "Treating the stream as a grammar makes the structure explicit, and threading depth as a parser argument avoids any explicit stack or state. Both parts re-parse the input with near-duplicate grammars instead of returning a pair from one pass. The outer try wrappers are redundant because each alternative fails on its first character. No eof check means trailing junk is silently ignored, and head . lines is partial on empty input.",
+  "tags": [
+   "parsing",
+   "parser combinators",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/10": {
+  "approach": "Rotates a Data.Sequence after each reversal so the current position stays at index 0, tracking original index 0 in `start`; `step`'s base case rotates back for both parts.",
+  "critique": "Because the cursor sits at index 0, each reversal is a plain splitAt/reverse on the sequence prefix. Flattening 64 rounds into one length list carries the skip counter across rounds. The `[0 .. 255]` literal is duplicated in part1 and knotHash, the input string is hard-coded, and the `newStart` arithmetic carries no comment.",
+  "tags": [
+   "simulation",
+   "sequence",
+   "bit manipulation",
+   "hashing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/11": {
+  "approach": "Maps hex steps onto doubled-row coordinates (n/s move y by 2, diagonals by 1), folds the moves for part 1, and scans the running positions for the maximum distance in part 2.",
+  "critique": "The doubled-y encoding keeps `move` a plain case table, and `scanl` reuses it for part 2. `distance` returns wrong values for many positions: (-1,1) gives -1, (0,-2) gives -1, and (3,1) gives 2 instead of 3. The correct form is `abs x + max 0 ((abs y - abs x) `div` 2)`. The input is also read and parsed twice.",
+  "tags": [
+   "hex grid",
+   "simulation",
+   "coordinates",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/12": {
+  "approach": "Builds an adjacency map with reverse edges merged via fromListWith and deduplicated with nub, then runs a Seq-based BFS from 0 for part 1 and repeatedly removes BFS components from a node set to count groups.",
+  "critique": "The BFS adds nodes to `seen` on dequeue and filters neighbours against that set, so a node can enter the queue several times before it is first dequeued. The result stays correct but the queue holds redundant entries. Adding reverse edges makes the graph symmetric without assuming the input lists both directions. The irrefutable [x, ys'] pattern and head are partial, and nub is quadratic per adjacency list.",
+  "tags": [
+   "bfs",
+   "connected components",
+   "graph",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/13": {
+  "approach": "Parses lines into Layers, detects catches with (depth + delay) mod (2*(range-1)) == 0, sums depth*range of caught layers at delay zero, then scans delays upward for the first catch-free one.",
+  "critique": "Using each scanner's period avoids simulating movement, and part 1 is a short filter-and-sum pipeline. Part 2 is a linear brute-force search over an infinite comprehension, checking every layer per candidate delay. The parsing lambda is a partial pattern match, and a range of 1 makes the modulus zero, so mod raises a divide-by-zero error.",
+  "tags": [
+   "math",
+   "brute force",
+   "parsing",
+   "modular arithmetic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/14": {
+  "approach": "Expands 128 Day 10 knot hashes into bit strings with printf, counts '1's for part 1, then row-major scans a Map grid, BFS-flooding each unseen '1' for part 2.",
+  "critique": "Reusing knotHash and expanding hex via `printf \"%04b\" . digitToInt` with `=<<` is compact. The base case `countGroups _ _ (127, 127) n = n` returns without examining the last cell, so an isolated '1' there is never counted. BFS marks cells seen only on dequeue, allowing duplicate enqueues. Grid size and input are hard-coded.",
+  "tags": [
+   "bfs",
+   "flood fill",
+   "grid",
+   "bit manipulation",
+   "connected components"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/15": {
+  "approach": "Both parts simulate the two multiplicative generators modulo 2^31-1. Part 1 strict-folds a ((a, b), count) state over a counter list. Part 2 zips mod-filtered lazy infinite lists and counts pairs whose low 16 bits match.",
+  "critique": "Part 2's lazy-stream pipeline reads cleanly. Part 1 folds over [0 .. 40000000] and compares before advancing, so it checks the seed pair plus all 40,000,000 generated pairs. With the hard-coded seeds that extra check cannot match, so it is harmless here but fragile. Inputs are hard-coded, and the generator step is written twice.",
+  "tags": [
+   "simulation",
+   "bit manipulation",
+   "brute force",
+   "lazy lists"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/16": {
+  "approach": "Parses the moves with Parsec into one composed `Programs -> Programs` function. State is two Maps (position→char, char→position) plus a head offset, so spin is O(1). Part 2 finds the cycle length and reduces 10^9 modulo it.",
+  "critique": "The rotating head offset makes spin cheap, and composing the parsed moves with `>>>` turns the dance into a single function. `findCycle` assumes the first repeat is the start state, which is true here because the dance is a bijection, but the code never says so. `lastSeen` keeps step values it never reads, so a Set would do. The `M.!` lookups are partial.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "cycle detection",
+   "permutation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/17": {
+  "approach": "Part 1 simulates 2017 inserts with Data.Sequence.insertAt and reads the element after the final position. Part 2 keeps no buffer: a strict foldl' over 50 million steps updates a (position, size, last-value-after-0) triple.",
+  "critique": "Seq gives logarithmic inserts for part 1. Part 2 avoids the buffer entirely, and the bang-patterned tuple in foldl' prevents thunk buildup. Its rule does not visibly mirror part 1's `step`: it takes `mod (size + 1)` and tests the incoming `current == 0` rather than the freshly computed index, and nothing explains why these agree. The input is hard-coded as `offset`, and `thd3` adds a dependency for one accessor.",
+  "tags": [
+   "simulation",
+   "math",
+   "sequence"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/18": {
+  "approach": "Parses instructions with Parsec into an ADT in a Map Int Instruction, interprets part 1 by direct recursion, and for part 2 steps two machines alternately until both are blocked or terminated.",
+  "critique": "Tagged Value and Instruction types keep the interpreter readable, and part 2's Running/Blocked/Terminated state makes deadlock detection explicit. Weaknesses: interpreter cases are duplicated across both parts, Sub/Jnz parse but are never handled (incomplete matches), queues use O(n) `++ [x]` appends, and runUntil re-steps the other machine speculatively to probe for deadlock.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "interpreter"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/19": {
+  "approach": "Parses non-space cells into a Map keyed by (x,y), then tail-recursively walks from the top-row cell, collecting letters and counting steps, and turns at '+' toward an occupied non-backward neighbour.",
+  "critique": "Storing only non-space cells means a failed `M.lookup` marks the end of the path. Dropping the reverse direction with `delete (opposite dir)` keeps the turn logic short. At a '+' it takes the first occupied candidate in a fixed direction order. `head` is partial and crashes if a corner has no onward neighbour. Any character other than '-', '|' and '+' is collected as a letter without checking.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/20": {
+  "approach": "Part 1 picks the particle with the smallest Manhattan acceleration via minimumBy. Part 2 simulates 1000 ticks, each time grouping particles by position in a Data.Map and dropping any position shared by several particles.",
+  "critique": "The collision step is short and clear: fromListWith (++) groups particles by position and keeps only singleton groups. Part 1 ignores ties on acceleration, which would need velocity and position to break. Part 2's 1000-tick cutoff is an unchecked guess rather than a proven stopping point. The irrefutable [p, v, a] list patterns in the parser are partial.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "math",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/21": {
+  "approach": "Every rotation and flip of each rule's input is stored in a Map keyed by grid; each step splits the grid into 2×2 or 3×3 blocks, looks each up, and rejoins them.",
+  "critique": "Precomputing all symmetries means each block needs one `M.!` lookup instead of eight comparisons, and the shared split/join helpers keep the day file short. Grids are `Map (Int,Int)`, and `maxXY` builds key lists on every call, adding overhead on larger grids. `fromChar`, `M.!`, and the `[lhs, rhs]` list pattern all fail at runtime on unexpected input.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/22": {
+  "approach": "Simulates the virus carrier burst by burst, folding a step function over a fixed iteration count; the unbounded grid is a sparse Data.Map keyed by coordinate, with unseen cells defaulting to Clean.",
+  "critique": "findWithDefault Clean keeps the infinite grid sparse, and passing step1 or step2 to one solve function shares the driver across parts. Each burst costs one O(log n) Map lookup and insert, over hard-coded 10000 or 10000000 iterations. fromChar matches only '.' and '#', so it is partial, and every case branch repeats the same turn-then-move code.",
+  "tags": [
+   "simulation",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/23": {
+  "approach": "Part 1 interprets the parsed assembly, reusing Day 18's instruction type, over a Map-based register file and counts mul executions. Part 2 replaces the program with a hand-decompiled loop counting composite numbers in a stepped range.",
+  "critique": "Reusing Day 18's parser and `coerce` keeps the interpreter short, and recursing on the pc until the lookup fails is a simple halting rule. Part 2 hard-codes 106500, the step 17 and the span 17000 from one decompiled input, so it ignores the input file. `run` has no case for non-register destinations, making it a partial match.",
+  "tags": [
+   "simulation",
+   "interpreter",
+   "reverse engineering",
+   "math",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/24": {
+  "approach": "Recursive DFS over a Set of unused components: each extension `c : bridge` is inserted into an accumulated Set of bridges, branch results are unioned, then max strength and max (length, strength) are selected.",
+  "critique": "Part 2 reduces to a lexicographic `maximumBy (comparing ((,) <$> length <*> strength))` over the same bridge set. All bridges are materialised as lists in a Set, with `S.map next` building a temporary Set of Sets that is unioned, so list comparisons repeat; a fold carrying only best scores would avoid storing them. `toTuple2` here is partial on malformed lines.",
+  "tags": [
+   "dfs",
+   "brute force",
+   "backtracking",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2017/25": {
+  "approach": "A Parsec parser builds a Map from state letter to a pair of branches, then foldl' runs the Turing machine for the parsed step count over a Map Int Int tape and counts cells equal to 1.",
+  "critique": "Parser and simulation are short and the Branch/Conditional types make the rules easy to read. The parser discards the 'If the current value is' digit and step uses the first branch for 0 and the second for anything else, so the labels go unchecked. The direction case is non-exhaustive, `const . step` iterating over [1 .. steps] is indirect, and a Map tape costs O(log n) per step.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "turing machine"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/1": {
+  "approach": "Parses signed integers line by line and sums them for part 1. Part 2 walks an infinite `cycle` of the changes, tracking seen running frequencies in a `Data.Set`.",
+  "critique": "Using `cycle` with a lazy recursive walk and a Set membership check keeps part 2 short and O(k log k) in steps taken. Parsing is partial: an empty line fails the `(sign : number)` pattern, and any sign other than `+`/`-` hits the non-exhaustive `case`. Empty input makes `cycle []` error, non-empty input with no repeat loops forever, and the input path is hard-coded.",
+  "tags": [
+   "parsing",
+   "cycle detection",
+   "set",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/2": {
+  "approach": "Part 1 builds a per-ID letter frequency Map with countMap and counts IDs having a letter exactly twice or thrice; part 2 compares all ID pairs positionally, keeping common letters of the first pair differing once.",
+  "critique": "Both parts are short, and countMap fits part 1 well. Part 2 is a quadratic all-pairs scan that tests every pair twice, uses partial head, and assumes equal-length IDs since zip truncates. `filter (/= Nothing)` before catMaybes and `filter (== False)` are redundant; `[x | (x, y) <- zip xs ys, x == y]` is simpler. Part 1 also calls `lines content` twice.",
+  "tags": [
+   "brute force",
+   "hamming distance",
+   "frequency count",
+   "list comprehension"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/3": {
+  "approach": "Expands every claim into its unit cells, counts cell coverage in a Data.Map via countMap, counts cells with coverage above one, then finds the claim whose cells all have count one.",
+  "critique": "Reusing one coverage map for both parts keeps the code short, and the cell-expansion list comprehension is clear. Map (Int,Int) has O(log n) per cell; a bounded array would be faster. trackOverlap is dead code, catMaybes hides lookups that cannot fail, parsing uses partial pattern binds and read, and head errors if no claim is unique. The input path is hard-coded twice.",
+  "tags": [
+   "grid",
+   "parsing",
+   "brute force",
+   "counting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/4": {
+  "approach": "Parses lines with ReadP, sorts by timestamp, splits on guard-change entries, and pairs asleep/awake events into minute lists. These are merged per guard in a Map, then frequencies are taken with countMap.",
+  "critique": "Deriving Ord on the (TimeStamp, LogLine) tuple lets a plain sort put the log in order. The pipeline from split-then-chunksOf to the Map is clear. It relies on asleep/awake strictly alternating and on hours being ignored. getGuard, sleepMinutes, head and !! are partial, minutesAsleep is dead code, and both parts repeat the same parsing pipeline.",
+  "tags": [
+   "parsing",
+   "sorting",
+   "frequency counting",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/5": {
+  "approach": "Repeatedly scans the polymer with a single-pass pair-removal function until a fixed point. Part 2 filters out each letter a–z in both cases and takes the minimum fully reduced length.",
+  "critique": "The code is short and readable: `react` and `without` are small and easy to check, and the applicative `without <$> ['a'..'z'] <*> pure p` is compact. However, each pass is linear and many passes can be needed, so it is roughly quadratic, repeated 26 times. `reduceCompletely` also calls `reducePolymer` twice per iteration. A stack-based foldr would reduce in one pass, and `head . lines` is partial.",
+  "tags": [
+   "simulation",
+   "fixed point",
+   "brute force",
+   "string processing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/6": {
+  "approach": "Brute-forces Manhattan distances from every grid cell to every coordinate and labels each cell's unique nearest owner. It counts cells per owner, dropping owners on the bounding box, and keeps owners whose counts match between tight and 50-padded grids.",
+  "critique": "The pipeline from distance map to owner map to countMap area counts reads clearly. removeEdges drops owners whose own coordinate lies on the bounding box, but an interior owner can still have an infinite area. The code works around this with a self-described hack: an area counts as finite only if its count is unchanged on a grid padded by an unexplained 50. Part 2 assumes the region fits in the unpadded box, and tuplify2 and head are partial.",
+  "tags": [
+   "brute force",
+   "grid",
+   "manhattan distance"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/7": {
+  "approach": "Part 1 does a Kahn-style topological sort, repeatedly taking the alphabetically smallest node with no incoming edge. Part 2 simulates five workers tick by tick, freeing finished tasks and assigning ready nodes.",
+  "critique": "Each step is a small named function over a WorkerState record, which keeps the simulation readable. Every lookup rescans lists with elem, \\ and filter, so the work grows quadratically, which only stays cheap because there are 26 letters. The worker count 5, the duration ord n - 4 and the final -1 are hard-coded, and head on the parse result is partial.",
+  "tags": [
+   "topological sort",
+   "simulation",
+   "parsing",
+   "graph"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/8": {
+  "approach": "A recursive-descent parser walks the flat Int list and returns each node with the unconsumed remainder. Children accumulate through a counting loop; part 1 sums metadata and part 2 indexes children by metadata.",
+  "critique": "Returning (Tree, remainder) pairs from plain recursive functions matches the puzzle's preorder encoding. Children are accumulated reversed and then put back in order with reverse. parseTree is partial on lists shorter than two elements, and `rem` shadows Prelude. metaValue performs a `length` and a `!!` per metadata entry, each linear in the child count, which is harmless at these sizes.",
+  "tags": [
+   "parsing",
+   "recursion",
+   "tree"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/9": {
+  "approach": "Simulates the circle as a Data.Sequence: regular turns insertAt the stored index and add 2 to it; multiples of 23 deleteAt that index minus 9 and score, with per-player totals in a Vector.",
+  "critique": "Seq's logarithmic insertAt/deleteAt keeps the hundred-times-larger part 2 tractable without a hand-rolled zipper. The field currentMarble holds the next insertion index, two past the current marble, which is why -9 rather than -7 appears. Player count and marble limit are hard-coded, the loop runs in IO printing progress every 1000 marbles, V.// copies the score vector per scoring turn, and runTurnUntilPoints ignores the score runTurn returns.",
+  "tags": [
+   "simulation",
+   "sequence",
+   "hard-coded input"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/10": {
+  "approach": "Parses particles with Parsec, steps all of them one second at a time forever, and prints an ASCII rendering (via a Set of offset points) of every step whose bounding box is under 200 in both axes.",
+  "critique": "The simulation and rendering are short and readable. The step counter is printed with each frame, so the part-two time comes out of the same loop. But `run` never terminates, so a human must spot the message and kill the program. The 200 threshold is an input-tuned constant, and a minimal-bounding-box search would stop on its own. The local `number` parser also swallows spaces.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/11": {
+  "approach": "Part 1 sums each 3x3 window as a centre cell plus its eight `neighbors`. Part 2 grows a square from every top-left corner, adding one L-shaped border per size to the previous sum, and evaluates corners with `parMap rdeepseq`.",
+  "critique": "Reusing the previous square's sum avoids re-summing the interior, but `nub` on each O(n) border costs O(n^2), so all sizes from all corners reach about O(N^5). Cell powers are recomputed via `show` on every visit. A summed-area table answers each square in O(1), O(N^3) over every position and size. The serial is hard-coded, and a per-corner `Map` stands in for a running maximum.",
+  "tags": [
+   "brute force",
+   "grid",
+   "parallelism",
+   "incremental sum"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/12": {
+  "approach": "Live pots are stored as a Set of indices and stepped by building each 5-cell window as a string looked up in a Map of rules. Part 2 runs 145 generations, then shifts every pot by the remaining generation count.",
+  "critique": "The Set representation handles negative indices and growth without padding. Part 2 is weak: 145 is a hard-coded constant, presumably found by inspecting this input, and the code assumes a pure +1 per generation glider shift without detecting it. `M.!` is partial on missing rules, and building a String per cell is slow, though fine at this scale.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "cellular automaton",
+   "hard-coded constants"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/13": {
+  "approach": "Parses the track into a Map grid with cart glyphs replaced by track, then simulates ticks. Part 2 moves carts one at a time in row-major order, kept in a Map keyed by CartId.",
+  "critique": "Part 1 checks for collisions only after a full tick, using countMap on positions. Part 2 moves carts one at a time and calls crashedIds after each move, which scans every remaining cart, so each tick is quadratic in cart count. stepCart's case on track characters is non-exhaustive, and tickUntilLastCart never terminates if no cart survives.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/14": {
+  "approach": "Simulates recipe generation with a Data.Sequence scoreboard and two elf indices, appending the digits of each sum, then reads ten scores after the offset or scans the tail for the target digits.",
+  "critique": "Data.Sequence gives cheap appends and O(log n) indexing. Checking both the last-six window and the window one earlier handles steps that append two digits. step and tenAfter are parameterised, but part1 hard-codes the input as 598701, and stepUntil embeds it again as [5,9,8,7,0,1] with the six-digit length fixed in its window offsets. Splitting a sum below 19 via show/digitToInt is roundabout.",
+  "tags": [
+   "simulation",
+   "sequence",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/15": {
+  "approach": "Simulates combat on a Map-based grid. A unit that cannot attack runs a BFS over a Data.Sequence of whole paths, picks the shortest-distance target square (ties by `swap` of its coordinate), steps along the stored path, then attacks the weakest adjacent enemy.",
+  "critique": "HP and attack live in the Cell constructors, so a move or a hit is one Map insert. BFS queues full path lists and recomputes `length` repeatedly. `head` and `M.!` are partial. The turn list is fixed at round start, so if a unit dies and another moves onto its square, the stale entry acts again using the dead unit's stats. `traceStrLn` prints the grid after every turn. Part 2 tries attack values linearly from 4.",
+  "tags": [
+   "simulation",
+   "bfs",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/16": {
+  "approach": "Each sample is tested against all sixteen instruction constructors by running them on a Map-based register file. Per-opcode candidate sets are intersected, then a depth-first backtracking search assigns opcodes before the program is folded.",
+  "critique": "Typed Register/Immediate wrappers with an Evaluable class keep runI uniform. Eq/Ord on Instruction via Data.toConstr give constructor-identity sets, though that is indirect. Backtracking replaces simple constraint propagation, and runInstruction rebuilds all sixteen instructions per step. The register parser uses single `digit`, so it assumes one-digit values. `head`, `M.!` and `let Just` are partial.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "backtracking",
+   "constraint satisfaction"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/17": {
+  "approach": "Parses clay veins into a dense Map grid shifted by minX, then runs a queue-based flood (Data.Sequence) where each path carries its own seen-set; cells whose row is walled in by clay on both sides become Water.",
+  "critique": "Using Water cells as the floor that closedIn checks lets basins fill bottom-up, and one search yields both answers. Each queue entry carries a copy of its path's seen Set, and closedIn rescans the row on every check, so cost can grow well beyond linear. The dense Map and partial M.! lookups add overhead and fragility, and part12 always prints the whole grid.",
+  "tags": [
+   "bfs",
+   "simulation",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/18": {
+  "approach": "Simulates the grid as a Data.Map of coordinates, stepping with mapWithKey over 8-neighbour counts; part 2 stores each grid in a Map keyed by the grid to find a repeat, then indexes prefix ++ cycle.",
+  "critique": "Keying a Map by whole grids works because Cell derives Ord, so cycle detection needs no hashing or manual encoding. Grid steps stop at the first repeat, but `!! 1000000000` on `inits ++ cycle cyc` still walks a billion list cells; reducing the index modulo the cycle length would only traverse the short prefix and cycle lists. Neighbour lookups are O(log n) Map accesses, and fromChar is partial.",
+  "tags": [
+   "simulation",
+   "grid",
+   "cycle detection",
+   "cellular automaton"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/19": {
+  "approach": "Part 1 parses the program with Parsec into a Map of Day16 instruction constructors and steps a Map-backed register machine until the instruction pointer leaves the program. Part 2 sums the divisors of a hard-coded constant.",
+  "critique": "Reusing Day16's instruction builders through a name-to-constructor Map keeps the parser and interpreter short. The weak spot is part 2. Its constant is taken by hand from reverse-engineering one input, so it ignores the input file, and it uses trial division over 10.5 million values instead of stopping at the square root. Map-based registers are slow, the `#ip` parser reads only one digit, and most imports are unused.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "reverse engineering",
+   "math",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/20": {
+  "approach": "A Parsec parser builds a Path tree from the regex. A queue walk records door edges in a Set, then FIFO searches over the adjacency Map find the furthest room and count rooms 1000+ doors away.",
+  "critique": "Rewriting `|)` to `|_)` makes empty alternatives explicit. The searches check only each state's own `seen` set, never a global visited set. Any longer simple path to an already-reached room is still expanded, so results equal shortest distances only when the door graph is a tree, and the state count grows with path count. `allWalls` uses x bounds for y.",
+  "tags": [
+   "parsing",
+   "bfs",
+   "graph",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/21": {
+  "approach": "Part 1 runs the Day 19 interpreter lazily, emitting register 5 whenever the instruction pointer reaches 29, and takes the first value. Part 2 hand-translates the program into a generator, keeping the last value before a repeat.",
+  "critique": "Using a lazy list of breakpoint hits for part 1 is a tidy reuse of the shared machine. Part 2 hard-codes instruction 29, register 5 and the constants 13431073 and 65899 from one particular input, so it ignores the parsed program. lastBeforeCycle has no [] case and relies on head, and the commented-free bitwise loop is hard to read.",
+  "tags": [
+   "simulation",
+   "cycle detection",
+   "bit manipulation",
+   "reverse engineering"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/22": {
+  "approach": "Fills a Map of geologic index, erosion level and risk in lexicographic (x, y) order so both predecessors exist, then runs A* over (position, tool) states with a min-priority queue.",
+  "critique": "The (position, tool) state model and Set-based closed list are compact. Closing states on first pop without a best-cost map is safe because Manhattan distance plus 7 for a non-torch tool is a consistent heuristic. Depth, target and the 20x/3x bounds are hard-coded, `M.!` crashes outside them, and the `sort` repeats the comprehension's existing order.",
+  "tags": [
+   "a-star",
+   "grid",
+   "dynamic programming",
+   "priority queue"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/23": {
+  "approach": "Part 2 takes the largest maximal clique of pairwise-overlapping bots, then runs Adam with backprop gradients on a loss that sums each clique bot's full Manhattan distance when out of range, plus an origin pseudo-bot of radius 0.",
+  "critique": "Picking the largest clique from getMaximalCliques narrows the loss to bots that can plausibly share a point. The search is heuristic. Coverage is counted against all bots, and the best point updates only on strictly higher coverage, so equal-coverage candidates are never compared by origin distance. It hard-codes 110000 steps and alpha0 100000, mutates IORefs through unsafePerformIO inside the gradient function, and traces every step.",
+  "tags": [
+   "gradient descent",
+   "maximal clique",
+   "autodiff",
+   "heuristic search",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/24": {
+  "approach": "Parses groups with Parsec into a Map keyed by id, simulates target-selection and initiative-ordered attack rounds until one team remains or a full state repeats, then tries boosts 1, 2, 3… for part 2.",
+  "critique": "Newtypes and sort keys built from Down and applicative tuples mirror the rules directly. A Set of past maps ends stalemated fights, and part 2 keeps only outcomes where every surviving group is Immune. Boosts are scanned linearly rather than bisected, each fight stores every past round's map, and `selectTarget` re-sorts all defenders for each attacker.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "brute force",
+   "cycle detection"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2018/25": {
+  "approach": "Builds an adjacency Map by comparing every pair of 4D points with manhattan4 <= 3, then counts connected components via repeated BFS over a Data.Sequence queue with a Set of visited points.",
+  "critique": "Component search is straightforward, and the outer seen-set skips points already assigned to a constellation. Adjacency construction is an O(n²) all-pairs comparison, acceptable at this input size. The parser binds `[x, y, z, w] <-` as a partial pattern, so a line without exactly four numbers is not handled explicitly, and the local `num` parser is the same definition as `Util.number`.",
+  "tags": [
+   "bfs",
+   "connected components",
+   "brute force",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/1": {
+  "approach": "Reads each line as an Int with `read`, sums `div 3 - 2` per mass for part 1, and for part 2 recursively adds fuel-for-fuel until the next increment is non-positive.",
+  "critique": "Short and direct; the recursive guard correctly stops at non-positive fuel without adding negatives. `massToFuel m` is written three times in the guard and body rather than bound once with `where`. Parsing with `read` is partial and would crash on a malformed line, and both parts duplicate the input-loading code instead of sharing a parsed list.",
+  "tags": [
+   "math",
+   "recursion",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/2": {
+  "approach": "Interprets the opcode program over an immutable Data.Vector, copying it with (//) on each write, then brute-forces all 10,000 noun/verb pairs lazily until position 0 equals the target.",
+  "critique": "The interpreter is a short tail-recursive loop with an explicit error for unknown opcodes, and laziness makes the part-2 search stop at the first hit. However, every run builds a log list showing the whole program at each step, which is never used and costs heap. Each write copies the vector, parsing is duplicated across parts, and head/!! on variants are partial.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "intcode",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/3": {
+  "approach": "Each move's cells, both endpoints included, are numbered from the current step and merged into a Map with left-biased M.union so earlier step counts win. Part 1 intersects key sets; part 2 sums step counts.",
+  "critique": "Sharing endpoints between consecutive segments and keeping existing values via M.union gives correct first-visit step counts, even at self-crossings. Each straight move builds a degenerate cross-product and sorts it, where reversing the range would do. Part 2 reuses coordMaps for lookups but rebuilds them for the intersection set. An unknown direction letter hits a non-exhaustive case, and an empty token fails the (d : n) pattern.",
+  "tags": [
+   "simulation",
+   "grid",
+   "set intersection",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/4": {
+  "approach": "Brute-forces every number in a hard-coded range, converting each to a string and checking adjacent-digit and non-decreasing predicates with recursive pattern matches on consecutive character pairs.",
+  "critique": "The pairwise recursive helpers are short and easy to verify, and part 2 spells out the five exact-pair cases explicitly. However, the puzzle range is hard-coded rather than parsed, hasPreciselyTwoAdjacent is partial (only matches six-character strings), and digitToInt is unnecessary since Char comparison already orders digits. Scanning about half a million numbers is fine here but generates many non-monotonic candidates.",
+  "tags": [
+   "brute force",
+   "string processing",
+   "pattern matching"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/5": {
+  "approach": "Runs the shared Intcode interpreter twice, once with input 1 and once with input 5, and returns both full output lists; the interpreter steps a lens-based Machine over a Map-backed memory.",
+  "critique": "Memory is a Data.Map with missing addresses read as 0, which carries over cleanly to later days, and opcodes and modes are decoded into proper sum types. Decoding pads and slices the opcode's decimal string, which is roundabout. head, tail, !! and error make it partial, stepProgram is pure work wrapped in IO, and outputs are appended with ++, which is quadratic.",
+  "tags": [
+   "intcode",
+   "simulation",
+   "lens",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/6": {
+  "approach": "Builds a Map from each orbited body to its orbiters, unfolds it into a rose tree from \"COM\", sums node depths for part 1, and for part 2 takes the minimum over all subtrees of the YOU and SAN depth sums, minus 2.",
+  "critique": "The depth-accumulating fold for part 1 is linear and clear. Part 2 searches each subtree again from every node, so total work grows with the sum of subtree sizes, quadratic on deep chains, where comparing ancestor paths is linear. The `sequenceA . filter isJust` and `<*> Just 2` plumbing is hard to read, the `[oTo, oFrom]` pattern is partial, and none of the five LANGUAGE pragmas is used.",
+  "tags": [
+   "tree",
+   "recursion",
+   "parsing",
+   "dfs"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/7": {
+  "approach": "Tries all 120 phase permutations. Part 1 chains five full Intcode runs. Part 2's cluster executes one instruction per step and, when the current machine is blocked on input, moves its outputs to the next machine.",
+  "critique": "Cluster models the feedback loop plainly. Weaknesses: stepProgram returns IO although its body is a pure return of runInstruction, which forces IO on every caller. V.// copies the vector each step. Outputs use list appends, and head on outputs is partial. Every step re-decodes opcodes through the string-based parseOpcode, including for each machine in isClusterTerminated.",
+  "tags": [
+   "intcode",
+   "brute force",
+   "simulation",
+   "permutations"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/8": {
+  "approach": "Splits the digits into 25×6 layers with chunksOf, picks the fewest-zeros layer via minimumBy, and stacks layers by indexing each per position over an inclusive range, taking the first non-2 digit.",
+  "critique": "Each step is a short named function and reads clearly. The inclusive range [0 .. length (head layers)] yields one extra position whose (!!) lookup runs past the end of the first layer, erroring when printed; transpose would fix this and avoid O(i) indexing. combinePixel lacks an all-transparent case, dimensions are hard-coded, and rows print as Int lists.",
+  "tags": [
+   "parsing",
+   "grid",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/9": {
+  "approach": "Runs the shared Intcode interpreter twice on the program, once with input 1 and once with input 2, returning both output lists; memory is a Map Integer Integer.",
+  "critique": "Memory is a sparse Map whose missing addresses read as 0, so memory beyond the program needs no pre-allocation, and Relative mode and AdjustBase are explicit. stepProgram runs in IO only for commented-out debug output; opcodes are decoded by string padding. head, tail, !! and last are partial, outputs append with quadratic ++, and runProgram decodes each instruction twice.",
+  "tags": [
+   "intcode",
+   "simulation",
+   "lens"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/10": {
+  "approach": "Enumerates all displacements within ±(width−1, height−1), reduces each to lowest terms with Data.Ratio and dedupes, ray-marches from each asteroid to count visible ones, then cycles atan2-sorted directions to vaporise asteroids.",
+  "critique": "Reusing intersectAsteroid for both visibility counting and vaporisation keeps the code short. Weak spots: nub is quadratic over roughly 4·w·h offsets, rayIncrements is recomputed per asteroid, and each explode copies a vector row. The constant 200 is hard-coded, toAsteroid is partial, and explodeUntil loops forever over the cycled direction list if fewer than 200 other asteroids exist in total.",
+  "tags": [
+   "grid",
+   "geometry",
+   "ray casting",
+   "brute force",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/11": {
+  "approach": "Simulates the painting robot step by step. Each step feeds the current panel colour to an Intcode machine and runs it until two outputs appear. It then updates Sets of white and visited panels, the heading and the position.",
+  "critique": "The Robot state is explicit and the turn tables are easy to check, though modular rotation would be shorter. The output and turn cases and the list pattern are partial, and the robot loop is in IO because the Intcode stepping functions are typed in IO. Part 2 renders only coordinates from 0 to the maxima, so any white panels at negative coordinates are dropped, and `print` shows each row as a quoted string.",
+  "tags": [
+   "simulation",
+   "intcode",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/12": {
+  "approach": "Simulates bodies in a Map keyed by id, applying pairwise gravity per axis through a lens-parameterised function. Part 2 finds each axis's return-to-start period separately and combines them with lcm.",
+  "critique": "Passing an axis lens (`_1`/`_2`/`_3`) to `pairGravity` lets part 2 reuse the stepper on one axis at a time, which makes the per-axis lcm decomposition cheap. The input is hard-coded as Haskell literals rather than parsed, `bodyId` duplicates the map key, and each pair update uses partial `unjust` lookups and reinserts into the Map. `kinetic` and `potential` repeat the same three-component expression.",
+  "tags": [
+   "simulation",
+   "cycle detection",
+   "math",
+   "lens"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/13": {
+  "approach": "Runs an Intcode VM three outputs at a time into a Data.Matrix screen. Part 2 simulates ahead with zero input until the ball reaches or nears the paddle, then steers toward that column.",
+  "critique": "Every agent step rescans the whole matrix through findMx in ballX/paddleX/ballHeight/isLost. nextTarget is computed but the recursion passes Just 0, and the input branch replaces pending inputs with repeat of a randomR (-1, 0) draw. Grid sizes are hard-coded, fromId is partial, and stepArcadeI is dead code.",
+  "tags": [
+   "intcode",
+   "simulation",
+   "grid",
+   "lookahead"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/14": {
+  "approach": "Part 1 drains a worklist of chemical needs from FUEL, looks up each reaction in a Map, rounds batch counts up and keeps leftovers in a second Map while summing ORE. Part 2 binary-searches FUEL against one trillion ORE.",
+  "critique": "The leftover Map lets surplus be reused. When stock exceeds a need, the batch count is not clamped at zero, so zero or negative requirement entries go on the queue. That keeps the totals consistent but is hard to follow. The ceiling uses fractional division instead of integer arithmetic, and the queue grows through `needs ++`. Search bounds 1 and 1e10 are hard-coded, `unjust` is partial, and Day14's `Debug.Trace` import is unused.",
+  "tags": [
+   "simulation",
+   "binary search",
+   "parsing",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/15": {
+  "approach": "Drives the Intcode droid with a turn-preferring exploration policy and a move stack for backtracking to map the maze, then counts synchronous flood-fill passes over a fixed-size matrix to time oxygen spread.",
+  "critique": "Only part 2 is defined; part 1 has no function, just a comment noting the stack size on reaching oxygen. Exploration stops on a magic 'n > 10000 && null stack' test, the matrix is hard-coded at 45x45, and each flood pass rebuilds the whole matrix where a BFS would do. Per-step debug prints and partial 'head' calls remain.",
+  "tags": [
+   "intcode",
+   "dfs",
+   "flood fill",
+   "simulation",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/16": {
+  "approach": "Part 1 builds each repeating pattern as a list and takes dot products for 100 phases. Part 2 drops a hard-coded 5970807 digits, then runs 100 reversed suffix sums mod 10 with scanl'.",
+  "critique": "The part 2 scanl' over the reversed tail costs one linear pass per phase, but it is only valid if the dropped prefix covers at least half the signal. The code never checks this. target is hard-coded and the defined offset function goes unused. Taking the last digit via show and digitToInt is slow, part 1 is quadratic over lists, and modGet and efficientLastN are dead code.",
+  "tags": [
+   "simulation",
+   "prefix sums",
+   "math",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/17": {
+  "approach": "Part 1 converts Intcode ASCII output to a nested-list grid, dropping the trailing line, and sums x*y over interior scaffold cells with four scaffold neighbours. Part 2 feeds hard-coded movement functions to the machine.",
+  "critique": "Part 1 is direct, but its `!!` lookups on nested lists cost O(x+y) per access and are partial. Part 2 hard-codes the main routine and functions A/B/C, worked out by hand for one input, so it does no path finding or compression. The shared Intcode runner appends each output with `++`, which is quadratic in output length.",
+  "tags": [
+   "intcode",
+   "grid",
+   "parsing",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/18": {
+  "approach": "BFS from each start and key position finds the distance to every reachable key and the doors on the first shortest path found. A memoised DFS over (positions, key set) then searches with an IORef cost cache and best-so-far bound.",
+  "critique": "Reducing the maze to a key graph and memoising on (positions, keys) is sound. But dbg = True prints and blocks on getLine at every node. keyDistance copies a seen set per queue entry instead of sharing one. Pruned children return Dead (10000000), which feeds into the parent's cached minCost under a key that ignores steps taken, so later cheaper arrivals may reuse an inflated cost. Part 2 hard-codes four robots.",
+  "tags": [
+   "bfs",
+   "dfs",
+   "memoisation",
+   "grid",
+   "branch and bound"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/19": {
+  "approach": "Part 1 runs a fresh Intcode machine for each of the 50×50 points. Part 2 traces two staircase paths along the beam using step-right/step-down rules, then pairs points from both paths to locate a 100×100 square.",
+  "critique": "Each walk makes one machine run per step, so probing cost grows with path length rather than area. The pairing, however, is a 2000×2000 brute-force comparison, and the start (2,4) and cutoff of 2000 are hand-picked. `getCoord` uses `unsafePerformIO` to escape `runProgram`'s IO type. Part 1's sum relies on every machine producing outputs.",
+  "tags": [
+   "intcode",
+   "brute force",
+   "grid",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/20": {
+  "approach": "Builds a Map grid, finds portal tiles by scanning for open cells adjacent to two label letters, then runs a Data.Sequence BFS over cells, adding level as a state component for part 2.",
+  "critique": "Both parts share a Solver type, and part 2 differs only in the (position, level) state and the outer-portal test, which keeps them easy to compare. However, maxXY rescans every grid key on each dequeue, and outer portals are detected by hard-coded offsets (x == 2, maxX - 2), which assumes the input has no trailing-space trimming. Partial helpers (head, unjust, getLabel, M.!) are also used throughout.",
+  "tags": [
+   "bfs",
+   "grid",
+   "parsing",
+   "state space search"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/21": {
+  "approach": "Hand-written springscript programs are ASCII-encoded and fed as the input list to a shared Intcode interpreter, and the last output value is taken as the hull damage.",
+  "critique": "Raw-string quasiquotes keep the scripts readable, and one `solve` covers both parts. The real work is the hand-derived jump logic, which has no comments, and `NOT T T` is used as an unexplained copy idiom. `solve` returns `last` of outputs without checking it is a damage value rather than ASCII text. The interpreter appends outputs with `++`, which is quadratic, and `stepProgram` wraps a pure step in IO.",
+  "tags": [
+   "intcode",
+   "simulation",
+   "boolean logic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/22": {
+  "approach": "Part 1 simulates the shuffle on a Data.Sequence deck. Part 2 composes inverse position maps in a type-level modulus (Data.Mod), reads off the affine coefficients, and sums the geometric series for repeated application.",
+  "critique": "The parser returns composed functions directly. Part 2 probes the inverse at 0 and 1 to get the affine map and applies a closed-form power instead of iterating. `/` assumes a prime modulus, and deck size and repeat count are hard-coded. Part 1 rebuilds an array per deal and uses partial `unjust`. The two parsers duplicate structure.",
+  "tags": [
+   "simulation",
+   "math",
+   "modular arithmetic",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/23": {
+  "approach": "Steps 50 Intcode machines in a Map one instruction per round, routing three-value outputs to destination input queues, feeding -1 when idle, and diverting address-255 packets to the answer or NAT.",
+  "critique": "Routing is a single fold of M.adjust per round. Weaknesses: unsafePerformIO unwraps an IO-typed step, and helpers are duplicated across parts. Part 2 assumes idleness after a hard-coded 1000 packet-free rounds and stops when a NAT-delivered y matches any earlier delivered y, not only the previous one. `let Just (x, y) = nat'` errors if no NAT packet arrived, and queues use repeated `++` appends.",
+  "tags": [
+   "intcode",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/24": {
+  "approach": "Part 1 steps a 5x5 Map grid of Dead/Alive and stores every state in a Set until one repeats, then sums biodiversity powers of two. Part 2 keeps a sparse Set of live (x,y,depth) cells and runs 200 steps.",
+  "critique": "The sparse Set in part 2 grows the levels only as needed: each step looks only at live cells and their neighbours. recNeighbors encodes the level-crossing rules as nested if-chains with hard-coded coordinates like (2,1) and (3,2). This reads clearly but is verbose, and it relies on the fixed 5x5 size. fromChar is partial, part 1 uses a Map plus Set of grids where a bitmask Int would be cheaper, and stepRec recomputes neighbour counts for duplicate candidates.",
+  "tags": [
+   "simulation",
+   "cellular automaton",
+   "cycle detection",
+   "grid",
+   "set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2019/25": {
+  "approach": "Drives the Intcode droid with a hand-written route that collects eight items, then queues every subset's drop-move-retake command sequence as ASCII input and prints output at each prompt.",
+  "critique": "Precomputing all 256 subset attempts, ordered by length, as one input stream avoids parsing room text or reacting to feedback. The route and item names are hard-coded for one input. runTurn has no explicit stop or answer extraction, so the password is read from stdout. It also re-decodes the output list after every single instruction, and Output appends with ++.",
+  "tags": [
+   "intcode",
+   "brute force",
+   "simulation",
+   "hard-coded"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/1": {
+  "approach": "Part 1 checks all ordered pairs with a list comprehension. Part 2 builds a Map from 2020-a-b to a pair (a,b), then looks up each element c as a key to find a triple.",
+  "critique": "The Map replaces a cubic triple loop with n² insertions plus n lookups, and `<$> xs <*> xs` builds the pair table in one line. Neither part stops an element pairing with itself. Part 1 prints one product per ordered matching pair, so a distinct-valued answer appears twice. Part 2 prints one entry per element of xs found as a key. The local `lookup` shadows Prelude's.",
+  "tags": [
+   "brute force",
+   "lookup table",
+   "list comprehension"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/2": {
+  "approach": "Each line is split with splitOn into a Policy and password. Part 1 counts characters with Map.fromListWith and checks the range; part 2 XORs two 1-based positions using (/=) on Bools.",
+  "critique": "Part 2 states the exactly-one rule directly by comparing two Bools with (/=). In part 1 the Nothing branch returns False, so a password without the policy character is rejected even when the lower bound is zero. Parsing relies on irrefutable list patterns, head and read, and (!!) is partial on short passwords.",
+  "tags": [
+   "parsing",
+   "string processing",
+   "counting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/3": {
+  "approach": "Parses the grid into a Map keyed by (x, y) with the row width stored alongside, then walks each slope using x `mod` width for horizontal repetition until a lookup misses, and multiplies the five tree counts.",
+  "critique": "Using `mod` on the stored width avoids building a repeated grid, and stopping on `Nothing` gives a natural end condition. `head ls` and `squareFromChar` are partial, and Map lookups cost O(log n) where indexing rows directly would be cheaper. In `part2`, `gridFromLines ls` is written inside the mapped lambda although it does not depend on `inc`; binding it once outside would state the intent more clearly.",
+  "tags": [
+   "grid",
+   "simulation",
+   "parsing",
+   "modular arithmetic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/4": {
+  "approach": "Splits input on blank lines into passports, parses key:value tokens into a Data.Map, checks required keys for part 1, and runs a per-field validator returning a list of typed errors for part 2.",
+  "critique": "The ValidationError type distinguishing Missing from Invalid is a readable design, though only `null` is used. Weaknesses: `read` on byr/iyr/eyr/hgt crashes on non-numeric values, the lambda `\\[a,b]` is partial, and the missing-iyr case reports EYRError (copy-paste bug). The seven near-identical case blocks could collapse into a table of field validators.",
+  "tags": [
+   "parsing",
+   "validation",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/5": {
+  "approach": "Decodes each boarding pass by recursively halving an explicit list of row/column numbers per letter, computes seat IDs and takes the maximum, then finds the missing seat by set difference against a hard-coded seat grid.",
+  "critique": "`partition` mirrors the halving literally, which reads clearly but does repeated `length`/`take`/`drop` instead of reading F/B/L/R as binary digits. It is partial: short lines and unknown characters fail to match. Part 2 hard-codes rows `[1 .. 118]`, an input-specific constant, and takes `head` of the difference, assuming exactly one empty seat in that range rather than finding an ID whose neighbours are both present.",
+  "tags": [
+   "parsing",
+   "binary search",
+   "set",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/6": {
+  "approach": "Splits the input lines into groups on blank lines; part 1 sums the length of the nub of each group's concatenated answers, and part 2 sums the size of the folded Set intersection of each group's answers.",
+  "critique": "Each part is a single point-free line using the shared <$$> to map over groups inside IO, and the set intersection reads directly as 'questions everyone answered'. nub is quadratic, which is harmless for 26 letters. foldl1 is partial: an input ending in an extra blank line makes splitOn [\"\"] yield an empty final group and crash part 2. The path is hard-coded instead of using Util.input.",
+  "tags": [
+   "parsing",
+   "set intersection",
+   "data.set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/7": {
+  "approach": "A Parsec parser reads the rules; part 1 inverts them into a contained-by map and runs a Seq-queue BFS from shiny gold, part 2 recursively sums quantities over the forward map.",
+  "critique": "Inverting the map turns part 1 into plain reachability. The BFS never checks `seen` before enqueuing, so colours reached by several paths are expanded repeatedly, and `countBagsInside` is not memoised. `satisfy isDigit` assumes single-digit quantities. On a parse error `readRules` prints it and returns an empty rule list, so the parts silently produce a count rather than failing.",
+  "tags": [
+   "parsing",
+   "bfs",
+   "graph",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/8": {
+  "approach": "Parses instructions with Parsec into a Vector, steps a small machine inside the State monad while tracking visited counters in a Set, and brute-forces part 2 by trying every single jmp/nop swap.",
+  "critique": "Newtypes for Counter and Accumulator plus a pure stepMachine keep the interpreter readable, and laziness means head stops at the first terminating variant. Each candidate copies the whole vector with V.// and reruns from scratch, giving O(n²) work. The opcode case, sign case, irrefutable Jmp/Nop patterns and Right-only parse match are partial, and a jump landing past the end without equalling the length would crash at V.!.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "parsing",
+   "state monad",
+   "cycle detection"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/9": {
+  "approach": "Part 1 slides a 25-element window and checks each next number against a Set of the window for a pair sum; part 2 tries each start index and extends rightward until the running sum reaches or exceeds the target.",
+  "critique": "`canSum` rebuilds `S.fromList preamble` for every `p` instead of once per window. Part 2 restarts the scan at every start index rather than keeping a running two-pointer window, so its cost depends on how quickly sums overshoot. It fails at runtime if the input runs out before an invalid number, `head` finds no range, or `V.!` indexes past the end. part2 rereads the input through part1.",
+  "tags": [
+   "sliding window",
+   "brute force",
+   "set",
+   "vector"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/10": {
+  "approach": "Sorts the joltages. Part 1 counts gaps of one and three in one pass. Part 2 memoises a keep-or-skip recursion over (previous joltage, remaining list) using monad-memo.",
+  "critique": "The keep/skip recursion encodes each adapter choice directly, and `threes + 1` accounts for the device's final gap. Memo keys hold whole list suffixes, so each Map lookup compares lists rather than an index. Part 1 calls `error` on any gap other than 1 or 3, and the parameter name `last` shadows Prelude.",
+  "tags": [
+   "memoisation",
+   "dynamic programming",
+   "recursion",
+   "sorting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/11": {
+  "approach": "Iterates a seating step on a Map grid to a fixed point through a pluggable adjacency function. Part 2 precomputes, per cell, the first non-floor seat along eight rays built by zipping coordinate ranges.",
+  "critique": "One fixGrid serves both parts via AdjacencyFn. `zip <$> [...] <*> [...]` pairs three x-sequences with three y-sequences, all eight directions after `drop 1`, and zip truncation stops rays at the border. Weaknesses: hard-coded width/height, non-exhaustive fromChar and case expressions that crash on unexpected input, and full Map rebuilds each step.",
+  "tags": [
+   "simulation",
+   "grid",
+   "fixed point",
+   "precomputation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/12": {
+  "approach": "Parses actions with Parsec, then folds them over a ship state via an Actionable type class: a heading-plus-position Ship for part 1 and a ShipWaypoint with relative waypoint for part 2.",
+  "critique": "A shared `solve` fold over two Actionable/Manhattanable instances keeps both parts uniform; waypoint rotation is a coordinate swap with negation. Partial: `turn` and `rotate` (only 90/180/270), `opposite` (no F), `leftOf`/`rightOf`, `dirFromChar`, and the `Right` pattern. Its `line` parser demands '\\n' after every action, so a file without a final newline fails. Dir mixes headings and turn commands.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "type classes",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/13": {
+  "approach": "Part 1 computes each bus's wait as busId - ts `rem` busId and takes the minimum. Part 2 filters out `BusX`, then folds `findNext` over the indexed bus IDs.",
+  "critique": "`findNext` advances `current` by `step` until `(current + offset) mod busId == 0`, then sets `step` to `step * busId`, so each search only scans multiples of the accumulated step. It has no `BusX` clause and relies on the earlier filter. Part 1 reports a wait of busId rather than 0 when ts is divisible by an ID. `readInput` uses a partial list pattern and `read`.",
+  "tags": [
+   "chinese remainder theorem",
+   "sieving",
+   "math",
+   "parsing",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/14": {
+  "approach": "Parses instructions with Parsec into a typed AST, then runs them recursively through a Machine holding a Map from address to 36-bit lists; part 2 expands floating bits applicatively into all concrete addresses.",
+  "critique": "Explicit bit types (MaskBit, ValueBit) and the MemUpdater function parameter let both parts share one runMachine. maskBitFromChar and valueBitFromChar are partial, and `fromRight []` discards parse errors, leaving an empty instruction list instead of a reported failure. Values are stored as bit lists built through printf, which is wasteful. Part 2 enumerates 2^X addresses per write, workable only while masks have few Xs.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "bit manipulation",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/15": {
+  "approach": "Simulates the game turn by turn, keeping a strict Data.Map from each spoken number to a list of its last one or two turns, and iterates `stepGame` until the target turn.",
+  "critique": "The state type and `stepUntil` loop read clearly, and `Strict` avoids thunk buildup over 30 million turns. Both `case` expressions are partial (no `Nothing` arm in the first, no `Just []` in the second), relying on invariants instead of types. Each turn does a few Map lookups and inserts, O(t log m) with heavy allocation where an unboxed mutable array would be far faster; the input is hard-coded.",
+  "tags": [
+   "simulation",
+   "map",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/16": {
+  "approach": "A Parsec parser reads rules and tickets. Part 1 sums invalid values from nearby tickets only. Part 2 transposes valid tickets into columns and backtracks, caching failed remaining-rule sets in an IORef.",
+  "critique": "The dead-end cache is keyed on the remaining Set of Constraints, which implies the column position, so each failing subset is explored once, though distinct subsets can still number exponentially. `traverse` in IO explores every candidate branch even after one succeeds, and an IORef replaces pure state. `Right i` and `Just` are partial pattern matches.",
+  "tags": [
+   "parsing",
+   "backtracking",
+   "memoisation",
+   "constraint satisfaction"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/17": {
+  "approach": "Active cubes are kept as a sparse Data.Set of 4-tuples, with a Dim flag fixing w at 0 for part 1. Each of six steps re-evaluates every neighbour of an active cell.",
+  "critique": "One 4D coordinate type and a dimension switch inside `neighbours` let both parts share all the code, and the sparse set needs no bounds handling. The weak spot is `nub` for deduplicating candidates, which is quadratic. Collecting them into a Set would avoid that. The puzzle input is embedded via a quasiquote and the six steps are hard-coded.",
+  "tags": [
+   "simulation",
+   "cellular automaton",
+   "set",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/18": {
+  "approach": "Part 1 reverses each line and parses it with a right-recursive Parsec grammar, so right-associative parsing of the reversed text gives left-to-right evaluation. Part 2 rewrites operators and evaluates lines through Hint.",
+  "critique": "Reversing the string so naive right recursion acts like a left fold is compact, and the flipped parentheses are commented. Part 2 rewrites + and * to +: and *: and interprets each line with the Hint GHC interpreter. Those operators live in HintMixins.hs, which is not shown, so the precedence logic is not visible here. Operands go through digitToInt, so only single-digit numbers are supported.",
+  "tags": [
+   "parsing",
+   "parser combinators",
+   "string rewriting",
+   "hint interpreter"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/19": {
+  "approach": "Part 1 expands rule 0 into every string it generates and checks messages against a Set. Part 2 builds a Parsec parser accepting one or more rule-42 strings, then rule-31 strings, with more 42s than 31s.",
+  "critique": "Part 2 implements rules 0, 8 and 11 by hand as 42^n 31^m with n > m, so it depends on the input's rule 0 being \"8 11\". Its greedy many1 loops are correct only because rules 42 and 31 match disjoint fixed-length blocks. Enumerating every string for rules 0, 42 and 31 is exponential in grammar depth, and matches has no Nothing case, so a missing rule crashes.",
+  "tags": [
+   "parsing",
+   "parser combinators",
+   "brute force",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/20": {
+  "approach": "Backtracking fills the square row-major: cell (0,0) tries every variant of every tile, later cells take unused variants matching neighbours' edges via precomputed edge-string maps; part 2 stitches border-stripped tiles and scans orientations for monsters.",
+  "critique": "Indexing every variant by left and top edge turns each later placement into a map lookup. The first cell tries every stored variant of every tile, `intersect` on lists is quadratic, and tile size 10 is hard-coded in the edge functions and chopBorders. solveJigsaw runs once per part, and `head`/`M.!` are partial.",
+  "tags": [
+   "backtracking",
+   "grid",
+   "parsing",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/21": {
+  "approach": "Parses foods with Parsec, then backtracks over ingredients in the list monad, giving each an unused allergen or none in an allergen-to-ingredient map. Branches are pruned when a food's mapped allergen lacks its ingredient.",
+  "critique": "The `with ++ without` backtracking is short, and laziness lets `head` take the first complete mapping. It skips set intersection and elimination and rechecks every food at each node. `head` is partial, and the parser needs a trailing newline. `findValidMappings` declares `Map Ingredient Allergen` but builds allergen-keyed maps; it type-checks only because both aliases are `String`.",
+  "tags": [
+   "backtracking",
+   "parsing",
+   "constraint satisfaction",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/22": {
+  "approach": "Both parts simulate the game on Data.Sequence decks. Part 2 recurses into sub-games on SQ.take prefixes and keeps a Set of seen (hand, hand) pairs, awarding player one on a repeat.",
+  "critique": "Matching the front with the :<| and Empty pattern synonyms and appending winners with >< keeps play and playRec close to the rules. The guards have no case for equal cards, and readInput's `let [h1, h2]` fails at runtime unless there are exactly two blocks. The seen-set stores whole Seq pairs compared structurally, so memory and comparison cost grow with game length.",
+  "tags": [
+   "simulation",
+   "recursion",
+   "cycle detection",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/23": {
+  "approach": "Represents the cup circle as a successor map (IntMap from cup to next cup) and runs each move inside the State monad, splicing three cups out and back in with constant-count map updates.",
+  "critique": "The successor-map encoding makes each move a fixed number of lookups and inserts, so part 2's ten million moves finish without list rotation. IntMap still costs O(log n) per access, and the lazy State with `modify` can pile up thunks; an unboxed mutable array in ST would be much faster. `readOut` recomputes `length sofar` on every step, which is quadratic, though only nine cups are read. The puzzle input is hard-coded in the source.",
+  "tags": [
+   "simulation",
+   "linked list",
+   "state monad",
+   "intmap"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/24": {
+  "approach": "Parses each path into hex directions, folds them with foldl' onto doubled-width coordinates to toggle a Set of black tiles, then runs 100 rounds of a Set-based cellular automaton over black tiles and their neighbours.",
+  "critique": "Doubled-width coordinates (E/W move x by 2) give integer hex positions without cube coordinates, and storing only black tiles in a Set limits each step to the live region. Each neighbour count builds a fresh six-element Set and intersects it with the whole black set, rather than counting membership directly. fromString is partial, and the parser's try/choice ordering is verbose.",
+  "tags": [
+   "cellular automaton",
+   "hex grid",
+   "parsing",
+   "simulation",
+   "set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2020/25": {
+  "approach": "Recovers one loop size by brute-force discrete logarithm, multiplying 7 repeatedly modulo 20201227 until it matches a public key, then applies that many modular multiplications to the other key.",
+  "critique": "The two `go` loops are short and easy to follow. `getLoopSize` is linear in the discovered loop size and `transform` is linear in its exponent argument, where square-and-multiply would be logarithmic. Both public keys are literals in this module, 7 and 20201227 recur as magic numbers, and `getLoopSize` never terminates if the target is unreachable.",
+  "tags": [
+   "brute force",
+   "math",
+   "modular arithmetic",
+   "discrete logarithm"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/1": {
+  "approach": "Input is embedded at compile time via Template Haskell and parsed with decimal; numIncreasing zips `drop 1 xs` with `xs` into (next, current) pairs and counts those where fst > snd; part 2 first sums batch3 triples.",
+  "critique": "The reader-applicative predicate `(>) <$> fst <*> snd` keeps numIncreasing short, and part 2 reuses it unchanged after `batch3` and `fmap sum`. Summing each three-element window is more work than comparing values three apart, since shared terms cancel. readAs calls error on bad lines, and the embedded input fixes answers at compile time.",
+  "tags": [
+   "parsing",
+   "sliding window",
+   "template haskell"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/2": {
+  "approach": "Parses each line with a Parsec `choice` into a Movement ADT, then runs a strict left fold of a part-specific step function over a three-field Submarine (x, depth, aim) and multiplies x by depth.",
+  "critique": "Sharing one `solve` and swapping only the step function keeps the two parts small, and the ADT makes each command explicit. Part 1 carries an unused aim field. Errors are handled with `error`: a bad line aborts in `parseWith`, and `number` uses the unsafe `read`. The input is embedded at compile time, so the module cannot run on a different file without recompiling.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/3": {
+  "approach": "Parses lines into [Bool] lists. Part 1 transposes them into columns and takes the majority bit per column; part 2 repeatedly filters rows by the common bit at an increasing index until one row remains.",
+  "critique": "Epsilon is the complement of the gamma [Bool] list, and one filterBits serves both ratings via the bit selector. Each column has one entry per row, and the list popCount calls testBit (via !!?) for each index, so each count is quadratic in row count and is recomputed several times per call. filterBits re-transposes every step, and loops forever if two or more identical rows remain.",
+  "tags": [
+   "bit manipulation",
+   "parsing",
+   "filtering"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/4": {
+  "approach": "Each board maps number to (x,y) in an IntMap plus a Set of marked cells; calls are folded over all boards, checking ten row/column lines for a win, dropping winners for part 2.",
+  "critique": "The number-to-position IntMap makes marking a single lookup, and the rows-plus-transpose trick builds the win lines compactly. isWon recomputes all 10 lines after every call instead of tracking line counts, and the 5x5 size is hard-coded. Parsing relies on exact spacing and parseWith calls error on failure; the Maybe result type only covers the no-winner case.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/5": {
+  "approach": "Parses each line into two endpoints sorted lexicographically, expands each segment into points with linePoints, keeps points appearing more than once via a Map-based duplicates helper, and counts them.",
+  "critique": "Lexicographic sorting makes x ascend, so axis lines use plain ranges; diagonals may still have descending y, which linePoints handles via signum (y2 - y1). The part1 filter built from split, &&&, both and same is harder to read than x1 == x2 || y1 == y2. duplicates costs O(P log P); toTuple2 errors unless exactly two coordinates, and parseWith calls error on parse failure.",
+  "tags": [
+   "parsing",
+   "grid",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/6": {
+  "approach": "Computes, per starting fish, the number of descendants after d days via a recursive count over (days remaining, timer), memoised with monad-memo, and sums over all fish in one shared memo table.",
+  "critique": "The recurrence is compact: a timer of 0 splits into (6, 8), and the single startEvalMemo means repeated timers reuse cached work, so the state space is at most d×9 entries. Each recursive step also goes through memo, adding Map overhead for chains a direct per-timer count vector or closed form would avoid. Timer constants 6 and 8 are hard-coded, and parsing errors call error.",
+  "tags": [
+   "memoisation",
+   "recursion",
+   "dynamic programming",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/7": {
+  "approach": "Parses crab positions with a Parsec CSV parser, then sums fuel at the three positions within 1 of a centre (median for part 1, floored integer mean for part 2) and takes the minimum.",
+  "critique": "`solve` takes the centre and cost functions as arguments, so both parts share one routine: it computes the centre, then sums over the list once per candidate. Part 1 sorts first via `median`, so it costs O(n log n). Correctness depends on the optimum lying in the ±1 window, which the code neither states nor checks. `median` indexes with `!!` and `mean` divides by zero on empty input.",
+  "tags": [
+   "math",
+   "parsing",
+   "median",
+   "mean"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/8": {
+  "approach": "Each line is decoded by brute force: all 5040 permutations of the seven-segment enum are tried, and the first that maps every signal pattern onto a known digit set wins. It then decodes the four output digits.",
+  "critique": "Decoding happens inside the Parsec parser via `(p : _) <-`, so the parser itself solves the wiring; a compact design, but no matching permutation gives an opaque pattern-match failure. Brute force costs up to 5040×10 set maps per line, fine at this size. Part 1 runs the full part-2 decode just to count 1/4/7/8, where a segment-length check would do.",
+  "tags": [
+   "brute force",
+   "parsing",
+   "permutations",
+   "sets"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/9": {
+  "approach": "Parses the heightmap into a Map grid of DigitCell. Part 1 sums risk over cells lower than all orthogonal neighbours; part 2 runs a Seq-queue BFS from each minimum, stopping at cells equal to maxBound.",
+  "critique": "The basin wall is `maxBound` of the cell type, which for `DigitCell` comes from its derived `Bounded` instance rather than a literal 9. In `M.lookup n g >= M.lookup p g`, `p` is always on the grid, so an off-grid `n` gives `Nothing >= Just _`, which is False and drops it; this reliance on Maybe ordering is uncommented. The `&&& ... app` pipeline in part 1 is dense, and the input is parsed twice.",
+  "tags": [
+   "bfs",
+   "grid",
+   "flood fill",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/10": {
+  "approach": "Each line runs through a stack-based bracket matcher that pushes expected closers and returns Left on the first mismatched character or Right with the leftover stack. Corrupt lines are scored by character and incomplete lines by base-5 folding plus a median.",
+  "critique": "Pushing the expected closer instead of the opener makes the leftover stack the completion string directly, so partitionEithers splits both parts in one pass. The single score table avoids two lookups. scoreLine's Applicative-Maybe fold is harder to read than a plain fold, and median relies on an odd-length list via partial (!!).",
+  "tags": [
+   "stack",
+   "parsing",
+   "median"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/11": {
+  "approach": "Simulates each step on a Map-based grid of Fin-10 digits. Incrementing wraps 9 to 0, so a cell at 0 has flashed. Flashes cascade by repeatedly bumping the neighbours of newly found zero cells until none remain.",
+  "critique": "Using `Fin Nat10` arithmetic removes the separate reset pass: wrapped cells are the flashes, and `flashIncrement` leaves zeros untouched. `M.adjust` silently ignores off-grid neighbours. Each cascade round rescans the whole map with `flippedLookupM`. Part 2 hard-codes 100 as the grid size and uses partial `(!! 0)`, and the generic signature hides its reliance on wraparound `Num`.",
+  "tags": [
+   "simulation",
+   "grid",
+   "cellular automaton",
+   "modular arithmetic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/12": {
+  "approach": "Breadth-first enumeration of every path from Start over an adjacency Map, using a Data.Sequence queue whose entries carry the reversed path and a Map of visit counts for small caves.",
+  "critique": "Both parts share one search, differing only in a predicate over the count values, which keeps the rule change to one line. Every complete path is built and kept as a list only to be counted with length, so memory grows with the answer. A count-only DFS memoised on (node, visited set) would be cheaper. The line `catMaybes (sequence (M.lookup ...))` is an obscure way to get neighbours. Nodes that toNode rejects are dropped silently, so toTuple2 fails without a clear error.",
+  "tags": [
+   "bfs",
+   "graph",
+   "path enumeration",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/13": {
+  "approach": "The parser turns each fold line into a function that reflects points beyond the line via 2c - v, and Relude's scanl' applies them to the dot Set, keeping every intermediate set.",
+  "critique": "Each fold is one S.map over the dots, not a dense grid, and the scanl' list serves part 1 (index 1) and part 2 (last). many1 guarantees a fold, so NE.fromList is safe. parseWith calls error on parse failure, toTuple2 on wrong field counts, and number's unsafe read on digit-dash strings like 1-2. The parser one-liner is dense, and part 2 must be read by eye.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "grid",
+   "set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/14": {
+  "approach": "Tracks counts of adjacent character pairs in a Map, rewriting each pair (a,b) into (a,c) and (c,b) per step, then halves per-letter pair counts and adds back the template's end characters.",
+  "critique": "Pair counting makes each step's work proportional to the number of distinct pairs (rebuilt via fromListWith), not the polymer length, which is what makes 40 steps feasible. The halving trick with +1 for first and last characters is correct but unexplained. `rules M.! [a,b]` is partial, assuming every pair has a rule.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "dynamic programming",
+   "counting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/15": {
+  "approach": "Dijkstra with lazy deletion over a min-priority queue keyed by risk accumulated before entering a cell. Part 2 tiles the grid virtually with extendGrid and wraps risks above 9 by subtracting 9.",
+  "critique": "Each popped cell adds its own risk via lookup pos, with the origin special-cased to cost 0, and pushes all in-bounds neighbours at that total. extendGrid computes tiled values on demand through divMod tile offsets, so the 5x map is never built. Weaknesses: best-known risks live in a Map with O(log n) lookups, duplicate queue entries are only discarded when popped, and Data.Set is imported but unused.",
+  "tags": [
+   "dijkstra",
+   "priority queue",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/16": {
+  "approach": "Expands the hex line to a String of '0'/'1' characters, parses it with Parsec into a recursive Packet AST (literal groups, two length-type operator forms), then folds the tree for version sum or evaluation.",
+  "critique": "The ADT plus Parsec keeps parsing and evaluation separate, and the length-type-0 case reuses the parser by slicing the bits and re-parsing them with `parseWith (many packet)`. Weaknesses: bits are a list of Chars, `bitsToInt` on `[Bool]` is quadratic via `testBit`/`!!?`, and failures go through `error` in `opFromInt`, `toTuple2`, `hexToBin` and the nested `parseWith`.",
+  "tags": [
+   "parsing",
+   "parser combinators",
+   "recursion",
+   "bit manipulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/17": {
+  "approach": "Brute-forces launch velocities with vx from floor(1/4 + sqrt(1 + 8*minX)/2) to maxX and vy from minY to |minY|, simulating each until it lands in the hard-coded target or overshoots.",
+  "critique": "The vx lower bound uses the triangular-number formula to skip probes that stall before minX. The vy upper limit of |minY| is assumed, not derived in code. The target is hard-coded instead of parsed. The `vx == 0 && y < minY` guard is redundant because the next guard returns Nothing for the same cases. `L.maximum` is partial, and the bound relies on floating-point sqrt.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/18": {
+  "approach": "Snailfish numbers are binary trees with ID-tagged leaves. Explode finds the first depth-4 pair and locates its neighbours by ID position in the flattened leaf list; split rewrites the first leaf of 10 or more; reduce repeats until stable.",
+  "critique": "Unique leaf IDs plus derived Foldable give in-order neighbour lookup without zippers, and the Semigroup instance makes part 1 a plain fold. Each reduction step makes several linear passes (toList, elemIndex, mapID) plus structural equality checks to detect change. Part 2 filters pairs with derived structural `/=`, halving goes through Double, and toTuple2 is partial.",
+  "tags": [
+   "tree",
+   "simulation",
+   "parsing",
+   "brute force",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/19": {
+  "approach": "Scanners merge into scanner 0's growing beacon Set. Each scanner tries axis-permutation and sign-flip transforms, accepting an offset when one beacon difference appears 12 times (`nSameIn`), repeated via `iterateFix`.",
+  "critique": "Counting difference vectors in a Map with early exit is a short matcher. Putting `id` in the powerset list duplicates sign patterns, so 90 composed functions yield 48 distinct transforms, half of them reflections. Each remaining scanner's orientations are rebuilt every pass, comparing against the full merged set. Leftover unmatched scanners would silently undercount part 1.",
+  "tags": [
+   "brute force",
+   "parsing",
+   "set",
+   "fixed point",
+   "geometry"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/20": {
+  "approach": "Keeps the image in a coordinate Map grown one cell per side per step; fromListBE builds 9-bit indices, off-grid cells using a default from cycle [Cell False, Cell True].",
+  "critique": "Passing the off-grid default per step keeps background handling to one line. That default always alternates and is never read from alg, so it is only right for inputs whose first and last alg entries make the background flip. Each step rescans all keys for minXY/maxXY, does nine O(log n) Map lookups per cell, and rebuilds the Map with M.fromList, where an array would avoid these costs.",
+  "tags": [
+   "cellular automaton",
+   "grid",
+   "simulation",
+   "bit manipulation",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/21": {
+  "approach": "A lens-based Game record is advanced by `roll`. Part 1 recurses over an infinite cycled 1..100 die list. Part 2 recursively counts wins across all 27 three-roll outcomes, memoised on Game with monad-memo.",
+  "critique": "Tallying wins as (Sum Int, Sum Int) pairs combined with mconcat keeps part 2 short. Recursion stops once a score reaches 21, so the memo table is bounded by positions, scores below 21 and turn. It still explores 27 roll triples rather than 7 sums weighted by frequency. Starting positions are hard-coded literals instead of parsed input.",
+  "tags": [
+   "memoisation",
+   "simulation",
+   "dynamic programming",
+   "lens"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/22": {
+  "approach": "Part 1 folds every instruction over all cells of the 101³ cube. Part 2 uses inclusion–exclusion: each step appends the new cuboid if on, plus negated intersections with every stored cuboid, then sums signed volumes.",
+  "critique": "Half-open ranges from `(+ 1) <$> number` keep `volume` simple, and the signed-cuboid fold is short and correct. Each step walks all of `seen` and may add an entry per element, so the list can grow geometrically. With half-open ranges, `x0 <= x1` admits empty intersections; they add zero volume but still lengthen the list. Part 1 rewalks a million-element list per instruction.",
+  "tags": [
+   "inclusion-exclusion",
+   "brute force",
+   "geometry",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/23": {
+  "approach": "A* over states mapping each amphipod type to a HashSet of coordinates, using a min-priority queue keyed on cost plus a per-amphipod distance-to-home-column estimate; a BFS per amphipod finds legal destinations.",
+  "critique": "Move legality sits in `getValidDestinations` (rooms only when holding no strangers, a fixed set of hallway stops) and `isFixed`, which keeps settled amphipods in place. Both mazes are hard-coded with walls padding part 1 to four rows so one `destinationMap` serves both parts. A `traceShow` prints on every expansion, and partial `HM.!`, `L.head` and `foldl1` appear throughout.",
+  "tags": [
+   "a-star",
+   "bfs",
+   "priority queue",
+   "grid",
+   "state search"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/24": {
+  "approach": "Parses the three per-digit constants from fixed line offsets of each 18-line block, then runs a digit-by-digit search over a Map from z value to digit list, keeping the max or min list per z.",
+  "critique": "Collapsing states by z with fromListWith max/min is a sound dynamic program and avoids interpreting the ALU generically. However, z is never bounded or pruned, so the frontier can grow very large. Parsing depends on hard-coded line indices 4, 5 and 15 and the 18-line block shape. Using `length ws` per entry and `intToDigit` round-tripping through Text are awkward.",
+  "tags": [
+   "dynamic programming",
+   "parsing",
+   "reverse engineering",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2021/25": {
+  "approach": "Simulates the herd on a Map-based grid, moving east then south each step, then counts the leading pairs of consecutive grids in the lazy `iterate` sequence that differ.",
+  "critique": "Each half-step builds its move list from the pre-step grid, so simultaneous movement falls out naturally, and the answer comes from `takeWhile (uncurry (/=))` over adjacent grids, plus one. Every step rebuilds a persistent Map with O(n log n) inserts and compares whole maps. `g M.! n` is partial, though safe after `wrap`, and the `Bimap` and `foldl1'` imports are unused.",
+  "tags": [
+   "simulation",
+   "grid",
+   "fixed point"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/1": {
+  "approach": "A Parsec parser reads blank-line-separated groups of numbers and sums each group with a double fmap; part 1 takes the maximum, and part 2 sorts descending and sums the top three.",
+  "critique": "The parser does both the grouping and the summing in one line, so each part is a short `&` pipeline over input embedded at compile time with Template Haskell. Part 2 sorts the whole list to get three values, which costs O(n log n) where a single pass would be O(n). `maximum` and `parseWith` are partial and call `error` on empty or malformed input.",
+  "tags": [
+   "parsing",
+   "parser combinators",
+   "sorting",
+   "template haskell"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/2": {
+  "approach": "Parses each line into two RPS values with Parsec, scores games using cyclic successor/predecessor on a Bounded Enum, and for part 2 rewrites the second move from the desired outcome before scoring.",
+  "critique": "Encoding the beats relation as succCyc on a three-constructor enum avoids a 9-case table, and both parts share one solve function. Part 2 reuses the RPS type to mean lose/draw/win, so updateEntry's Rock/Paper/Scissors patterns are misleading. The parser treats A and X interchangeably, and parseWith calls error on bad input.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "enum"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/3": {
+  "approach": "Each line is cut in half with chunksOf, the halves become Data.Set values and are intersected; part 2 groups lines in threes, folds S.intersection over them, and scores letters by ord offsets.",
+  "critique": "Both parts are short point-free pipelines with the same set-intersection-then-head shape, though duplicate1 and duplicate2 are separate functions. U.head and toTuple2 are partial: an odd-length line such as length 5 gives chunks of 2, 2 and 1, so toTuple2 errors. priority relies on the bare offsets 96 and 38, and the unused chunk import is noise.",
+  "tags": [
+   "set intersection",
+   "parsing",
+   "string processing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/4": {
+  "approach": "Parses each line with Parsec into a pair of integer intervals, then counts pairs where one interval contains the other (part 1) or where they intersect (part 2), using direct endpoint comparisons.",
+  "critique": "Both predicates are O(1) endpoint checks with no range expansion. The overlap test, which checks whether either start lies inside the other interval, is correct but less obvious than `c <= b && a <= d`. `sepBy` accepts any field count, so a line with the wrong number of fields reaches the partial `toTuple2` inside the parser and crashes. Syntax errors crash too, via `parseWith`'s `error`.",
+  "tags": [
+   "parsing",
+   "intervals",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/5": {
+  "approach": "A Parsec parser reads eight crate rows, transposes them into a Vector of stacks, then folds the moves with V.//, taking the moved block as is or reversed.",
+  "critique": "Passing reverse or id as the only difference between parts keeps both answers in one solve function, and the generic numberLine3 makes move parsing short. The row count 8 is hard-coded, so the parser depends on input height. U.head crashes if a stack ends empty, and each V.// copies the whole vector, which is cheap only because there are few stacks.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "fold",
+   "stack"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/6": {
+  "approach": "Unpacks the embedded input to a String and recursively slides a window of n characters, returning the index past the first window whose nub length equals n, starting the counter at n.",
+  "critique": "Short and direct: starting the counter at n gives the answer position without extra arithmetic, and the trailing pattern returns Nothing instead of crashing. Each step runs quadratic nub on the window and calls length on take, so it costs O(len·n²), fine at n=14 but not incremental. The inner `as` shadows the outer argument, and Maybe Integer next to Int counts adds needless conversions.",
+  "tags": [
+   "sliding window",
+   "brute force",
+   "string processing",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/7": {
+  "approach": "Parses the terminal log with Parsec into Cd/Ls commands, replays them with a reversed path stack to build a rose tree of Dir/File nodes, then recomputes every directory's size recursively.",
+  "critique": "The tree type and parser are clear, and both parts reduce to a filter and fold over dirSizes. insertNode is partial (U.head crashes on an unseen directory) and uses structural delete, and dirSizes calls nodeSize per directory, giving quadratic work. mkFs drops the first command unchecked and treats any later `cd /` as a child name; 100000 and 40000000 are bare literals.",
+  "tags": [
+   "parsing",
+   "tree",
+   "recursion",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/8": {
+  "approach": "Part 1 folds each row and column in both directions, keeping coordinates that beat a running maximum. Part 2 sweeps each line tracking distance to the last tree of each height 0-9 and multiplies the four directional scores per cell.",
+  "critique": "Part 2's per-height table makes each sweep O(10) per cell instead of rescanning, so the whole thing is linear in grid size times 10. However, `nub` over the visible-coordinate list is quadratic where a Set would do. `visibilityFrom` has no empty-list case, and `U.head`/`U.last` are partial. Cell 9 is hard-coded as the maximum height. The `fst3`/`<$$>` fold state is dense to read.",
+  "tags": [
+   "grid",
+   "dynamic programming",
+   "monotonic scan"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/9": {
+  "approach": "`foldl'` over parsed moves calls `moveRope`, which recurses once per unit step: it shifts the head, lets each knot follow by clipping the per-axis delta to [-1,1], and prepends the new tail position.",
+  "critique": "Clipping each axis delta with `clip` expresses the follow rule in one expression, and `solve n` handles both parts. The answer comes from `nub` on the full path, which is O(n²); a `Set` would make it O(n log n). Also, `moveTail` takes a `d` parameter it never uses, adjacency is checked with `elem` over `a : neighbors a` rather than a Chebyshev-distance comparison, and the fold carries an anonymous tuple.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/10": {
+  "approach": "A strict left fold over parsed instructions records the X register value during every cycle in a Map; part 1 sums signal strengths at fixed cycles, and part 2 renders lit pixels via the Grid helper.",
+  "critique": "Logging X once per cycle (twice for addx) produces one trace that serves both parts. The Map is unnecessary because cycles are inserted in order, so a list would do. The checkpoints [20,60,...,220] and the screen width 40 are literals. fromCoords sizes the grid to the largest lit coordinate, so trailing dark columns or rows are dropped, and parseWith calls error on bad input.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "grid",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/11": {
+  "approach": "Parses each monkey into a positional `Monkey` constructor holding an item Seq, operation and target-choice closures, and a throw counter, then simulates rounds over a Map using `iterate`.",
+  "critique": "Building the operation and test as closures during parsing keeps the simulation short. Reducing worry modulo the product of all divisors keeps part 2 numbers small. The constructor fields are lazy, so the `n + 1` counters may build thunk chains, and `iterate ... !! 10000` defers evaluation. Monkey ids are assumed to run 0..n-1, and `M.!` is partial.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "modular arithmetic",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/12": {
+  "approach": "Breadth-first search backwards from the End cell over a Map-based grid with a reversed climb rule, stopping at the first cell matching a predicate: Start for part 1, a plain 'a' cell for part 2.",
+  "critique": "One `floodUntil` serves both parts, and S and E carry heights 'a' and 'z' in their `_c` fields. Out-of-grid neighbours are dropped because the step test compares `Maybe` values, where `Nothing < Just _`, which is a subtle way to bounds-check. Part 2's `(== Cell 'a')` excludes `Start 'a'` as a target. Visited checks happen on dequeue, so duplicates enter the Seq, and the grid is parsed twice.",
+  "tags": [
+   "bfs",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/13": {
+  "approach": "A recursive Parsec parser builds a Packet tree; a hand-written cmp gives the ordering, part 1 sums indices of LT pairs, part 2 sorts all packets plus dividers and multiplies divider positions.",
+  "critique": "The cmp function maps the comparison rules directly onto pattern matches, promoting a lone integer to a one-element list, and the pipelines read clearly. Part 2 sorts everything in O(n log n) when counting packets below each divider would be linear. Parsing relies on partial toTuple2 and an error-throwing parseWith, and cmp could have been an Ord instance.",
+  "tags": [
+   "parsing",
+   "recursion",
+   "sorting",
+   "parser combinators"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/14": {
+  "approach": "Parses rock paths into coordinate lists, passes them to Helper.Grid.fromCoords (which fills the bounding box from (0,0) with Empty), then drops grains via iterate over Maybe Grid until one escapes or the source fills.",
+  "critique": "One solve serves both parts by appending a floor row, and Maybe gives a clean stop signal. Each grain is re-simulated from (500,0) rather than resuming from the previous path. fromCoords stores every cell from x=0 to maxX, not just rocks. Part 2 hard-codes floor width 0..1000, and dropGrain treats missing cells as blocked.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/15": {
+  "approach": "Part 1 builds a Set of every covered x on row 2000000 per sensor, unions them and counts. Part 2 runs best-first search from the grid centre, prioritising cells by how many sensors cover them.",
+  "critique": "Part 1 materialises millions of points in Sets instead of merging intervals, so it is memory-heavy. Part 2's priority-queue search on coverage count has no guarantee of reaching a zero-score cell quickly, and each pushed cell rescans all sensors. Constants 2000000/4000000 are hard-coded, foldl1 fails on an empty list, and parse errors abort via error.",
+  "tags": [
+   "best-first search",
+   "priority queue",
+   "brute force",
+   "parsing",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/16": {
+  "approach": "Part 1 runs a breadth-first search over (valve, open set, flow, total, time) states, pruned by the best total per (valve, open set). Part 2 enumerates single-agent opening schedules over BFS distances and pairs the top 250.",
+  "critique": "Part 1's cache stores only the total per (valve, open set), not time, so pruning relies on BFS order. singlePaths can insert openings later than the limit, which score weights negatively by `limit - t`. Part 2 keeps a hard-coded `take 250` with no stated guarantee of optimality. shortestPaths uses per-path seen sets, so it expands redundant paths.",
+  "tags": [
+   "bfs",
+   "memoisation",
+   "graph",
+   "brute force",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/17": {
+  "approach": "Simulates falling rocks in a Map-based grid with lazily cycled jets and pieces. Part 2 stops when an undercounted move tally hits a jet-length multiple as the piece cycle restarts, then multiplies that height and adds a fresh remainder simulation.",
+  "critique": "Collision and push checks are direct and readable. Part 1 drops a hard-coded 485 pieces instead of 2022. Part 2's counter skips each rock's final jet, and assuming the tower repeats from an empty floor, with no profile check, is unsound, as the wrong-answer comments show. maxXY rescans all keys per rock; drop is copied three times.",
+  "tags": [
+   "simulation",
+   "grid",
+   "cycle detection",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/18": {
+  "approach": "Part 1 sums six minus occupied neighbours per cube via Set lookups. Part 2 starts a size-capped BFS flood fill from every cell of a hard-coded box, subtracting faces touching each bounded region found.",
+  "critique": "Part 1 is a straightforward O(n log n) count over a Data.Set. Part 2 is fitted to one input: the 1..18/0..19 box, the 3500-cell cap where interiorArea returns Nothing and the result is dropped, and the fixups (halving count key 10, inserting 1196) are unexplained constants. Every box coordinate, including lava cells, launches a flood, so regions are re-filled many times; fst3/snd3/thd3 are imported unused.",
+  "tags": [
+   "bfs",
+   "flood fill",
+   "brute force",
+   "set",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/19": {
+  "approach": "Best-first branch-and-bound over 9-tuple states in a max-priority queue keyed by an optimistic geode estimate; it stops once the best queued bound cannot beat the best geode count found.",
+  "critique": "The obsidian-limited upper bound and early exit prune strongly. The `seen` check compares only resources under the same robot counts, ignores `t`, and overwrites rather than merges entries. No `t == duration` cutoff exists, so stopping depends on the bound test. There is no max-spend robot cap, and the 9-tuples hurt readability.",
+  "tags": [
+   "branch and bound",
+   "best-first search",
+   "priority queue",
+   "pruning",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/20": {
+  "approach": "Builds a circular doubly linked list in an immutable Vector of (value, prevIndex, nextIndex) triples, unlinks each element, walks |n| mod (len-1) links to the new spot, and relinks.",
+  "critique": "Indexing nodes by original position makes mixing order trivial, and reducing the step count mod (len-1) keeps part 2 walks bounded. But each V.// copies the whole vector, so a mix costs O(n²) in copies plus walking, where a mutable vector would avoid that. The irrefutable Just pattern for zeroI and list (!!) on a cycled list are partial and slow.",
+  "tags": [
+   "linked list",
+   "simulation",
+   "vector",
+   "modular arithmetic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/21": {
+  "approach": "Parses each monkey into a closure over the monkey map and evaluates root by recursive lookup. Part 2 binary-searches humn over [0, 2^64] using root's comparison of its two operands.",
+  "critique": "Each closure looks up its own operands, so the Map is both the parse result and the evaluator, and swapping humn is a single M.insert. There is no memoisation, so every probe re-walks the tree. The search fixes one direction (LT narrows to the lower half) without checking it, assumes a non-negative answer below 2^64, and on EQ shrinks b by one instead of returning the matching m.",
+  "tags": [
+   "parsing",
+   "binary search",
+   "recursion",
+   "closures"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/22": {
+  "approach": "Parses the map into a padded Map-based grid and the path with Parsec, then walks step by step, delegating off-map moves to a wrapper: linear scan for part 1, hand-coded cube-edge table for part 2.",
+  "critique": "Parametrising followPath over a Wrapper keeps both parts on one walker. Part 2 is a fourteen-guard table for one 50-wide net, with start (50,0), 200 grid rows and edge offsets hard-coded. With no otherwise clause, a differently shaped net can reach an unmatched guard and crash. The last guard's x < 100 is redundant given x == 49, and linearWrap rescans a row or column on every wrap.",
+  "tags": [
+   "simulation",
+   "grid",
+   "parsing",
+   "geometry"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/23": {
+  "approach": "Simulates rounds as a lazy infinite list of Set Coord2 states; each elf proposes via the rotating direction order, countMap rejects collided targets, part 2 finds the first unchanged consecutive pair.",
+  "critique": "The lazy `steps` stream is shared by both parts, and the 'all four directions free means stay' rule is folded neatly into the `[_, _, _, _]` pattern. Weaknesses: part 1 materialises a filled bounding-box Map instead of computing area minus elf count, each round rebuilds an O(n log n) Map plus full Set equality, and `!!`, `M.!`, `U.head` are partial.",
+  "tags": [
+   "simulation",
+   "grid",
+   "cellular automaton",
+   "lazy evaluation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/24": {
+  "approach": "Precomputes one blizzard Map-grid per minute over a period of lcm (w - 1) (h - 1), then runs A* (min-priority queue, Manhattan heuristic) over (position, time mod period) states, chaining three searches for part 2.",
+  "critique": "Caching grids for the full period makes each lookup cheap and keeps the seen set finite, and part 2 reuses the search by rotating the cycled grid list by elapsed time. The cost is memory: one full Map per minute, rebuilt separately in each part. The `let Blizzard ds = v` binding is a partial pattern, guarded only by the preceding `isBlizzard` filter.",
+  "tags": [
+   "a-star",
+   "grid",
+   "simulation",
+   "cycle detection",
+   "priority queue"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2022/25": {
+  "approach": "Decodes each SNAFU line by recursing over reversed digits, adding digit value times 5^n, then sums. Encoding finds the digit count from repeated '2' strings and picks digits greedily from the top.",
+  "critique": "Decoding is plain place-value recursion with an explicit accumulator in `go`. Encoding picks each digit by whether the remaining magnitude exceeds 2·(sum of lower powers), the most the lower digits can cover. The greedy step recomputes `sum ps` at every digit, making it quadratic in digit count, though counts are small. `snafuVal` is partial and `U.head` is unsafe.",
+  "tags": [
+   "math",
+   "parsing",
+   "base conversion",
+   "greedy"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/1": {
+  "approach": "Each line is scanned with replace-megaparsec's sepCap for digit (and, in part 2, spelled-number) matches; the first match comes from the forward line, the last from parsing the reversed line against reversed words.",
+  "critique": "Parsing the reversed line against reversed number words handles overlapping spellings like 'twone' without lookahead. Running sepCap over the whole line only to take the head does extra work, but it is linear and harmless here. uhead is partial, so a line with no match crashes. Input is embedded at compile time via Template Haskell.",
+  "tags": [
+   "parsing",
+   "megaparsec",
+   "string processing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/2": {
+  "approach": "A parser-combinator grammar builds Game records holding lists of Color draws. Part 1 keeps games whose draws stay within fixed limits; part 2 flattens draws and multiplies per-colour maxima.",
+  "critique": "The Color sum type and the explicit three-accumulator go loop for r/g/b keep both parts short, linear in input, and easy to follow. The 12/13/14 limits are hard-coded literals. Input is spliced at compile time via Template Haskell, and because (⊢) returns a plain value rather than an Either or Maybe, the caller cannot handle a parse failure.",
+  "tags": [
+   "parsing",
+   "fold",
+   "template haskell"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/3": {
+  "approach": "Scans the grid row by row, accumulating each digit run's characters and neighbour coordinates, then nubs them; part 1 keeps numbers bordering any Mark, part 2 groups numbers by adjacent '*' cells.",
+  "critique": "The hand-written scanner repeats the same flush logic at a non-digit cell and at the row end. Neighbour lists grow by repeated list appends and are deduplicated with quadratic nub, while out-of-bounds coordinates are handled by catMaybes over (||?). Part 2 builds a per-number Map, merges with unionWith (<>), and keeps gears with exactly two numbers; foldl1 is partial if the grid has no numbers.",
+  "tags": [
+   "grid",
+   "parsing",
+   "map",
+   "neighbours"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/4": {
+  "approach": "Parses each card into an id and two number lists split at `|`; part 1 sums `2 ^ size (as ∩ bs) `div` 2`, part 2 folds over cards, adding each card's count to the next n card ids in a Map.",
+  "critique": "The `2 ^ n `div` 2` form gives 0 for n = 0 without a branch, and one `parser` serves both parts. Part 2 uses an outer `foldl'` over cards and an inner `foldl'` over `[i + 1 .. i + n]` applying `adjust (+ c)`, so copies propagate forward as counts without materialising cards. Part 1 calls `parseWith parser` while part 2 uses the `⊢` operator for the same step, an inconsistency.",
+  "tags": [
+   "parsing",
+   "dynamic programming",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/5": {
+  "approach": "Each map line becomes a forward and inverse partial function, combined per section as first-match-or-identity. Part 1 folds seeds forward; part 2 takes each line's first number as a candidate and checks it against the seed ranges.",
+  "critique": "A single lambda over the swapped (source, dest) pairs produces both directions, so neither is written twice. Part 2 tests only the per-line dest numbers, combining the sections' inverse functions with `Ɍ ($)`. Range lookups scan linearly, the seed check rebuilds `chunksOf 2 seeds` for every candidate, and `toTuple2` is partial.",
+  "tags": [
+   "parsing",
+   "function composition",
+   "inverse mapping",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/6": {
+  "approach": "Parses times and distances as Doubles, solves the quadratic x(t−x) > d in closed form, and counts integers strictly between the roots via ceiling/floor; part 2 concatenates digits and reparses.",
+  "critique": "The quadratic formula makes each race O(1), so part 2 needs no search, and `ceiling − floor − 1` counts only integers strictly between the roots, so exact integer roots are excluded correctly. All arithmetic, including the square root, is done in Double rather than integers. `asOne` builds the part-2 race by going through `round`, `show` and `uread` on each column, which works but is indirect.",
+  "tags": [
+   "math",
+   "parsing",
+   "quadratic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/7": {
+  "approach": "Cards and hand types are enums with derived Ord. A tuple compare of (hand type, cards) sorts hands. Part 2 wraps cards in a JCard newtype that ranks jokers lowest and maps each type and joker count to an upgraded type. The sorted list is zipped with ranks.",
+  "critique": "Using Ord instances and newtypes means the sort does all the ranking work. The joker upgrade is a hand-written case table over count patterns, which is long and easy to get wrong where a rule like 'add jokers to the largest group' would be shorter. charToCard and the Pair/TwoPair case are partial, and the parser also computes the final sum.",
+  "tags": [
+   "sorting",
+   "parsing",
+   "type classes",
+   "counting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/8": {
+  "approach": "Parses the instruction string and node map with parser combinators, then lazily walks the cyclic L/R list to emit every step count at which a goal predicate holds. Part 2 takes each 'A'-ending start's first hit and folds them with lcm.",
+  "critique": "Having travel return a lazy infinite list of hit times keeps one walker for both parts, with uhead taking the first hit. Part 2 combines only each start's first hit via lcm and never inspects later hits from the same list. The non-exhaustive case on 'L'/'R' and the (!! 2) indexing are partial functions.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "math",
+   "lcm",
+   "laziness"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/9": {
+  "approach": "Each line is parsed into integers. A foldl' runs length−1 times, prepending successive difference rows, then foldr1 and the operator ((+) part 1, (-) part 2) combine each row's last or first element.",
+  "critique": "Both parts share one solve, parameterised only by the element selector and the combining operator. It always builds all length−1 difference rows, so each line costs quadratic time and it never stops early when a row turns all zero. The whole pipeline in solve is a single point-free line of &&&, uncurry and flip, which makes the operand order of the final combination hard to follow.",
+  "tags": [
+   "parsing",
+   "math",
+   "finite differences",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/10": {
+  "approach": "Walks the loop from S in both directions, marking one side of each pipe as candidate outside cells. It BFS flood-fills non-loop regions, discards any region touching a marked cell, then drops whichever result contains (0,0).",
+  "critique": "Marking a side of the loop during the walk replaces a separate shoelace or ray-casting pass, and the two walk directions cover both orientations. Choosing between the results by testing (0,0) assumes that cell is off the loop, so it sits in the exterior. The point-free part2 pipeline, built from both, &&& and uncurry, is hard to follow.",
+  "tags": [
+   "grid",
+   "flood fill",
+   "bfs",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/11": {
+  "approach": "Builds two sets of empty line indices, one per coordinate axis, then for every unordered galaxy pair walks each axis's coordinate range, counting 1 per index or the scale factor for empty ones.",
+  "critique": "One function parameterised by the expansion factor serves both parts, and the inclusive `range` walk with a `- 2` correction handles endpoints uniformly. The empty-line sets are built inside the per-pair function `d`, so each pair rescans the grid unless GHC floats them out. The range walk is also linear in coordinate differences, where prefix sums over sorted coordinates would avoid that.",
+  "tags": [
+   "grid",
+   "brute force",
+   "parsing",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/12": {
+  "approach": "Memoised recursion keyed on (remaining string, remaining group sizes): a leading '.' is prepended, each group is placed after a gap of i non-'#' cells, and recursive counts are summed. Part two unfolds records fivefold.",
+  "critique": "Prepending '.' makes every placement a uniform gap-then-block step, keeping the recursion to two clauses. The memo key holds the whole string suffix, so key comparisons cost more as strings grow. For each candidate i it builds a Set from the gap take i ss and another from the block take c (drop i ss), and it tries every i rather than stopping once the gap hits a '#'.",
+  "tags": [
+   "memoisation",
+   "dynamic programming",
+   "recursion",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/13": {
+  "approach": "Each candidate vertical and horizontal mirror line is checked by comparing the cell blocks on either side. Part 2 toggles every cell, recomputes reflections, and keeps lines absent from the original grid.",
+  "critique": "Both axes are handled in one comprehension tagged Left/Right, so no code is duplicated, and partitionEithers keeps the final sum short. Part 2 is brute force, rerunning the full reflection scan once per toggled cell instead of finding lines with exactly one mismatch. The dense operators and the index arithmetic in `b` make the mirrored ranges hard to verify.",
+  "tags": [
+   "brute force",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/14": {
+  "approach": "Tilts by repeating a single-cell roll pass (`step`) over a VectorGrid until it stops changing (`iterateFix`), then sums row-weighted loads; part 2 indexes the `iterate oneCycle` sequence at 1000000000 using `(...)`.",
+  "critique": "One `step` serves all four directions via `move`, `opposite` and `iterCoords`, keeping both parts short. Each tilt runs whole-grid passes until a fixpoint and compares full grids with `Eq` after every pass, rather than sliding rocks in one sweep. Part 2 relies on `(...)` selecting the 1000000000th element; its `Ord` constraint suggests repeat detection, but the shortcut is not visible here.",
+  "tags": [
+   "simulation",
+   "grid",
+   "fixpoint",
+   "cycle detection"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/15": {
+  "approach": "Part 1 sums the HASH of each comma-separated step. Part 2 parses steps and folds them into 256 boxes, each a Map from label to focal length plus a Seq for lens order.",
+  "critique": "Keeping a label-to-focal Map beside a Seq of labels separates lookup from ordering: '=' on an existing label rewrites only the Map entry, so the Seq order is preserved without searching it. Encoding '-' as ('-', 0) via pure 0 keeps one tuple type. The bool-based branches, with argument order (false, true), are harder to read than guards.",
+  "tags": [
+   "parsing",
+   "simulation",
+   "hashing",
+   "fold"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/16": {
+  "approach": "Worklist traversal over (coordinate, direction) states, destructured with `Empty`/`:<|` and extended with `<⊕`, recording a visited set and mapping each tile character to outgoing directions; part 2 maximises over perimeter starts.",
+  "critique": "The mirror and splitter rules fit in one case expression, with `bool` choosing the turn per incoming axis, and keying `seen` on (cell, direction) stops beams from looping forever. Part 2 runs `energized` from scratch for each direction paired with the perimeter cells `pFrom` gives for it, a straightforward brute force. The case has no fallback branch, so an unexpected character crashes at runtime.",
+  "tags": [
+   "grid",
+   "simulation",
+   "brute force",
+   "flood fill"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/17": {
+  "approach": "A* search over states (cell, current run length, direction) using a min-priority queue and Manhattan-distance heuristic, with turn and continue rules passed in as predicates for each part.",
+  "critique": "One search serves both parts through the turnP/noTurnP predicates, and the goal check reuses turnP to enforce part 2's minimum run. Cost is charged on the cell being left and corrected at the goal by adding the target and subtracting the origin, which works but is hard to follow. Duplicate states are pruned only when popped, so the queue grows, and `(q <!)` is partial if no path exists.",
+  "tags": [
+   "a-star",
+   "dijkstra",
+   "grid",
+   "priority queue"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/18": {
+  "approach": "Parses each line into two (direction, length) instructions, selects one per part, then walks the polygon accumulating a shoelace-style area term and perimeter, combining them via Pick's theorem.",
+  "critique": "One parser and one fold serve both parts, and accumulating `x' * (y' - y)` plus `p div 2 + 1` handles the large part 2 coordinates in O(n) without a grid. The area term is used without `abs`, so the sign depends on traversal orientation, which the code does not check. The part 2 direction comes from indexing the hard-coded list `[DirRight, DirDown, DirLeft, DirUp]` with a parsed `number`, a partial `!!` lookup.",
+  "tags": [
+   "parsing",
+   "shoelace formula",
+   "pick's theorem",
+   "math",
+   "geometry"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/19": {
+  "approach": "Each rule is parsed once into a pair of a predicate closure and a symbolic condition; part 1 runs parts through the closures, part 2 walks backward from \"A\" over rule-prefix paths, intersecting xmas ranges.",
+  "critique": "Building both representations in one parser pass serves both parts, and the backward search uses a map of paths keyed by destination; negating earlier conditions with `invert` gives disjoint ranges without forward interval splitting. Part 1's `uhead` fails if no rule in a workflow matches, and `|!` lookups assume every target exists. The 1–4000 bounds and \"in\" start are hard-coded.",
+  "tags": [
+   "parsing",
+   "interval arithmetic",
+   "graph search",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/20": {
+  "approach": "Simulates pulses with a FIFO Seq queue per button press, timestamping each module's outputs; for each predecessor of hard-coded 'vf', takes the first output change's later press index plus 1, then multiplies.",
+  "critique": "The per-module (press, signal) history makes part 2 a scan for the first output flip. Each processed pulse conses a full state map onto `ss`, never trimmed, and `stateChanges` reruns the 5000-press simulation once per predecessor. The 'vf' name and 5000 bound are input-specific, and `let Just (ts, fullName)` and `uhead` are partial.",
+  "tags": [
+   "simulation",
+   "cycle detection",
+   "parsing",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/21": {
+  "approach": "Both parts expand a Set of reachable plots one step at a time. Part 2 tiles the grid via modular lookups, records set sizes when `n mod 131 == 65` (steps 65, 196, 327), and extrapolates quadratically.",
+  "critique": "The frontier-set simulation is short, and a finite-difference quadratic fit avoids simulating 26501365 steps. The constants 131, 65 and 393 are hard-coded, and the extrapolation assumes the counts grow quadratically at those intervals, which the code does not check. Each step rebuilds a Set from all neighbours, `let [a, b, c]` is a partial pattern, and `do` wraps a pure value.",
+  "tags": [
+   "simulation",
+   "grid",
+   "set",
+   "math",
+   "polynomial extrapolation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/22": {
+  "approach": "Bricks are sorted by z and settled by repeated passes that lower each unsupported brick one unit until a fixpoint. Pairwise support maps answer part 1 and drive an iterated fallen-set expansion for part 2.",
+  "critique": "Two Map Brick (Set Brick) support relations make both parts short comprehensions, and endpoint order is normalised with min/max. Settling is slow: a pass moves each brick at most one unit with an O(n) any-check per brick. The maps need O(n²) pairwise tests, and part 2 re-filters the surviving set every round for each starting brick.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "parsing",
+   "graph"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/23": {
+  "approach": "Part 1 enumerates paths with a queue of (cell, visited-set) states, moving any direction on '.' but only arrow-wise on slopes. Part 2 builds a junction graph (convolution-found forks plus start/end) and runs exhaustive DFS.",
+  "critique": "Junction compression keeps Part 2's exhaustive search tractable. mkGraph runs a full slopePaths search for every junction pair from triPairs, adjacent or not, repeating grid work. Part 1 keeps every complete path set in memory before taking the maximum length. maximum and |! are partial, and -1 stands in for no path.",
+  "tags": [
+   "graph compression",
+   "dfs",
+   "brute force",
+   "grid",
+   "longest path"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/24": {
+  "approach": "Part 1 intersects every hailstone pair's 2D slope-intercept lines over exact rationals, filtering by bounds and future time; part 2 gives Z3 position-plus-velocity equations for all stones.",
+  "critique": "Exact rationals avoid floating-point error, and Z3 solves part 2 with little algebra. `t'` is computed from the first stone's `x` and `vx`, duplicating `t`; the second stone's future check really comes from its own `validIntersection` call, where `inFuture` uses its values. A zero x- or y-velocity can divide by zero. Part 2 adds a time variable per stone where three stones suffice.",
+  "tags": [
+   "geometry",
+   "z3",
+   "parsing",
+   "brute force",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2023/25": {
+  "approach": "Parses lines into (node, neighbours) pairs, builds an adjacency map with mkMap and a reversed one with swapMapList, merges them via unionWith (<>), then counts nodes reachable while skipping three literal edges.",
+  "critique": "The three cut edges are hard-coded node-name literals, so nothing computes the minimum cut and the solution depends on a specific input's edge names. The traversal is short: a queue matched with Empty and :<| plus a visited set, multiplying component size by the remainder. `count 3 alphaNum` assumes three-character names.",
+  "tags": [
+   "graph",
+   "graph traversal",
+   "parsing",
+   "input-specific",
+   "hard-coded"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/1": {
+  "approach": "Parses the input into number pairs and unzips them into two lists. Part 1 sorts both and sums `diff` over the zipped pairs. Part 2 counts the right list and sums each left value times its count.",
+  "critique": "Each part fits on one line, and `twoOf` with `unzip` keeps parsing compact. Sorting costs O(n log n), and the count map avoids a quadratic scan. Part 2 is hard to read: `counts <$> lists` counts only the right list via the tuple Functor, then `&<@>`, `<.>`, a flipped `|?` and `? 0` follow, and decoding it needs the prelude's signatures.",
+  "tags": [
+   "parsing",
+   "sorting",
+   "map",
+   "point-free"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/2": {
+  "approach": "A recursive parser reads numbers one at a time, prepending each to the accumulated list. With `skip` set, an alternative consumes one `anyWord` and continues with skipping disabled.",
+  "critique": "The guard multiplies every difference by each distinct sign and requires all products to lie in [1,2,3], so mixed signs or a zero difference fail and one check enforces both direction and step size. Tolerance is just another `trying` alternative. `diffs` is recomputed over the whole accumulated list at each step rather than incrementally.",
+  "tags": [
+   "parsing",
+   "backtracking",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/3": {
+  "approach": "A recursive parser tries ordered alternatives at each position: do() and don't() set an enabled flag, mul(a,b) yields a Σ of Π values, any other character is skipped, and |-<.> runs the parser on the input.",
+  "critique": "One parser serves both parts. The first Bool is the state don't() switches to, so part 1 passes True and effectively ignores don't. A disabled mul still parses but produces Σ [Π 0] instead of being dropped, and the Σ/Π wrappers express the sum-of-products. The paired Bool parameters are cryptic, and the anyChar fallback means the parser advances one character at a time through junk input.",
+  "tags": [
+   "parsing",
+   "parser combinators",
+   "monoid",
+   "state machine"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/4": {
+  "approach": "Each Text argument is parsed with readGrid; every grid from its rotations list goes to convolveWith as the first argument, with the $(grid 4) splice second; result cells are folded into a Σ ℤ total via its Monoid instance.",
+  "critique": "One function serves both parts: part 1 passes two text grids (a straight one and a diagonal one with '_' cells), part 2 one. Because rotations returns a list of same-typed grids, the applicative <$>/<*> yields one convolution per rotation and avoids per-direction code. The type-level arity (@n via variadicat) and the compile-time splice add machinery that makes the call sites harder to read.",
+  "tags": [
+   "grid",
+   "convolution",
+   "pattern matching",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/5": {
+  "approach": "Parses the `|` lines into a Map from each left-hand page to its right-hand pages, sorts each update with a comparator built from that map, and sums middle elements of unchanged (part 1) or reordered (part 2) updates.",
+  "critique": "Sorting with the rule-derived comparator and comparing against the original lets one `solve` helper handle both parts. `mkCompare` only checks whether `b` is listed under `a`, so a pair with no rule either way gets GT in both orders, which is not a lawful ordering; the results rely on every pair in an update having a rule. Membership is a linear list scan. The local `solve` shadows quaalude's Z3 `solve`.",
+  "tags": [
+   "sorting",
+   "parsing",
+   "custom comparator",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/6": {
+  "approach": "Simulates the guard with a Set of (position, direction) states, returning Nothing on a repeat. Part 2 reruns the walk with '#' at each visited position, counting Nothing results minus one.",
+  "critique": "A single `walk` serves both parts, since a repeated (cell, direction) state means a loop. Part 2 reruns the whole simulation once per visited position. The fold starts at (-1) with no comment explaining the offset. The point-free `walk'`, built from `>>>` and `(+)`, is hard to read.",
+  "tags": [
+   "simulation",
+   "grid",
+   "cycle detection",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/7": {
+  "approach": "Each line's numbers go through `snoc`; `f` recurses over the list with `0` as its other argument, expanding every operator via `(ops >>=)`, and `Σ t` is summed when `t` is a result.",
+  "critique": "Passing the operator list into `with` lets both parts share one evaluator, with operator choices expanded by list-monad bind. It is brute force: all operator combinations are generated and membership of `t` is tested only at the end. Part 2's `||` builds `show a <> show b` and parses that string with `number`. The point-free composition in `f` is dense to read.",
+  "tags": [
+   "brute force",
+   "list monad",
+   "parsing",
+   "recursion"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/8": {
+  "approach": "Converts the grid with `co` into a `Map Char` of positions, drops '.', forms all ordered position pairs per character via `join cartesian`, generates `b + (i,i)⋅(b-a)` over a range of i, deduplicates, and counts in-grid points.",
+  "critique": "Both parts share `step`. Part 1 passes the fixed range [1..1]. Part 2 uses `$$@` to apply one grid value twice, once to derive a single global bound from `maxXY` and once as input. That bound exceeds what pairs with larger offsets need, so their extra points are discarded by the membership test. List `nub` is quadratic where a set would not be, and the point-free chain is hard to follow without quaalude's definitions.",
+  "tags": [
+   "grid",
+   "brute force",
+   "math",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/9": {
+  "approach": "After prepending '0', the input parses as (gap, file) length pairs. Gaps go into a min-priority queue keyed by start, and each file range is placed in the leftmost gap before it that fits.",
+  "critique": "One function solves both parts. Files are fed last-first; part 1 splits each into single-block ranges, part 2 keeps whole ranges. Each range's checksum comes in closed form from triangular numbers. In place, too-small gaps before a file are popped and reinserted on the way back, so in part 2 one move can cost time linear in the earlier gaps. The point-free tuple pipeline (bimap, &@, $@, <:>, swap) is dense.",
+  "tags": [
+   "priority queue",
+   "parsing",
+   "greedy",
+   "math"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/10": {
+  "approach": "From each height-0 cell, a queue search over a Seq follows 4-neighbours exactly one higher and collects reached 9s in a list. Part 1 nubs it; part 2 counts it.",
+  "critique": "A skip flag and post-processing function let one traversal serve both parts. Part 2 never checks seen, so cells are re-expanded each time they are popped and work grows with trail count rather than grid size. Part 1 always passes skip=True, and the seen check runs before the 9 guard, so nines has no duplicates there and nub is redundant. The point-free chaining in hike is hard to read.",
+  "tags": [
+   "bfs",
+   "grid",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/11": {
+  "approach": "Each parsed stone becomes an `Mℤ n S` key (blinks left, plus `S`, a `Dℤ`-wrapped digit sequence built by `mkS`). A memoised `blink` is traversed over all stones, and the joined result sequence's `size` is returned.",
+  "critique": "Keeping digits as a sequence makes the even-length split a plain `halve` and the length test a `size` call. Memoising on (blinks left, stone) lets 75 blinks finish. But `blink` returns `Seq S`, concatenated with `(><)`, so memo entries hold stone sequences rather than counts. Results are counted only at the end with `size`. The `Mℤ`/`Dℤ` wrappers and `Dec` arithmetic obscure the rules.",
+  "tags": [
+   "memoisation",
+   "recursion",
+   "parsing",
+   "dynamic programming"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/12": {
+  "approach": "Repeatedly picks an unvisited cell and flood-fills its region with a Seq queue, accumulating area, perimeter and outward boundary segments, then counts sides by grouping segments by direction and splitting them into contiguous runs.",
+  "critique": "One flood fill collects area, perimeter and boundary data. Keying segments by outward normal through `mkWith` keeps opposite edges of a thin strip apart, so a later sort and group finds straight runs. A cell can be enqueued several times before the membership guard skips it. The view-pattern guard and `<$@>` / `<>!` operators make the sides step hard to follow.",
+  "tags": [
+   "flood fill",
+   "bfs",
+   "grid",
+   "sorting"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/13": {
+  "approach": "Runs gradient descent per machine on squared distance to the prize plus 3a+b, stepping by 0.001 times the gradient divided by ax and bx; stops on an exact hit or when the loss is unchanged from the previous step.",
+  "critique": "Gradient descent is an unusual choice for a 2×2 linear system that Cramer's rule would solve exactly in constant time. Stopping when the loss equals the previous loss, or when the presses converted to integers hit the prize exactly, can miss solutions because of float error. The lens traversal adding 10^13 to indices 4 and 5 is compact. Any short final chunk from chunksOf 6 would crash the partial six-element match.",
+  "tags": [
+   "gradient descent",
+   "optimisation",
+   "parsing",
+   "math",
+   "lens"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/14": {
+  "approach": "Simulates robots with modular wraparound, counts quadrants after 100 steps, then iterates until successive symmetric KL divergences of the robots' x+y histogram against the grid's differ by at least 0.6.",
+  "critique": "Part 2 projects robots onto anti-diagonals and measures symmetric KL divergence against the trapezoidal x+y distribution of all grid cells, so a large change between consecutive steps flags the clustered picture without image heuristics. The 0.6 threshold and the 101x103 dimensions are hard-coded constants. Using a list as a four-counter accumulator is less clear than a tuple, and logBase (exp 1) is a roundabout natural log.",
+  "tags": [
+   "simulation",
+   "grid",
+   "statistics",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/15": {
+  "approach": "Simulates the robot on a grid, recursively collecting the layer of box cells each push reaches until hitting walls or empty space, then applying the resulting list of grid-update functions to the grid.",
+  "critique": "One `step` handles both parts: `affected` adds the partner half only for vertical pushes of `[`/`]`, and `nub` stops a shared box being pushed twice. Each layer's move is a partially applied `movs` (`flip $ foldl' ...`) waiting for the grid; `foldl' (&) g moves` applies them farthest layer first, a compact but indirect encoding. `wide` omits `OL`/`OR`, safe only because they never appear before widening.",
+  "tags": [
+   "simulation",
+   "grid",
+   "recursion",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/16": {
+  "approach": "Compresses the maze into a graph of junctions joined by straight corridors that store their tile sets, then runs a priority-queue search ordered by cost plus a turn-and-distance estimate over (position, facing) states carrying accumulated tiles.",
+  "critique": "Storing corridor tiles on edges keeps the graph small, and the finished routes' tile sets are unioned once at the end, so no backtracking pass is needed. The seen map keeps the first cost popped per state and drops other costs, so part 2 relies on the estimate in `h` never popping a state above its optimal cost. Each queued state copies a Set, and `foldl1` is partial if no route exists.",
+  "tags": [
+   "a-star",
+   "graph compression",
+   "grid",
+   "priority queue"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/17": {
+  "approach": "f₁ is a hard-coded formula giving one output digit from register A. Part 1's f shifts A right three bits per digit; part 2's allA rebuilds A three bits at a time from the last digit backwards.",
+  "critique": "allA extends each candidate by eight 3-bit suffixes, keeps those whose f₁ output matches the next digit, explores every surviving branch through list-monad bind and takes the minimum. f₁ hard-codes one specific program (xor constants 3 and 5), and the parsed program serves only as part 2's target without ever being interpreted. The precedence-dependent one-liner in f₁ is hard to read.",
+  "tags": [
+   "reverse engineering",
+   "backtracking",
+   "bit manipulation",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/18": {
+  "approach": "scanl' builds one grid per prefix of falling bytes. A* ordered by steps plus Manhattan distance returns the reversed path to the goal, whose size answers part 1. Part 2 searches for the first unreachable index.",
+  "critique": "Precomputing all prefix grids lets `paths n` fetch grid `n + 1` directly, but each searchFromTo probe still runs a full A*. `path` accepts a step-indexed vector of grids, yet callers wrap one grid in `pure`, so the `min` clamp is dead generality. The `n + 1` and `? -1` offsets are hard to verify, and 70 and 1024 are hard-coded.",
+  "tags": [
+   "a-star",
+   "grid",
+   "priority queue",
+   "search",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/19": {
+  "approach": "A memoised recursion counts the ways each design can be built by stripping towel prefixes. Each count n becomes the pair (signum n, n), and the pairs are monoid-summed to give both parts.",
+  "critique": "The (signum, count) pair under the Σ monoid answers both parts in one pass. The .=<<. memo combinator keeps the recursion close to the recurrence, with the empty design as base case. Nearly every token is a custom operator or point-free composition, so the data flow is hard to follow without quaalude.",
+  "tags": [
+   "memoisation",
+   "dynamic programming",
+   "recursion",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/20": {
+  "approach": "Walks the corridor from S to E by repeatedly taking the single unvisited open neighbour, indexes each path cell by its distance from E, then pairs each cell with every cell nearer E within the cheat's Manhattan radius.",
+  "critique": "The `let [n] = ...` pattern assumes exactly one open unvisited neighbour at each step and crashes otherwise. The pair scan is O(N²) over path cells, with no spatial pruning. `size path - cost` is the true saving plus one, so the test also accepts savings of `threshold - 1`; the code alone does not rule out such cases.",
+  "tags": [
+   "grid",
+   "brute force",
+   "manhattan distance",
+   "path tracing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/21": {
+  "approach": "A queue-driven search records every neighbour walk between keys up to a length cap, then keeps all tied shortest walks per key pair. A memoised recursion picks the cheapest candidate, costing each move at the next layer.",
+  "critique": "Memoising the inner `go'` on (layer, path) through `.$.` makes 25 layers cheap. Keeping every tied shortest path avoids hard-coding a move order. The search does not stop at the first shortest walks. It collects every gap-avoiding walk under the rows+cols−1 cap, including back-and-forth ones, then sorts, wasting work on tiny pads. Type-level keypad alphabets add machinery.",
+  "tags": [
+   "memoisation",
+   "dynamic programming",
+   "grid",
+   "recursion",
+   "brute force"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/22": {
+  "approach": "Part 1 iterates the shift/xor/prune step with scanl'. Part 2 maps each four-change window to its price per buyer via mkMap over the reversed window list, then tries every distinct window across all buyers.",
+  "critique": "Reversing before mkMap appears meant to make the earliest occurrence win, assuming mkMap keeps the last duplicate as Data.Map.fromList does. Part 2 is slow: an Eq-only nub over every buyer's keys is quadratic in the number of windows, and each candidate is then looked up in every buyer's map. Merging the per-buyer maps with a summing union would avoid both.",
+  "tags": [
+   "simulation",
+   "brute force",
+   "bit manipulation",
+   "map"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/23": {
+  "approach": "Builds a symmetric adjacency map, then grows cliques level by level, extending each by every vertex adjacent to all members; part 1 filters 3-cliques, part 2 takes the last level.",
+  "critique": "Each level is a Set of Sets, so permutations collapse and the scanl' yields each clique once, with both parts reusing one list. Growth is brute force: every clique is tested against every vertex each round. The `where` binding `(cl : cls)` is a refutable list pattern that would fail at runtime on an empty graph, and `clique !! 2` relies on index 2 being the 3-clique level.",
+  "tags": [
+   "graph",
+   "clique",
+   "brute force",
+   "parsing",
+   "sets"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/24": {
+  "approach": "Part 1 recursively evaluates every z wire over the gate map. Part 2 builds expression trees for all circuit keys, diffs them against a generated ripple-carry adder, and records swaps recursively until the adder matches or eight entries exist.",
+  "critique": "Comparing trees with commutative matching (diffTree) against a reference adder finds swaps structurally, not by brute force. Wire evaluation is unmemoised, and each fixAdd call re-parses the input. The nested let pattern is refutable and fails if getclosest returns nothing. swaptext and treeIn (which has a duplicated clause) are never called by part1 or part2, the local !+! is unused, and traceShow calls remain in part2's path.",
+  "tags": [
+   "parsing",
+   "recursion",
+   "expression trees",
+   "graph"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2024/25": {
+  "approach": "Parses all schematics into typed grids, forms pairs with triPairs, and counts a pair when the cell pair ('#','#') is absent from the zip of the two grids' cell lists, casting Bool to ℤ and summing.",
+  "critique": "The overlap test is one expression: `dup` of the '#' cell checked with `∉` against the zipped cells. It never computes column heights or separates locks from keys. Correctness assumes the cell lists line up position by position, since `zip` truncates silently and this file has no size check. Every pair is compared directly, and the operator-heavy quaalude style is hard to read without the library.",
+  "tags": [
+   "brute force",
+   "grid",
+   "parsing",
+   "combinatorics"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/1": {
+  "approach": "Parses lines into signed rotations (L negative, R positive); part 2 replaces each value n with `replicate (abs n) (sgn n)`. Each list gets 50 prepended, a mod-100 running sum via `scanl1`, and a `counts` lookup of 0.",
+  "critique": "`⥢` duplicates the parsed list and `⇲` maps the expansion over only the second copy, so one `both` pipeline serves both parts. Part 2 materialises every unit step, so its work grows with the summed rotation magnitudes. `counts` builds a frequency Map of all visited positions just to read key 0; `|!` returns a bare value, so missing-key behaviour depends on quaalude.",
+  "tags": [
+   "simulation",
+   "parsing",
+   "brute force",
+   "modular arithmetic"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/2": {
+  "approach": "Parses comma-separated ranges and enumerates every integer in each. Digit count comes from logBase; an ID matches if repeating its leading l/s digits s times rebuilds it, and matches are summed via `Σ`.",
+  "critique": "The check is arithmetic with no string conversion. Part 2 passes [1 .. 10], and with s = 1 the check reduces to i == i, so every positive ID matches and the filter does nothing; starting the list at 2 avoids this. It is also brute force, floating-point logBase can miscount near powers of ten, and repetition counts above 10 are never tested.",
+  "tags": [
+   "brute force",
+   "math",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/3": {
+  "approach": "For each digit line, a recursion over (index, digits remaining) either skips or takes the current digit and keeps the larger e-digit value; line results are summed for e=2 and e=12.",
+  "critique": "One function covers both parts through the digit count, and Maybe marks suffixes too short to fill the remaining digits. Recursive calls go through .$. into an MM monad keyed on the Ord (index, remaining) pair, so cost depends on that prelude machinery. The nested Maybe cases are wordy, and the quaalude operators (.$., ?, |-<..>) are hard to read without knowing the prelude.",
+  "tags": [
+   "dynamic programming",
+   "recursion",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/4": {
+  "approach": "Each round finds every '@' cell with fewer than four '@' among its eight neighbours, removes them together through grid updates, and adds up the counts. Part 1 runs one round; part 2 runs until no cell qualifies.",
+  "critique": "One `remove` with a round limit covers both parts. Passing -1 never hits the 0 case, so recursion ends only when `removable` returns empty. Every round rescans the whole grid instead of rechecking only the neighbours of removed cells. Candidates go into a set of Maybe-wrapped coordinates, which is then queried with `Just c` for each coordinate. A plain filter would be more direct.",
+  "tags": [
+   "grid",
+   "simulation"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/5": {
+  "approach": "Template Haskell embeds and parses the input into ranges and IDs. Part 1 counts IDs that fall in any range. Part 2 applies `Ŀ` with a combinator to the sorted ranges and measures the result with `|.|`.",
+  "critique": "Part 1 filters the IDs with `or` over per-range `∈` tests, costing O(ids × ranges); merging the ranges and binary-searching would avoid the full scan. Part 2 combines `(<<*>>) ∘ (max <:>)` and `(⇱) ∘ (-!) ∘ (|.|)` via `&.&` and passes this to `Ŀ` over `(fst i) 🎜`. `Ŀ` has no given signature, so how this combination behaves on the ranges cannot be determined from the code shown, and the dense point-free style makes it hard to follow.",
+  "tags": [
+   "parsing",
+   "brute force",
+   "point-free"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/6": {
+  "approach": "Parses the input into number groups `ps` and operator functions `ops`. For part 2, it splits raw lines, applies `(⊤)`, cuts at all-space rows, filters digits and parses each group.",
+  "critique": "`both` runs one shared pipeline on `ps` and `psᵀ`: zip with `ops`, apply `Ŀ` via `$@`, then `!>`, then `Σ`, and combine with `<>!`. So the parts differ only in how the numbers are grouped. `<$$>` keeps the nested group structure through filtering and parsing. Readability suffers from dense, unsigned quaalude operators such as `Ŀ`, which make the core per-problem combining step opaque.",
+  "tags": [
+   "parsing",
+   "grid",
+   "point-free"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/7": {
+  "approach": "Parses a grid of 'S', '^' and '.' cells and binds the single 'S' position. A recursive function steps along increasing y from it, branching diagonally at '^' and returning a position set plus a count.",
+  "critique": "One traversal yields both answers: part 1 is the size of the returned set, part 2 the count, which adds 1 at each off-grid exit. Recursive calls go through .$. into an MM value unwrapped by run, and every '^' unions two child sets. The dense operator style is hard to read, and the refutable [s] pattern fails unless there is exactly one 'S'.",
+  "tags": [
+   "recursion",
+   "grid",
+   "parsing",
+   "set"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/8": {
+  "approach": "Sorts all box pairs by squared distance and merges circuits held as a Set of Sets. Part 1 applies `Ł connect` over the first 1000 pairs, then multiplies the three largest sizes. Part 2 merges until one circuit remains.",
+  "critique": "Sorting pairs once by integer squared distance (`ssd³`) avoids floating point, and that sorted list drives both parts. Each `connect` filters the circuit set twice with `(<-?-|)` to find the two endpoints' circuits, where union-find would avoid repeated searches. `final` has no empty-list case, so it is partial. The 1000 and `take 3` in `part1` are literal constants.",
+  "tags": [
+   "sorting",
+   "set",
+   "connected components",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/9": {
+  "approach": "Parses input with `(⋮)` at type `[ℤ ⹉ 2] ≠ []`, builds `out` via `outside ∘ loopPairs` and `rects` via `triPairs`, then runs one `|-?->`, `ds²`, `🎝`, `Ȟ`, `!>` pipeline per predicate.",
+  "critique": "`<:>` applies one shared pipeline to a pair of predicates, `(⊨)` for part 1 and `not ∘ or ∘ (out <&>) ∘ (□?□)` for part 2, so the parts differ only in that predicate. In part 2 every pair produced by `triPairs` is tested with `□?□` against every element of `out`, a brute-force pairs-times-edges scan. The geometry lives in unshown helpers such as `outside` and `□?□`.",
+  "tags": [
+   "geometry",
+   "brute force",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/10": {
+  "approach": "Part 1 runs a breadth-first search over string states starting from all '.', toggling characters per button, with a Set of seen states. Part 2 encodes press counts as Z3 integer variables and minimises their sum under per-counter equality constraints.",
+  "critique": "The BFS is direct but explores up to 2^n states and enqueues every successor before checking whether it was already seen, so the Seq queue grows larger than needed. Part 2 hands the integer program to Z3, which keeps it short but leaves the method opaque. Machines with no solution are silently dropped by (<>?) rather than reported.",
+  "tags": [
+   "bfs",
+   "z3",
+   "parsing",
+   "linear programming"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/11": {
+  "approach": "Parses the input into a map from node names to successor lists and counts paths by recursion; part 2 recurses over (sawDac, sawFft, node) states through the `.$.` helper, unwrapped with `run`.",
+  "critique": "Carrying two flags in the state lets one recursion count only paths that visit both `dac` and `fft`. Part 1 is plain recursion with no visible caching, so shared suffixes are recomputed. Neither part tracks visited nodes, so a reachable cycle would not terminate. The Unicode operators and Template Haskell input splice keep the code short but opaque without the custom prelude.",
+  "tags": [
+   "dfs",
+   "graph",
+   "recursion",
+   "parsing"
+  ],
+  "model": "claude-opus-5.5"
+ },
+ "2025/12": {
+  "approach": "part1 counts regions where the summed cell counts of the requested presents (count times shape size) is at most w·h; part1' instead runs a priority-queue search over placements of rotated and flipped shapes.",
+  "critique": "part1 is a single area comparison per region, linear in input size, and does not try to place any shape. part1' enumerates shape orientations with uniq and prunes states whose remaining required area exceeds free cells. Its ordering key and nested sections are very dense and hard to follow without knowing quaalude.",
+  "tags": [
+   "parsing",
+   "math",
+   "backtracking",
+   "priority queue",
+   "grid"
+  ],
+  "model": "claude-opus-5.5"
+ }
+}
