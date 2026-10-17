@@ -40,7 +40,11 @@ want='{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
 mode=$(gh api "repos/$repo/pages" --jq '.build_type+":"+(.source.branch//"")+":"+(.source.path//"")' 2>/dev/null || echo disabled)
 if [ "$mode" = disabled ]; then
   gh api -X POST "repos/$repo/pages" --input - <<< "$want" >/dev/null 2>&1 || true  # a push may have enabled it (409)
-  mode=$(gh api "repos/$repo/pages" --jq '.build_type+":"+(.source.branch//"")+":"+(.source.path//"")' 2>/dev/null || echo disabled)
+  for _ in $(seq 10); do  # a new site takes a few seconds to appear
+    mode=$(gh api "repos/$repo/pages" --jq '.build_type+":"+(.source.branch//"")+":"+(.source.path//"")' 2>/dev/null || echo disabled)
+    [ "$mode" != disabled ] && break
+    sleep 3
+  done
 fi
 if [ "$mode" != "legacy:gh-pages:/" ]; then
   gh api -X PUT "repos/$repo/pages" --input - <<< "$want" >/dev/null
