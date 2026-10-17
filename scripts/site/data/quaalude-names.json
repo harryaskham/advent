@@ -1,0 +1,1679 @@
+{
+ "solutions": 37,
+ "distinct": 239,
+ "names": [
+  {
+   "name": "aoc",
+   "solutions": 30,
+   "uses": 39,
+   "signature": "aoc :: Int -> Language.Haskell.TH.Syntax.Q Language.Haskell.TH.Syntax.Exp",
+   "module": "Quaalude.TH"
+  },
+  {
+   "name": "∘",
+   "solutions": 17,
+   "uses": 96,
+   "signature": "(∘) :: (b -> c) -> (a -> b) -> a -> c",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "∈",
+   "solutions": 16,
+   "uses": 20,
+   "signature": "(∈) :: a -> b -> Bool",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "≡",
+   "solutions": 14,
+   "uses": 33,
+   "signature": "(≡) :: Eq a => a -> a -> Bool",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "<>!",
+   "solutions": 14,
+   "uses": 20,
+   "signature": "(<>!) :: Monoid a => [a] -> a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "#",
+   "solutions": 13,
+   "uses": 27,
+   "signature": "(#) :: Applicative m => a -> m a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "size",
+   "solutions": 12,
+   "uses": 25,
+   "signature": "size :: Integral i => a -> i",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|!",
+   "solutions": 12,
+   "uses": 28,
+   "signature": "(|!) :: f k v -> k -> v default (|!) :: Ixable k (f k) => f k v -> k -> v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|-",
+   "solutions": 12,
+   "uses": 15,
+   "signature": "(|-) :: String -> Parser a -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "⋅",
+   "solutions": 12,
+   "uses": 36,
+   "signature": "(⋅) :: Num a => a -> a -> a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "|->",
+   "solutions": 11,
+   "uses": 13,
+   "signature": "(|->) :: a -> f a -> f a default (|->) :: a -> f a -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "both",
+   "solutions": 10,
+   "uses": 11,
+   "signature": "both :: Bifunctor f => (a -> b) -> f a a -> f b b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "number",
+   "solutions": 9,
+   "uses": 14,
+   "signature": "number :: (Read a, Num a) => Parser a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "$@",
+   "solutions": 9,
+   "uses": 10,
+   "signature": "($@) :: (a -> b -> c) -> (a, b) -> c",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "as",
+   "solutions": 9,
+   "uses": 27,
+   "signature": "as :: from -> to",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "?",
+   "solutions": 8,
+   "uses": 12,
+   "signature": "(?) :: a -> QuestionableF a -> QuestionableFR a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "cs",
+   "solutions": 8,
+   "uses": 48,
+   "signature": "cs :: [(a, Char)] default cs :: [(a, Char)]",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "|?",
+   "solutions": 7,
+   "uses": 10,
+   "signature": "(|?) :: f k v -> k -> Maybe v default (|?) :: Ixable k (f k) => f k v -> k -> Maybe v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "grid",
+   "solutions": 7,
+   "uses": 10,
+   "signature": "grid :: Int -> Language.Haskell.TH.Syntax.Q Language.Haskell.TH.Syntax.Exp",
+   "module": "Quaalude.TH"
+  },
+  {
+   "name": "mk",
+   "solutions": 7,
+   "uses": 13,
+   "signature": "mk :: [a] -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "nub",
+   "solutions": 6,
+   "uses": 6,
+   "signature": "nub :: Eq a => [a] -> [a]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "neighs",
+   "solutions": 6,
+   "uses": 6,
+   "signature": "neighs :: a -> g -> f a",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "mk₁",
+   "solutions": 6,
+   "uses": 10,
+   "signature": "mk₁ :: Mkable f a => a -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "∧",
+   "solutions": 6,
+   "uses": 8,
+   "signature": "(∧) :: Bool -> Bool -> Bool",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "run",
+   "solutions": 6,
+   "uses": 6,
+   "signature": "run :: f a -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "numbers",
+   "solutions": 6,
+   "uses": 7,
+   "signature": "numbers :: (Read a, Num a) => Parser [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|.",
+   "solutions": 6,
+   "uses": 19,
+   "signature": "(|.) :: f k v -> (k, v) -> f k v default (|.) :: Ixable k (f k) => f k v -> (k, v) -> f k v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "!!",
+   "solutions": 6,
+   "uses": 11,
+   "signature": "(!!) :: f a -> i -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "???",
+   "solutions": 6,
+   "uses": 8,
+   "signature": "(???) :: Bool -> a -> a -> a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "□",
+   "solutions": 6,
+   "uses": 13,
+   "signature": "(□) :: (SChar c :< SymSChars cs, KnownChar c) => SChar c -> Cell cs",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "><",
+   "solutions": 5,
+   "uses": 6,
+   "signature": "(><) :: Seq a -> Seq a -> Seq a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": ".$.",
+   "solutions": 5,
+   "uses": 11,
+   "signature": "(.$.) :: Ord k => (k .->. v) -> k -> MM k v",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "unMap",
+   "solutions": 5,
+   "uses": 5,
+   "signature": "unMap :: Map k v -> [(k, v)]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "mkMap",
+   "solutions": 5,
+   "uses": 6,
+   "signature": "mkMap :: Ord k => [(k, v)] -> Map k v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "!>",
+   "solutions": 5,
+   "uses": 5,
+   "signature": "(!>) :: f -> o",
+   "module": "Quaalude.Unary"
+  },
+  {
+   "name": "|.|",
+   "solutions": 5,
+   "uses": 10,
+   "signature": "(|.|) :: a -> MagnitudeF a default (|.|) :: (Sizable a, Integral (MagnitudeF a)) => a -> MagnitudeF a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⥢",
+   "solutions": 4,
+   "uses": 4,
+   "signature": "(⥢) :: a -> ((a, a) -> b) -> b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|?>",
+   "solutions": 4,
+   "uses": 4,
+   "signature": "(|?>) :: f -> v -> [k]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "<$@>",
+   "solutions": 4,
+   "uses": 4,
+   "signature": "(<$@>) :: Functor f => (a -> b -> c) -> f (a, b) -> f c",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "readGrid",
+   "solutions": 4,
+   "uses": 6,
+   "signature": "readGrid :: Griddable Identity g k a => Text -> g k a",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "∪",
+   "solutions": 4,
+   "uses": 5,
+   "signature": "(∪) :: a -> a -> a",
+   "module": "Quaalude.Unary"
+  },
+  {
+   "name": "un",
+   "solutions": 4,
+   "uses": 6,
+   "signature": "un :: f a -> [a]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⇱",
+   "solutions": 4,
+   "uses": 4,
+   "signature": "(⇱) :: Bifunctor p => (a -> b) -> p a c -> p b c",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "dup",
+   "solutions": 4,
+   "uses": 4,
+   "signature": "dup :: a -> (a, a)",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": ".<.",
+   "solutions": 4,
+   "uses": 4,
+   "signature": "(.<.) :: (c -> d) -> (a -> b -> c) -> a -> b -> d",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "diff",
+   "solutions": 3,
+   "uses": 4,
+   "signature": "diff :: Num a => a -> a -> a",
+   "module": "Quaalude.Math"
+  },
+  {
+   "name": "counts",
+   "solutions": 3,
+   "uses": 4,
+   "signature": "counts :: (Ord a, Num n) => [a] -> Map a n",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|-?->",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "(|-?->) :: f a -> (a -> Bool) -> f a default (|-?->) :: f a -> (a -> Bool) -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "mkWith",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "mkWith :: (Ord k, Unable t) => (v -> v -> v) -> t (k, v) -> f k v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "coords",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "coords :: Griddable Identity g k a => g k a -> [k]",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "≢",
+   "solutions": 3,
+   "uses": 8,
+   "signature": "(≢) :: Eq a => a -> a -> Bool",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "move",
+   "solutions": 3,
+   "uses": 7,
+   "signature": "move :: (Num c, Num i, Coord' i c (c, c)) => Dir2 -> i -> (c, c) -> (c, c)",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "|!>",
+   "solutions": 3,
+   "uses": 6,
+   "signature": "(|!>) :: f -> v -> k default (|!>) :: f -> v -> k",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "maximum",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "maximum :: Ord a => [a] -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "manhattan",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "manhattan :: (Coord (a, a), Num a) => (a, a) -> (a, a) -> a",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "∨",
+   "solutions": 3,
+   "uses": 13,
+   "signature": "(∨) :: Bool -> Bool -> Bool",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "∉",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "(∉) :: a -> b -> Bool",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "cells",
+   "solutions": 3,
+   "uses": 5,
+   "signature": "cells :: Griddable Identity g k a => g k a -> [a]",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "keys",
+   "solutions": 3,
+   "uses": 7,
+   "signature": "keys :: f -> [k]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "mapcat",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "mapcat :: Ord k => String -> Parser k -> Parser v -> Parser (Map k [v])",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "triPairs",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "triPairs :: Unable t => t a -> [(a, a)]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "∅",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "(∅) :: Monoid a => a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "<:>",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "(<:>) :: Bifunctor f => (a -> b) -> f a a -> f b b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "⇲",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "(⇲) :: Bifunctor p => p b a -> (a -> c) -> p b c",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "⋯",
+   "solutions": 3,
+   "uses": 3,
+   "signature": "(⋯) :: CanonicalParseSelf a => String -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "twoOf",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "twoOf :: Parser a -> Parser (a, a)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|-..",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(|-..) :: String -> Parser a -> [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "⇄",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(⇄) :: b -> (a -> b -> c) -> a -> c",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "⤊",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(⤊) :: ZipWithable f => (f a, f b) -> (a -> b -> c) -> f c",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "∘<∘",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(∘<∘) :: (c -> d) -> (a -> b -> c) -> a -> b -> d",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "&<$>&",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(&<$>&) :: Functor f => (a1 -> a2 -> b) -> (c -> f a2) -> (a1, c) -> f b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "nat₁₀",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "nat₁₀ :: Parser ℕ₁₀",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "vicinity",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "vicinity :: a -> f a default vicinity :: a -> f a",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "tuples",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "tuples :: (ToTup n (HomTup n a) t, ToTups [a] [HomTup n a]) => Text.Parsec.Prim.ParsecT s u m [a] -> Text.Parsec.Prim.ParsecT s u m [t]",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "unGrid",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "unGrid :: Griddable Identity g k a => g k a -> [(k, a)]",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "<$$>",
+   "solutions": 2,
+   "uses": 3,
+   "signature": "(<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "pack",
+   "solutions": 2,
+   "uses": 4,
+   "signature": "pack :: a -> b",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "mkQ₁",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "mkQ₁ :: Ord k => (a -> k) -> a -> pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "qInsert",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "qInsert :: Ord k => (a -> k) -> a -> pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a -> pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "goingTo",
+   "solutions": 2,
+   "uses": 3,
+   "signature": "goingTo :: c -> c -> [d] default goingTo :: Turnable d => c -> c -> [d]",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "minimum",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "minimum :: Ord a => [a] -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "mkSet",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "mkSet :: Ord a => [a] -> Set a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "snoc",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "snoc :: [a] -> (a, [a])",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "splitOn",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "splitOn :: a -> a -> [a]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "<>?",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(<>?) :: [Maybe a] -> [a]",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "|-<..>",
+   "solutions": 2,
+   "uses": 3,
+   "signature": "(|-<..>) :: (UnMonoid m a, m ~ m' a) => String -> Parser m -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "trying",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "trying :: [Parser a] -> Parser a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "sgn",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "sgn :: (Num a, Ord a) => a -> a",
+   "module": "Quaalude.Math"
+  },
+  {
+   "name": "&@",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(&@) :: (a, b) -> (a -> b -> c) -> c",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "unpack",
+   "solutions": 2,
+   "uses": 3,
+   "signature": "unpack :: b -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "eol",
+   "solutions": 2,
+   "uses": 4,
+   "signature": "eol :: Parser Char",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "co",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "co :: a -> c default co :: (Mkable f y, a ~ [x], Convable x y, c ~ f y) => a -> c",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "..#",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(..#) :: (Foldable f, Mkable f (a, b), Num a, Enum a) => f b -> f (a, b)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "!.",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(!.) :: f a -> (i, a) -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⋮",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(⋮) :: (CanonicalParseF v ~ a, CanonicalParse v) => String -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "<-?-|",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(<-?-|) :: (a -> Bool) -> f a -> f a default (<-?-|) :: (a -> Bool) -> f a -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⊏",
+   "solutions": 2,
+   "uses": 3,
+   "signature": "(⊏) :: Unable f => f a -> [a]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "🎝",
+   "solutions": 2,
+   "uses": 2,
+   "signature": "(🎝) :: (Ord a, Foldable f) => f a -> [a]",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "&<@>",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(&<@>) :: Applicative f => (f a, b) -> (a -> b -> c) -> f c",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "<.>",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(<.>) :: Applicative f => f (b -> c) -> f (a -> b) -> f (a -> c)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": ".>.",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(.>.) :: (a -> b -> c) -> (c -> d) -> a -> b -> d",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "˙",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(˙) :: a -> b -> c",
+   "module": "Quaalude.Unary"
+  },
+  {
+   "name": "surrounding",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "surrounding :: Parser a -> Parser b -> Parser b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "spaceTabs",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "spaceTabs :: Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "halve",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "halve :: forall {k} n (f :: k -> *) (a :: k). (Sizable (f a), Integral n, Takeable n f a, Droppable n f a) => f a -> (f a, f a)",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "wordsOf",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "wordsOf :: Parser a -> Parser [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "\\\\",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(\\\\) :: f a -> f a -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "area",
+   "solutions": 1,
+   "uses": 9,
+   "signature": "area :: (a ~ (i, i)) => s (i, i) -> i",
+   "module": "Quaalude.Shape"
+  },
+  {
+   "name": "arbitrary",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "arbitrary :: f a -> a default arbitrary :: f a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|-..<>",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|-..<>) :: Monoid a => String -> Parser a -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "loss",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "loss :: a -> Integer default loss :: Sizable a => a -> Integer",
+   "module": "Quaalude.LossQ"
+  },
+  {
+   "name": "chunksOf",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "chunksOf :: Int -> [a] -> [[a]]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|-.",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|-.) :: String -> Parser a -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "linesOf",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "linesOf :: Parser a -> Parser [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "mkGrid",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "mkGrid :: Griddable Identity g k a => [(k, a)] -> g k a",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "fromArrow2",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "fromArrow2 :: Char -> Dir2",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "manyOf",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "manyOf :: String -> Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "foldl1",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "foldl1 :: (a -> a -> a) -> [a] -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "turnDiff",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "turnDiff :: (Integral i, Ord i) => d -> d -> i default turnDiff :: (Integral i, Ord i) => d -> d -> i",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "enumerate",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "enumerate :: Enum a => [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "opposite",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "opposite :: d -> d default opposite :: d -> d",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "mkSeq",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "mkSeq :: [a] -> Seq a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "toTup",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "toTup :: a -> b",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "<|",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(<|) :: a -> Seq a -> Seq a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "defGrid",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "defGrid :: (Default a, Griddable Identity g k a) => [k] -> g k a",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "cellEmpty",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "cellEmpty :: (Griddable Identity g k a, EmptyCell a) => k -> g k a -> Bool",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": ".=<<.",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(.=<<.) :: (Ord k, Traversable m) => (k .->. v) -> m k -> Control.Monad.Trans.Memo.StateCache.StateCache (Control.Monad.Trans.Memo.State.Container (Map k v)) Identity (m v)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "±",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(±) :: Num a => a -> a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "flines",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "flines :: Text -> [Text]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "&<$>",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(&<$>) :: Functor f => (a1 -> a2 -> b) -> (a1, f a2) -> f b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "diffs",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "diffs :: Num a => [a] -> [a]",
+   "module": "Quaalude.Math"
+  },
+  {
+   "name": "anyWord",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "anyWord :: Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "succeed",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "succeed :: a -> Parser a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "wordOf",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "wordOf :: Parser a -> Parser a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|~",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|~) :: f k v -> (k, v -> v) -> f k v default (|~) :: (Gettable f k v, Settable f k v) => f k v -> (k, v -> v) -> f k v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "gridDims",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "gridDims :: Griddable Identity g k a => g k a -> k",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "toArrow²",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "toArrow² :: Dir2 -> Char",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "fromChar",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "fromChar :: Char -> a default fromChar :: Ord a => Char -> a",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "decDigit",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "decDigit :: Integral n => n -> n -> n",
+   "module": "Quaalude.Math"
+  },
+  {
+   "name": "setConcat",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "setConcat :: Ord a => Set (Set a) -> Set a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "setConcatMap",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "setConcatMap :: Ord b => (a -> Set b) -> Set a -> Set b",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "abc",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "abc :: Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "bitsToInt",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "bitsToInt :: Bits a => a -> Integer",
+   "module": "Quaalude.Bits"
+  },
+  {
+   "name": "intToBits",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "intToBits :: Int -> [Bool]",
+   "module": "Quaalude.Bits"
+  },
+  {
+   "name": "mapSep",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "mapSep :: Ord k => Parser kvSep -> Parser itemSep -> Parser k -> Parser v -> Parser (Map k v)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "abc123",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "abc123 :: Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "tuple",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "tuple :: (KnownNat n, Text.Parsec.Prim.Stream s m tok, ToTup n (HomTup n a) t, t ~ ToTupF (HomTup n a)) => Text.Parsec.Prim.ParsecT s u m a -> Text.Parsec.Prim.ParsecT s u m (ToTupF (HomTup n a))",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "mkBimap",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "mkBimap :: (Ord a, Ord b) => [(a, b)] -> Data.Bimap.Bimap a b",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "!?",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(!?) :: f a -> i -> Maybe a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "pad",
+   "solutions": 1,
+   "uses": 5,
+   "signature": "pad :: Int -> c -> [c] -> [c]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "unBimap",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "unBimap :: Data.Bimap.Bimap a b -> [(a, b)]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "abcABC123",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "abcABC123 :: Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "gridsT",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "gridsT :: (Griddable Identity g k a, Packable t Text) => t -> [g k a]",
+   "module": "Quaalude.TH"
+  },
+  {
+   "name": "hom",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "hom :: (Functor g, Data.HList.HList.HMapOut (a -> a) l e) => ([e] -> b) -> g (HList l) -> g b",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "cargs",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "cargs :: (CFuncArgs (CParsersF args), CFuncArgsF (CParsersF args) ~ args) => CFnName -> HList (CParsersF args) -> Parser (HList args)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "cfunc_",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "cfunc_ :: CFnName -> Parser String",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|-<.>",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(|-<.>) :: UnMonoid m a => String -> Parser m -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "hdup",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "hdup :: p -> HList [p, p]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|=<",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|=<) :: forall {k} (m :: k -> *) (a :: k) (f :: * -> *) b. (Monoid (m a), Monad f, Foldable f) => (b -> f (m a)) -> f b -> m a",
+   "module": "Quaalude.Unary"
+  },
+  {
+   "name": "x_x",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "x_x :: (Eq k, Griddable Identity g k Char, GridUnionable (g k) Char) => g k Char -> g k Char -> Bool",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "txt",
+   "solutions": 1,
+   "uses": 3,
+   "signature": "txt :: Language.Haskell.TH.Quote.QuasiQuoter",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "variadicat",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "variadicat :: (a -> b) -> ToVariadicF arity a b default variadicat :: (a -> b) -> ToVariadicF arity a b",
+   "module": "Quaalude.Variadic"
+  },
+  {
+   "name": "rotations",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "rotations :: Griddable Identity g k a => g k a -> [g k a]",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "convolveWith",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "convolveWith :: (Griddable Identity g Coord2 c, Griddable Identity g Coord2 d) => (g Coord2 c -> g Coord2 c -> d) -> g Coord2 c -> g Coord2 c -> g Coord2 d",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "middle",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "middle :: f a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "solve",
+   "solutions": 1,
+   "uses": 4,
+   "signature": "solve :: SolveForF a -> Z3 (Maybe a)",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "gridFindOne",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "gridFindOne :: Griddable Identity g k a => a -> g k a -> Maybe k",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "unSet",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "unSet :: Set a -> [a]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "turnCW",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "turnCW :: d -> d",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "setMap",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "setMap :: Ord b => (a -> b) -> f a -> f b",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "||.",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(||.) :: Griddable Identity g k a => g k a -> (k, a) -> g k a",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "|-<..?!>",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(|-<..?!>) :: Monoid a => String -> Parser a -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "-|",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(-|) :: Parser a -> String -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "cartesian",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "cartesian :: [a] -> [b] -> [(a, b)]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "$$@",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "($$@) :: (a -> a -> b) -> a -> b",
+   "module": "Quaalude.Tuple"
+  },
+  {
+   "name": "maxXY",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "maxXY :: Griddable Identity g k a => g k a -> k",
+   "module": "Quaalude.Grid"
+  },
+  {
+   "name": "values",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "values :: f k1 v -> [v]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "∋",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(∋) :: b -> a -> Bool",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "<>∘",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(<>∘) :: Monoid c => (b -> [c]) -> (a -> b) -> a -> c",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "|/",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|/) :: Ord k => Map k v -> k -> Map k v",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "nullQ",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "nullQ :: pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a -> Bool",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "<!",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(<!) :: Ord k => pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a -> ((k, a), pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a)",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "digitToInt",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "digitToInt :: Char -> Int",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "triangular",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "triangular :: Integral a => a -> a",
+   "module": "Quaalude.Math"
+  },
+  {
+   "name": "z3",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "z3 :: Z3 a -> a",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "z3And",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "z3And :: Z3.Monad.MonadZ3 z3 => [Z3.Base.AST] -> z3 Z3.Base.AST",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "minimize",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "minimize :: String -> Z3 (SolveForF i, SolveForF a) -> Z3 (Maybe (i, a))",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "z3Add",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "z3Add :: Z3.Monad.MonadZ3 z3 => [Z3.Base.AST] -> z3 Z3.Base.AST",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "|>",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|>) :: Seq a -> a -> Seq a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "z3Int",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "z3Int :: Z3.Monad.MonadZ3 z3 => Integer -> z3 Z3.Base.AST",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "range",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "range :: (Ord a, Enum a) => a -> a -> [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "z3IntVar",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "z3IntVar :: Z3.Monad.MonadZ3 z3 => String -> z3 Z3.Base.AST",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "z3Ge",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "z3Ge :: Z3.Monad.MonadZ3 z3 => Z3.Base.AST -> Z3.Base.AST -> z3 Z3.Base.AST",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "⋮⊏",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⋮⊏) :: (CanonicalParseVia v (f x), CanonicalParseF v ~ f x, Unable f) => String -> [x]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "enum",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "enum :: (Foldable f, Mkable f (a, b), Num a, Enum a) => f b -> f (a, b)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "z3Eq",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "z3Eq :: Z3.Monad.MonadZ3 z3 => Z3.Base.AST -> Z3.Base.AST -> z3 Z3.Base.AST",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "z3Assert",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "z3Assert :: Z3.Monad.MonadZ3 z3 => Z3.Base.AST -> z3 ()",
+   "module": "Quaalude.Solve"
+  },
+  {
+   "name": "⌞",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⌞) :: f a -> f a default (⌞) :: f a -> f a",
+   "module": "Quaalude.BoundedSet"
+  },
+  {
+   "name": "∩",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(∩) :: a -> a -> a",
+   "module": "Quaalude.Unary"
+  },
+  {
+   "name": "⇆⇅",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⇆⇅) :: s (i, i) -> (i, i) -> s (i, i)",
+   "module": "Quaalude.Shape"
+  },
+  {
+   "name": "⊏|⊐",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(⊏|⊐) :: (CanonicalParse v, Convable (CanonicalParseF v) a) => String -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "box₀",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "box₀ :: (a, a) -> f (a, a) default box₀ :: Num a => (a, a) -> f (a, a)",
+   "module": "Quaalude.Geometry"
+  },
+  {
+   "name": "↻",
+   "solutions": 1,
+   "uses": 3,
+   "signature": "(↻) :: a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "◓",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(◓) :: a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|?|",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(|?|) :: (Magnitude (m b), Alternative m, Monad m) => m b -> (b -> Bool) -> MagnitudeF (m b)",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "mkℤ₁",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "mkℤ₁ :: (Ord k, ZeroKey k, MkableKey f) => a -> f k a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "≤",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(≤) :: Ord a => a -> a -> Bool",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "⥅",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⥅) :: Num a => a -> a -> RangeOf2 a a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⇑",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⇑) :: [a] -> [b] -> [(a, b)]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "∖",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(∖) :: f a -> f a -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "ͼ",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "ͼ :: (Foldable f, Mkable g a) => f a -> g a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "|≤|",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(|≤|) :: (MagnitudeF p1 ~ MagnitudeF p2, Ord (MagnitudeF p2), Magnitude p2, Magnitude p1) => p2 -> p1 -> Bool",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "φ",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "φ :: Applicative m => a -> m a",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "↺",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(↺) :: a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "ͽ",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "ͽ :: Unable f => f a -> [a]",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⟒",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⟒) :: f a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "||->",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(||->) :: Ord k => (a -> k, [a]) -> pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a -> pqueue-1.5.0.0:Data.PQueue.Prio.Internals.MinPQueue k a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "◐",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(◐) :: a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "uniq",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "uniq :: f a -> f a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "csvOf",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "csvOf :: Parser a -> Parser [a]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|-<>",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(|-<>) :: Monoid a => String -> Parser [a] -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "&.&",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(&.&) :: (b1 -> b2 -> c) -> (b1 -> a -> b2) -> b1 -> a -> c",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "-!",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(-!) :: Num a => a -> a -> a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "🎜",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(🎜) :: (Ord a, Foldable f) => f a -> [a]",
+   "module": "Quaalude.Alias"
+  },
+  {
+   "name": "splitBy",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "splitBy :: (a -> Bool) -> [a] -> [[a]]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "⋮×⋯",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⋮×⋯) :: CanonicalParseSelf (NonEmpty a, [b]) => Parser (NonEmpty a, [b])",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "⊤",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(⊤) :: a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "⊏⊐",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⊏⊐) :: Convable a c => a -> c",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "?>",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(?>) :: p -> [(p -> Bool, b)] -> b",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "->>",
+   "solutions": 1,
+   "uses": 3,
+   "signature": "(->>) :: a -> b -> (a, b)",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "|\\",
+   "solutions": 1,
+   "uses": 2,
+   "signature": "(|\\) :: m -> k -> m default (|\\) :: m -> k -> m",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "ssd³",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "ssd³ :: Num a => (a, a, a) -> (a, a, a) -> a",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "parseVia",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "parseVia :: Parser a default parseVia :: (CanonicalParseF v ~ a) => Parser a",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "head'",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "head' :: f a -> a",
+   "module": "Quaalude.Collection"
+  },
+  {
+   "name": "ds²",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "ds² :: Num a => (a, a) -> (a, a) -> a",
+   "module": "Quaalude.Coord"
+  },
+  {
+   "name": "outside",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "outside :: [ℤ² × ℤ²] -> [ℤ² × ℤ²]",
+   "module": "Quaalude.Geometry"
+  },
+  {
+   "name": "⊨",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(⊨) :: a -> Bool",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "loopPairs",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "loopPairs :: [a] -> [(a, a)]",
+   "module": "Quaalude.Util"
+  },
+  {
+   "name": "□?□",
+   "solutions": 1,
+   "uses": 1,
+   "signature": "(□?□) :: (ℤ² × ℤ²) -> (ℤ² × ℤ²) -> 𝔹",
+   "module": "Quaalude.Geometry"
+  }
+ ]
+}
