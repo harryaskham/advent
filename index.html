@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>advent · Advent of Code in Haskell, 2015–2025</title>
+<meta name="description" content="Haskell solutions to every Advent of Code puzzle from 2015 to 2025, one file per day, in a viewer that shows each solution next to a short critique of how it works and where it is weak, from plain Haskell in 2015 to the quaalude custom prelude in 2025.">
+<meta name="theme-color" content="#10101e">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#viewer">Skip to the solutions</a>
+<div class="wrap">
+<nav class="topbar" aria-label="Site">
+  <a href="https://a.skh.am/all/">a.skh.am/all</a><span aria-hidden="true">/</span><span>advent</span>
+  <a class="src" href="https://github.com/harryaskham/advent">Source on GitHub</a>
+</nav>
+
+<main id="main">
+<header class="intro">
+  <h1>advent</h1>
+  <p class="lede">Haskell solutions to every <a href="https://adventofcode.com">Advent of Code</a> puzzle from 2015 to 2025: 262 days, one file each, shown here next to a short critique of how each one works and where it is weak.</p>
+  <div class="cols">
+    <div>
+      <p>The years read differently. 2015 to 2020 aim for idiomatic, fairly clean Haskell with a few shared helpers. From 2021 the solutions use a replacement Prelude, Relude at first and then a custom one, and from 2022 they prioritise fun: by 2024 and 2025 every solution is written against <a href="https://a.skh.am/quaalude/">quaalude</a>, a dense Unicode prelude with no imports needed, and the median solution is less than a third of the length it was in 2018.</p>
+      <p>Pick a year and a day below, or use <kbd>←</kbd> and <kbd>→</kbd> to step through them. In 2024 and 2025 code, dotted names are quaalude's: hover or focus one for its type.</p>
+    </div>
+  </div>
+  <figure class="wide">
+      <div class="fig" tabindex="0">
+        <!-- fig:lines -->
+<svg class="dg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" role="img" aria-labelledby="lines-t lines-d">
+<title id="lines-t">Lines of code in each solution, by year</title>
+<desc id="lines-d">A dot for every solution, placed by year and by its number of lines of code (not counting blank lines or comments), with each year&#x27;s median marked. 2015 to 2020 are plain Haskell, with medians of 37 to 74 lines; 2021 and 2022 use Relude and helper modules; 2023 uses adlude, a custom prelude; 2024 and 2025 use quaalude, with medians of 21 and 15 lines.</desc>
+<line class="life" x1="56" x2="880" y1="300.0" y2="300.0"/>
+<line class="life" x1="56" x2="880" y1="257.7" y2="257.7"/>
+<line class="life" x1="56" x2="880" y1="215.3" y2="215.3"/>
+<line class="life" x1="56" x2="880" y1="173.0" y2="173.0"/>
+<line class="life" x1="56" x2="880" y1="130.7" y2="130.7"/>
+<line class="life" x1="56" x2="880" y1="88.3" y2="88.3"/>
+<line class="life" x1="56" x2="880" y1="46.0" y2="46.0"/>
+<g class="k-muted"><circle class="node solid" cx="93.5" cy="286.5" r="3.2" opacity="0.75"><title>2015 day 1: 16 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="119.9" cy="283.9" r="3.2" opacity="0.75"><title>2015 day 2: 19 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="91.3" cy="266.1" r="3.2" opacity="0.75"><title>2015 day 3: 40 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="117.7" cy="287.3" r="3.2" opacity="0.75"><title>2015 day 4: 15 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="89.0" cy="264.4" r="3.2" opacity="0.75"><title>2015 day 5: 42 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="115.5" cy="244.1" r="3.2" opacity="0.75"><title>2015 day 6: 66 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="86.8" cy="241.6" r="3.2" opacity="0.75"><title>2015 day 7: 69 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="113.3" cy="278.8" r="3.2" opacity="0.75"><title>2015 day 8: 25 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="84.6" cy="259.4" r="3.2" opacity="0.75"><title>2015 day 9: 48 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="111.1" cy="294.9" r="3.2" opacity="0.75"><title>2015 day 10: 6 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="82.4" cy="277.1" r="3.2" opacity="0.75"><title>2015 day 11: 27 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="108.9" cy="261.1" r="3.2" opacity="0.75"><title>2015 day 12: 46 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="80.2" cy="256.8" r="3.2" opacity="0.75"><title>2015 day 13: 51 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="106.7" cy="256.8" r="3.2" opacity="0.75"><title>2015 day 14: 51 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="78.0" cy="245.8" r="3.2" opacity="0.75"><title>2015 day 15: 64 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="104.5" cy="242.4" r="3.2" opacity="0.75"><title>2015 day 16: 68 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="75.8" cy="276.3" r="3.2" opacity="0.75"><title>2015 day 17: 28 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="102.3" cy="252.6" r="3.2" opacity="0.75"><title>2015 day 18: 56 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="73.6" cy="248.4" r="3.2" opacity="0.75"><title>2015 day 19: 61 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="100.1" cy="279.7" r="3.2" opacity="0.75"><title>2015 day 20: 24 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="71.4" cy="244.1" r="3.2" opacity="0.75"><title>2015 day 21: 66 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="97.9" cy="190.8" r="3.2" opacity="0.75"><title>2015 day 22: 129 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="69.2" cy="261.9" r="3.2" opacity="0.75"><title>2015 day 23: 45 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="95.7" cy="258.5" r="3.2" opacity="0.75"><title>2015 day 24: 49 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="67.0" cy="293.2" r="3.2" opacity="0.75"><title>2015 day 25: 8 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="168.4" cy="266.1" r="3.2" opacity="0.75"><title>2016 day 1: 40 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="194.8" cy="256.8" r="3.2" opacity="0.75"><title>2016 day 2: 51 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="166.2" cy="288.1" r="3.2" opacity="0.75"><title>2016 day 3: 14 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="192.6" cy="256.8" r="3.2" opacity="0.75"><title>2016 day 4: 51 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="164.0" cy="272.9" r="3.2" opacity="0.75"><title>2016 day 5: 32 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="190.4" cy="281.4" r="3.2" opacity="0.75"><title>2016 day 6: 22 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="161.8" cy="244.1" r="3.2" opacity="0.75"><title>2016 day 7: 66 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="188.2" cy="228.0" r="3.2" opacity="0.75"><title>2016 day 8: 85 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="159.6" cy="256.8" r="3.2" opacity="0.75"><title>2016 day 9: 51 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="186.0" cy="228.0" r="3.2" opacity="0.75"><title>2016 day 10: 85 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="157.3" cy="184.9" r="3.2" opacity="0.75"><title>2016 day 11: 136 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="183.8" cy="199.2" r="3.2" opacity="0.75"><title>2016 day 12: 119 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="155.1" cy="262.7" r="3.2" opacity="0.75"><title>2016 day 13: 44 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="181.6" cy="270.4" r="3.2" opacity="0.75"><title>2016 day 14: 35 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="152.9" cy="262.7" r="3.2" opacity="0.75"><title>2016 day 15: 44 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="179.4" cy="278.8" r="3.2" opacity="0.75"><title>2016 day 16: 25 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="150.7" cy="267.8" r="3.2" opacity="0.75"><title>2016 day 17: 38 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="177.2" cy="257.7" r="3.2" opacity="0.75"><title>2016 day 18: 50 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="148.5" cy="264.4" r="3.2" opacity="0.75"><title>2016 day 19: 42 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="175.0" cy="279.7" r="3.2" opacity="0.75"><title>2016 day 20: 24 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="146.3" cy="189.9" r="3.2" opacity="0.75"><title>2016 day 21: 130 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="172.8" cy="189.9" r="3.2" opacity="0.75"><title>2016 day 22: 130 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="144.1" cy="287.3" r="3.2" opacity="0.75"><title>2016 day 23: 15 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="170.6" cy="237.3" r="3.2" opacity="0.75"><title>2016 day 24: 74 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="141.9" cy="278.8" r="3.2" opacity="0.75"><title>2016 day 25: 25 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="243.3" cy="284.8" r="3.2" opacity="0.75"><title>2017 day 1: 18 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="269.7" cy="278.0" r="3.2" opacity="0.75"><title>2017 day 2: 26 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="241.1" cy="260.2" r="3.2" opacity="0.75"><title>2017 day 3: 47 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="267.5" cy="281.4" r="3.2" opacity="0.75"><title>2017 day 4: 22 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="238.9" cy="286.5" r="3.2" opacity="0.75"><title>2017 day 5: 16 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="265.3" cy="274.6" r="3.2" opacity="0.75"><title>2017 day 6: 30 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="236.7" cy="238.2" r="3.2" opacity="0.75"><title>2017 day 7: 73 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="263.1" cy="264.4" r="3.2" opacity="0.75"><title>2017 day 8: 42 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="234.5" cy="270.4" r="3.2" opacity="0.75"><title>2017 day 9: 35 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="260.9" cy="273.8" r="3.2" opacity="0.75"><title>2017 day 10: 31 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="232.3" cy="278.0" r="3.2" opacity="0.75"><title>2017 day 11: 26 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="258.7" cy="265.3" r="3.2" opacity="0.75"><title>2017 day 12: 41 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="230.1" cy="282.2" r="3.2" opacity="0.75"><title>2017 day 13: 21 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="256.5" cy="250.0" r="3.2" opacity="0.75"><title>2017 day 14: 59 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="227.9" cy="276.3" r="3.2" opacity="0.75"><title>2017 day 15: 28 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="254.3" cy="215.3" r="3.2" opacity="0.75"><title>2017 day 16: 100 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="225.6" cy="279.7" r="3.2" opacity="0.75"><title>2017 day 17: 24 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="252.1" cy="207.7" r="3.2" opacity="0.75"><title>2017 day 18: 109 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="223.4" cy="256.8" r="3.2" opacity="0.75"><title>2017 day 19: 51 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="249.9" cy="245.0" r="3.2" opacity="0.75"><title>2017 day 20: 65 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="221.2" cy="260.2" r="3.2" opacity="0.75"><title>2017 day 21: 47 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="247.7" cy="232.3" r="3.2" opacity="0.75"><title>2017 day 22: 80 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="219.0" cy="271.2" r="3.2" opacity="0.75"><title>2017 day 23: 34 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="245.5" cy="268.7" r="3.2" opacity="0.75"><title>2017 day 24: 37 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="216.8" cy="224.6" r="3.2" opacity="0.75"><title>2017 day 25: 89 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="318.2" cy="279.7" r="3.2" opacity="0.75"><title>2018 day 1: 24 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="344.6" cy="281.4" r="3.2" opacity="0.75"><title>2018 day 2: 22 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="316.0" cy="264.4" r="3.2" opacity="0.75"><title>2018 day 3: 42 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="342.4" cy="220.4" r="3.2" opacity="0.75"><title>2018 day 4: 94 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="313.8" cy="279.7" r="3.2" opacity="0.75"><title>2018 day 5: 24 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="340.2" cy="248.4" r="3.2" opacity="0.75"><title>2018 day 6: 61 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="311.6" cy="229.7" r="3.2" opacity="0.75"><title>2018 day 7: 83 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="338.0" cy="278.8" r="3.2" opacity="0.75"><title>2018 day 8: 25 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="309.4" cy="236.5" r="3.2" opacity="0.75"><title>2018 day 9: 75 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="335.8" cy="237.3" r="3.2" opacity="0.75"><title>2018 day 10: 74 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="307.2" cy="265.3" r="3.2" opacity="0.75"><title>2018 day 11: 41 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="333.6" cy="256.0" r="3.2" opacity="0.75"><title>2018 day 12: 52 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="305.0" cy="214.5" r="3.2" opacity="0.75"><title>2018 day 13: 101 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="331.4" cy="273.8" r="3.2" opacity="0.75"><title>2018 day 14: 31 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="302.8" cy="140.8" r="3.2" opacity="0.75"><title>2018 day 15: 188 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="329.2" cy="133.2" r="3.2" opacity="0.75"><title>2018 day 16: 197 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="300.6" cy="184.0" r="3.2" opacity="0.75"><title>2018 day 17: 137 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="327.0" cy="264.4" r="3.2" opacity="0.75"><title>2018 day 18: 42 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="298.4" cy="223.8" r="3.2" opacity="0.75"><title>2018 day 19: 90 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="324.8" cy="173.8" r="3.2" opacity="0.75"><title>2018 day 20: 149 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="296.1" cy="259.4" r="3.2" opacity="0.75"><title>2018 day 21: 48 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="322.6" cy="223.0" r="3.2" opacity="0.75"><title>2018 day 22: 91 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="293.9" cy="200.1" r="3.2" opacity="0.75"><title>2018 day 23: 118 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="320.4" cy="112.0" r="3.2" opacity="0.75"><title>2018 day 24: 222 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="291.7" cy="260.2" r="3.2" opacity="0.75"><title>2018 day 25: 47 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="393.1" cy="286.5" r="3.2" opacity="0.75"><title>2019 day 1: 16 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="419.5" cy="273.8" r="3.2" opacity="0.75"><title>2019 day 2: 31 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="390.9" cy="267.0" r="3.2" opacity="0.75"><title>2019 day 3: 39 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="417.3" cy="272.9" r="3.2" opacity="0.75"><title>2019 day 4: 32 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="388.7" cy="288.1" r="3.2" opacity="0.75"><title>2019 day 5: 14 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="415.1" cy="257.7" r="3.2" opacity="0.75"><title>2019 day 6: 50 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="386.5" cy="242.4" r="3.2" opacity="0.75"><title>2019 day 7: 68 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="412.9" cy="275.4" r="3.2" opacity="0.75"><title>2019 day 8: 29 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="384.3" cy="288.1" r="3.2" opacity="0.75"><title>2019 day 9: 14 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="410.7" cy="226.3" r="3.2" opacity="0.75"><title>2019 day 10: 87 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="382.1" cy="238.2" r="3.2" opacity="0.75"><title>2019 day 11: 73 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="408.5" cy="216.2" r="3.2" opacity="0.75"><title>2019 day 12: 99 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="379.9" cy="136.6" r="3.2" opacity="0.75"><title>2019 day 13: 193 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="406.3" cy="255.1" r="3.2" opacity="0.75"><title>2019 day 14: 53 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="377.7" cy="172.2" r="3.2" opacity="0.75"><title>2019 day 15: 151 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="404.1" cy="265.3" r="3.2" opacity="0.75"><title>2019 day 16: 41 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="375.5" cy="228.9" r="3.2" opacity="0.75"><title>2019 day 17: 84 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="401.9" cy="47.7" r="3.2" opacity="0.75"><title>2019 day 18: 298 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="373.3" cy="263.6" r="3.2" opacity="0.75"><title>2019 day 19: 43 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="399.7" cy="218.7" r="3.2" opacity="0.75"><title>2019 day 20: 96 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="371.1" cy="263.6" r="3.2" opacity="0.75"><title>2019 day 21: 43 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="397.5" cy="247.5" r="3.2" opacity="0.75"><title>2019 day 22: 62 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="368.9" cy="215.3" r="3.2" opacity="0.75"><title>2019 day 23: 100 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="395.3" cy="223.8" r="3.2" opacity="0.75"><title>2019 day 24: 90 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="366.7" cy="224.6" r="3.2" opacity="0.75"><title>2019 day 25: 89 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="468.0" cy="287.3" r="3.2" opacity="0.75"><title>2020 day 1: 15 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="494.4" cy="273.8" r="3.2" opacity="0.75"><title>2020 day 2: 31 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="465.8" cy="265.3" r="3.2" opacity="0.75"><title>2020 day 3: 41 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="492.2" cy="211.9" r="3.2" opacity="0.75"><title>2020 day 4: 104 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="463.6" cy="272.9" r="3.2" opacity="0.75"><title>2020 day 5: 32 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="490.0" cy="289.0" r="3.2" opacity="0.75"><title>2020 day 6: 13 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="461.4" cy="204.3" r="3.2" opacity="0.75"><title>2020 day 7: 113 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="487.8" cy="211.9" r="3.2" opacity="0.75"><title>2020 day 8: 104 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="459.2" cy="266.1" r="3.2" opacity="0.75"><title>2020 day 9: 40 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="485.6" cy="278.8" r="3.2" opacity="0.75"><title>2020 day 10: 25 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="457.0" cy="218.7" r="3.2" opacity="0.75"><title>2020 day 11: 96 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="483.4" cy="213.6" r="3.2" opacity="0.75"><title>2020 day 12: 102 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="454.8" cy="267.8" r="3.2" opacity="0.75"><title>2020 day 13: 38 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="481.2" cy="199.2" r="3.2" opacity="0.75"><title>2020 day 14: 119 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="452.6" cy="272.9" r="3.2" opacity="0.75"><title>2020 day 15: 32 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="479.0" cy="217.9" r="3.2" opacity="0.75"><title>2020 day 16: 97 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="450.4" cy="241.6" r="3.2" opacity="0.75"><title>2020 day 17: 69 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="476.8" cy="266.1" r="3.2" opacity="0.75"><title>2020 day 18: 40 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="448.2" cy="239.9" r="3.2" opacity="0.75"><title>2020 day 19: 71 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="474.6" cy="137.4" r="3.2" opacity="0.75"><title>2020 day 20: 192 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="446.0" cy="245.0" r="3.2" opacity="0.75"><title>2020 day 21: 65 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="472.4" cy="265.3" r="3.2" opacity="0.75"><title>2020 day 22: 41 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="443.8" cy="252.6" r="3.2" opacity="0.75"><title>2020 day 23: 56 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="470.2" cy="227.2" r="3.2" opacity="0.75"><title>2020 day 24: 86 lines</title></circle></g>
+<g class="k-muted"><circle class="node solid" cx="441.6" cy="286.5" r="3.2" opacity="0.75"><title>2020 day 25: 16 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="542.9" cy="281.4" r="3.2" opacity="0.75"><title>2021 day 1: 22 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="569.3" cy="269.5" r="3.2" opacity="0.75"><title>2021 day 2: 36 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="540.7" cy="275.4" r="3.2" opacity="0.75"><title>2021 day 3: 29 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="567.1" cy="247.5" r="3.2" opacity="0.75"><title>2021 day 4: 62 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="538.5" cy="285.6" r="3.2" opacity="0.75"><title>2021 day 5: 17 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="564.9" cy="286.5" r="3.2" opacity="0.75"><title>2021 day 6: 16 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="536.3" cy="289.8" r="3.2" opacity="0.75"><title>2021 day 7: 12 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="562.7" cy="268.7" r="3.2" opacity="0.75"><title>2021 day 8: 37 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="534.1" cy="273.8" r="3.2" opacity="0.75"><title>2021 day 9: 31 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="560.5" cy="274.6" r="3.2" opacity="0.75"><title>2021 day 10: 30 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="531.9" cy="276.3" r="3.2" opacity="0.75"><title>2021 day 11: 28 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="558.3" cy="261.1" r="3.2" opacity="0.75"><title>2021 day 12: 46 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="529.7" cy="285.6" r="3.2" opacity="0.75"><title>2021 day 13: 17 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="556.1" cy="258.5" r="3.2" opacity="0.75"><title>2021 day 14: 49 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="527.5" cy="270.4" r="3.2" opacity="0.75"><title>2021 day 15: 35 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="553.9" cy="230.6" r="3.2" opacity="0.75"><title>2021 day 16: 82 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="525.3" cy="267.8" r="3.2" opacity="0.75"><title>2021 day 17: 38 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="551.7" cy="217.0" r="3.2" opacity="0.75"><title>2021 day 18: 98 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="523.1" cy="257.7" r="3.2" opacity="0.75"><title>2021 day 19: 50 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="549.5" cy="267.8" r="3.2" opacity="0.75"><title>2021 day 20: 38 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="520.9" cy="266.1" r="3.2" opacity="0.75"><title>2021 day 21: 40 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="547.3" cy="251.7" r="3.2" opacity="0.75"><title>2021 day 22: 57 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="518.7" cy="173.0" r="3.2" opacity="0.75"><title>2021 day 23: 150 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="545.1" cy="266.1" r="3.2" opacity="0.75"><title>2021 day 24: 40 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="516.5" cy="277.1" r="3.2" opacity="0.75"><title>2021 day 25: 27 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="617.8" cy="290.7" r="3.2" opacity="0.75"><title>2022 day 1: 11 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="644.3" cy="269.5" r="3.2" opacity="0.75"><title>2022 day 2: 36 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="615.6" cy="265.3" r="3.2" opacity="0.75"><title>2022 day 3: 41 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="642.1" cy="285.6" r="3.2" opacity="0.75"><title>2022 day 4: 17 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="613.4" cy="272.1" r="3.2" opacity="0.75"><title>2022 day 5: 33 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="639.9" cy="287.3" r="3.2" opacity="0.75"><title>2022 day 6: 15 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="611.2" cy="247.5" r="3.2" opacity="0.75"><title>2022 day 7: 62 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="637.6" cy="247.5" r="3.2" opacity="0.75"><title>2022 day 8: 62 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="609.0" cy="273.8" r="3.2" opacity="0.75"><title>2022 day 9: 31 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="635.4" cy="257.7" r="3.2" opacity="0.75"><title>2022 day 10: 50 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="606.8" cy="245.8" r="3.2" opacity="0.75"><title>2022 day 11: 64 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="633.2" cy="275.4" r="3.2" opacity="0.75"><title>2022 day 12: 29 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="604.6" cy="264.4" r="3.2" opacity="0.75"><title>2022 day 13: 42 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="631.0" cy="267.0" r="3.2" opacity="0.75"><title>2022 day 14: 39 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="602.4" cy="262.7" r="3.2" opacity="0.75"><title>2022 day 15: 44 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="628.8" cy="234.8" r="3.2" opacity="0.75"><title>2022 day 16: 77 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="600.2" cy="205.2" r="3.2" opacity="0.75"><title>2022 day 17: 112 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="626.6" cy="245.8" r="3.2" opacity="0.75"><title>2022 day 18: 64 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="598.0" cy="229.7" r="3.2" opacity="0.75"><title>2022 day 19: 83 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="624.4" cy="247.5" r="3.2" opacity="0.75"><title>2022 day 20: 62 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="595.8" cy="243.3" r="3.2" opacity="0.75"><title>2022 day 21: 67 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="622.2" cy="228.9" r="3.2" opacity="0.75"><title>2022 day 22: 84 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="593.6" cy="255.1" r="3.2" opacity="0.75"><title>2022 day 23: 53 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="620.0" cy="223.0" r="3.2" opacity="0.75"><title>2022 day 24: 91 lines</title></circle></g>
+<g class="k-b"><circle class="node solid" cx="591.4" cy="270.4" r="3.2" opacity="0.75"><title>2022 day 25: 35 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="692.7" cy="282.2" r="3.2" opacity="0.75"><title>2023 day 1: 21 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="719.2" cy="275.4" r="3.2" opacity="0.75"><title>2023 day 2: 29 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="690.5" cy="259.4" r="3.2" opacity="0.75"><title>2023 day 3: 48 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="717.0" cy="272.1" r="3.2" opacity="0.75"><title>2023 day 4: 33 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="688.3" cy="261.1" r="3.2" opacity="0.75"><title>2023 day 5: 46 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="714.8" cy="287.3" r="3.2" opacity="0.75"><title>2023 day 6: 15 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="686.1" cy="220.4" r="3.2" opacity="0.75"><title>2023 day 7: 94 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="712.6" cy="262.7" r="3.2" opacity="0.75"><title>2023 day 8: 44 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="683.9" cy="294.1" r="3.2" opacity="0.75"><title>2023 day 9: 7 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="710.4" cy="245.8" r="3.2" opacity="0.75"><title>2023 day 10: 64 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="681.7" cy="290.7" r="3.2" opacity="0.75"><title>2023 day 11: 11 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="708.1" cy="283.9" r="3.2" opacity="0.75"><title>2023 day 12: 19 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="679.5" cy="283.1" r="3.2" opacity="0.75"><title>2023 day 13: 20 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="705.9" cy="289.0" r="3.2" opacity="0.75"><title>2023 day 14: 13 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="677.3" cy="288.1" r="3.2" opacity="0.75"><title>2023 day 15: 14 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="703.7" cy="281.4" r="3.2" opacity="0.75"><title>2023 day 16: 22 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="675.1" cy="281.4" r="3.2" opacity="0.75"><title>2023 day 17: 22 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="701.5" cy="273.8" r="3.2" opacity="0.75"><title>2023 day 18: 31 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="672.9" cy="254.3" r="3.2" opacity="0.75"><title>2023 day 19: 54 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="699.3" cy="234.0" r="3.2" opacity="0.75"><title>2023 day 20: 78 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="670.7" cy="272.9" r="3.2" opacity="0.75"><title>2023 day 21: 32 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="697.1" cy="239.0" r="3.2" opacity="0.75"><title>2023 day 22: 72 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="668.5" cy="245.8" r="3.2" opacity="0.75"><title>2023 day 23: 64 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="694.9" cy="241.6" r="3.2" opacity="0.75"><title>2023 day 24: 69 lines</title></circle></g>
+<g class="k-c"><circle class="node solid" cx="666.3" cy="283.9" r="3.2" opacity="0.75"><title>2023 day 25: 19 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="767.6" cy="294.1" r="3.2" opacity="0.75"><title>2024 day 1: 7 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="794.1" cy="287.3" r="3.2" opacity="0.75"><title>2024 day 2: 15 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="765.4" cy="286.5" r="3.2" opacity="0.75"><title>2024 day 3: 16 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="791.9" cy="282.2" r="3.2" opacity="0.75"><title>2024 day 4: 21 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="763.2" cy="284.8" r="3.2" opacity="0.75"><title>2024 day 5: 18 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="789.7" cy="286.5" r="3.2" opacity="0.75"><title>2024 day 6: 16 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="761.0" cy="289.0" r="3.2" opacity="0.75"><title>2024 day 7: 13 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="787.5" cy="290.7" r="3.2" opacity="0.75"><title>2024 day 8: 11 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="758.8" cy="269.5" r="3.2" opacity="0.75"><title>2024 day 9: 36 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="785.3" cy="286.5" r="3.2" opacity="0.75"><title>2024 day 10: 16 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="756.6" cy="283.1" r="3.2" opacity="0.75"><title>2024 day 11: 20 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="783.1" cy="280.5" r="3.2" opacity="0.75"><title>2024 day 12: 23 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="754.4" cy="276.3" r="3.2" opacity="0.75"><title>2024 day 13: 28 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="780.9" cy="264.4" r="3.2" opacity="0.75"><title>2024 day 14: 42 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="752.2" cy="245.8" r="3.2" opacity="0.75"><title>2024 day 15: 64 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="778.7" cy="257.7" r="3.2" opacity="0.75"><title>2024 day 16: 50 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="750.0" cy="289.0" r="3.2" opacity="0.75"><title>2024 day 17: 13 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="776.4" cy="275.4" r="3.2" opacity="0.75"><title>2024 day 18: 29 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="747.8" cy="296.6" r="3.2" opacity="0.75"><title>2024 day 19: 4 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="774.2" cy="280.5" r="3.2" opacity="0.75"><title>2024 day 20: 23 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="745.6" cy="267.8" r="3.2" opacity="0.75"><title>2024 day 21: 38 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="772.0" cy="270.4" r="3.2" opacity="0.75"><title>2024 day 22: 35 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="743.4" cy="267.8" r="3.2" opacity="0.75"><title>2024 day 23: 38 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="769.8" cy="167.9" r="3.2" opacity="0.75"><title>2024 day 24: 156 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="741.2" cy="293.2" r="3.2" opacity="0.75"><title>2024 day 25: 8 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="842.5" cy="295.8" r="3.2" opacity="0.75"><title>2025 day 1: 5 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="869.0" cy="286.5" r="3.2" opacity="0.75"><title>2025 day 2: 16 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="840.3" cy="283.1" r="3.2" opacity="0.75"><title>2025 day 3: 20 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="866.8" cy="281.4" r="3.2" opacity="0.75"><title>2025 day 4: 22 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="838.1" cy="296.6" r="3.2" opacity="0.75"><title>2025 day 5: 4 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="864.6" cy="296.6" r="3.2" opacity="0.75"><title>2025 day 6: 4 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="835.9" cy="287.3" r="3.2" opacity="0.75"><title>2025 day 7: 15 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="862.4" cy="287.3" r="3.2" opacity="0.75"><title>2025 day 8: 15 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="833.7" cy="296.6" r="3.2" opacity="0.75"><title>2025 day 9: 4 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="860.2" cy="267.0" r="3.2" opacity="0.75"><title>2025 day 10: 39 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="831.5" cy="294.1" r="3.2" opacity="0.75"><title>2025 day 11: 7 lines</title></circle></g>
+<g class="k-accent"><circle class="node solid" cx="858.0" cy="287.3" r="3.2" opacity="0.75"><title>2025 day 12: 15 lines</title></circle></g>
+<text x="48.0" y="304.0" font-size="11" text-anchor="end" class="sub m">0</text>
+<text x="48.0" y="261.7" font-size="11" text-anchor="end" class="sub m">50</text>
+<text x="48.0" y="219.3" font-size="11" text-anchor="end" class="sub m">100</text>
+<text x="48.0" y="177.0" font-size="11" text-anchor="end" class="sub m">150</text>
+<text x="48.0" y="134.7" font-size="11" text-anchor="end" class="sub m">200</text>
+<text x="48.0" y="92.3" font-size="11" text-anchor="end" class="sub m">250</text>
+<text x="48.0" y="50.0" font-size="11" text-anchor="end" class="sub m">300</text>
+<text x="48.0" y="30.0" font-size="11" text-anchor="end" class="sub m">lines</text>
+<text x="123.4" y="265.1" font-size="11.5" text-anchor="start" class="lbl m halo">46</text>
+<text x="93.5" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2015</text>
+<text x="198.3" y="266.7" font-size="11.5" text-anchor="start" class="lbl m halo">44</text>
+<text x="168.4" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2016</text>
+<text x="273.2" y="272.7" font-size="11.5" text-anchor="start" class="lbl m halo">37</text>
+<text x="243.3" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2017</text>
+<text x="348.1" y="241.3" font-size="11.5" text-anchor="start" class="lbl m halo">74</text>
+<text x="318.2" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2018</text>
+<text x="423.1" y="251.5" font-size="11.5" text-anchor="start" class="lbl m halo">62</text>
+<text x="393.1" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2019</text>
+<text x="498.0" y="256.6" font-size="11.5" text-anchor="start" class="lbl m halo">56</text>
+<text x="468.0" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2020</text>
+<text x="572.9" y="272.7" font-size="11.5" text-anchor="start" class="lbl m halo">37</text>
+<text x="542.9" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2021</text>
+<text x="647.8" y="261.7" font-size="11.5" text-anchor="start" class="lbl m halo">50</text>
+<text x="617.8" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2022</text>
+<text x="722.7" y="277.8" font-size="11.5" text-anchor="start" class="lbl m halo">31</text>
+<text x="692.7" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2023</text>
+<text x="797.6" y="286.2" font-size="11.5" text-anchor="start" class="lbl m halo">21</text>
+<text x="767.6" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2024</text>
+<text x="872.5" y="291.3" font-size="11.5" text-anchor="start" class="lbl m halo">15</text>
+<text x="842.5" y="322.0" font-size="12.5" text-anchor="middle" class="sub m">2025</text>
+<g class="k-muted"><circle class="node solid" cx="61" cy="342" r="5"/></g>
+<text x="71.0" y="346.0" font-size="12" text-anchor="start" class="sub">plain Haskell</text>
+<g class="k-b"><circle class="node solid" cx="188.60000000000002" cy="342" r="5"/></g>
+<text x="198.6" y="346.0" font-size="12" text-anchor="start" class="sub">Relude + helpers</text>
+<g class="k-c"><circle class="node solid" cx="337.8" cy="342" r="5"/></g>
+<text x="347.8" y="346.0" font-size="12" text-anchor="start" class="sub">adlude</text>
+<g class="k-accent"><circle class="node solid" cx="415.0" cy="342" r="5"/></g>
+<text x="425.0" y="346.0" font-size="12" text-anchor="start" class="sub">quaalude</text>
+<g class="k-ink"><line class="edge" x1="501.6" x2="523.6" y1="342" y2="342" stroke-width="2.5"/></g>
+<text x="531.6" y="346.0" font-size="12" text-anchor="start" class="sub">median</text>
+<g class="k-ink"><line class="edge" x1="66.5" x2="120.4" y1="261.1" y2="261.1" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="141.4" x2="195.3" y1="262.7" y2="262.7" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="216.3" x2="270.2" y1="268.7" y2="268.7" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="291.2" x2="345.1" y1="237.3" y2="237.3" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="366.1" x2="420.1" y1="247.5" y2="247.5" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="441.0" x2="495.0" y1="252.6" y2="252.6" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="515.9" x2="569.9" y1="268.7" y2="268.7" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="590.9" x2="644.8" y1="257.7" y2="257.7" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="665.8" x2="719.7" y1="273.8" y2="273.8" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="740.7" x2="794.6" y1="282.2" y2="282.2" stroke-width="2.5"/></g>
+<g class="k-ink"><line class="edge" x1="815.6" x2="869.5" y1="287.3" y2="287.3" stroke-width="2.5"/></g>
+</svg>
+<!-- /fig -->
+      </div>
+      <figcaption><b>Shorter every era.</b> Lines of code per solution, blank lines and comments excluded.</figcaption>
+  </figure>
+
+</header>
+
+<section class="viewer" id="viewer" aria-label="Solutions" tabindex="-1">
+  <nav class="years" id="years" aria-label="Years"></nav>
+  <nav class="days" id="days" aria-label="Days"></nav>
+  <article class="day" id="day" aria-live="polite">
+    <noscript><p>The viewer needs JavaScript. Every solution is also <a href="https://github.com/harryaskham/advent">on GitHub</a>.</p></noscript>
+  </article>
+</section>
+
+<section class="part" aria-labelledby="h-notes">
+  <h2 id="h-notes">About this page</h2>
+  <div class="cols">
+    <p>Each critique was drafted by a language model (Claude Opus 5.5) from the solution's code and the types of any quaalude names it uses. A second model (GPT-5.4) then checked every claim against the code: 194 critiques were revised at least once, 170 passed the check, and for the other 92 the drafting model ruled on each remaining objection from the code (accepting 43, rejecting 162 as mistaken or pedantic). A sample was checked by hand. They describe the code, not the answers, and are deliberately short.</p>
+    <p>Puzzle text and inputs are not reproduced here: they belong to Advent of Code, whose author asks that they are not redistributed. Each day links to its puzzle. The page is generated from the repository by <code>scripts/site</code>.</p>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <span>advent</span>
+  <a href="https://github.com/harryaskham/advent">Source</a>
+  <a href="https://a.skh.am/quaalude/">quaalude</a>
+  <a href="https://a.skh.am/all/">More at a.skh.am/all</a>
+</footer>
+</div>
+<script src="assets/site.js" defer></script>
+<script src="assets/viewer.js" defer></script>
+</body>
+</html>
