@@ -25,11 +25,17 @@ TOKEN = re.compile(r"""
 """, re.X | re.S)
 
 
+# Names that mean something else at the type level: in `Ѓ ℤ (?)`, (?) is a class, not the value ?.
+TYPE_LEVEL_DIFFERS = {"?"}
+
+
 def highlight(src, link=None):
     link = link or {}
     out = []
     for m in TOKEN.finditer(src):
         kind, text = m.lastgroup, m.group()
+        line_start = src.rfind("\n", 0, m.start()) + 1
+        in_type = "::" in src[line_start:m.start()]
         esc = html.escape(text)
         if kind in ("ws", "other"):
             out.append(esc)
@@ -46,7 +52,7 @@ def highlight(src, link=None):
         else:
             cls = kind
         inner = f'<span class="{cls}">{esc}</span>' if cls else esc
-        if text in link:
+        if text in link and not (in_type and text in TYPE_LEVEL_DIFFERS):
             inner = f'<abbr title="{html.escape(link[text], quote=True)}">{inner}</abbr>'
         out.append(inner)
     return "".join(out)
